@@ -1,0 +1,1292 @@
+ 0000           ;main.asm
+ 0000           ;
+ 0000           ;Main program
+ 0000           ;
+ 0000           ;Copyright (C) 2006, Brian Shucker <brian@iguanaworks.net>
+ 0000           ;
+ 0000           ;Distribute under the GPL version 2.
+ 0000           ;See COPYING for license details.
+ 0000           
+ 0010           FLAG_XIO_MASK:  equ 10h
+ 0008           FLAG_SUPER:     equ 08h
+ 0004           FLAG_CARRY:     equ 04h
+ 0002           FLAG_ZERO:      equ 02h
+ 0001           FLAG_GLOBAL_IE: equ 01h
+ 0000           
+ 0000           ;;=============================================================================
+ 0000           ;;      Register Space, Bank 0
+ 0000           ;;=============================================================================
+ 0000           
+ 0000           ;------------------------------------------------
+ 0000           ;  Port Registers
+ 0000           ;------------------------------------------------
+ 0000           ; Port Data Registers
+ 0000           P0DATA:       equ 00h          ; Port 0 Data Register                     (RW)
+ 0001           P1DATA:       equ 01h          ; Port 1 Data Register                     (RW)
+ 0002           P2DATA:       equ 02h          ; Port 2 Data Register                     (RW)
+ 0003           P3DATA:       equ 03h          ; Port 3 Data Register                     (RW)
+ 0004           P4DATA:       equ 04h          ; Port 4 Data Register                     (RW)
+ 0000           ; PSoC Compatability
+ 0000           PRT0DR:       equ 00h          ; Port 0 Data Register                     (RW)(PSoC)
+ 0001           PRT1DR:       equ 01h          ; Port 1 Data Register                     (RW)(PSoC)
+ 0002           PRT2DR:       equ 02h          ; Port 2 Data Register                     (RW)(PSoC)
+ 0003           PRT3DR:       equ 03h          ; Port 3 Data Register                     (RW)(PSoC)
+ 0004           PRT4DR:       equ 04h          ; Port 4 Data Register                     (RW)(PSoC)
+ 0000           
+ 0000           ; Port/Pin Configuration Registers
+ 0005           P00CR:        equ 05h          ; P0.0 Configuration Register              (RW)
+ 0006           P01CR:        equ 06h          ; P0.1 Configuration Register              (RW)
+ 0007           P02CR:        equ 07h          ; P0.2 Configuration Register              (RW)
+ 0008           P03CR:        equ 08h          ; P0.3 Configuration Register              (RW)
+ 0009           P04CR:        equ 09h          ; P0.4 Configuration Register              (RW)
+ 000A           P05CR:        equ 0Ah          ; P0.5 Configuration Register              (RW)
+ 000B           P06CR:        equ 0Bh          ; P0.6 Configuration Register              (RW)
+ 000C           P07CR:        equ 0Ch          ; P0.7 Configuration Register              (RW)
+ 000D           P10CR:        equ 0Dh          ; P1.0 Configuration Register              (RW)
+ 000E           P11CR:        equ 0Eh          ; P1.1 Configuration Register              (RW)
+ 000F           P12CR:        equ 0Fh          ; P1.2 Configuration Register              (RW)
+ 0010           P13CR:        equ 10h          ; P1.3 Configuration Register              (RW)
+ 0011           P14CR:        equ 11h          ; P1.4 Configuration Register              (RW)
+ 0012           P15CR:        equ 12h          ; P1.5 Configuration Register              (RW)
+ 0013           P16CR:        equ 13h          ; P1.6 Configuration Register              (RW)
+ 0014           P17CR:        equ 14h          ; P1.7 Configuration Register              (RW)
+ 0015           P2CR:         equ 15h          ; P2.0-P2.7 Configuration Register         (RW)
+ 0016           P3CR:         equ 16h          ; P3.0-P3.7 Configuration Register         (RW)
+ 0017           P4CR:         equ 17h          ; P4.0-P4.7 Configuration Register         (RW)
+ 0000           
+ 0000           ; Timer Registers
+ 0020           FRTMRL:       equ 20h          ; Free Running Timer Low                   (RW)
+ 0021           FRTMRH:       equ 21h          ; Free Running Timer High                  (RW)
+ 0022           TCAP0R:       equ 22h          ; Capture 0 Rising                         (R)             
+ 0023           TCAP1R:       equ 23h          ; Capture 1 Rising                         (R)             
+ 0024           TCAP0F:       equ 24h          ; Capture 0 Falling                        (R)             
+ 0025           TCAP1F:       equ 25h          ; Capture 1 Falling                        (R)             
+ 0026           PITMRL:       equ 26h          ; Programmable Interval Timer Low          (RW)
+ 0027           PITMRH:       equ 27h          ; Programmable Interval Timer High         (RW)
+ 0028           PIRL:         equ 28h          ; Programmable Interval Timer Reload Low   (RW)
+ 0029           PIRH:         equ 29h          ; Programmable Interval Timer Reload High  (RW)
+ 002A           TMRCR:        equ 2Ah          ; Timer Configuration Register             (RW)
+ 002B           TCAPINTE:     equ 2Bh          ; Capture Timer Interrupt Enable           (RW)
+ 002C           TCAPINTS:     equ 2Ch          ; Capture Timer Interrupt Status           (RW)
+ 0000           
+ 0000           ; Clock Configuration Registers
+ 0030           CPUCLKCR:     equ 30h          ; CPU Clock Configuration Register         (RW)
+ 0000           CPUCLK_SEL_INT:         equ 00h ; CPU Clock Select Internal Oscillator
+ 0001           CPUCLK_SEL_EXT:         equ 01h ; CPU Clock Select External Clock
+ 0000           CPUCLK_USBCLK_SEL_INT:  equ 00h ; USB Clock Select Internal Clock
+ 0040           CPUCLK_USBCLK_SEL_EXT:  equ 40h ; USB Clock Select External Clock
+ 0000           CPUCLK_USBCLK_DIV2_DIS: equ 00h ; USB Clock Divide by 2 disable
+ 0080           CPUCLK_USBCLK_DIV2_ENA: equ 80h ; USB Clock Divide by 2 enable
+ 0000           
+ 0031           TMRCLKCR:     equ 31h          ; Timer Clock Configuration Register       (RW)
+ 0000           TMRCLKCR_ITMRCLK_IOSC:     equ 00h ; MASK: ITMRCLK Source--Internal Oscillator
+ 0001           TMRCLKCR_ITMRCLK_XOSC:     equ 01h ; MASK: ITMRCLK Source--External Oscillator or CLKIN
+ 0002           TMRCLKCR_ITMRCLK_LPO:      equ 02h ; MASK: ITMRCLK Source--Low Power Oscillator (32 Khz)
+ 0003           TMRCLKCR_ITMRCLK_TCAPCLK:  equ 03h ; MASK: ITMRCLK Source--TCAPCLK
+ 0000           TMRCLKCR_ITMRCLK_DIV_1:    equ 00h ; MASK: ITMRCLK Divider Value 1
+ 0004           TMRCLKCR_ITMRCLK_DIV_2:    equ 04h ; MASK: ITMRCLK Divider Value 2
+ 0008           TMRCLKCR_ITMRCLK_DIV_3:    equ 08h ; MASK: ITMRCLK Divider Value 3
+ 000C           TMRCLKCR_ITMRCLK_DIV_4:    equ 0Ch ; MASK: ITMRCLK Divider Value 4
+ 0002           TMRCLKCR_ITMRCLK_LPO:      equ 02h ; MASK: ITMRCLK Source--Low Power Oscillator (32 Khz)
+ 0000           TMRCLKCR_TCAPCLK_IOSC:     equ 00h ; MASK: TCAPCLK Source--Internal Oscillator
+ 0010           TMRCLKCR_TCAPCLK_XOSC:     equ 10h ; MASK: TCAPCLK Source--External Oscillator or CLKIN
+ 0020           TMRCLKCR_TCAPCLK_LPO:      equ 20h ; MASK: TCAPCLK Source--Low Power Oscillator (32 Khz)
+ 0030           TMRCLKCR_TCAPCLK_DISABLED: equ 30h ; MASK: TCAPCLK Source--DISABLED
+ 0000           TMRCLKCR_TCAPCLK_DIV_2:    equ 00h ; MASK: TCAPCLK Divider Value 2
+ 0040           TMRCLKCR_TCAPCLK_DIV_4:    equ 40h ; MASK: TCAPCLK Divider Value 4
+ 0080           TMRCLKCR_TCAPCLK_DIV_6:    equ 80h ; MASK: TCAPCLK Divider Value 6
+ 00C0           TMRCLKCR_TCAPCLK_DIV_8:    equ C0h ; MASK: TCAPCLK Divider Value 8
+ 0000           
+ 0032           CLKIOCR:      equ 32h          ; Clock I/O Configuration Register         (RW)
+ 0000           CLKIOCR_CLKOUT_IOSC:       equ 00h ; MASK: Clock Source--Internal Oscillator
+ 0001           CLKIOCR_CLKOUT_XOSC:       equ 01h ; MASK: Clock Source--External Oscillator or CLKIN
+ 0002           CLKIOCR_CLKOUT_LPO:        equ 02h ; MASK: Clock Source--Low Power Oscillator (32 Khz)
+ 0003           CLKIOCR_CLKOUT_CPUCLK:     equ 03h ; MASK: Clock Source--CPUCLK
+ 0000           
+ 0000           ; Oscillator Configuration Registers
+ 0034           IOSCTR:       equ 34h          ; Internal Oscillator Trim Register        (R)
+ 0035           XOSCTR:       equ 35h          ; Crystal Oscillator Trim Register         (R)
+ 0036           LPOSCTR:      equ 36h          ; Low Power Oscillator Trim Register       (RW)
+ 0000           
+ 0000           ; SPI Configuration/Data Registers
+ 003C           SPIDATA:      equ 3Ch          ; SPI Data Register                        (RW)
+ 003D           SPICR:        equ 3Dh          ; SPI Configuration Register               (RW)
+ 0000           
+ 0000           ; USB SIE Configuration/Data Registers
+ 0040           USBCR:        equ 40h          ; USB Configuration Register               (RW)
+ 0041           EP0CNT:       equ 41h          ; Endpoint 0 Count Register                (RW)
+ 0042           EP1CNT:       equ 42h          ; Endpoint 1 Count Register                (RW)
+ 0043           EP2CNT:       equ 43h          ; Endpoint 2 Count Register                (RW)
+ 0044           EP0MODE:      equ 44h          ; Endpoint 0 Mode  Register                (RW)
+ 0045           EP1MODE:      equ 45h          ; Endpoint 1 Mode  Register                (RW)
+ 0046           EP2MODE:      equ 46h          ; Endpoint 2 Mode  Register                (RW)
+ 0050           EP0DATA:      equ 50h          ; Endpoint 0 Data  Register (50h-57h)      (RW)
+ 0058           EP1DATA:      equ 58h          ; Endpoint 1 Data  Register (58h-5Fh)      (RW)
+ 0060           EP2DATA:      equ 60h          ; Endpoint 2 Data  Register (60h-67h)      (RW)
+ 0000           
+ 0000           ; Band-gap/TRIMBUF Configuration Registers
+ 0070           BGAPTR:       equ 70h          ; Band-gap Trim Register                   (R)
+ 0071           TRIM0:        equ 71h          ; TRIMBUF Trim Register 0                  (R)
+ 0072           TRIM1:        equ 72h          ; TRIMBUF Trim Register 1                  (R)
+ 0000           
+ 0000           ; VREG Configuration Register
+ 0073           VREGCR:       equ 73h          ; VREG Configuration Register              (RW)
+ 0000           
+ 0000           ; USB Transceiver Configuration Registers
+ 0074           USBXCR:       equ 74h          ; USB Transceiver Configuration Register   (RW)
+ 0080           USBXCR_ENABLE:    equ 80h      ; USB Transceiver Enable
+ 0001           USBXCR_FORCE:     equ 01h      ; USB Transceiver Force
+ 0000           
+ 0000           ; Data Pointer Registers--Listed for compatability with other M8C based parts.
+ 00D0           CPPDR:        equ D0h          ; Current Page Pointer Data Register       (RW)
+ 00D4           DPRDR:        equ D4h          ; Data Page Read Register                  (RW)
+ 00D5           DPWDR:        equ D5h          ; Data Page Write Register                 (RW)
+ 0000           
+ 0000           ; Watchdog Timer Reset
+ 00E3           RESWDT:       equ E3h          ; Watchdog Timer Reset                     (W)
+ 00E3           RES_WDT:      equ E3h          ; WatchDog Timer Register                  (W) (PSoC)
+ 0000           
+ 0000           ;------------------------------------------------
+ 0000           ;  System and Global Resource Registers
+ 0000           ;------------------------------------------------
+ 00DA           INT_CLR0:     equ DAh          ; Interrupt Clear Register 0               (RW)
+ 0000                                          ; Use INT_MSK0 bit field masks
+ 00DB           INT_CLR1:     equ DBh          ; Interrupt Clear Register 1               (RW)
+ 0000                                          ; Use INT_MSK1 bit field masks
+ 00DC           INT_CLR2:     equ DCh          ; Interrupt Clear Register 2               (RW)
+ 0000                                          ; Use INT_MSK2 bit field masks
+ 0000           
+ 00DE           INT_MSK3:     equ DEh          ; Interrupt Mask Register                  (RW)
+ 0080           INT_MSK3_ENSWINT:          equ 80h ; MASK: enable/disable SW interrupt
+ 0000           
+ 00DF           INT_MSK2:     equ DFh          ; Interrupt Mask Register                  (RW)
+ 0040           INT_MSK2_GPIO_PORT4:       equ 40h ; MASK: enable/disable GPIO Port 4 interrupt
+ 0020           INT_MSK2_GPIO_PORT3:       equ 20h ; MASK: enable/disable GPIO Port 3 interrupt
+ 0010           INT_MSK2_GPIO_PORT2:       equ 10h ; MASK: enable/disable GPIO Port 2 interrupt
+ 0008           INT_MSK2_PS2_DATA_LOW:     equ 08h ; MASK: enable/disable PS/2 Data Low
+ 0004           INT_MSK2_GPIO_INT2:        equ 04h ; MASK: enable/disable GPIO INT2 interrupt
+ 0002           INT_MSK2_CTR_16_WRAP:      equ 02h ; MASK: enable/disable 16 bit counter wrap
+ 0001           INT_MSK2_TCAP1:            equ 01h ; MASK: enable/disable Timer/Capture 0 interrupt
+ 0000           
+ 00E0           INT_MSK0:     equ E0h          ; Interrupt Mask Register                 (RW)
+ 0080           INT_MSK0_GPIO_PORT1:       equ 80h ; MASK: enable/disable GPIO Port 1 interrupt
+ 0040           INT_MSK0_SLEEP:            equ 40h ; MASK: enable/disable sleep interrupt
+ 0020           INT_MSK0_GPIO_INT1:        equ 20h ; MASK: enable/disable GPIO INT1 interrupt
+ 0010           INT_MSK0_GPIO_PORT0:       equ 10h ; MASK: enable/disable GPIO Port 0 interrupt
+ 0008           INT_MSK0_SPI_RX:           equ 08h ; MASK: enable/disable SPI Receive interrupt
+ 0004           INT_MSK0_SPI_TX:           equ 04h ; MASK: enable/disable SPI Transmit interrupt
+ 0002           INT_MSK0_GPIO_INT0:        equ 02h ; MASK: enable/disable GPIO INT0 interrupt
+ 0001           INT_MSK0_POR_LVD:          equ 01h ; MASK: enable/disable POR/LVD interrupt
+ 0000           
+ 00E1           INT_MSK1:     equ E1h          ; Interrupt Mask Register                 (RW)
+ 0080           INT_MSK1_TCAP0:            equ 80h ; MASK: enable/disable Timer/Capture 0 interrupt
+ 0040           INT_MSK1_PIT:              equ 40h ; MASK: enable/disable Progrmmable Interval Timer
+ 0020           INT_MSK1_MS_TIMER:         equ 20h ; MASK: enable/disable One Millisecond Timer interrupt
+ 0010           INT_MSK1_USB_ACTIVITY:     equ 10h ; MASK: enable/disable USB Bus Activity interrupt
+ 0008           INT_MSK1_USB_BUS_RESET:    equ 08h ; MASK: enable/disable USB Bus Reset interrupt
+ 0004           INT_MSK1_USB_EP2:          equ 04h ; MASK: enable/disable USB Endpoint 2 interrupt
+ 0002           INT_MSK1_USB_EP1:          equ 02h ; MASK: enable/disable USB Endpoint 1 interrupt
+ 0001           INT_MSK1_USB_EP0:          equ 01h ; MASK: enable/disable USB Endpoint 0 interrupt
+ 0000           
+ 00E2           INT_VC:       equ E2h          ; Interrupt vector register                (RC)
+ 0000           
+ 0000           ;------------------------------------------------------
+ 0000           ;  System Status and Control Registers
+ 0000           ;------------------------------------------------------
+ 0000           ;        Register bank 1.
+ 0000           ;------------------------------------------------------
+ 00E0           OSC_CR0:                   equ E0h  ; System Oscillator Control Register 0     (RW)
+ 0020           OSC_CR0_NO_BUZZ:           equ 20h    ; MASK: Bandgap always powered/BUZZ bandgap
+ 0018           OSC_CR0_SLEEP:             equ 18h    ; MASK: Set Sleep timer freq/period
+ 0000           OSC_CR0_SLEEP_512Hz:       equ 00h    ;     Set sleep bits for 1.95ms period
+ 0008           OSC_CR0_SLEEP_64Hz:        equ 08h    ;     Set sleep bits for 15.6ms period
+ 0010           OSC_CR0_SLEEP_8Hz:         equ 10h    ;     Set sleep bits for 125ms period
+ 0018           OSC_CR0_SLEEP_1Hz:         equ 18h    ;     Set sleep bits for 1 sec period
+ 0000           
+ 0007           OSC_CR0_CPU:               equ 07h    ; MASK: Set CPU Frequency
+ 0000           OSC_CR0_CPU_3MHz:          equ 00h    ;     set CPU Freq bits for 3MHz Operation
+ 0001           OSC_CR0_CPU_6MHz:          equ 01h    ;     set CPU Freq bits for 6MHz Operation
+ 0002           OSC_CR0_CPU_12MHz:         equ 02h    ;     set CPU Freq bits for 12MHz Operation
+ 0003           OSC_CR0_CPU_24MHz:         equ 03h    ;     set CPU Freq bits for 24MHz Operation
+ 0004           OSC_CR0_CPU_1d5MHz:        equ 04h    ;     set CPU Freq bits for 1.5MHz Operation
+ 0005           OSC_CR0_CPU_750kHz:        equ 05h    ;     set CPU Freq bits for 750kHz Operation
+ 0006           OSC_CR0_CPU_187d5kHz:      equ 06h    ;     set CPU Freq bits for 187.5kHz Operation
+ 0000           
+ 0000           ;------------------------------------------------------
+ 0000           ;  Note: The following registers are mapped into both
+ 0000           ;        register bank 0 AND register bank 1.
+ 0000           ;------------------------------------------------------
+ 00F7           CPU_F:        equ F7h          ; CPU Flag Register Access                 (RO)
+ 0000                                              ; Use FLAG_ masks defined at top of file
+ 00FF           CPU_SCR:     equ FFh          ; CPU Status and Control Register          (#)
+ 0080           CPU_SCR_GIE_MASK:      equ 80h    ; MASK: Global Interrupt Enable shadow
+ 0020           CPU_SCR_WDRS_MASK:     equ 20h    ; MASK: Watch Dog Timer Reset
+ 0010           CPU_SCR_PORS_MASK:     equ 10h    ; MASK: power-on reset bit PORS
+ 0008           CPU_SCR_SLEEP_MASK:    equ 08h    ; MASK: Enable Sleep
+ 0001           CPU_SCR_STOP_MASK:     equ 01h    ; MASK: Halt CPU bit
+ 0000           
+ 0000           ;;=============================================================================
+ 0000           ;;      Register Space, Bank 1
+ 0000           ;;=============================================================================
+ 0000           
+ 0000           ;------------------------------------------------
+ 0000           ;  Clock and System Control Registers
+ 0000           ;------------------------------------------------
+ 0000           
+ 0000           ;;=============================================================================
+ 0000           ;;      M8C System Macros
+ 0000           ;;  These macros should be used when their functions are needed.
+ 0000           ;;=============================================================================
+ 0000           
+ 0000           ;----------------------------------------------------
+ 0000           ;  Swapping Register Banks
+ 0000           ;----------------------------------------------------
+ 0000               macro M8C_SetBank0
+ 0000               and   F, ~FLAG_XIO_MASK
+ 0000               macro M8C_SetBank1
+ 0000               or    F, FLAG_XIO_MASK
+ 0000               macro M8C_EnableGInt
+ 0000               or    F, FLAG_GLOBAL_IE
+ 0000               macro M8C_DisableGInt
+ 0000               and   F, ~FLAG_GLOBAL_IE
+ 0000               macro M8C_DisableIntMask
+ 0000               and   reg[@0], ~@1              ; disable specified interrupt enable bit
+ 0000               macro M8C_EnableIntMask
+ 0000               or    reg[@0], @1               ; enable specified interrupt enable bit
+ 0000               macro M8C_ClearIntFlag
+ 0000               mov   reg[@0], ~@1              ; clear specified interrupt enable bit
+ 0000               macro M8C_EnableWatchDog
+ 0000               and   reg[CPU_SCR], ~CPU_SCR_PORS_MASK
+ 0000               macro M8C_ClearWDT
+ 0000               mov   reg[RES_WDT], 00h
+ 0000               macro M8C_ClearWDTAndSleep
+ 0000               mov   reg[RES_WDT], 38h
+ 0000               macro M8C_Sleep
+ 0000               or    reg[CPU_SCR], CPU_SCR_SLEEP_MASK
+ 0000               ; The next instruction to be executed depends on the state of the
+ 0000               ; various interrupt enable bits. If some interrupts are enabled
+ 0000               ; and the global interrupts are disabled, the next instruction will
+ 0000               ; be the one that follows the invocation of this macro. If global
+ 0000               ; interrupts are also enabled then the next instruction will be
+ 0000               ; from the interrupt vector table. If no interrupts are enabled
+ 0000               ; then the CPU sleeps forever.
+ 0000               macro M8C_Stop
+ 0000               ; In general, you probably don't want to do this, but here's how:
+ 0000               or    reg[CPU_SCR], CPU_SCR_STOP_MASK
+ 0000               ; Next instruction to be executed is located in the interrupt
+ 0000               ; vector table entry for Power-On Reset.
+ 0000               macro M8C_Reset
+ 0000               ; Restore CPU to the power-on reset state.
+ 0000               mov A, 0
+ 0000               SSC
+ 0000               ; Next non-supervisor instruction will be at interrupt vector 0.
+ 0000               macro Suspend_CodeCompressor
+ 0000               or   F, 0
+ 0000               macro Resume_CodeCompressor
+ 0000               add  SP, 0
+ 0000           SYSTEM_STACK_BASE_ADDR: equ 0h   
+ 0000           SYSTEM_LARGE_MEMORY_MODEL: equ 0   
+ 0001           SYSTEM_SMALL_MEMORY_MODEL: equ 1   
+ 0001           SYSTEM_TOOLS: equ 1   
+ 0001           SYSTEM_IDXPG_TRACKS_STK_PP: equ 1   
+ 0000           SYSTEM_IDXPG_TRACKS_IDX_PP: equ 0   
+ 0000           SYSTEM_MULTIPAGE_STACK: equ 0 
+ 0000           
+ 0000           
+ 0000           ;  ******* Function Class Definitions *******
+ 0000           ;
+ 0000           ;  These definitions are used to describe RAM access patterns. They provide
+ 0000           ;  documentation and they control prologue and epilogue macros that perform
+ 0000           ;  the necessary housekeeping functions for large memory model devices like
+ 0000           ;  the CY8C27x66 and CY8C29x66.
+ 0000           
+ 0001           RAM_USE_CLASS_1:               equ 1   ; PUSH, POP & I/O access
+ 0002           RAM_USE_CLASS_2:               equ 2   ; Indexed address mode on stack page
+ 0004           RAM_USE_CLASS_3:               equ 4   ; Indexed address mode to any page
+ 0008           RAM_USE_CLASS_4:               equ 8   ; Direct/Indirect address mode access
+ 0000           
+ 0000           
+ 0000           ;  ******* Page Pointer Manipulation Macros *******
+ 0000           ;
+ 0000           ;  Most of the following macros are conditionally compiled so they only
+ 0000           ;  produce code if the large memory model is selected.
+ 0000           
+ 0000              ;-----------------------------------------------
+ 0000              ;  Set Stack Page Macro
+ 0000              ;-----------------------------------------------
+ 0000              ;
+ 0000              ;  DESC: Modify STK_PP in the large or small memory Models.
+ 0000              ;
+ 0000              ; INPUT: Constant (e.g., SYSTEM_STACK_PAGE) that specifies the RAM page on
+ 0000              ;        which stack operations like PUSH and POP store and retrieve their
+ 0000              ;        data
+ 0000              ;
+ 0000              ;  COST: 8 instruction cycles (in LMM only)
+ 0000           
+ 0000              macro RAM_SETPAGE_STK( PG_NUMBER )
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 mov reg[STK_PP], @PG_NUMBER
+ 0000              ENDIF
+ 0000              macro RAM_SETPAGE_CUR( PG_NUMBER )
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 mov reg[CUR_PP], @PG_NUMBER
+ 0000              ENDIF
+ 0000              macro RAM_SETPAGE_IDX( PG_NUMBER )
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 mov reg[IDX_PP], @PG_NUMBER
+ 0000              ENDIF
+ 0000              macro RAM_SETPAGE_MVR( PG_NUMBER )
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 mov reg[MVR_PP], @PG_NUMBER
+ 0000              ENDIF
+ 0000              macro RAM_SETPAGE_MVW( PG_NUMBER )
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 mov reg[MVW_PP], @PG_NUMBER
+ 0000              ENDIF
+ 0000              macro RAM_SETPAGE_IDX2STK
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 IF ( SYSTEM_MULTIPAGE_STACK )
+ 0000                    mov   A, reg[STK_PP]
+ 0000                    mov   reg[IDX_PP], A
+ 0000                 ELSE
+ 0000                    RAM_SETPAGE_IDX SYSTEM_STACK_PAGE
+ 0000                 ENDIF
+ 0000              ENDIF
+ 0000              macro RAM_CHANGE_PAGE_MODE( MODE )
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 and   F, ~FLAG_PGMODE_MASK        ; NOTE: transition thru 00b state
+ 0000                 or    F,  FLAG_PGMODE_MASK & @MODE
+ 0000              ENDIF
+ 0000              macro RAM_SET_NATIVE_PAGING
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000              IF ( SYSTEM_IDXPG_TRACKS_STK_PP )
+ 0000                 or    F,  FLAG_PGMODE_11b            ; LMM w/ IndexPage<==>StackPage
+ 0000              ENDIF ;  PGMODE LOCKED
+ 0000              IF ( SYSTEM_IDXPG_TRACKS_IDX_PP )
+ 0000                 or    F,  FLAG_PGMODE_10b            ; LMM with independent IndexPage
+ 0000              ENDIF ; PGMODE FREE
+ 0000              ENDIF ; SYSTEM_LARGE_MEMORY_MODEL
+ 0000              macro RAM_RESTORE_NATIVE_PAGING
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000              IF ( SYSTEM_IDXPG_TRACKS_STK_PP )
+ 0000                 RAM_CHANGE_PAGE_MODE FLAG_PGMODE_11b ; LMM w/ IndexPage<==>StackPage
+ 0000              ENDIF ;  PGMODE LOCKED
+ 0000              IF ( SYSTEM_IDXPG_TRACKS_IDX_PP )
+ 0000                 RAM_CHANGE_PAGE_MODE FLAG_PGMODE_10b ; LMM with independent IndexPage
+ 0000              ENDIF ; PGMODE FREE
+ 0000              ENDIF ; SYSTEM_LARGE_MEMORY_MODEL
+ 0000              macro RAM_X_POINTS_TO_STACKPAGE
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 or   F, FLAG_PGMODE_01b
+ 0000              ENDIF ;  SYSTEM_LARGE_MEMORY_MODEL
+ 0000              macro RAM_X_POINTS_TO_INDEXPAGE
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 and  F, ~FLAG_PGMODE_01b
+ 0000              ENDIF ;  SYSTEM_LARGE_MEMORY_MODEL
+ 0000              macro RAM_PROLOGUE( ACTUAL_CLASS )
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_1 )
+ 0000              ; Nothing to do
+ 0000              ENDIF ; RAM_USE_CLASS_1
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_2 )
+ 0000                 IF ( SYSTEM_IDXPG_TRACKS_IDX_PP )
+ 0000                    RAM_X_POINTS_TO_STACKPAGE         ; exit native paging mode!
+ 0000                 ENDIF
+ 0000              ENDIF ; RAM_USE_CLASS_2
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_3 )
+ 0000                 IF ( SYSTEM_IDXPG_TRACKS_STK_PP )
+ 0000                    RAM_X_POINTS_TO_INDEXPAGE         ; exit native paging mode!
+ 0000                 ENDIF
+ 0000              ENDIF ; RAM_USE_CLASS_3
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_4 )
+ 0000              ; Nothing to do
+ 0000              ENDIF ; RAM_USE_CLASS_4
+ 0000           
+ 0000              macro RAM_EPILOGUE( ACTUAL_CLASS )
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_1 )
+ 0000              ; Nothing to do
+ 0000              ENDIF ; RAM_USE_CLASS_1
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_2 )
+ 0000                 RAM_RESTORE_NATIVE_PAGING
+ 0000              ENDIF ; RAM_USE_CLASS_2
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_3 )
+ 0000                 RAM_RESTORE_NATIVE_PAGING
+ 0000              ENDIF ; RAM_USE_CLASS_3
+ 0000           
+ 0000              IF ( @ACTUAL_CLASS & RAM_USE_CLASS_4 )
+ 0000              ; Nothing to do
+ 0000              ENDIF ; RAM_USE_CLASS_4
+ 0000           
+ 0000              macro REG_PRESERVE( IOReg )
+ 0000              mov   A, reg[ @IOReg ]
+ 0000              push  A
+ 0000              macro REG_RESTORE( IOReg )
+ 0000              pop   A
+ 0000              mov   reg[ @IOReg ], A
+ 0000              macro ISR_PRESERVE_PAGE_POINTERS
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 REG_PRESERVE CUR_PP
+ 0000                 REG_PRESERVE IDX_PP
+ 0000                 REG_PRESERVE MVR_PP
+ 0000                 REG_PRESERVE MVW_PP
+ 0000              ENDIF
+ 0000              macro ISR_RESTORE_PAGE_POINTERS
+ 0000              IF ( SYSTEM_LARGE_MEMORY_MODEL )
+ 0000                 REG_RESTORE MVW_PP
+ 0000                 REG_RESTORE MVR_PP
+ 0000                 REG_RESTORE IDX_PP
+ 0000                 REG_RESTORE CUR_PP
+ 0000              ENDIF
+ 0000           MACRO   GET_WORD
+ 0000               PUSH A                              ; Quickly get a RAM temp
+ 0000               PUSH A                              ; Save the source MSB
+ 0000               ROMX                                ; Get the first byte
+ 0000               PUSH X                              ; Save X
+ 0000               MOV  X,SP                           ; Get SP, to index to the temp 
+ 0000               MOV  [X - 3],A                      ; Save the first byte
+ 0000               POP  X                              ; Get back the source LSB
+ 0000               POP  A                              ; And the MSB
+ 0000               INC  X                              ; Point to the second byte
+ 0000               ADC  A, 0                           ; 
+ 0000               ROMX                                ; Get the second byte
+ 0000               MOV  X,A                            ; Save it in X
+ 0000               POP  A                              ; And the first byte in A
+ 0000           MACRO   NULL_PTR_CHECK
+ 0000               SWAP    A, X                        ; LSB non-zero?
+ 0000               JNZ     .ok                         ; Exit on non-zero
+ 0000               SWAP    A, X                        ; MSB zero
+ 0000               JZ      @0                          ; Jump to the null pointer handler
+ 0000               JMP     .exit
+ 0000           .ok:
+ 0000               SWAP    A, X                        ; Put them back
+ 0000           .exit:
+ 0000           NULL_PTR:   EQU 0                       ; Null pointer value
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Transfer Descriptor--Data Source
+ 0000           ;--------------------------------------------------
+ 0000           USB_DS_ROM:                                      EQU 0x00
+ 0001           USB_DS_RAM:                                      EQU 0x01
+ 0002           USB_DS_RAM_CB:                                   EQU 0x02
+ 0003           USB_DS_RAM_MASK:                                 EQU 0x03
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; TRANSFER DESCRIPTOR MACROS
+ 0000           ;--------------------------------------------------
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; TD_START_TABLE MACRO
+ 0000           ;-----------------------------------------------
+ 0000           ; Parameters:
+ 0000           ;   @0 = Number of table entries
+ 0000           ; Register setup
+ 0000           ;   N/A (builds ROM data at assembly time)
+ 0000           ;-----------------------------------------------
+ 0000           MACRO   TD_START_TABLE
+ 0000               DB      ((@0) - 1)                 ; Number of table entries - 1
+ 0000           MACRO   TD_ENTRY
+ 0000               DB  @0                             ; Data source (USB_DS_*)
+ 0000               DW  @1                             ; Transfer size
+ 0000               DW  @2                             ; Data source address
+ 0000               DW  @3                             ; Transfer Completion Status Block Address
+ 0000               DB  0xde                           ; Reserved 
+ 0008           TD_ENTRY_SIZE:                         EQU 8
+ 0001           TD_START_SIZE:                         EQU 1
+ 0000           ;-----------------------------------------------
+ 0000           ; TD_INDEX_TO_OFFSET MACRO
+ 0000           ;-----------------------------------------------
+ 0000           ; Parameters:
+ 0000           ;   @0 = RAM address of Index
+ 0000           ; Register setup
+ 0000           ;   A = DC (restored)
+ 0000           ;   X = DC (not used)
+ 0000           ;--------------------------------------------------
+ 0000           MACRO   TD_INDEX_TO_OFFSET
+ 0000               PUSH    A                          ; Save a work register
+ 0000               ASL     [@0]                       ; Index * 2
+ 0000               ASL     [@0]                       ; Index * 4
+ 0000               ASL     [@0]                       ; Index * 4
+ 0000               POP     A                          ; Restore the work register
+ 0000           MACRO LT_START
+ 0000               DB      (@0)                       ; Table size
+ 0000           MACRO LT_ENTRY
+ 0000               DW      (@0)                       ; Table entry
+ 0000               DW      (@1)                       ; Table entry
+ 0002           LT_ENTRY_SIZE:                         EQU 2
+ 0001           LT_START_SIZE:                         EQU 1
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; LT_INDEX_TO_OFFSET MACRO
+ 0000           ;-----------------------------------------------
+ 0000           ; Parameters:
+ 0000           ;   @0 = RAM address of Index
+ 0000           ; Register setup
+ 0000           ;   A = DC (not used)
+ 0000           ;   X = DC (not used)
+ 0000           ;--------------------------------------------------
+ 0000           MACRO   LT_INDEX_TO_OFFSET
+ 0000               ASL     [@0]                       ; Simply shift (mult by 2)
+ 0000               ASL     [@0]                       ;              (mult by 4)
+ 0000           MACRO DISPATCHER
+ 0000               CMP   A,@1
+ 0000               JNC   .dispatch_not_supported
+ 0000               ASL   A
+ 0000               JACC  @0
+ 0000           .dispatch_not_supported:
+ 0000               JMP  @2    
+ 0001           USB_NOT_SUPPORTED:  EQU 0x01
+ 0002           USB_UM_SUPPLIED:    EQU 0x02
+ 0004           USB_APP_SUPPLIED:   EQU 0x04
+ 0000           ; end of file USB_macro.inc
+ 0002           USB_bNumStringDescrs: EQU    2
+ 0000           
+ 0003           USB_NUM_ENDPOINTS:                          EQU 3 
+ 0002           USB_MAX_EP_NUMBER:                          EQU (USB_NUM_ENDPOINTS - 1) 
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Registers for USB API's.
+ 0000           ;--------------------------------------------------
+ 0074           USB_USBXCR:    EQU    USBXCR
+ 0040           USB_ADDR:      EQU    USBCR
+ 0041           USB_EP0CNT:    EQU    EP0CNT
+ 0042           USB_EP1CNT:    EQU    (EP0CNT + 1)
+ 0043           USB_EP2CNT:    EQU    (EP0CNT + 2)
+ 0044           USB_EP0MODE:   EQU    EP0MODE
+ 0045           USB_EP1MODE:   EQU    (EP0MODE + 1)
+ 0046           USB_EP2MODE:   EQU    (EP0MODE + 2)
+ 0050           USB_EP0DATA:   EQU    EP0DATA
+ 0058           USB_EP1DATA:   EQU    (EP0DATA + 8)
+ 0060           USB_EP2DATA:   EQU    (EP0DATA + 16)
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Endpoint 0 offsets (Table 9-2)
+ 0000           ;--------------------------------------------------
+ 0000           bmRequestType:                              EQU     0
+ 0001           bRequest:                                   EQU     1
+ 0002           wValue:                                     EQU     2
+ 0003           wValueHi:                                   EQU     3
+ 0002           wValueLo:                                   EQU     2
+ 0004           wIndex:                                     EQU     4
+ 0005           wIndexHi:                                   EQU     5
+ 0004           wIndexLo:                                   EQU     4
+ 0006           wLength:                                    EQU     6
+ 0007           wLengthHi:                                  EQU     7
+ 0006           wLengthLo:                                  EQU     6
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Request Types (Table 9-4)
+ 0000           ;--------------------------------------------------
+ 0000           USB_GET_STATUS:                             EQU    0x00
+ 0001           USB_CLEAR_FEATURE:                          EQU    0x01
+ 0003           USB_SET_FEATURE:                            EQU    0x03
+ 0005           USB_SET_ADDRESS:                            EQU    0x05
+ 0006           USB_GET_DESCRIPTOR:                         EQU    0x06
+ 0007           USB_SET_DESCRIPTOR:                         EQU    0x07
+ 0008           USB_GET_CONFIGURATION:                      EQU    0x08
+ 0009           USB_SET_CONFIGURATION:                      EQU    0x09
+ 000A           USB_GET_INTERFACE:                          EQU    0x0A
+ 000B           USB_SET_INTERFACE:                          EQU    0x0B
+ 000C           USB_SYNCH_FRAME:                            EQU    0x0C
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Descriptor Types (Table 9-5)
+ 0000           ;--------------------------------------------------
+ 0001           DESCR_TYPE_DEVICE:                          EQU     1
+ 0002           DESCR_TYPE_CONFIG:                          EQU     2
+ 0003           DESCR_TYPE_STRING:                          EQU     3
+ 0004           DESCR_TYPE_INTERFACE:                       EQU     4
+ 0005           DESCR_TYPE_ENDPOINT:                        EQU     5
+ 0006           DESCR_TYPE_DEVICE_QUALIFIER:                EQU     6
+ 0007           DESCR_TYPE_OTHER_SPEED:                     EQU     7
+ 0008           DESCR_TYPE_INTERFACE_POWER:                 EQU     8
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Feature Selectors (Table 9-6)
+ 0000           ;--------------------------------------------------
+ 0001           USB_DEVICE_REMOTE_WAKEUP:                   EQU    0x01
+ 0000           USB_ENDPOINT_HALT:                          EQU    0x00
+ 0002           USB_TEST_MODE:                              EQU    0x02
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; USB Device Status (Figure 9-4)
+ 0000           ;--------------------------------------------------
+ 0000           USB_DEVICE_STATUS_BUS_POWERED:              EQU   0x00
+ 0001           USB_DEVICE_STATUS_SELF_POWERED:             EQU   0x01
+ 0002           USB_DEVICE_STATUS_REMOTE_WAKEUP:            EQU   0x02
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; USB Endpoint Status (Figure 9-4)
+ 0000           ;--------------------------------------------------
+ 0001           USB_ENDPOINT_STATUS_HALT:                   EQU    0x01
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; USB Endpoint Directions
+ 0000           ;--------------------------------------------------
+ 0080           USB_DIR_IN:                                 EQU    0x80
+ 0000           USB_DIR_OUT:                                EQU    0x00
+ 007F           USB_DIR_UNUSED:                             EQU    0x7F
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; USB Endpoint Address Symbols 
+ 0000           ;--------------------------------------------------
+ 0000           EP0:                                        EQU    0x00
+ 0001           EP1:                                        EQU    0x01
+ 0002           EP2:                                        EQU    0x02
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Control Endpoint States--These act as JACC jump values
+ 0000           ;--------------------------------------------------
+ 0000           USB_TRANS_STATE_IDLE:                       EQU     0x00
+ 0002           USB_TRANS_STATE_CONTROL_READ:               EQU     0x02
+ 0004           USB_TRANS_STATE_CONTROL_WRITE:              EQU     0x04
+ 0006           USB_TRANS_STATE_NO_DATA_CONTROL:            EQU     0x06
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Control Write flag values to indicate pending data changes
+ 0000           ;--------------------------------------------------
+ 0001           USB_ADDRESS_CHANGE_PENDING:     EQU     0x01
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Register Constants for USB
+ 0000           ;--------------------------------------------------
+ 0080           USB_ADDR_ENABLE:                             EQU 0x80
+ 0040           USB_CNT_VALID:                               EQU 0x40
+ 0080           USB_CNT_TOGGLE:                             EQU 0x80
+ 0080           USB_PULLUP_ENABLE:                          EQU 0x80
+ 0000           
+ 0000           USB_MODE_DISABLE:                            EQU 0x00
+ 0001           USB_MODE_NAK_IN_OUT:                         EQU 0x01
+ 0002           USB_MODE_STATUS_OUT_ONLY:                    EQU 0x02
+ 0003           USB_MODE_STALL_IN_OUT:                       EQU 0x03
+ 0004           USB_MODE_RESERVED_0100:                      EQU 0x04
+ 0005           USB_MODE_ISO_OUT:                            EQU 0x05
+ 0006           USB_MODE_STATUS_IN_ONLY:                     EQU 0x06
+ 0007           USB_MODE_ISO_IN:                             EQU 0x07
+ 0008           USB_MODE_NAK_OUT:                            EQU 0x08
+ 0009           USB_MODE_ACK_OUT:                            EQU 0x09
+ 000A           USB_MODE_RESERVED_1010:                      EQU 0x0A
+ 000B           USB_MODE_ACK_OUT_STATUS_IN:                  EQU 0x0B
+ 000C           USB_MODE_NAK_IN:                             EQU 0x0C
+ 000D           USB_MODE_ACK_IN:                             EQU 0x0D
+ 000E           USB_MODE_RESERVED_1110:                      EQU 0x0E
+ 000F           USB_MODE_ACK_IN_STATUS_OUT:                  EQU 0x0F
+ 0080           USB_MODE_STALL_DATA_EP:                      EQU 0x80
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; FORCE J/K/SE0 (Argument values)
+ 0000           ;--------------------------------------------------
+ 0002           USB_FORCE_J:                                 EQU 0x02
+ 0001           USB_FORCE_K:                                 EQU 0x01
+ 0000           USB_FORCE_SE0:                               EQU 0x00
+ 00FF           USB_FORCE_NONE:                              EQU 0xFF
+ 0001           USB_FORCE_STATE:                             EQU 0x01
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Idle Timer (Argument values)
+ 0000           ;--------------------------------------------------
+ 0002           USB_IDLE_TIMER_RUNNING:                      EQU 0x02
+ 0001           USB_IDLE_TIMER_EXPIRED:                      EQU 0x01
+ 0000           USB_IDLE_TIMER_INDEFINITE:                   EQU 0x00
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Device to host (d2h) Standard (std) Device (dev)
+ 0000           ;--------------------------------------------------
+ 0002           USB_CB_SRC_d2h_std_dev_00: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_d2h_std_dev_01: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_dev_02: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_dev_03: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_dev_04: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_dev_05: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_d2h_std_dev_06: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_d2h_std_dev_07: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_d2h_std_dev_08: equ USB_UM_SUPPLIED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Host to device (h2d) Standard (std) Device (dev)
+ 0000           ;--------------------------------------------------
+ 0001           USB_CB_SRC_h2d_std_dev_00: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_std_dev_01: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_h2d_std_dev_02: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_std_dev_03: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_h2d_std_dev_04: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_std_dev_05: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_h2d_std_dev_06: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_std_dev_07: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_std_dev_08: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_std_dev_09: equ USB_UM_SUPPLIED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Device to host (d2h) Standard (std) Interface (ifc)
+ 0000           ;--------------------------------------------------
+ 0002           USB_CB_SRC_d2h_std_ifc_00: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_d2h_std_ifc_01: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_ifc_02: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_ifc_03: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_ifc_04: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_ifc_05: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_d2h_std_ifc_06: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_d2h_std_ifc_07: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_ifc_08: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_d2h_std_ifc_09: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_d2h_std_ifc_10: equ USB_UM_SUPPLIED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Host to device (h2d) Standard (std) Interface (ifc)
+ 0000           ;--------------------------------------------------
+ 0001           USB_CB_SRC_h2d_std_ifc_00: equ USB_NOT_SUPPORTED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Device to host (d2h) Standard (std) Endpoint (ep)
+ 0000           ;--------------------------------------------------
+ 0002           USB_CB_SRC_d2h_std_ep_00: equ USB_UM_SUPPLIED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Host to device (h2d) Standard (std) Endpoint (ep)
+ 0000           ;--------------------------------------------------
+ 0001           USB_CB_SRC_h2d_std_ep_00: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_std_ep_01: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_h2d_std_ep_02: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_std_ep_03: equ USB_UM_SUPPLIED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Device to Host (d2h) Class (cls) Interface (ifc)
+ 0000           ;--------------------------------------------------
+ 0001           USB_CB_SRC_d2h_cls_ifc_00: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_d2h_cls_ifc_01: equ USB_UM_SUPPLIED
+ 0002           USB_CB_SRC_d2h_cls_ifc_02: equ USB_UM_SUPPLIED
+ 0002           USB_CB_SRC_d2h_cls_ifc_03: equ USB_UM_SUPPLIED
+ 0000           
+ 0000           ;--------------------------------------------------
+ 0000           ; Host to Device (h2d) Class (cls) Interface (ifc)
+ 0000           ;--------------------------------------------------
+ 0001           USB_CB_SRC_h2d_cls_ifc_00: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_01: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_02: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_03: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_04: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_05: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_06: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_07: equ USB_NOT_SUPPORTED
+ 0001           USB_CB_SRC_h2d_cls_ifc_08: equ USB_NOT_SUPPORTED
+ 0002           USB_CB_SRC_h2d_cls_ifc_09: equ USB_UM_SUPPLIED
+ 0002           USB_CB_SRC_h2d_cls_ifc_10: equ USB_UM_SUPPLIED
+ 0002           USB_CB_SRC_h2d_cls_ifc_11: equ USB_UM_SUPPLIED
+ 0001           USB_CB_SRC_h2d_cls_ifc_12: equ USB_NOT_SUPPORTED
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; 1st Tier Dispatch--Standard Requests
+ 0000           ;-----------------------------------------------
+ 0001           USB_CB_h2d_std_dev: equ 1
+ 0001           USB_CB_h2d_std_ifc: equ 1
+ 0001           USB_CB_h2d_std_ep:  equ 1
+ 0000           USB_CB_h2d_std_oth: equ 0
+ 0001           USB_CB_d2h_std_dev: equ 1
+ 0001           USB_CB_d2h_std_ifc: equ 1
+ 0001           USB_CB_d2h_std_ep:  equ 1
+ 0000           USB_CB_d2h_std_oth: equ 0
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; 1st Tier Dispatch--Class Requests
+ 0000           ;-----------------------------------------------
+ 0000           USB_CB_h2d_cls_dev: equ 0
+ 0001           USB_CB_h2d_cls_ifc: equ 1
+ 0000           USB_CB_h2d_cls_ep:  equ 0
+ 0000           USB_CB_h2d_cls_oth: equ 0
+ 0000           USB_CB_d2h_cls_dev: equ 0
+ 0001           USB_CB_d2h_cls_ifc: equ 1
+ 0000           USB_CB_d2h_cls_ep:  equ 0
+ 0000           USB_CB_d2h_cls_oth: equ 0
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; 1st Tier Dispatch--Vendor Specific Requests
+ 0000           ;-----------------------------------------------
+ 0000           USB_CB_h2d_vnd_dev: equ 0
+ 0000           USB_CB_h2d_vnd_ifc: equ 0
+ 0000           USB_CB_h2d_vnd_ep:  equ 0
+ 0000           USB_CB_h2d_vnd_oth: equ 0
+ 0000           USB_CB_d2h_vnd_dev: equ 0
+ 0000           USB_CB_d2h_vnd_ifc: equ 0
+ 0000           USB_CB_d2h_vnd_ep:  equ 0
+ 0000           USB_CB_d2h_vnd_oth: equ 0
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; 1st Tier Dispatch--Reserved Requests
+ 0000           ;-----------------------------------------------
+ 0000           USB_CB_h2d_rsv_dev: equ 0
+ 0000           USB_CB_h2d_rsv_ifc: equ 0
+ 0000           USB_CB_h2d_rsv_ep:  equ 0
+ 0000           USB_CB_h2d_rsv_oth: equ 0
+ 0000           USB_CB_d2h_rsv_dev: equ 0
+ 0000           USB_CB_d2h_rsv_ifc: equ 0
+ 0000           USB_CB_d2h_rsv_ep:  equ 0
+ 0000           USB_CB_d2h_rsv_oth: equ 0
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; Endpoint event flags
+ 0000           ;-----------------------------------------------
+ 0002           NO_EVENT_ALLOWED:   equ               2
+ 0001           EVENT_PENDING:      equ               1
+ 0000           NO_EVENT_PENDING:   equ               0
+ 0000           
+ 0000           IN_BUFFER_FULL:     equ               NO_EVENT_PENDING
+ 0001           IN_BUFFER_EMPTY:    equ               EVENT_PENDING
+ 0001           OUT_BUFFER_FULL:    equ               EVENT_PENDING
+ 0000           OUT_BUFFER_EMPTY:   equ               NO_EVENT_PENDING
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; HID Descriptor Types
+ 0000           ;-----------------------------------------------
+ 0021           DESCR_TYPE_HID_CLASS:        equ      0x21
+ 0009           DESCR_SIZE_HID_CLASS:        equ      9
+ 0022           DESCR_TYPE_HID_REPORT:       equ      0x22
+ 0023           DESCR_TYPE_HID_PHYSICAL:     equ      0x23
+ 0000           
+ 0000           ;-----------------------------------------------
+ 0000           ; Transfer Completion Notification
+ 0000           ;-----------------------------------------------
+ 0000           USB_XFER_IDLE:         equ      0x00
+ 0001           USB_XFER_STATUS_ACK:   equ      0x01
+ 0002           USB_XFER_PREMATURE:    equ      0x02
+ 0003           USB_XFER_ERROR:        equ      0x03
+ 0000           
+ 0000           ; This macro is used to allocate a completion status block
+ 0000           ; for all Requests.  The macro parameter is used
+ 0000           ; to prefix the two data elements.
+ 0000           USB_XFER_STATUS:       equ      0
+ 0001           USB_XFER_LENGTH:       equ      1
+ 0000           MACRO    USB_XFER_STATUS_BLOCK
+ 0000               BLK    1    ; Completion Status
+ 0000               BLK    2    ; Transfer Length
+ 0000           USB_VSR_SUPPORT: EQU 0
+                IF USB_CB_h2d_vnd_dev
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_h2d_vnd_ifc
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_h2d_vnd_ep
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_h2d_vnd_oth
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_d2h_vnd_dev
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_d2h_vnd_ifc
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_d2h_vnd_ep
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                IF USB_CB_d2h_vnd_oth
+                USB_VSR_SUPPORT: EQU 1
+                ENDIF
+                
+                ; end of file USB.inc
+ 0003           VERSION_ID_LOW:  EQU 0x03 ;firmware version ID low byte
+ 0000           VERSION_ID_HIGH: EQU 0x00 ;firmware version ID high byte
+ 0000           
+ 0000           ;flash programming stuff
+ 0040           FLASH_BLOCK_SIZE: 	EQU 64 ;size of flash block
+ 0000           ;addresses for SROM param block
+ 00F8           KEY1:				EQU	0xF8
+ 00F9           KEY2:				EQU	0xF9
+ 00FA           BLOCKID:			EQU 0xFA
+ 00FB           POINTER:			EQU 0xFB
+ 00FC           CLOCK:				EQU 0xFC
+ 00FE           DELAY:				EQU 0xFE
+ 0000           ;exec address
+ 1FC0           EXEC_ADDR:			EQU 0x1FC0
+ 0000           ;address of the tx function
+ 1C00           TXPROG_ADDR:		EQU 0x1C00
+ 0000           
+ 0000           
+ 0090           BUFFER_SIZE: EQU 144 ;size of code buffer
+ 0000           ;don't make code buffer smaller than 132--there will be dire consequences.
+ 0000           ;This guarantees that addresses 7c through 83 (8 bytes) are inside
+ 0000           ;the code buffer, no matter where it is in memory.  We can take advantage of that
+ 0000           ;fact when writing user-defined code that needs a packet buffer.
+ 0000           
+ 0008           PACKET_SIZE: EQU 8 ;size of packets to send
+ 0004           CTL_BASE_SIZE: EQU 4 ;base size of control packets (w/o data) 
+ 0000           
+ 000B           TX_PIN_CR: EQU P06CR ; control reg for tx pin
+ 000A           RX_PIN_CR: EQU P05CR ; control reg for rx pin
+ 0000           
+ 0000           ;control codes
+ 0001           CTL_VERSION:		EQU 0x01 ;get the firmware version
+ 0002           CTL_TX:				EQU	0x02 ;tx starting, will read code from host
+ 0003           CTL_RX_ON:			EQU	0x03 ;rx enabled
+ 0004           CTL_RX_OFF:			EQU	0x04 ;rx disabled
+ 0005           CTL_GET_PINS:		EQU	0x05 ;get GPIO pin state
+ 0006           CTL_SET_PINS:		EQU	0x06 ;set GPIO pin state
+ 0007           CTL_GET_CFG0_PINS:	EQU 0x07 ;get GPIO pin configuration, port 0
+ 0008           CTL_SET_CFG0_PINS:	EQU 0x08 ;set GPIO pin configuration, port 0
+ 0009           CTL_GET_CFG1_PINS:	EQU 0x09 ;get GPIO pin configuration, port 1
+ 000A           CTL_SET_CFG1_PINS:	EQU 0x0A ;set GPIO pin configuration, port 1
+ 000B           CTL_GET_BUFSIZE:	EQU 0x0B ;get the data buffer size
+ 000C           CTL_PROG:			EQU 0x0C ;program a block of flash
+ 000D           CTL_EXEC:			EQU 0x0D ;call an arbitrary address
+ 000E           CTL_BURST:			EQU 0x0E ;set the GPIO pins in a sequence
+ 00FF           CTL_RST:			EQU	0xFF ;reset requested
+ 0020           CTL_RX_OVERFLOW: 	EQU 0x20 ;received code is too long, throwing it out
+ 0030           CTL_TX_OVERFLOW: 	EQU 0x30 ;transmit code is too long, throwing it out
+ 0000           
+ 0040           TX_MASK: EQU 0x40 ;which pins to drive high for ir tx
+ FFFFFFBF           NOT_TX_MASK: EQU ~TX_MASK ;complement of tx mask
+ 0010           TX_CARRIER_DELAY: EQU 16 ;delay loops to execute to get 38KHz (15 will give you 40KHz)
+ 0000           
+ 001E           BURST_DELAY: EQU 30 ;delay loops between GPIO transfers in burst mode
+ 0000           
+ 0003           CCODE: EQU  3 ;where control code goes in control_pkt
+ 0004           CDATA: EQU  4 ;where control data goes in control_pkt
+ 0000           
+                export _main
+                export soft_reset
+                export tmp
+                export tmp2
+                export write_ptr
+                export rx_overflow
+                export rx_fill
+                export halted
+                export buffer_ptr
+                export buf_size 
+                
+                AREA bss
+                
+                ;TODO: combine these flag bits into one byte
+ 0000           buffer_ptr:
+ 0000                   BLK 1 ;current index into buffer
+ 0001           write_ptr:
+ 0001                   BLK 1 ;current index where we are writing from buffer to USB
+ 0002           rx_overflow:
+ 0002                   BLK 1 ;true if rx buffer has overflowed
+ 0003           rx_on:
+ 0003                   BLK 1 ;true if receiver is turned on
+ 0004           buf_size:
+ 0004                   BLK 1 ;amount of data currently in buffer
+ 0005           rx_fill:
+ 0005                   BLK 1 ;true if receiver on and a packet's worth of data ready to send
+ 0006           halted:
+ 0006                   BLK 1 ;true if endpoint was halted
+ 0007           tmp:
+ 0007                   BLK 1 ;general purpose temporary var
+ 0008                   ;NOTE: tmp is not preserved across function calls!
+ 0008           tmp2:
+ 0008                   BLK 1 ;general purpose temporary var
+ 0009                   ;NOTE: tmp2 is not preserved across function calls!
+ 0009           flash_addr:
+ 0009                   BLK 1
+ 000A           
+                AREA text
+                
+ 0000           _main:	
+ 0000 620B01            mov REG[TX_PIN_CR], 0x01 ;enable output on tx pin
+ 0003           
+ 0003                   ;configure capture
+ 0003 620A02            mov REG[RX_PIN_CR], 0b00000010 ;configure port pin: pullup enabled
+ 0006 6231CF            mov REG[TMRCLKCR], 0b11001111 ;timer to 3MHz
+ 0009 622A08            mov REG[TMRCR], 0b00001000 ;16 bit mode
+ 000C 622B03            mov REG[TCAPINTE], 0b00000011 ;configure rise and fall interrupts
+ 000F                   ;don't actually enable the interrupt yet
+ 000F                   
+ 000F 5000              mov A, 0 ;put arg 0 for USB_start
+ 0011 7C0000            lcall USB_Start ;enable USB device
+ 0014 7101              or  F, 0x1 ;enable global interrupts
+ 0016           
+ 0016           ;wait for usb enumeration
+ 0016           config_loop:
+ 0016 7C0000            lcall USB_bGetConfiguration
+ 0019 AFFC              jz config_loop ;if return val was zero, try again
+ 001B           
+ 001B           ;now we're connected
+ 001B           soft_reset:
+ 001B 550600            mov [halted], 0; :clear halt flag
+ 001E 550200            mov [rx_overflow], 0; clear rx overflow flag
+ 0021 550300            mov [rx_on], 0 ;rx starts in the off state
+ 0024 550500            mov [rx_fill], 0 ;clear fill flag
+ 0027 7C0000            lcall rx_disable ;make sure receiver is off
+ 002A 7C0000            lcall pins_reset ;clear GPIO pin state
+ 002D                   
+ 002D                   ;clear the IN endpoint by sending 0-byte packet
+ 002D 550001            mov [USB_APIEPNumber], 0x1 ;set to endpoint 1
+ 0030 550000            mov [USB_APICount], 0 ;set packet size
+ 0033 5700              mov X, buffer ;put packet address into X
+ 0035 7C0000            lcall USB_XLoadEP ;send packet
+ 0038                   
+ 0038                   ;enable OUT endpoint
+ 0038 5002              MOV             A, 2 ;out is enpoint 2
+ 003A 7C0000            lcall  USB_EnableEP 
+ 003D                   
+ 003D           main_loop:
+ 003D 5106              mov A, [halted];check for halt condition
+ 003F BFDB              jnz soft_reset ;go to known state after halt
+ 0041                   ;check for data from host
+ 0041 7C0000            lcall check_read ;see if there is a transmission from the host
+ 0044 B00B              jnz main_recv ;there is a transmission, so receive and handle it
+ 0046 5102              mov A, [rx_overflow] ;check rx overflow flag
+ 0048 B0AF              jnz main_send_oflow ;there is a rx overflow, send it to the host
+ 004A 5105              mov A, [rx_fill] ;check rx fill flag
+ 004C B0B8              jnz main_write_signal ;there is rx data, send it to the host
+ 004E 8FEE              jmp main_loop ;repeat main loop
+ 0050           
+ 0050           main_recv:	
+ 0050           	;get control packet
+ 0050 7C0000            lcall read_control
+ 0053                   
+ 0053                   ;at this point, A contains control code
+ 0053 AFE9              jz main_loop ;null control code, just ignore
+ 0055 3901              cmp A, CTL_VERSION ;get version
+ 0057 A03B              jz main_getversion
+ 0059 390B              cmp A, CTL_GET_BUFSIZE ;get the buffer size
+ 005B A04A              jz main_getbufsize
+ 005D 3903              cmp A, CTL_RX_ON ;enable receive
+ 005F A056              jz main_rx_on
+ 0061 3904              cmp A, CTL_RX_OFF ;disable receive
+ 0063 A062              jz main_rx_off
+ 0065 3902              cmp A, CTL_TX ;transmit a code
+ 0067 A06E              jz main_transmit ;receive code, ack and transmit
+ 0069 3906              cmp A, CTL_SET_PINS ;set the GPIO pins
+ 006B A0AE              jz main_set_pins
+ 006D 390E              cmp A, CTL_BURST ;set the GPIO pins in a sequence
+ 006F A0BA              jz main_burst
+ 0071 3905              cmp A, CTL_GET_PINS ;get the GPIO pin state
+ 0073 A096              jz main_get_pins
+ 0075 3907              cmp A, CTL_GET_CFG0_PINS ;get GPIO configuration
+ 0077 A0C5              jz main_get_cfg0_pins
+ 0079 3908              cmp A, CTL_SET_CFG0_PINS ;set GPIO configuration
+ 007B A0E1              jz main_set_cfg0_pins
+ 007D 3909              cmp A, CTL_GET_CFG1_PINS ;get GPIO configuration
+ 007F A0CD              jz main_get_cfg1_pins
+ 0081 390A              cmp A, CTL_SET_CFG1_PINS ;set GPIO configuration
+ 0083 A0E9              jz main_set_cfg1_pins
+ 0085 390C              cmp A, CTL_PROG ;program a block of flash
+ 0087 A0F6              jz main_prog
+ 0089 390D              cmp A, CTL_EXEC ;call an arbitrary address
+ 008B A142              jz main_exec
+ 008D 39FF              cmp A, CTL_RST ;reset command
+ 008F A14F              jz main_reset
+ 0091 8FAB              jmp main_loop; default behavior--unknown code
+ 0093           
+ 0093           main_getversion:
+ 0093 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 0096                   //send control packet with version id
+ 0096 550301            mov [control_pkt + CCODE], CTL_VERSION
+ 0099 550403            mov [control_pkt + CDATA], VERSION_ID_LOW
+ 009C 550500            mov [control_pkt + CDATA+1], VERSION_ID_HIGH
+ 009F 5006              mov A, CTL_BASE_SIZE + 2
+ 00A1 7C0000            lcall write_control
+ 00A4 8131              jmp main_return
+ 00A6           
+ 00A6           main_getbufsize:
+ 00A6 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 00A9                   //send control packet with buffer size
+ 00A9 55030B            mov [control_pkt + CCODE], CTL_GET_BUFSIZE
+ 00AC 550490            mov [control_pkt + CDATA], BUFFER_SIZE
+ 00AF 5005              mov A, CTL_BASE_SIZE + 1
+ 00B1 7C0000            lcall write_control
+ 00B4 8121              jmp main_return
+ 00B6                   
+ 00B6           main_rx_on:
+ 00B6           	//send ack
+ 00B6 550303            mov [control_pkt + CCODE], CTL_RX_ON
+ 00B9 5004              mov A, CTL_BASE_SIZE
+ 00BB 7C0000            lcall write_control;
+ 00BE                   
+ 00BE 550301            mov [rx_on], 0x1 ;note that rx is on
+ 00C1 7C0000            lcall rx_enable ;enable rx
+ 00C4 8F78              jmp main_loop
+ 00C6           
+ 00C6           main_rx_off:
+ 00C6 7C0000            lcall rx_disable ;disable rx
+ 00C9 550300            mov [rx_on], 0x0 ;note that rx is off
+ 00CC                   //send ack
+ 00CC 550304            mov [control_pkt + CCODE], CTL_RX_OFF
+ 00CF 5004              mov A, CTL_BASE_SIZE
+ 00D1 7C0000            lcall write_control;
+ 00D4 8F68              jmp main_loop
+ 00D6           
+ 00D6           main_transmit:
+ 00D6 7C0000            lcall rx_disable;disable timer interrupt, clear rx state
+ 00D9 7C0000            lcall read_buffer ;receive the code--returns 0 if read overflow
+ 00DC A00E              jz main_tover
+ 00DE 7C0000            lcall transmit_code ;transmit
+ 00E1                   ;send ack
+ 00E1 550302            mov [control_pkt + CCODE], CTL_TX
+ 00E4 5004              mov A, CTL_BASE_SIZE
+ 00E6 7C0000            lcall write_control ;send control packet
+ 00E9 80EC              jmp main_return
+ 00EB           
+ 00EB           main_tover:
+ 00EB 7C0000            lcall transmit_code ;transmit anyway
+ 00EE                   ;send overflow instead of ack
+ 00EE 550330            mov [control_pkt + CCODE], CTL_TX_OVERFLOW
+ 00F1 5004              mov A, CTL_BASE_SIZE
+ 00F3 7C0000            lcall write_control ;send control packet
+ 00F6 80DF              jmp main_return
+ 00F8           
+ 00F8           main_send_oflow:
+ 00F8           	;send control packet
+ 00F8 550320            mov [control_pkt + CCODE], CTL_RX_OVERFLOW
+ 00FB 5004              mov A, CTL_BASE_SIZE
+ 00FD 7C0000            lcall write_control;
+ 0100 550200            mov [rx_overflow], 0 ;clear overflow flag
+ 0103 8F39              jmp main_loop ;repeat main loop
+ 0105                   
+ 0105           main_write_signal:
+ 0105 7C0000            lcall write_signal
+ 0108 8F34              jmp main_loop ;repeat main loop
+ 010A           
+ 010A           main_get_pins:
+ 010A 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 010D                   ;get the pins
+ 010D 7C0000            lcall pins_get ;get the pins and put data in control packet
+ 0110 550305            mov [control_pkt + CCODE], CTL_GET_PINS
+ 0113 5006              mov A, CTL_BASE_SIZE+2
+ 0115 7C0000            lcall write_control;
+ 0118 80BD              jmp main_return
+ 011A                   
+ 011A           main_set_pins:
+ 011A 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 011D                   ;set the pins
+ 011D 7C0000            lcall pins_set ;set the pins
+ 0120                   ;send ack packet
+ 0120 550306            mov [control_pkt + CCODE], CTL_SET_PINS
+ 0123 5004              mov A, CTL_BASE_SIZE
+ 0125 7C0000            lcall write_control;
+ 0128 80AD              jmp main_return
+ 012A                   
+ 012A           main_burst:
+ 012A 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 012D                   ;set the pins
+ 012D 7C0000            lcall read_buffer ;get the block to read
+ 0130 7C0000            lcall pins_burst ;set pins in a burst
+ 0133                   ;send ack packet
+ 0133 55030E            mov [control_pkt + CCODE], CTL_BURST
+ 0136 5004              mov A, CTL_BASE_SIZE
+ 0138 7C0000            lcall write_control;
+ 013B 809A              jmp main_return
+ 013D                   
+ 013D           main_get_cfg0_pins:
+ 013D 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 0140                   ;get the pins config
+ 0140 7C0000            lcall pins_get_cfg0 ;get the pin config and put data in control packet
+ 0143 550307            mov [control_pkt + CCODE], CTL_GET_CFG0_PINS
+ 0146 5008              mov A, CTL_BASE_SIZE+4
+ 0148 7C0000            lcall write_control;
+ 014B 808A              jmp main_return
+ 014D                   
+ 014D           main_get_cfg1_pins:
+ 014D 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 0150                   ;get the pins config
+ 0150 7C0000            lcall pins_get_cfg1 ;get the pin config and put data in control packet
+ 0153 550309            mov [control_pkt + CCODE], CTL_GET_CFG1_PINS
+ 0156 5008              mov A, CTL_BASE_SIZE+4
+ 0158 7C0000            lcall write_control;
+ 015B 807A              jmp main_return
+ 015D                   
+ 015D           main_set_cfg0_pins:
+ 015D 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 0160                   ;set the pins
+ 0160 7C0000            lcall pins_set_cfg0 ;set the pin config
+ 0163                   ;send ack packet
+ 0163 550308            mov [control_pkt + CCODE], CTL_SET_CFG0_PINS
+ 0166 5004              mov A, CTL_BASE_SIZE
+ 0168 7C0000            lcall write_control;
+ 016B 806A              jmp main_return
+ 016D                   
+ 016D           main_set_cfg1_pins:
+ 016D 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 0170                   ;set the pins
+ 0170 7C0000            lcall pins_set_cfg1 ;set the pin config
+ 0173                   ;send ack packet
+ 0173 55030A            mov [control_pkt + CCODE], CTL_SET_CFG1_PINS
+ 0176 5004              mov A, CTL_BASE_SIZE
+ 0178 7C0000            lcall write_control;
+ 017B 805A              jmp main_return
+ 017D           
+ 017D 30                halt ;to prevent anyone from falling into main_prog
+ 017E           main_prog:
+ 017E 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 0181 5F0904            mov [flash_addr], [control_pkt + CDATA] ;read the flash block address
+ 0184 550440            mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ;set up to read right number of bytes into buffer
+ 0187 7C0000            lcall read_buffer; //get the block
+ 018A                   ;ack the receive
+ 018A 55030C            mov [control_pkt + CCODE], CTL_PROG
+ 018D 5004              mov A, CTL_BASE_SIZE
+ 018F 7C0000            lcall write_control;
+ 0192                   
+ 0192                   ;wait for ack to go through
+ 0192           main_cwait:
+ 0192 5106              mov A, [halted];check for halt condition
+ 0194 BE86              jnz soft_reset ;go to known state after halt
+ 0196 5001              mov A, 0x1; ;check endpoint 1
+ 0198 7C0000            lcall USB_bGetEPState ;check state
+ 019B 3901              CMP A, IN_BUFFER_EMPTY ;compare--if equal, zero flag set
+ 019D BFF4              jnz main_cwait ;not equal, keep waiting
+ 019F                   
+ 019F                   ;now do a block erase
+ 019F 55F83A            mov [KEY1], 0x3A;
+ 01A2 4F                mov X, SP ;get stack pointer
+ 01A3 5B                mov A, X
+ 01A4 0103              add A, 3 ;just following directions from datasheet
+ 01A6 53F9              mov [KEY2], A
+ 01A8 5FFA09            mov [BLOCKID], [flash_addr] ;set which flash block to write
+ 01AB 55FC00            mov [CLOCK], 0x00 ;guessing at the right clock divider
+ 01AE 55FEAC            mov [DELAY], 0xAC ;this is a guess, since datasheet says use 0x56 for 12MHz
+ 01B1 5003              mov A, 0x03 ;erase block code
+ 01B3 00                ssc ;do it
+ 01B4                   
+ 01B4                   ;now set up the parameter block for the SROM call
+ 01B4 55F83A            mov [KEY1], 0x3A;
+ 01B7 4F                mov X, SP ;get stack pointer
+ 01B8 5B                mov A, X
+ 01B9 0103              add A, 3 ;just following directions from datasheet
+ 01BB 53F9              mov [KEY2], A
+ 01BD 5FFA09            mov [BLOCKID], [flash_addr] ;set which flash block to write
+ 01C0 55FB00            mov [POINTER], buffer ;read data from buffer
+ 01C3 55FC00            mov [CLOCK], 0x00 ;guessing at the right clock divider
+ 01C6 55FEAC            mov [DELAY], 0xAC ;this is a guess, since datasheet says use 0x56 for 12MHz
+ 01C9 5002              mov A, 0x02 ;write block code
+ 01CB 00                ssc ;do it
+ 01CC                   
+ 01CC 8012              jmp main_reset ;reset
+ 01CE           
+ 01CE           main_exec:
+ 01CE 7C0000            lcall rx_disable ;disable timer interrupt, clear rx state
+ 01D1 7C1FC0            lcall EXEC_ADDR ;call the user-defined function
+ 01D4 8001              jmp main_return;
+ 01D6           
+ 01D6           ;common code to re-enable rx if necessary and go to main loop   
+ 01D6           main_return:
+ 01D6           	//re-enable rx if it's supposed to be on
+ 01D6 5103              mov A, [rx_on]
+ 01D8 AE64              jz main_loop ;rx off, just go to main loop
+ 01DA 7C0000            lcall rx_enable ;rx on, so re-enable
+ 01DD 8E5F              jmp main_loop ;repeat main loop
+ 01DF           
+ 01DF           main_reset:
+ 01DF 7C0000            lcall USB_Stop ;have to do this first, or badness occurs
+ 01E2 55F83A            mov [KEY1], 0x3A;
+ 01E5 4F                mov X, SP ;get stack pointer
+ 01E6 5B                mov A, X
+ 01E7 0103              add A, 3 ;just following directions from datasheet
+ 01E9 53F9              mov [KEY2], A
+ 01EB 5000              mov A, 0 ;reset code
+ 01ED 00                ssc
+ 01EE                   
+ 01EE           prog_end:
+ 01EE           .terminate:
+ 01EE 8FFF          jmp .terminate
+ 01F0           
+ 01F0           ;put ret at EXEC_ADDR, so it doesn't halt if the user doens't put anything there
+                AREA userprog (ROM,ABS)
+                org EXEC_ADDR
+ 1FC0 7F                ret

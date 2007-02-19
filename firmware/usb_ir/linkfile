@@ -1,0 +1,5 @@
+-F0x30 -g -blit:0x150.0x1fff 
+ -bdata:0.0xFF -bSSCParmBlk:0x00F7.0x00FF   
+ -o"output/usb_ir" 
+ ./obj/ir.o ./obj/main.o ./obj/pc.o ./obj/util.o   
+ C:/iguana/trunk/firmware/usb_ir/lib/libPSoc.a -LC:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/lib/SMM C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/lib/CY7C63800/cms.a C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/lib/SMM/UASW/NoMAC/arith.a 

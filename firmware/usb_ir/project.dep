@@ -1,0 +1,37 @@
+# DO NOT DELETE
+./obj/boot.o :  C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8ssc.inc\
+   C:\iguana\trunk\firmware\usb_ir\lib\GLOBAL~1.INC
+./obj/ir.o :  ./lib/PSoCAPI.inc ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc\
+   C:\iguana\trunk\firmware\usb_ir\CONSTA~1.INC\
+   C:\iguana\trunk\firmware\usb_ir\memory.inc
+./obj/main.o :  ./lib/PSoCAPI.inc ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc\
+   C:\iguana\trunk\firmware\usb_ir\CONSTA~1.INC\
+   C:\iguana\trunk\firmware\usb_ir\memory.inc
+./obj/pc.o :  ./lib/PSoCAPI.inc ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc\
+   C:\iguana\trunk\firmware\usb_ir\CONSTA~1.INC\
+   C:\iguana\trunk\firmware\usb_ir\memory.inc
+./obj/util.o :  ./lib/PSoCAPI.inc ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc\
+   C:\iguana\trunk\firmware\usb_ir\CONSTA~1.INC\
+   C:\iguana\trunk\firmware\usb_ir\memory.inc
+./lib/obj/psocconfig.o :  ./lib/GLOBAL~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc\
+   C:\iguana\trunk\firmware\usb_ir\memory.inc
+./lib/obj/psocconfigtbl.o : \
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc
+./lib/obj/usb.o :  ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc
+./lib/obj/usb_cls_hid.o :  ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc
+./lib/obj/usb_descr.o :  ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc
+./lib/obj/usb_drv.o :  ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc
+./lib/obj/usb_std.o :  ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc
+./lib/obj/usbint.o :  ./lib/USB.inc ./lib/USB_MA~1.INC\
+   C:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2/m8c.inc

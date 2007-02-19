@@ -1,0 +1,28 @@
+Rambling about design.  Belongs in the wiki when I get to that point.
+
+Must use two threads for each device because libusb requires a thread
+to enter a read call to wait for data, however, at the same time we
+must also be waiting for data from the lirc pipe or the iguanaX pipe.
+So, add one more pipe to that list, and make a read thread with NO
+brains.  It just reads bytes from USB and places them into a pipe that
+the primary thread can wait on.  If a command comes in from lirc or
+iguana0 then handle that command entirely before checking either pipe
+again.
+
+Explicit interface claiming appears to be entirely optional, although
+probably a good idea.  It appears that the interfaces are
+automatically claimed (to a specific handle) when sends and recvs are
+going on, because two unlocked threads trying to access the same
+interface cuases EBUSY.  In order to use two interfaces you MUST open
+two handles, or lock (kinda silly to pick the 2 interface version if
+you're gonna lock anyway).  This is because receive may consume
+callbacks as described below.
+
+With two interfaces from the USB device, one holding each endpoint, we
+can operate without a lock.  However, with a single interface we must
+lock such that a receive must have returned prior to attempting any
+sends.  This is because the receive will consume the callback
+notification for the send, causing usb_interrupt_write to *never*
+return.  One way to detect this is that the usb_interrupt_read
+function call will occasionally return with 0 bytes read.  This is not
+a gaurantee of what happened, but it is a hint.

@@ -1,0 +1,106 @@
+#!/usr/bin/python
+
+import subprocess
+
+POWER_PIN  = 0x08
+REGSEL_PIN = 0x04
+RW_PIN     = 0x02
+ENABLE_PIN = 0x01
+
+# version SHOULD be detected automatically
+version = 2
+
+import iguanaIR
+conn = iguanaIR.connect('0')
+
+def deviceTransaction(type, data = None):
+    retval = False
+    req = iguanaIR.createRequest(type, data)
+    if not iguanaIR.writeRequest(req, conn):
+        print 'Failed to write packet.'
+    else:
+        resp = iguanaIR.readResponse(conn, 10000)
+        if iguanaIR.responseIsError(resp):
+            print 'Error response.'
+        else:
+            retval = True
+    return retval
+
+def strobeEnable(pins):
+    pins |= ENABLE_PIN | POWER_PIN
+    deviceTransaction(iguanaIR.IG_DEV_SETPINS,
+                      chr(pins & 0x0F) + chr((pins & 0xF0) >> 4))
+    pins &= ~ENABLE_PIN
+    deviceTransaction(iguanaIR.IG_DEV_SETPINS,
+                      chr(pins & 0x0F) + chr((pins & 0xF0) >> 4))
+
+def writeString(text):
+    for c in text:
+        # write high nibble)
+        strobeEnable((ord(c) & 0xF0) | REGSEL_PIN)
+        # write low nibble)
+        strobeEnable(((ord(c) & 0x0F) << 4) | REGSEL_PIN)
+
+def writeBulkPinData(data):
+    if version < 2:
+        raise Exception('First bulkpin support was in version 2.')
+    deviceTransaction(iguanaIR.IG_DEV_BULKPINS, data)
+
+def generateBulkPinData(text, isCommand = True):
+    if (version == 2 and len(text) > 15) or \
+       len(text) > 35:
+        raise ValueError('Text too long')
+
+    regsel = REGSEL_PIN
+    if isCommand:
+        regsel = 0
+
+    output = ''
+    if version == 2:
+        output = chr(len(text) * 4)
+    for c in text:
+        a = (ord(c) & 0xF0)
+        b = (ord(c) & 0x0F) << 4
+        output += chr(a | regsel | POWER_PIN | ENABLE_PIN) + \
+                  chr(a | regsel | POWER_PIN) + \
+                  chr(b | regsel | POWER_PIN | ENABLE_PIN) + \
+                  chr(b | regsel | POWER_PIN);
+    if version == 2:
+        output += chr(0) * (64 - len(output))
+    return output
+
+def bulkWriteCommands(text, isCommand = True):
+    writeBulkPinData(generateBulkPinData(text, isCommand))
+
+def bulkWriteString(text):
+    bulkWriteCommands(text, False)
+
+def initLCD():
+    # set all the pins to outputs
+    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG0, chr(iguanaIR.IG_OUTPUT) * 4)
+    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG1, chr(iguanaIR.IG_OUTPUT) * 4)
+
+    # send the Function Set command 3 times
+    strobeEnable(0x30)
+    strobeEnable(0x30)
+    strobeEnable(0x30)
+
+    # send the home command
+    strobeEnable(0x20)
+
+    # Function Set, display off, display clear, mode set
+    bulkWriteCommands('\x28\x08\x01\x08')
+    # appear to need a delay between clear and on
+    # display on
+    bulkWriteCommands('\x0F')
+
+initLCD()
+writeString('H')
+bulkWriteString('ello world')
+
+#bulkWriteCommands('\x01')
+#bulkWriteString('aaaaaaaa')
+#bulkWriteCommands('\x01')
+#bulkWriteString('bbbbbbbb')
+#bulkWriteCommands('\x01')
+#bulkWriteString('ccccccccaaaabbb')

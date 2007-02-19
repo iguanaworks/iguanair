@@ -1,0 +1,35 @@
+SKIPDIRS=testdata win32
+
+SOBJS=iguanaIR
+PYSWIG=iguanaIR
+EXECS=igdaemon igclient
+
+iguanaIR=iguanaIR.o support.o list.o dataPackets.o
+igdaemon=daemon.o iguanadev.o usbclient.o protocol.o
+igclient=client.o
+
+CPPFLAGS=-D_DEBUG
+CFLAGS=-Wall -g -pedantic
+
+iguanaIR-LDFLAGS=-lrt
+igclient-LDFLAGS=-L. -liguanaIR
+igdaemon-LDFLAGS=-lusb -lpthread -L. -liguanaIR
+
+LDFLAGS=-lpopt
+
+# Older versions of libusb do not play with threads at all nicely.
+# This driver was actually developed on such a version of libusb.
+# However, in later versions threads seem to not eat the responses for
+# URBs intended for other threads.  By defining LIBUSB_NO_THREADS you
+# can request the slower (around 1/4 the speed for USB transaction
+# heavy workloads), but safer, behavior where 2 threads never use the
+# same libusb object at once.
+#CPPFLAGS+=-DLIBUSB_NO_THREADS
+
+local-install:
+	install -D iguanaIR.init $(DESTDIR)/etc/rc.d/init.d/iguanaIR
+	install -D --mode=0644 iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
+	install -D iguanaIR.h $(DESTDIR)/usr/include/iguanaIR.h
+	install -D --mode 644 iguanaIR.rules \
+	                      $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
+	install --mode 755 -d $(DESTDIR)/etc/udev/devices/iguanaIR

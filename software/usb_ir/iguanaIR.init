@@ -1,0 +1,153 @@
+#!/bin/sh
+#
+# Startup script for the Iguanaworks USB IR daemon.
+#
+# Two lines for Fedora's chkconfig
+# chkconfig: 2345 80 20
+# description: Enables the driver for Iguanaworks USB IR devices.
+#
+
+# need various helper functions, and can use this to detect how to run
+if [ -f /etc/init.d/functions ]; then
+    # welcome to fedora land
+    . /etc/init.d/functions
+
+    # fedora needs these variables
+    LOCKFILE=/var/lock/subsys/iguanaIR
+    PIDFILE=/var/run/igdaemon.pid
+
+    # definitions to make a common shell script    
+    log_begin_msg()
+    {
+        echo -n $*
+    }
+    log_end_msg()
+    {
+        echo
+    }
+else #if [ -f /lib/lsb/init-functions ]; then
+    # ubuntu and others
+    . /lib/lsb/init-functions
+fi
+
+# common defaults
+IGPATH=/usr/bin/igdaemon
+LOGFILE=/var/log/iguanaIR.log
+RETVAL=0
+
+# check for the executable exists
+if [ ! -x $IGPATH ]; then
+    echo $"Failed to find igdaemon executable."
+    exit 1
+fi
+
+# load the settings
+[ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
+
+start()
+{
+    # figure out what command to run to start the daemon
+    if [ "$LOCKFILE" != "" ]; then 
+        if [ ! -e $LOCKFILE ]; then
+            START="daemon --user=iguanair $IGPATH $IGUANAIR_OPTIONS -l $LOGFILE"
+        fi
+    else
+        START="start-stop-daemon --start --chuid iguanair --group iguanair --exec $IGPATH -- $IGUANAIR_OPTIONS -l $LOGFILE"
+    fi
+
+    if [ "$START" != "" ]; then
+        # make sure the log file exists/is writable
+        touch $LOGFILE
+        chown iguanair:iguanair $LOGFILE
+
+        # start the daemon
+        log_begin_msg "Starting Iguanaworks USB IR daemon..."
+        $START
+        RETVAL=$?
+        log_end_msg $RETVAL
+
+        # touch the PIDFILE
+        if [ "$PIDFILE" != "" -a $RETVAL == 0 ]; then
+            echo $(pidofproc $IGPATH) > $PIDFILE
+            touch $LOCKFILE
+        fi
+    fi
+
+    return $RETVAL
+}
+
+stop()
+{
+    log_begin_msg "Stopping Iguanaworks USB IR daemon..."
+    if [ "$LOCKFILE" != "" ]; then
+        killproc $IGPATH
+    else
+        start-stop-daemon --stop --oknodo --retry 2 --exec $IGPATH
+    fi
+    RETVAL=$?
+    log_end_msg $RETVAL
+
+    if [ "$LOCKFILE" != "" ]; then
+        [ $RETVAL = 0 ] && rm -f $LOCKFILE $PIDFILE
+    fi
+
+    return $RETVAL
+}
+
+restart()
+{
+    stop && start
+}
+
+rescan()
+{
+    log_begin_msg "Signalling Iguanaworks USB IR daemon: "
+    if [ "$LOCKFILE" != "" ]; then
+        if [ -e $LOCKFILE ]; then
+            PID=$(pidofproc $IGPATH)
+            kill -s HUP $PID
+            echo_success
+        fi
+    else
+        start-stop-daemon --stop --signal HUP --exec $IGPATH
+    fi
+
+    RETVAL=$?
+    log_end_msg $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+    start)
+        udevtrigger
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        if [ "$LOCKFILE" != "" ]; then
+            status $IGPATH
+        fi
+        ;;
+    condrestart)
+        if [ "$LOCKFILE" != "" ]; then
+            [ -e $LOCKFILE ] && restart
+        fi
+        ;;
+    rescan)
+        rescan
+        ;;
+    *)
+        if [ "$LOCKFILE" != "" ]; then
+            echo $"Usage: $0 {start|stop|status|restart|condrestart|rescan}"
+        else
+            echo $"Usage: $0 {start|stop|restart|rescan}"
+        fi
+        RETVAL=1
+esac
+
+exit $RETVAL

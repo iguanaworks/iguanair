@@ -1,0 +1,55 @@
+Rambling about the protocols, belongs in the wiki, and needs updating
+badly.
+
+This driver is required to communicate over 3 different protocols:
+    1) Iguanaworks device protocol
+    2) Human readable command protocol
+    3) Lirc lirc_dev protocol
+
+Each of these serves a different purpose as described below.
+
+1) Iguanaworks device protocol
+
+    This protocol is used to pass commands to the USB device, and
+return signals, or command responses.  The protocol is defined as
+follows:
+
+2) Human readable command protocol
+
+    A text-based protocol to allow for scripting and testing.  This
+protocol is used over the daemon control pipe (default:
+/dev/iguanactl), and the device control pipes (default: /dev/iguana0).
+There is no locking built into the protocol, and no good way of doing
+it, so try and keep communication to one at a time.  Each usb device
+plugged into the system will show up as a different numbered device.
+
+Commands are issued by entering a command name and optional arguments
+in one line.  Transceiver commands will require multiple lines of
+input, or return multiple lines of output.  Transceived data is in
+pulse/space format.  The first line represents a pulse and each
+additional one alternates.  Therefore, odd numbers of lines make more
+sense that even.
+
+Only a few commands are allowed over the command pipe:
+scan - scan for devices
+restart [%d-%d,%d] - restart the threads managing these devices (default: all)
+
+Legal commands for a device control pipe are:
+enablerecv - No arguments, enable the reciever.
+send %d - Send and a count of pulse/space lines to read.
+getpins [%d-%d,%d] - retrieve the state (0 or 1) of specified GPIO pins (default all).
+setpins %d-%d,%d %d%d%d - set GPIO pin states.
+reset [soft|hard] - send a hard or soft reset to the device (default soft)
+
+Legal responses for a device control pipe are:
+success - Obvious.
+failure %d:%s - Failure code and string.
+recv %d - Notification of recv start with line count
+pins %d-%d,%d %d%d%d - pins as specified in getpins, with current values.
+
+3) Lirc lirc_dev protocol
+    The intent of implementing this protocol is to provide a mechanism
+for our devices to interact with the lirc system.  When used this
+protocol will operate over a pipe (default: /dev/iguana_lirc0), much
+like the human readable protocol.  Last to be implemented, and for the
+moment, not my problem.

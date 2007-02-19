@@ -1,0 +1,9 @@
+cy7c63813-sxc -- the chip
+mj-3523-smt -- mono audio jack 3.5mm
+tsop36238 -- receiver
+t491a475k020at -- cap
+crcw06035k10fkea -- resistor (5.1kOhm)
+0603waf523jt5e -- resistor 52.3ohm
+bss64	-- npn transitor
+KUSBX-SMT2AP1S-B -- usb header
+tsal6400 -- LED

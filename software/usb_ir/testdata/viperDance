@@ -1,0 +1,12 @@
+viperMove()
+{
+    irsend send_start viper $1
+    sleep $2
+    irsend send_stop viper $1
+}
+
+viperMove up 1
+viperMove down 2
+viperMove up 1
+viperMove left 1
+viperMove right 1

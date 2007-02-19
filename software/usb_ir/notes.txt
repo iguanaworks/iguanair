@@ -1,0 +1,8 @@
+This is mainly notes to myself:
+
+Ubuntu needs a command to create the user:
+/usr/sbin/groupadd -g 213 iguanair
+/usr/sbin/useradd -u 213 -g iguanair -c "Iguanaworks IR Daemon" -d / -s /sbin/false iguanair
+
+the command in Gentoo to mess with runlevels is somethin like:
+rc-update add iguanaIR default

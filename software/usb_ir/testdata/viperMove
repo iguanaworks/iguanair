@@ -1,0 +1,3 @@
+irsend send_start viper $1
+sleep 1
+irsend send_stop viper $1
