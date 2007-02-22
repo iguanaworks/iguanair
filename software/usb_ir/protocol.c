@@ -533,7 +533,7 @@ bool findDeviceEndpoints(iguanaDev *idev)
     return false;
 }
 
-uint32_t* iguanaDevToPulses(unsigned char *code, unsigned int *length)
+uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
 {
     unsigned int x, codeLength = 0, inSpace = 0;
     uint32_t *retval;
@@ -576,7 +576,7 @@ uint32_t* iguanaDevToPulses(unsigned char *code, unsigned int *length)
     return retval;
 }
 
-unsigned char* pulsesToIguanaSend(uint32_t *sendCode, unsigned int *length)
+unsigned char* pulsesToIguanaSend(uint32_t *sendCode, int *length)
 {
     unsigned int x, codeLength = 0, inSpace = 0;
     unsigned char *codes = NULL;
