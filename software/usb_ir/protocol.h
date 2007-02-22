@@ -69,7 +69,7 @@ void handleIncomingPackets(iguanaDev *idev);
 bool findDeviceEndpoints(iguanaDev *idev);
 
 /* translation of data for transmission */
-uint32_t* iguanaDevToPulses(unsigned char *code, int *length);
-unsigned char* pulsesToIguanaSend(uint32_t *sendCode, int *length);
+uint32_t* iguanaDevToPulses(unsigned char *code, unsigned int *length);
+unsigned char* pulsesToIguanaSend(uint32_t *sendCode, unsigned int *length);
 
 #endif

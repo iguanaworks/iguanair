@@ -22,7 +22,7 @@ typedef struct dataPacket
     itemHeader header;
 
     unsigned char code;
-    int dataLen;
+    unsigned int dataLen;
     unsigned char *data;
 } dataPacket;
 
