@@ -1,4 +1,4 @@
-SKIPDIRS=testdata win32
+SKIPDIRS=testdata win32 utils
 
 SOBJS=iguanaIR
 PYSWIG=iguanaIR

@@ -16,8 +16,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <stddef.h>
-
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include "iguanaIR.h"
 #include "support.h"
@@ -242,7 +243,7 @@ static char* getID(iguanaDev *idev, char *name)
         message(LOG_ERROR, "Failed to get id.\n");
     else
     {
-        retval = iguanaRemoveData(response, NULL);
+        retval = (char*)iguanaRemoveData(response, NULL);
         freeDataPacket(response);
     }
 
