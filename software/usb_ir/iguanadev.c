@@ -18,8 +18,11 @@
 #include <stddef.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#ifndef WIN32
+    #include <sys/socket.h>
+#endif
 
+#include "pipes.h"
 #include "iguanaIR.h"
 #include "support.h"
 #include "usbclient.h"
@@ -36,7 +39,7 @@ typedef struct client
     iguanaDev *idev;
 
     /* for communication with the client */
-    int fd;
+    PIPE_PTR fd;
 
     /* whether recv-related messages should be returned to this
      * client */
@@ -119,7 +122,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
 static void releaseClient(client *target, fdSets *fds)
 {
     FD_CLR(target->fd, &fds->next);
-    close(target->fd);
+    closePipe(target->fd);
 
     if (target->receiving)
     {
@@ -256,10 +259,10 @@ static void joinWithReader(iguanaDev *idev)
 
     /* signal then join with the reader */
     idev->quitRequested = true;
-    pthread_join(idev->reader, &exitVal);
+    joinThread(idev->reader, &exitVal);
 }
 
-static bool acceptNewClients(int listener, fdSets *fds,
+static bool acceptNewClients(PIPE_PTR listener, fdSets *fds,
                              listHeader *clientList, iguanaDev *idev)
 {
     bool retval = false;
@@ -286,8 +289,8 @@ static bool acceptNewClients(int listener, fdSets *fds,
         {
             newClient->idev = idev;
             newClient->receiving = false;
-            newClient->fd = accept(listener, NULL, NULL);
-            if (newClient->fd == -1)
+            newClient->fd = acceptClient(listener);
+            if (newClient->fd == INVALID_PIPE)
                 message(LOG_ERROR, "Error accepting client: %s\n",
                         strerror(errno));
             else
@@ -340,7 +343,7 @@ static bool handleReader(iguanaDev *idev, fdSets *fds, listHeader *clientList)
         break;
 
     case 1:
-        switch(read(idev->readPipe[READ], &byte, 1))
+        switch(readPipe(idev->readPipe[READ], &byte, 1))
         {
         case -1:
             message(LOG_ERROR, "Error reading from readPipe.\n");
@@ -399,20 +402,22 @@ static void* workLoop(void *instance)
 {
     iguanaDev *idev = (iguanaDev*)instance;
 
+#ifndef WIN32
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-        message(LOG_ERROR, "failed to install SIGPIPE handler.\n");
+        message(LOG_ERROR, "Failed when setting SIG_IGN for SIGPIPE.\n");
+#endif
 
     message(LOG_INFO, "Worker %d starting\n", idev->usbDev->id);
     if (checkVersion(idev))
     {
-        int listener;
+        PIPE_PTR listener;
         char name[4], *alias = NULL;
 
         snprintf(name, 4, "%d", idev->usbDev->id);
         if (readLabels)
             alias = getID(idev, name);
         listener = startListening(name, alias);
-        if (listener != -1)
+        if (listener != INVALID_PIPE)
         {
             bool done = false;
             listHeader clientList;
@@ -452,8 +457,8 @@ static void* workLoop(void *instance)
     releaseDevice(idev->usbDev);
 
     message(LOG_INFO, "Worker %d exiting\n", idev->usbDev->id);
-    if (write(idev->usbDev->list->childPipe[WRITE],
-              &idev->worker, sizeof(pthread_t)) != sizeof(pthread_t))
+    if (writePipe(idev->usbDev->list->childPipe[WRITE],
+                  &idev->worker, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
         message(LOG_ERROR, "Failed to write thread id to childPipe.\n");
 
     /* now actually free the malloc'd data */
@@ -474,17 +479,16 @@ void startWorker(usbDevice *dev)
     else
     {
         memset(idev, 0, sizeof(iguanaDev));
-        if (pthread_mutex_init(&idev->listLock, NULL) != 0)
-            message(LOG_ERROR, "Failed to initialize listLock\n");
+        InitializeCriticalSection(&idev->listLock);
+        if (createPipePair(idev->readPipe))
+            message(LOG_ERROR, "Failed to create readPipe for %d\n", dev->id);
+        else if (createPipePair(idev->responsePipe))
+            message(LOG_ERROR,
+                    "Failed to create responsePipe for %d\n", dev->id);
 #ifdef LIBUSB_NO_THREADS
         else if (pthread_mutex_init(&idev->devLock, NULL) != 0)
             message(LOG_ERROR, "Failed to initialize devLock\n");
 #endif
-        else if (pipe(idev->readPipe) != 0)
-            message(LOG_ERROR, "Failed to create readPipe for %d\n", dev->id);
-        else if (pipe(idev->responsePipe) != 0)
-            message(LOG_ERROR,
-                    "Failed to create responsePipe for %d\n", dev->id);
         else
         {
             /* this must be set before the call to findDeviceEndpoints */
@@ -493,14 +497,14 @@ void startWorker(usbDevice *dev)
             if (! findDeviceEndpoints(idev))
                 message(LOG_ERROR,
                         "Failed find device endpoints for %d\n", dev->id);
-            else if (pthread_create(&idev->reader, NULL,
-                                    (void *(*)(void*))handleIncomingPackets,
-                                    idev) != 0)
+            else if (startThread(&idev->reader,
+                                 (void *(*)(void*))handleIncomingPackets,
+                                 idev))
                 message(LOG_ERROR,
                         "Failed to create reader thread %d\n", dev->id);
             else
             {
-                if (pthread_create(&idev->worker, NULL, workLoop, idev) != 0)
+                if (startThread(&idev->worker, workLoop, idev) != 0)
                     message(LOG_ERROR,
                             "Failed to create worker thread %d\n", dev->id);
                 else
@@ -525,17 +529,17 @@ bool reapAllChildren(usbDeviceList *list)
     {
         void *exitval;
         int result;
-        pthread_t child;
+        THREAD_PTR child;
 
         /* NOTE: using 2*recv timeout to allow readers to exit. */
         result = readBytes(list->childPipe[READ], 2 * list->recvTimeout,
-                           (char*)&child, sizeof(pthread_t));
+                           (char*)&child, sizeof(THREAD_PTR));
         /* no one ready */
         if (result == 0)
             break;
         /* try to join with the worker thread */
-        else if (result != sizeof(pthread_t) ||
-                 pthread_join(child, &exitval) != 0)
+        else if (result != sizeof(THREAD_PTR) ||
+                 joinThread(child, &exitval) != 0)
         {
             message(LOG_ERROR, "failed while reaping worker thread.\n");
             return false;

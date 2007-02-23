@@ -61,8 +61,8 @@ enum
 };
 
 /* manage a connection to the server */
-int iguanaConnect(const char *name);
-void iguanaClose(int connection);
+PIPE_PTR iguanaConnect(const char *name);
+void iguanaClose(PIPE_PTR connection);
 
 /* requests and responses are represented by opaque handles */
 typedef void* iguanaPacket;
@@ -73,8 +73,8 @@ unsigned char iguanaCode(const iguanaPacket pkt);
 void iguanaFreePacket(iguanaPacket pkt);
 
 /* for communication with the server */
-bool iguanaWriteRequest(const iguanaPacket request, int connection);
-iguanaPacket iguanaReadResponse(int connection, unsigned int timeout);
+bool iguanaWriteRequest(const iguanaPacket request, PIPE_PTR connection);
+iguanaPacket iguanaReadResponse(PIPE_PTR connection, unsigned int timeout);
 bool iguanaResponseIsError(const iguanaPacket response);
 
 int iguanaReadPulseFile(const char *filename, void **pulses);

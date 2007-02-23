@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <time.h>
 
+#include "pipes.h"
 #include "support.h"
 #include "dataPackets.h"
 
@@ -27,16 +28,14 @@ void freeDataPacket(dataPacket *packet)
     }
 }
 
-bool readDataPacket(dataPacket *packet, int fd, unsigned int timeout)
+bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
 {
     bool retval = false;
     int result;
-    struct timespec start, now;
+    uint64_t then, now;
 
-    result = clock_gettime(CLOCK_MONOTONIC, &start);
-    if (result == 0)
-        result = readBytes(fd, timeout,
-                           (char*)packet, sizeof(dataPacket));
+    then = microsSinceX();
+    result = readBytes(fd, timeout, (char*)packet, sizeof(dataPacket));
     if (result == sizeof(dataPacket))
     {
         if (packet->dataLen <= 0)
@@ -51,36 +50,31 @@ bool readDataPacket(dataPacket *packet, int fd, unsigned int timeout)
             {
                 unsigned int timePassed;
 
-                result = clock_gettime(CLOCK_MONOTONIC, &now);
-                if (result == 0)
-                {
-                    timePassed = (now.tv_sec - start.tv_sec) * 1000 + 
-                                 (now.tv_nsec - start.tv_nsec) / 1000000;
-
+                now = microsSinceX();
+                timePassed = (unsigned int)(now - then) / 1000;
 #if 0
-                    /* Leaving this for now, though it should not be
-                     * necessary ever again */
-                    if (timePassed > timeout)
-                    {
-                        fprintf(stderr, "TIMEOUT ON PAYLOAD!!! (%u > %u)\n",
-                                timePassed, timeout);
-                        timePassed = timeout;
-                    }
-#endif
-
-                    if (timePassed <= timeout)
-                        result = readBytes(fd, timeout - timePassed,
-                                           (char*)packet->data,
-                                           packet->dataLen);
-                }
-
-                if (result != packet->dataLen)
+                /* Leaving this for now, though it should not be
+                    * necessary ever again */
+                if (timePassed > timeout)
                 {
-                    free(packet->data);
-                    packet->data = NULL;
+                    fprintf(stderr, "TIMEOUT ON PAYLOAD!!! (%u > %u)\n",
+                            timePassed, timeout);
+                    timePassed = timeout;
                 }
-                else
-                    retval = true;
+#endif
+                if (timePassed <= timeout)
+                {
+                    result = readBytes(fd, timeout - timePassed,
+                                        (char*)packet->data,
+                                        packet->dataLen);
+                    if (result != packet->dataLen)
+                    {
+                        free(packet->data);
+                        packet->data = NULL;
+                    }
+                    else
+                        retval = true;
+                }
             }
         }
     }
@@ -91,17 +85,17 @@ bool readDataPacket(dataPacket *packet, int fd, unsigned int timeout)
     return retval;
 }
 
-bool writeDataPacket(dataPacket *packet, int fd)
+bool writeDataPacket(dataPacket *packet, PIPE_PTR fd)
 {
     bool retval = false;
     int result;
 
-    result = write(fd, packet, sizeof(dataPacket));
+    result = writePipe(fd, packet, sizeof(dataPacket));
     if (result == sizeof(dataPacket))
     {
         if (packet->dataLen > 0)
         {
-            result = write(fd, packet->data, packet->dataLen);
+            result = writePipe(fd, packet->data, packet->dataLen);
             if (result == packet->dataLen)
                 retval = true;
         }

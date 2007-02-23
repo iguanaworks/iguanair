@@ -15,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "pipes.h"
 #include "iguanaIR.h"
 #include "support.h"
 #include "usbclient.h"
@@ -109,7 +110,7 @@ static void queueDataPacket(iguanaDev *idev, dataPacket *current)
 {
     message(LOG_DEBUG3, "Notifying of packet.\n");
 
-    pthread_mutex_lock(&idev->listLock);
+    EnterCriticalSection(&idev->listLock);
     if (current->code & IG_DEV_FROM_MASK)
     {
         insertItem(&idev->recvList, NULL, (itemHeader*)current);
@@ -122,7 +123,7 @@ static void queueDataPacket(iguanaDev *idev, dataPacket *current)
         if (! notify(idev->responsePipe[WRITE]))
             message(LOG_ERROR, "Failed to signal primary thread.\n");
     }
-    pthread_mutex_unlock(&idev->listLock);
+    LeaveCriticalSection(&idev->listLock);
 }
 
 static bool sendData(iguanaDev *idev,
@@ -219,7 +220,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
     {
         unsigned char msg[MAX_PACKET_SIZE] = {IG_CTL_START, IG_CTL_START,
                                               CTL_TODEV};
-        struct timespec then, now;
+        uint64_t then, now;
         int length = MIN_CODE_LENGTH, result, sent = 0;
 
 #ifdef LIBUSB_NO_THREADS
@@ -248,12 +249,12 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
 #ifdef LIBUSB_NO_THREADS
         /* force the reader to give up the lock */
         idev->needToWrite = true;
-        pthread_mutex_lock(&idev->devLock);
+        EnterCriticalSection(&idev->devLock);
         idev->needToWrite = false;
 #endif
 
         /* time the transfer */
-        clock_gettime(CLOCK_MONOTONIC, &then);
+        then = microsSinceX();
         result = interruptSend(idev->usbDev, msg, length);
         /* error if we were not able to write ALL the data */
         if (result != length)
@@ -275,7 +276,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
 
 #ifdef LIBUSB_NO_THREADS
             /* unlock as soon as possible after all data has been sent */
-            pthread_mutex_unlock(&idev->devLock);
+            LeaveCriticalSection(&idev->devLock);
             unlocked = true;
 #endif
 
@@ -289,7 +290,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
             {
                 dataPacket *pos;
 
-                pthread_mutex_lock(&idev->listLock);
+                EnterCriticalSection(&idev->listLock);
                 pos = idev->response;
 
                 errno = EINVAL;
@@ -308,18 +309,16 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
                     }
 
                     /* how long did this all take? */
-                    clock_gettime(CLOCK_MONOTONIC, &now);
+                    now = microsSinceX();
                     message(LOG_INFO,
                             "Transaction: 0x%x (%d microseconds)\n",
-                            request->code,
-                            (now.tv_sec - then.tv_sec) * 1000000 + \
-                            (now.tv_nsec - then.tv_nsec) / 1000);
+                            request->code, now - then);
                     retval = true;
                 }
 
                 freeDataPacket(pos);
                 idev->response = NULL;
-                pthread_mutex_unlock(&idev->listLock);
+                LeaveCriticalSection(&idev->listLock);
             }
             else
                 message(LOG_ERROR, "No response from device.\n");
@@ -339,7 +338,7 @@ dataPacket* removeNextPacket(iguanaDev *idev)
 {
     dataPacket *retval;
 
-    pthread_mutex_lock(&idev->listLock);
+    EnterCriticalSection(&idev->listLock);
 
     /* snag the first one off the list (NULL on empty) */
     retval = (dataPacket*)removeFirstItem(&idev->recvList);
@@ -351,7 +350,7 @@ dataPacket* removeNextPacket(iguanaDev *idev)
         message(LOG_DEBUG, "Returning data packet (0x%x, %d byte payload)\n",
                 retval->code, retval->dataLen);
 
-    pthread_mutex_unlock(&idev->listLock);
+    LeaveCriticalSection(&idev->listLock);
 
     return retval;
 }
@@ -489,7 +488,7 @@ void handleIncomingPackets(iguanaDev *idev)
         }
 
     /* signal worker thread that the reader is exiting */
-    close(idev->readPipe[WRITE]);
+    closePipe(idev->readPipe[WRITE]);
 }
 
 /* set dev_ep_in and dev_ep_out to the in/out endpoints of the given
@@ -535,7 +534,7 @@ bool findDeviceEndpoints(iguanaDev *idev)
 
 uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
 {
-    unsigned int x, codeLength = 0, inSpace = 0;
+    int x, codeLength = 0, inSpace = 0;
     uint32_t *retval;
 
     /* allocate space for the deciphered code */
@@ -578,15 +577,15 @@ uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
 
 unsigned char* pulsesToIguanaSend(uint32_t *sendCode, int *length)
 {
-    unsigned int x, codeLength = 0, inSpace = 0;
+    int x, codeLength = 0, inSpace = 0;
     unsigned char *codes = NULL;
 
     /* convert each pulse */
     for(x = 0; x < *length; x++)
     {
         uint32_t cycles, numBytes;
-        cycles = ((sendCode[x] & IG_PULSE_MASK) / 
-                  1000000.0 * CARRIER_RATE + 0.5);
+        cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
+                            1000000.0 * CARRIER_RATE + 0.5);
         numBytes = (cycles / MAX_DATA_BYTE) + 1;
         cycles %= MAX_DATA_BYTE;
 

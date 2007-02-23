@@ -43,25 +43,4 @@ bool wouldOutput(int level);
 int message(int level, char *format, ...);
 void appendHex(int level, void *location, unsigned int length);
 
-/* functions dealing with the unix sockets */
-void socketName(const char *name, char *buffer, unsigned int length);
-int startListening(const char *name, const char *alias);
-void stopListening(int fd, const char *name, const char *alias);
-
-int readBytes(int fd, int timeout,
-              char *buffer, int size);
-
-/* used for notification of packet arrival */
-int notified(int fd, int timeout);
-bool notify(int fd);
-
-typedef struct fdSets
-{
-    int max;
-    fd_set next;
-    fd_set in, err;
-} fdSets;
-
-int checkFD(int fd, fdSets *fds);
-
 #endif

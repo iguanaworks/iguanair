@@ -32,8 +32,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libusb.lib"
 				OutputFile="$(OutDir)/usb_ir.exe"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="libusb-win32"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/usb_ir.pdb"
 				SubSystem="2"
@@ -114,10 +116,7 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\client.c">
-			</File>
-			<File
-				RelativePath="..\daemon.c">
+				RelativePath=".\base.c">
 			</File>
 			<File
 				RelativePath="..\dataPackets.c">

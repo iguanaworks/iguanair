@@ -21,8 +21,8 @@ typedef struct iguanaDev
 {
     /* used to pass data from the reader to the worker, closed to
      * notify worker to terminate */
-    int readPipe[2];
-    int responsePipe[2];
+    PIPE_PTR readPipe[2];
+    PIPE_PTR responsePipe[2];
 
     /* maximum packet size for send and recv */
     int maxPacketSize;
@@ -31,7 +31,7 @@ typedef struct iguanaDev
     struct usbDevice *usbDev;
 
     /* so we can join with the reader thread */
-    pthread_t worker, reader;
+    THREAD_PTR worker, reader;
     bool quitRequested;
 
     /* all data will go in this list as it's read */
@@ -42,14 +42,14 @@ typedef struct iguanaDev
     unsigned int receiverCount;
 
     /* must lock the list of received packets */
-    pthread_mutex_t listLock;
+    LOCK_PTR listLock;
 
     /* need to know what protocol version to support. */
     uint16_t version;
 
 #ifdef LIBUSB_NO_THREADS
     /* if necessary lock access to the underlying usb device */
-    pthread_mutex_t devLock;
+    LOCK_PTR devLock;
     bool needToWrite;
 #endif
 } iguanaDev;

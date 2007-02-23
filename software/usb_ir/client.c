@@ -243,23 +243,17 @@ static void setSetting(unsigned int setting, const char *pins,
 
 static void receiveResponse(int conn, igtask *cmd, int timeout)
 {
-    struct timespec end, now;
+    struct timespec end;
 
     /* read the start and add the timeout */
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    end.tv_nsec += (timeout % 1000) * 1000000;
-    end.tv_sec  += (timeout / 1000) + end.tv_nsec / 1000000000;
-    end.tv_nsec %= 1000000000;
+    end = microsSinceX() + timeout * 1000;
 
     while(timeout >= 0)
     {
         iguanaPacket response;
 
         /* determine the time remaining */
-        clock_gettime(CLOCK_MONOTONIC, &now);
-        timeout = (end.tv_sec - now.tv_sec) * 1000 + 
-                  (end.tv_nsec - now.tv_nsec) / 1000000;
-        if (timeout < 0)
+        if (microsSinceX() >= end)
             break;
 
         response = iguanaReadResponse(conn, timeout);

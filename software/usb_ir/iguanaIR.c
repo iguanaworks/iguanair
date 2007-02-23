@@ -20,34 +20,14 @@
 #include "protocol.h"
 #include "dataPackets.h"
 
-int iguanaConnect(const char *name)
+PIPE_PTR iguanaConnect(const char *name)
 {
-    int retval = -1;
-    struct sockaddr_un server;
-
-    /* generate the server address */
-    server.sun_family = PF_UNIX;
-    socketName(name, server.sun_path, sizeof(server.sun_path));
-
-    /* connect to the server */
-    retval = socket(PF_UNIX, SOCK_STREAM, 0);
-    if (retval != -1)
-    {
-        if (connect(retval,
-                    (struct sockaddr *)&server,
-                    sizeof(struct sockaddr_un)) == -1)
-        {
-            close(retval);
-            retval = -1;
-        }
-    }
-
-    return retval;
+    return connectToPipe(name);
 }
 
-void iguanaClose(int connection)
+void iguanaClose(PIPE_PTR connection)
 {
-    close(connection);
+    closePipe(connection);
 }
 
 void* iguanaCreateRequest(unsigned char code,
@@ -97,14 +77,14 @@ void iguanaFreePacket(iguanaPacket pkt)
     freeDataPacket((dataPacket*)pkt);
 }
 
-bool iguanaWriteRequest(const iguanaPacket request, int connection)
+bool iguanaWriteRequest(const iguanaPacket request, PIPE_PTR connection)
 {
     if (writeDataPacket((dataPacket*)request, connection))
         return 1;
     return 0;
 }
 
-iguanaPacket iguanaReadResponse(int connection, unsigned int timeout)
+iguanaPacket iguanaReadResponse(PIPE_PTR connection, unsigned int timeout)
 {
     dataPacket *response;
 

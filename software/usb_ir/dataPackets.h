@@ -28,7 +28,7 @@ typedef struct dataPacket
 
 void freeDataPacket(dataPacket *packet);
 
-bool writeDataPacket(dataPacket *packet, int fd);
-bool readDataPacket(dataPacket *packet, int fd, unsigned int timeout);
+bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout);
+bool writeDataPacket(dataPacket *packet, PIPE_PTR fd);
 
 #endif
