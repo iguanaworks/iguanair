@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <popt.h>
 
+#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
 #include "usbclient.h"

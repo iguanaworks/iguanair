@@ -25,6 +25,8 @@
 #else
     #include "stdbool.h"
 
+    #define IGUANAIR_API
+
     #define PIPE_PTR int
     #define INVALID_PIPE -1
 #endif

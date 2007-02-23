@@ -648,9 +648,8 @@ static struct poptOption options[] =
     { "get-id", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETID, "Fetch the unique id from the USB device.", NULL },
     { "set-id", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETID, "Set the unique id from the USB device.", NULL },
 
-//    POPT_AUTOHELP
-//{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, NULL, 0, "Help options:", NULL },
-POPT_TABLEEND
+    POPT_AUTOHELP
+    POPT_TABLEEND
 };
 
 static void exitOnOptError(poptContext poptCon, char *msg)
@@ -666,8 +665,6 @@ int main(int argc, const char **argv)
     int x = 0, retval = 1;
     PIPE_PTR conn = INVALID_PIPE;
     poptContext poptCon;
-
-//    poptHelpOptions
 
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)
