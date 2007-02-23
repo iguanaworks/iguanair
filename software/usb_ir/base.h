@@ -20,7 +20,7 @@
 
   #define getpid GetCurrentProcessId
   #define setlinebuf(a)
-  #define _snprintf snprintf
+  #define snprintf _snprintf
 
   /* thread defines */
   #define THREAD_PTR HANDLE

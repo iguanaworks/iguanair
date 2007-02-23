@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "pipes.h"
 #include "iguanaIR.h"
+#include "pipes.h"
 #include "support.h"
 #include "protocol.h"
 #include "dataPackets.h"

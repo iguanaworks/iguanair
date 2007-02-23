@@ -1,4 +1,8 @@
 #include "base.h"
+
+
+
+#include "iguanaIR.h"
 #include "pipes.h"
 
 bool createPipePair(PIPE_PTR *pair)
@@ -45,3 +49,23 @@ PIPE_PTR connectToPipe(const char *name)
     return INVALID_PIPE;
 }
 
+int readBytes(PIPE_PTR fd, int timeout,
+              char *buffer, int size)
+{
+    return -1;
+}
+
+int notified(PIPE_PTR fd, int timeout)
+{
+    return -1;
+}
+
+bool notify(PIPE_PTR fd)
+{
+    return false;
+}
+
+int checkFD(PIPE_PTR fd, fdSets *fds)
+{
+    return -1;
+}

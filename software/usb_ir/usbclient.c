@@ -16,6 +16,7 @@
 #include <usb.h>
 #include <errno.h>
 
+#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
 #include "usbclient.h"
@@ -157,7 +158,7 @@ bool updateDeviceList(usbDeviceList *list)
     usb_find_devices();
 
     /* search for the first device we find */
-    for (bus = usb_busses; bus; bus = bus->next)
+    for (bus = usb_get_busses(); bus; bus = bus->next)
         for (dev = bus->devices; dev; dev = dev->next)
             for(pos = 0; list->ids[pos].idVendor != INVALID_VENDOR; pos++)
                 /* continue if we are not examining the correct device */
@@ -166,7 +167,7 @@ bool updateDeviceList(usbDeviceList *list)
                 {
                     int busIndex;
                     count++;
-                    
+
                     /* couldn't find the bus index as a number anywhere */
                     busIndex = atoi(bus->dirname);
 
@@ -212,6 +213,8 @@ bool updateDeviceList(usbDeviceList *list)
                         /* open a handle to the usb device */
                         if ((newDev->device = usb_open(dev)) == NULL)
                             setError(newDev, "Failed to open usb device");
+                        else if (usb_set_configuration(newDev->device, 1) < 0)
+                            setError(newDev, "Failed to set device configuration");
                         else if (! dev->config)
                             setError(newDev, "Failed to receive device descriptors");
                         /* claim the interface */
@@ -232,7 +235,7 @@ bool updateDeviceList(usbDeviceList *list)
                                        "updateDeviceList failed", newDev);
                             return false;
                         }
-                        else
+                        else if (list->newDev != NULL)
                             list->newDev(newDev);
                     }
                 }

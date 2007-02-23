@@ -5,9 +5,9 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
-#include "iguanaIR.h"
 
 #define NO_TERMINATOR -1
 

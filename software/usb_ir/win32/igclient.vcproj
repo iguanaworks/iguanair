@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="usb_ir"
-	ProjectGUID="{40D29588-CD68-4B28-AA2C-DB857C1D6E63}"
+	Name="igclient"
+	ProjectGUID="{35CB37C4-0658-4496-9BB8-95FD00DF6002}"
+	RootNamespace="igclient"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -14,31 +15,31 @@
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="2"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;libusb-win32;popt"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;IGUANAIR_EXPORTS"
+				AdditionalIncludeDirectories="..;popt"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libusb.lib Ws2_32.lib"
-				OutputFile="$(OutDir)/usb_ir.dll"
+				AdditionalDependencies="libpopt.lib"
+				OutputFile="$(OutDir)/igclient.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="libusb-win32"
+				AdditionalLibraryDirectories="popt"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/usb_ir.pdb"
-				SubSystem="2"
+				ProgramDatabaseFile="$(OutDir)/igclient.pdb"
+				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -69,7 +70,8 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;IGUANAIR_EXPORTS"
+				AdditionalIncludeDirectories="..;popt"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -79,10 +81,12 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/usb_ir.dll"
+				AdditionalDependencies="libpopt.lib"
+				OutputFile="$(OutDir)/igclient.exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="popt"
 				GenerateDebugInformation="TRUE"
-				SubSystem="2"
+				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"/>
@@ -118,11 +122,29 @@
 			<File
 				RelativePath=".\base.c">
 			</File>
+			<File
+				RelativePath="..\client.c">
+			</File>
+			<File
+				RelativePath="..\list.c">
+			</File>
+			<File
+				RelativePath="..\support.c">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			<File
+				RelativePath="..\base.h">
+			</File>
+			<File
+				RelativePath="..\list.h">
+			</File>
+			<File
+				RelativePath="..\support.h">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

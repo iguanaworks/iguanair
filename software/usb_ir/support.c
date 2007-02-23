@@ -17,9 +17,9 @@
 #include <stdarg.h>
 #include <time.h>
 
+#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
-#include "iguanaIR.h"
 
 static char *msgPrefixes[] =
 {
@@ -35,7 +35,7 @@ static char *msgPrefixes[] =
 
 /* logging variables */
 static int currentLevel = LOG_NORMAL;
-static FILE *log = NULL;
+static FILE *logFile = NULL;
 
 /* Exit the application with proper cleanup. */
 void dieCleanly(int level)
@@ -55,15 +55,15 @@ void changeLogLevel(int difference)
 
 void openLog(const char *filename)
 {
-    if (log != NULL)
-        fclose(log);
-    log = NULL;
+    if (logFile != NULL)
+        fclose(logFile);
+    logFile = NULL;
 
     if (strcmp(filename, "-") != 0)
     {
-        log = fopen(filename, "a");
-        if (log != NULL)
-            setlinebuf(log);
+        logFile = fopen(filename, "a");
+        if (logFile != NULL)
+            setlinebuf(logFile);
     }
 }
 
@@ -75,8 +75,8 @@ static FILE* pickStream(int level)
         level == LOG_ALWAYS)
     {
         /* if logfile is open print to it instead */
-        if (log != NULL)
-            out = log;
+        if (logFile != NULL)
+            out = logFile;
         else if (level <= LOG_WARN)
             out = stderr;
         else
@@ -105,15 +105,15 @@ int message(int level, char *format, ...)
         char *buffer;
         if (level != LOG_ALWAYS && level != LOG_NORMAL)
         {
-            char when[21];
+            char when[22];
             time_t now;
             struct tm *nowTm;
 
             /* figure out the timestamp */
             now = time(NULL);
             nowTm = localtime(&now);
-            strftime(when, 21, "%b %d %H:%M:%S %Y", nowTm);
-            when[20] = '\0';
+            strftime(when, 22, "%b %d %H:%M:%S %Y ", nowTm);
+            when[21] = '\0';
 
             buffer = (char*)malloc(strlen(when) + \
                                    strlen(msgPrefixes[level]) + \

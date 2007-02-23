@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="usb_ir"
-	ProjectGUID="{40D29588-CD68-4B28-AA2C-DB857C1D6E63}"
+	Name="iguanaIR"
+	ProjectGUID="{B2CA1625-68B8-47B6-A3FA-71D0B635672E}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -19,13 +19,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;libusb-win32;popt"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;IGUANAIR_EXPORTS"
+				AdditionalIncludeDirectories="..;libusb-win32"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
 			<Tool
@@ -33,12 +33,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libusb.lib Ws2_32.lib"
-				OutputFile="$(OutDir)/usb_ir.dll"
+				OutputFile="$(OutDir)/iguanaIR.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="libusb-win32"
+				AdditionalLibraryDirectories="&quot;libusb-win32&quot;"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/usb_ir.pdb"
+				ProgramDatabaseFile="$(OutDir)/iguanaIR.pdb"
 				SubSystem="2"
+				ImportLibrary="$(OutDir)/iguanaIR.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -65,26 +66,30 @@
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;IGUANAIR_EXPORTS"
-				RuntimeLibrary="4"
+				AdditionalIncludeDirectories="..;libusb-win32"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
+				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/usb_ir.dll"
+				AdditionalDependencies="libusb.lib Ws2_32.lib"
+				OutputFile="$(OutDir)/iguanaIR.dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;libusb-win32&quot;"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary="$(OutDir)/iguanaIR.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -118,11 +123,62 @@
 			<File
 				RelativePath=".\base.c">
 			</File>
+			<File
+				RelativePath="..\dataPackets.c">
+			</File>
+			<File
+				RelativePath="..\iguanadev.c">
+			</File>
+			<File
+				RelativePath="..\iguanaIR.c">
+			</File>
+			<File
+				RelativePath="..\list.c">
+			</File>
+			<File
+				RelativePath=".\pipes.c">
+			</File>
+			<File
+				RelativePath="..\protocol.c">
+			</File>
+			<File
+				RelativePath="..\support.c">
+			</File>
+			<File
+				RelativePath="..\usbclient.c">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			<File
+				RelativePath="..\base.h">
+			</File>
+			<File
+				RelativePath="..\dataPackets.h">
+			</File>
+			<File
+				RelativePath="..\iguanadev.h">
+			</File>
+			<File
+				RelativePath="..\iguanaIR.h">
+			</File>
+			<File
+				RelativePath="..\list.h">
+			</File>
+			<File
+				RelativePath="..\pipes.h">
+			</File>
+			<File
+				RelativePath="..\protocol.h">
+			</File>
+			<File
+				RelativePath="..\support.h">
+			</File>
+			<File
+				RelativePath="..\usbclient.h">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

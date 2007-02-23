@@ -14,10 +14,19 @@
 
 /* hate including headers from headers, but we need a bool */
 #ifdef WIN32
-  #define PIPE_PTR HANDLE
+    #ifdef IGUANAIR_EXPORTS
+        #define IGUANAIR_API __declspec(dllexport)
+    #else
+        #define IGUANAIR_API __declspec(dllimport)
+    #endif
+
+    #define PIPE_PTR HANDLE
+    #define INVALID_PIPE NULL
 #else
-  #define PIPE_PTR int
-  #include "stdbool.h"
+    #include "stdbool.h"
+
+    #define PIPE_PTR int
+    #define INVALID_PIPE -1
 #endif
 
 /* NOTE: all IR timings will be in microseconds and packed in uint32_t
@@ -64,26 +73,30 @@ enum
 };
 
 /* manage a connection to the server */
-PIPE_PTR iguanaConnect(const char *name);
-void iguanaClose(PIPE_PTR connection);
+IGUANAIR_API PIPE_PTR iguanaConnect(const char *name);
+IGUANAIR_API void iguanaClose(PIPE_PTR connection);
 
 /* requests and responses are represented by opaque handles */
 typedef void* iguanaPacket;
-iguanaPacket iguanaCreateRequest(unsigned char code,
-                                 unsigned int dataLength, void *data);
-unsigned char* iguanaRemoveData(iguanaPacket pkt, unsigned int *dataLength);
-unsigned char iguanaCode(const iguanaPacket pkt);
-void iguanaFreePacket(iguanaPacket pkt);
+IGUANAIR_API iguanaPacket iguanaCreateRequest(unsigned char code,
+                                              unsigned int dataLength,
+                                              void *data);
+IGUANAIR_API unsigned char* iguanaRemoveData(iguanaPacket pkt,
+                                             unsigned int *dataLength);
+IGUANAIR_API unsigned char iguanaCode(const iguanaPacket pkt);
+IGUANAIR_API void iguanaFreePacket(iguanaPacket pkt);
 
 /* for communication with the server */
-bool iguanaWriteRequest(const iguanaPacket request, PIPE_PTR connection);
-iguanaPacket iguanaReadResponse(PIPE_PTR connection, unsigned int timeout);
-bool iguanaResponseIsError(const iguanaPacket response);
+IGUANAIR_API bool iguanaWriteRequest(const iguanaPacket request,
+                                     PIPE_PTR connection);
+IGUANAIR_API iguanaPacket iguanaReadResponse(PIPE_PTR connection,
+                                             unsigned int timeout);
+IGUANAIR_API bool iguanaResponseIsError(const iguanaPacket response);
 
-int iguanaReadPulseFile(const char *filename, void **pulses);
-int iguanaReadBlockFile(const char *filename, void **data);
-int iguanaPinSpecToData(unsigned int value, void **data);
-unsigned char iguanaDataToPinSpec(const void *data);
+IGUANAIR_API int iguanaReadPulseFile(const char *filename, void **pulses);
+IGUANAIR_API int iguanaReadBlockFile(const char *filename, void **data);
+IGUANAIR_API int iguanaPinSpecToData(unsigned int value, void **data);
+IGUANAIR_API unsigned char iguanaDataToPinSpec(const void *data);
 
 /* The following enum is for configuring various settings for GPIO
  * pins.  An explanation of each value, from low to high bit, is

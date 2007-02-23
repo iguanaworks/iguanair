@@ -1,6 +1,16 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usb_ir", "usb_ir.vcproj", "{40D29588-CD68-4B28-AA2C-DB857C1D6E63}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igclient", "igclient.vcproj", "{35CB37C4-0658-4496-9BB8-95FD00DF6002}"
 	ProjectSection(ProjectDependencies) = postProject
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E} = {B2CA1625-68B8-47B6-A3FA-71D0B635672E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iguanaIR", "iguanaIR.vcproj", "{B2CA1625-68B8-47B6-A3FA-71D0B635672E}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igdaemon", "igdaemon.vcproj", "{84C520CA-58A1-4E16-8141-91CFD166959D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E} = {B2CA1625-68B8-47B6-A3FA-71D0B635672E}
 	EndProjectSection
 EndProject
 Global
@@ -9,10 +19,18 @@ Global
 		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{40D29588-CD68-4B28-AA2C-DB857C1D6E63}.Debug.ActiveCfg = Debug|Win32
-		{40D29588-CD68-4B28-AA2C-DB857C1D6E63}.Debug.Build.0 = Debug|Win32
-		{40D29588-CD68-4B28-AA2C-DB857C1D6E63}.Release.ActiveCfg = Release|Win32
-		{40D29588-CD68-4B28-AA2C-DB857C1D6E63}.Release.Build.0 = Release|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Debug.ActiveCfg = Debug|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Debug.Build.0 = Debug|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Release.ActiveCfg = Release|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Release.Build.0 = Release|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Debug.ActiveCfg = Debug|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Debug.Build.0 = Debug|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Release.ActiveCfg = Release|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Release.Build.0 = Release|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug.ActiveCfg = Debug|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug.Build.0 = Debug|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release.ActiveCfg = Release|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

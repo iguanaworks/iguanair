@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <time.h>
 
+#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
 #include "dataPackets.h"

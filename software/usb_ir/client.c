@@ -605,6 +605,8 @@ static void enqueueTaskById(unsigned short code, const char *arg)
         message(LOG_FATAL, "enqueueTaskById failed on code %d\n", code);
 }
 
+
+
 static struct poptOption options[] =
 {
     /* general options */
@@ -646,8 +648,9 @@ static struct poptOption options[] =
     { "get-id", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETID, "Fetch the unique id from the USB device.", NULL },
     { "set-id", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETID, "Set the unique id from the USB device.", NULL },
 
-    POPT_AUTOHELP
-    POPT_TABLEEND
+//    POPT_AUTOHELP
+//{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, NULL, 0, "Help options:", NULL },
+POPT_TABLEEND
 };
 
 static void exitOnOptError(poptContext poptCon, char *msg)
@@ -660,8 +663,11 @@ static void exitOnOptError(poptContext poptCon, char *msg)
 int main(int argc, const char **argv)
 {
     const char **leftOvers, *device = "0";
-    int x = 0, retval = 1, conn = -1;
+    int x = 0, retval = 1;
+    PIPE_PTR conn = INVALID_PIPE;
     poptContext poptCon;
+
+//    poptHelpOptions
 
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)

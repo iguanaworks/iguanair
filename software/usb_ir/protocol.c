@@ -15,8 +15,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "pipes.h"
 #include "iguanaIR.h"
+#include "pipes.h"
 #include "support.h"
 #include "usbclient.h"
 #include "dataPackets.h"

@@ -2,18 +2,12 @@
 #define _PIPES_
 
 #ifdef WIN32
-  #define PIPE_PTR HANDLE
-  #define INVALID_PIPE NULL
-
   bool createPipePair(PIPE_PTR *pair);
   int readPipe(PIPE_PTR fd, void *buf, size_t count);
   int writePipe(PIPE_PTR fd, const void *buf, size_t count);
   int closePipe(PIPE_PTR fd);
   PIPE_PTR acceptClient(PIPE_PTR *server);
 #else
-  #define PIPE_PTR int
-  #define INVALID_PIPE -1
-
   #include <sys/un.h>
   #include <sys/socket.h>
 
