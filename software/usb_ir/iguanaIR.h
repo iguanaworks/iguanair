@@ -13,8 +13,11 @@
 #define _IGUANA_IR_
 
 /* hate including headers from headers, but we need a bool */
-#ifndef WIN32
-    #include "stdbool.h"
+#ifdef WIN32
+  #define PIPE_PTR HANDLE
+#else
+  #define PIPE_PTR int
+  #include "stdbool.h"
 #endif
 
 /* NOTE: all IR timings will be in microseconds and packed in uint32_t

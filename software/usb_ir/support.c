@@ -15,14 +15,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
-#include <sys/stat.h>
 #include <time.h>
 
 #include "pipes.h"
 #include "support.h"
 #include "iguanaIR.h"
-
-#define NO_TERMINATOR -1
 
 static char *msgPrefixes[] =
 {

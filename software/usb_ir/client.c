@@ -243,7 +243,7 @@ static void setSetting(unsigned int setting, const char *pins,
 
 static void receiveResponse(int conn, igtask *cmd, int timeout)
 {
-    struct timespec end;
+    uint64_t end;
 
     /* read the start and add the timeout */
     end = microsSinceX() + timeout * 1000;

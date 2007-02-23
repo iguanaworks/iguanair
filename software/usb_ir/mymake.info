@@ -4,7 +4,7 @@ SOBJS=iguanaIR
 PYSWIG=iguanaIR
 EXECS=igdaemon igclient
 
-iguanaIR=iguanaIR.o support.o list.o dataPackets.o
+iguanaIR=iguanaIR.o support.o list.o dataPackets.o pipes.o base.o
 igdaemon=daemon.o iguanadev.o usbclient.o protocol.o
 igclient=client.o
 
