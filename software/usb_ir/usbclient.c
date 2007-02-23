@@ -213,8 +213,10 @@ bool updateDeviceList(usbDeviceList *list)
                         /* open a handle to the usb device */
                         if ((newDev->device = usb_open(dev)) == NULL)
                             setError(newDev, "Failed to open usb device");
+/*
                         else if (usb_set_configuration(newDev->device, 1) < 0)
                             setError(newDev, "Failed to set device configuration");
+*/
                         else if (! dev->config)
                             setError(newDev, "Failed to receive device descriptors");
                         /* claim the interface */

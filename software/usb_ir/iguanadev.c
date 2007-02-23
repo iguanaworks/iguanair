@@ -497,14 +497,14 @@ void startWorker(usbDevice *dev)
             if (! findDeviceEndpoints(idev))
                 message(LOG_ERROR,
                         "Failed find device endpoints for %d\n", dev->id);
-            else if (startThread(&idev->reader,
-                                 (void *(*)(void*))handleIncomingPackets,
-                                 idev))
+            else if (! startThread(&idev->reader,
+                                   (void *(*)(void*))handleIncomingPackets,
+                                   idev))
                 message(LOG_ERROR,
                         "Failed to create reader thread %d\n", dev->id);
             else
             {
-                if (startThread(&idev->worker, workLoop, idev) != 0)
+                if (! startThread(&idev->worker, workLoop, idev) != 0)
                     message(LOG_ERROR,
                             "Failed to create worker thread %d\n", dev->id);
                 else

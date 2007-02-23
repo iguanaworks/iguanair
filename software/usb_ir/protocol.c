@@ -39,8 +39,8 @@ enum
     IG_DEV_ANY_CODE   = 0x00,
 
     /* constants for packetType table */
-    NO_PAYLOAD  = -1,
-    ANY_PAYLOAD = 0,
+    NO_PAYLOAD  = 0xFF,
+    ANY_PAYLOAD = 0x00,
 
     /* terminate the payload with this */
     CTL_ENDDATA    = 0x00,
@@ -442,7 +442,8 @@ void handleIncomingPackets(iguanaDev *idev)
 
                     /* if the type demands more data then read it here */
                     type = findTypeEntry(current->code, idev->version);
-                    if (type->inData > current->dataLen)
+                    if (type->inData != NO_PAYLOAD &&
+                        type->inData > current->dataLen)
                     {
                         current->data = (unsigned char*)malloc(type->inData);
                         memcpy(current->data, dataStart, current->dataLen);
@@ -452,6 +453,7 @@ void handleIncomingPackets(iguanaDev *idev)
                             length = interruptRecv(idev->usbDev,
                                                    buffer,
                                                    idev->maxPacketSize);
+/* TODO: timeouts should never happen, but can cause a CRASH */
                             memcpy(current->data + current->dataLen,
                                    buffer, length);
                             current->dataLen += length;
