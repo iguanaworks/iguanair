@@ -4,15 +4,20 @@ SOBJS=iguanaIR
 PYSWIG=iguanaIR
 EXECS=igdaemon igclient
 
-iguanaIR=iguanaIR.o support.o list.o dataPackets.o pipes.o base.o
-igdaemon=daemon.o iguanadev.o usbclient.o protocol.o
-igclient=client.o
+iguanaIR=iguanaIR.o support.o dataPackets.o pipes.o base.o
+igdaemon=daemon.o igdaemon.o usbclient.o protocol.o list.o 
+#         pipes.o dataPackets.o support.o base.o
+igclient=client.o list.o 
+#         base.o support.o
 
 CPPFLAGS=-D_DEBUG
 CFLAGS=-Wall -g -pedantic
 
+iguanaIR.o-CPPFLAGS=-DIGUANAIR_EXPORTS
 iguanaIR-LDFLAGS=-lrt
+
 igclient-LDFLAGS=-L. -liguanaIR
+
 igdaemon-LDFLAGS=-lusb -lpthread -L. -liguanaIR
 
 LDFLAGS=-lpopt

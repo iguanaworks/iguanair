@@ -10,27 +10,26 @@
  * Distribute under the GPL version 2.
  * See COPYING for license details.
  */
-#include "base.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
+
+#include <popt.h>
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <popt.h>
 
 #include "iguanaIR.h"
+#include "base.h"
+#include "usbclient.h"
 #include "pipes.h"
 #include "support.h"
-#include "usbclient.h"
-#include "iguanadev.h"
+#include "protocol.h"
+#include "igdaemon.h"
 
 /* local variables */
 static usbId ids[] = {
     {0x1781, 0x0938}, /* iguanaworks USB transceiver */
     END_OF_USB_ID_LIST
 };
+static mode_t devMode = 0777;
 static PIPE_PTR commPipe[2];
 #ifdef LIBUSB_NO_THREADS
 static unsigned int recvTimeout = 100;
@@ -64,7 +63,7 @@ static void workLoop()
         message(LOG_ERROR, "failed to install SIGHUP handler.\n");
     else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         message(LOG_ERROR, "failed to install SIGPIPE handler.\n");
-    else if (createPipePair(commPipe) != 0)
+    else if (! createPipePair(commPipe))
         message(LOG_ERROR, "failed to open communication pipe.\n");
     else
     {
@@ -293,4 +292,186 @@ int main(int argc, const char **argv)
     }
 
     return retval;
+}
+
+static int startListening(const char *name, const char *alias)
+{
+    int sockfd, attempt = 0;
+    struct sockaddr_un server;
+    bool retry = true;
+
+    /* generate the server address */
+    server.sun_family = PF_UNIX;
+    socketName(name, server.sun_path, sizeof(server.sun_path));
+
+    while(retry)
+    {
+        retry = false;
+        attempt++;
+
+        sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
+        if (sockfd == -1)
+            message(LOG_ERROR, "failed to create server socket.\n");
+        else if (bind(sockfd, (struct sockaddr*)&server,
+                      sizeof(struct sockaddr_un)) == -1)
+        {
+            if (errno == EADDRINUSE)
+            {
+                /* check that the socket has something listening */
+                int testconn;
+                testconn = iguanaConnect(name);
+                if (testconn == -1 && errno == 111 && attempt == 1)
+                {
+                    /* if not, try unlinking the pipe and trying again */
+                    unlink(server.sun_path);
+                    retry = true;
+                }
+                else
+                {
+                    /* guess someone is there, whoops, close and complain */
+                    iguanaClose(testconn);
+                    message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
+                }
+            }
+            else
+                message(LOG_ERROR,
+                        "failed to bind server socket: %s\n", strerror(errno));
+        }
+        /* start listening */
+        else if (listen(sockfd, 5) == -1)
+            message(LOG_ERROR,
+                    "failed to put server socket in a listening state.\n");
+        /* set the proper permissions */
+        else if (chmod(server.sun_path, devMode) != 0)
+            message(LOG_ERROR,
+                    "failed to set permissions on the server socket.\n");
+        else
+        {
+            if (alias != NULL)
+            {
+                char path[PATH_MAX], *slash, *aliasCopy;
+                struct stat st;
+
+                aliasCopy = strdup(alias);
+                while(1)
+                {
+                    slash = strchr(aliasCopy, '/');
+                    if (slash == NULL)
+                        break;
+                    slash[0] = '|';
+                }
+                socketName(aliasCopy, path, PATH_MAX);
+                free(aliasCopy);
+
+                if (lstat(path, &st) == 0 &&
+                    S_ISLNK(st.st_mode))
+                    unlink(path);
+                symlink(name, path);
+            }
+
+            return sockfd;
+        }
+        close(sockfd);
+    }
+
+    return -1;
+}
+
+static void stopListening(int fd, const char *name, const char *alias)
+{
+    char path[PATH_MAX], ptr[PATH_MAX];
+    int length;
+
+    /* figure out the name */
+    socketName(name, path, PATH_MAX);
+
+    /* and nuke it */
+    unlink(path);
+    close(fd);
+
+    /* find the alias and nuke it if it is a link to the name */
+    if (alias != NULL)
+    {
+        socketName(alias, path, PATH_MAX);
+        length = readlink(path, ptr, PATH_MAX - 1);
+        if (length > 0)
+        {
+            ptr[length] = '\0';
+            if (strcmp(name, ptr) == 0)
+                unlink(path);
+        }
+    }
+}
+
+void listenToClients(char *name, char *alias, iguanaDev *idev,
+                     handleReaderFunc handleReader,
+                     clientConnectedFunc clientConnected,
+                     handleClientFunc handleClient)
+{
+    PIPE_PTR listener;
+
+    listener = startListening(name, alias);
+    if (listener == INVALID_PIPE)
+        message(LOG_ERROR, "Worker failed to start listening.\n");
+    else
+    {
+        fd_set fds, fdsin, fdserr;
+
+        FD_ZERO(&fdsin);
+        FD_ZERO(&fdserr);
+        while(true)
+        {
+            client *john;
+            int max;
+            FD_ZERO(&fds);
+
+            /* first check the listener and read pipe for error */
+            if (FD_ISSET(listener, &fdserr) ||
+                FD_ISSET(idev->readerPipe[READ], &fdserr))
+                break;
+
+            /* take care of messages from the reader */
+            if (FD_ISSET(idev->readerPipe[READ], &fds) &&
+                ! handleReader(idev))
+                break;
+            FD_SET(idev->readerPipe[READ], &fds);
+            max = idev->readerPipe[READ];
+
+            /* next handle incoming connections */
+            if (FD_ISSET(listener, &fdsin))
+                clientConnected(accept(listener, NULL, NULL), idev);
+            FD_SET(listener, &fds);
+            if (listener > max)
+                max = listener;
+
+            /* last check the clients */
+            for(john = (client*)idev->clientList.head; john != NULL;)
+            {
+                client *next;
+
+                next = (client*)john->header.next;
+
+                if ((! FD_ISSET(john->fd, &fdserr) &&
+                     ! FD_ISSET(john->fd, &fdsin)) ||
+                    handleClient(john))
+                {
+                    FD_SET(john->fd, &fds);
+                    if (john->fd > max)
+                        max = john->fd;
+                }
+
+                john = next;
+            }
+
+            /* wait until there is data ready */
+            fdsin = fdserr = fds;
+            if (select(max + 1, &fdsin, NULL, &fdserr, NULL) < 0)
+            {
+                message(LOG_ERROR, "select failed: %s\n", strerror(errno));
+                break;
+            }
+        }
+
+        stopListening(listener, name, alias);
+    }
 }

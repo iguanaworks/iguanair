@@ -21,7 +21,7 @@ typedef struct iguanaDev
 {
     /* used to pass data from the reader to the worker, closed to
      * notify worker to terminate */
-    PIPE_PTR readPipe[2];
+    PIPE_PTR readerPipe[2];
     PIPE_PTR responsePipe[2];
 
     /* maximum packet size for send and recv */

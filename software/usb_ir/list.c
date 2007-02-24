@@ -9,9 +9,10 @@
  * Distribute under the GPL version 2.
  * See COPYING for license details.
  */
-#include "base.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include "iguanaIR.h"
 #include "list.h"
 
 void initializeList(listHeader *list)

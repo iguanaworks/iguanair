@@ -10,17 +10,19 @@
  * See COPYING for license details.
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <errno.h>
+#include <signal.h>
 
-#include "base.h"
 #include "iguanaIR.h"
 #include "dataPackets.h"
-#include "list.h"
+#include "base.h"
 #include "protocol.h"
+#include "usbclient.h"
 #include "igdaemon.h"
 #include "support.h"
-#include "usbclient.h"
 #include "pipes.h"
 
 bool readLabels = true;
@@ -278,8 +280,7 @@ static bool handleReader(iguanaDev *idev)
     bool retval = false;
     char byte;
 
-    fprintf(stderr, "READING NOTIFICATION!!!\n");
-    switch(readPipe(idev->readPipe[READ], &byte, 1))
+    switch(readPipe(idev->readerPipe[READ], &byte, 1))
     {
     case -1:
         message(LOG_ERROR, "Error reading from readPipe.\n");
@@ -351,50 +352,8 @@ static void* workLoop(void *instance)
             alias = getID(idev);
 
         listenToClients(name, alias, idev,
-                        handleReader,
-                        clientConnected,
-                        handleClient);
+                        handleReader, clientConnected, handleClient);
     }
-#if 0
-        listener = startListening(name, alias);
-        if (listener == INVALID_PIPE)
-            message(LOG_ERROR, "Worker failed to start listening.\n");
-        else
-        {
-            bool done = false;
-            listHeader clientList;
-            fdSets fds;
-
-            initializeList(&clientList);
-
-
-            FD_ZERO(&fds.in);
-            FD_ZERO(&fds.err);
-            while(! done)
-            {
-                /* prepare the basics for the next select */
-                FD_ZERO(&fds.next);
-                fds.max = -1;
-                checkFD(listener, &fds);
-                checkFD(idev->readPipe[READ], &fds);
-
-                /* service each client and add them to the fds */
-                forEach(&clientList, handleClient, &fds);
-
-                /* wait until there is data ready */
-                done = true;
-                fds.err = fds.in = fds.next;
-                if (select(fds.max + 1, &fds.in, NULL, &fds.err, NULL) < 0)
-                    message(LOG_ERROR, "select failed: %s\n", strerror(errno));
-                /* watch for incoming clients and packets from usb */
-                else if (acceptNewClients(listener, &fds, &clientList, idev) &&
-                         handleReader(idev, &fds, &clientList))
-                    done = false;
-            }
-            stopListening(listener, name, alias);
-        }
-    }
-#endif
 
     /* release resources for reader and usb device */
     joinWithReader(idev);
@@ -427,7 +386,7 @@ void startWorker(usbDevice *dev)
 #ifdef LIBUSB_NO_THREADS
         InitializeCriticalSection(&idev->devLock);
 #endif
-        if (! createPipePair(idev->readPipe))
+        if (! createPipePair(idev->readerPipe))
             message(LOG_ERROR, "Failed to create readPipe for %d\n", dev->id);
         else if (! createPipePair(idev->responsePipe))
             message(LOG_ERROR,
@@ -475,20 +434,23 @@ bool reapAllChildren(usbDeviceList *list)
         THREAD_PTR child;
 
         /* NOTE: using 2*recv timeout to allow readers to exit. */
-        result = readBytes(list->childPipe[READ], 2 * list->recvTimeout,
-                           (char*)&child, sizeof(THREAD_PTR));
+        result = readPipeTimed(list->childPipe[READ],
+                               (char*)&child, sizeof(THREAD_PTR),
+                               2 * list->recvTimeout);
         /* no one ready */
         if (result == 0)
             break;
         /* try to join with the worker thread */
-        else if (result != sizeof(THREAD_PTR) ||
-                 joinThread(child, &exitval) != 0)
+        else if (result != sizeof(THREAD_PTR))
         {
             message(LOG_ERROR, "failed while reaping worker thread.\n");
             return false;
         }
         else
+        {
+            joinThread(child, &exitval);
             message(LOG_DEBUG, "Reaped child: %p\n", child);
+        }
     }
 
     return true;

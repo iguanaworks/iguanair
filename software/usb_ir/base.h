@@ -24,12 +24,11 @@
     /* thread defines */
     #define THREAD_PTR HANDLE
     bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
-    bool joinThread(THREAD_PTR *handle, void **exitVal);
+    void joinThread(THREAD_PTR *handle, void **exitVal);
 
     /* lock defines */
     #define LOCK_PTR CRITICAL_SECTION
 #else
-    #include <stdbool.h>
     #include <stdint.h>
     #include <unistd.h>
     #include <pthread.h>
@@ -37,7 +36,7 @@
     /* thread defines */
     #define THREAD_PTR pthread_t
     #define startThread(a, b, c) (pthread_create((a), NULL, (b), (c)) == 0)
-    #define joinThread(a,b) (pthread_join((a), (b)) == 0)
+    #define joinThread(a,b) (void)pthread_join((a), (b))
 
     /* lock defines */
     #define LOCK_PTR pthread_mutex_t

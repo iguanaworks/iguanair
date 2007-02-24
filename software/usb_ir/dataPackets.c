@@ -36,7 +36,7 @@ bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
     uint64_t then, now;
 
     then = microsSinceX();
-    result = readBytes(fd, timeout, (char*)packet, sizeof(dataPacket));
+    result = readPipeTimed(fd, (char*)packet, sizeof(dataPacket), timeout);
     if (result == sizeof(dataPacket))
     {
         if (packet->dataLen <= 0)
@@ -65,9 +65,9 @@ bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
 #endif
                 if (timePassed <= timeout)
                 {
-                    result = readBytes(fd, timeout - timePassed,
-                                        (char*)packet->data,
-                                        packet->dataLen);
+                    result = readPipeTimed(fd, (char*)packet->data,
+                                           packet->dataLen,
+                                           timeout - timePassed);
                     if (result != packet->dataLen)
                     {
                         free(packet->data);

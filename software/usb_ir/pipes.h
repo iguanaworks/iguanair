@@ -13,7 +13,7 @@
   #include <sys/un.h>
   #include <sys/socket.h>
 
-  #define createPipePair pipe
+#define createPipePair(a) (pipe(a) == 0)
   #define readPipe read
   #define writePipe write
   #define closePipe close
@@ -26,9 +26,8 @@
 void socketName(const char *name, char *buffer, unsigned int length);
 PIPE_PTR connectToPipe(const char *name);
 
-// readPipeTimed
-int readBytes(PIPE_PTR fd, int timeout,
-              char *buffer, int size);
+/* reads with timeouts */
+int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
 
 /* used for notification of packet arrival */
 int notified(PIPE_PTR fd, int timeout);

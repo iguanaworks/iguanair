@@ -32,7 +32,11 @@
 #else
     #include "stdbool.h"
 
-    #define IGUANAIR_API
+    #ifdef IGUANAIR_EXPORTS
+        #define IGUANAIR_API __attribute__((visibility("default")))
+    #else
+        #define IGUANAIR_API
+    #endif
 
     #define PIPE_PTR int
     #define INVALID_PIPE -1

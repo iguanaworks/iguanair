@@ -114,8 +114,7 @@ static void queueDataPacket(iguanaDev *idev, dataPacket *current)
     if (current->code & IG_DEV_FROM_MASK)
     {
         insertItem(&idev->recvList, NULL, (itemHeader*)current);
-    fprintf(stderr, "SENDING NOTIFICATION!!!\n");
-        if (! notify(idev->readPipe[WRITE]))
+        if (! notify(idev->readerPipe[WRITE]))
             message(LOG_ERROR, "Failed to signal primary thread.\n");        
     }
     else
@@ -191,9 +190,8 @@ static packetType* findTypeEntry(unsigned char code, uint16_t version)
 
 static bool payloadMatch(unsigned char spec, unsigned char length)
 {
-    return ((spec == NO_PAYLOAD  && length == 0) ||
-            (spec == ANY_PAYLOAD && length > 0) ||
-            (spec >= 0 && spec == length));
+    return ((spec == NO_PAYLOAD && length == 0) ||
+            spec == ANY_PAYLOAD || spec == length);
 }
 
 bool deviceTransaction(iguanaDev *idev,      /* required */
@@ -491,7 +489,7 @@ void handleIncomingPackets(iguanaDev *idev)
         }
 
     /* signal worker thread that the reader is exiting */
-    closePipe(idev->readPipe[WRITE]);
+    closePipe(idev->readerPipe[WRITE]);
 }
 
 /* set dev_ep_in and dev_ep_out to the in/out endpoints of the given
