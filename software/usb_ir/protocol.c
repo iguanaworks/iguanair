@@ -114,6 +114,7 @@ static void queueDataPacket(iguanaDev *idev, dataPacket *current)
     if (current->code & IG_DEV_FROM_MASK)
     {
         insertItem(&idev->recvList, NULL, (itemHeader*)current);
+    fprintf(stderr, "SENDING NOTIFICATION!!!\n");
         if (! notify(idev->readPipe[WRITE]))
             message(LOG_ERROR, "Failed to signal primary thread.\n");        
     }
@@ -188,7 +189,7 @@ static packetType* findTypeEntry(unsigned char code, uint16_t version)
     return NULL;
 }
 
-static bool payloadMatch(char spec, unsigned char length)
+static bool payloadMatch(unsigned char spec, unsigned char length)
 {
     return ((spec == NO_PAYLOAD  && length == 0) ||
             (spec == ANY_PAYLOAD && length > 0) ||
@@ -285,7 +286,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
             amount = notified(idev->responsePipe[READ],
                               idev->usbDev->list->sendTimeout);
             if (amount < 0)
-                message(LOG_ERROR, "failed to read control ack\n");
+                message(LOG_ERROR, "Failed to read control ack\n");
             else if (amount > 0)
             {
                 dataPacket *pos;
@@ -327,7 +328,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
 #ifdef LIBUSB_NO_THREADS
         /* certain errors may result in unlocking here */
         if (!unlocked)
-            pthread_mutex_unlock(&idev->devLock);
+            LeaveCriticalSection(&idev->devLock);
 #endif
     }
 
@@ -375,8 +376,8 @@ void handleIncomingPackets(iguanaDev *idev)
              * transaction because otherwise we can spin and keep
              * getting the lock before the writer is scheduled */
             if (idev->needToWrite)
-                sched_yield();
-            pthread_mutex_lock(&idev->devLock);
+                SwitchToThread();
+            EnterCriticalSection(&idev->devLock);
 #endif
 
             /* wait for data to arrive */
@@ -385,7 +386,7 @@ void handleIncomingPackets(iguanaDev *idev)
             if (length < 0)
             {
                 /* loop on timeouts */
-                if (errno == EAGAIN)
+                if (errno == EAGAIN || errno == ETIMEDOUT)
                     length = 0;
                 /* (somewhat) quietly clean up on disconnect */
                 else if (errno == ENODEV)
@@ -485,7 +486,7 @@ void handleIncomingPackets(iguanaDev *idev)
 
 #ifdef LIBUSB_NO_THREADS
             /* unlock the device between reads */
-            pthread_mutex_unlock(&idev->devLock);
+            LeaveCriticalSection(&idev->devLock);
 #endif
         }
 

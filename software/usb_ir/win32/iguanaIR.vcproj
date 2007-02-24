@@ -23,11 +23,11 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -72,7 +72,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..;libusb-win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
@@ -127,9 +127,6 @@
 				RelativePath="..\dataPackets.c">
 			</File>
 			<File
-				RelativePath="..\iguanadev.c">
-			</File>
-			<File
 				RelativePath="..\iguanaIR.c">
 			</File>
 			<File
@@ -139,13 +136,7 @@
 				RelativePath=".\pipes.c">
 			</File>
 			<File
-				RelativePath="..\protocol.c">
-			</File>
-			<File
 				RelativePath="..\support.c">
-			</File>
-			<File
-				RelativePath="..\usbclient.c">
 			</File>
 		</Filter>
 		<Filter
@@ -159,9 +150,6 @@
 				RelativePath="..\dataPackets.h">
 			</File>
 			<File
-				RelativePath="..\iguanadev.h">
-			</File>
-			<File
 				RelativePath="..\iguanaIR.h">
 			</File>
 			<File
@@ -171,13 +159,7 @@
 				RelativePath="..\pipes.h">
 			</File>
 			<File
-				RelativePath="..\protocol.h">
-			</File>
-			<File
 				RelativePath="..\support.h">
-			</File>
-			<File
-				RelativePath="..\usbclient.h">
 			</File>
 		</Filter>
 	</Files>

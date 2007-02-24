@@ -12,7 +12,6 @@
 #define NO_TERMINATOR -1
 
 /* variables concerning the communication pipes */
-static char *devRoot = "/dev/iguanaIR";
 static mode_t devMode = 0777;
 
 void socketName(const char *name, char *buffer, unsigned int length)
@@ -24,9 +23,9 @@ void socketName(const char *name, char *buffer, unsigned int length)
     /* left in case there is some daemon functionality that does not
      * fit well with simple signalling */
     else if (name == NULL)
-        snprintf(buffer, length, "%s/ctl", devRoot);
+        snprintf(buffer, length, "%s/ctl", IGSOCK_NAME);
     else
-        snprintf(buffer, length, "%s/%s", devRoot, name);
+        snprintf(buffer, length, "%s/%s", IGSOCK_NAME, name);
 }
 
 int startListening(const char *name, const char *alias)
@@ -123,7 +122,7 @@ void stopListening(int fd, const char *name, const char *alias)
     /* and nuke it */
     unlink(path);
     close(fd);
- 
+
     /* find the alias and nuke it if it is a link to the name */
     if (alias != NULL)
     {
@@ -256,8 +255,7 @@ int readBytes(PIPE_PTR fd, int timeout,
 int notified(PIPE_PTR fd, int timeout)
 {
     char byte;
-    return readAnyDataBlock(&fd, 1, timeout, NO_TERMINATOR,
-                            NULL, &byte, 1);
+    return readBytes(fd, timeout, &byte, 1);
 }
 
 bool notify(PIPE_PTR fd)
@@ -284,3 +282,31 @@ int checkFD(PIPE_PTR fd, fdSets *fds)
 
     return retval;
 }
+
+
+
+bool acceptNewClients(PIPE_PTR listener, fdSets *fds, acceptedFunc accepted, iguanaDev *idev)
+{
+    bool retval = false;
+    client *newClient;
+
+    switch(checkFD(listener, fds))
+    {
+    /* quit on listener errors */
+    case -1:
+        message(LOG_ERROR, "error on client listener socket.\n");
+        break;
+
+    case 0:
+        retval = true;
+        break;
+
+    /* add new clients to the list */
+    case 1:
+        accepted(accept(listener, NULL, NULL), idev)
+        break;
+    }
+
+    return retval;
+}
+

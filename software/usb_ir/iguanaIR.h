@@ -14,6 +14,13 @@
 
 /* hate including headers from headers, but we need a bool */
 #ifdef WIN32
+    typedef int bool;
+    enum
+    {
+        false,
+        true
+    };
+
     #ifdef IGUANAIR_EXPORTS
         #define IGUANAIR_API __declspec(dllexport)
     #else

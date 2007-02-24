@@ -1,14 +1,21 @@
-#include "base.h"
 #include <stdio.h>
+
+#include "base.h"
+#include "iguanaIR.h"
 
 bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg)
 {
-    return false;
+    *handle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)target, arg, 0, NULL);
+    return *handle != NULL;
 }
 
 bool joinThread(THREAD_PTR *handle, void **exitVal)
 {
-    return false;
+    /* wait for the thread to exit */
+    WaitForSingleObject(handle, INFINITE);
+    GetExitCodeThread(handle, (DWORD*)exitVal);
+    CloseHandle(handle);
+    return true;
 }
 
 uint64_t microsSinceX()

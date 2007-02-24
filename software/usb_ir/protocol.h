@@ -47,6 +47,9 @@ typedef struct iguanaDev
     /* need to know what protocol version to support. */
     uint16_t version;
 
+    /* might as well keep the list of clients here */
+    listHeader clientList;
+
 #ifdef LIBUSB_NO_THREADS
     /* if necessary lock access to the underlying usb device */
     LOCK_PTR devLock;

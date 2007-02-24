@@ -20,14 +20,14 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;libusb-win32"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;LIBUSB_NO_THREADS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -69,8 +69,9 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				RuntimeLibrary="4"
+				AdditionalIncludeDirectories="..;libusb-win32"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;LIBUSB_NO_THREADS"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
@@ -79,6 +80,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib libusb.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"
@@ -116,10 +118,22 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
+				RelativePath=".\base.c">
+			</File>
+			<File
+				RelativePath="..\dataPackets.c">
+			</File>
+			<File
+				RelativePath="..\iguanadev.c">
+			</File>
+			<File
 				RelativePath="..\list.c">
 			</File>
 			<File
-				RelativePath="..\pipes.c">
+				RelativePath=".\pipes.c">
+			</File>
+			<File
+				RelativePath="..\protocol.c">
 			</File>
 			<File
 				RelativePath=".\service.c">
@@ -139,10 +153,22 @@
 				RelativePath="..\base.h">
 			</File>
 			<File
+				RelativePath="..\dataPackets.h">
+			</File>
+			<File
+				RelativePath="..\igdaemon.h">
+			</File>
+			<File
+				RelativePath="..\iguanadev.h">
+			</File>
+			<File
 				RelativePath="..\list.h">
 			</File>
 			<File
 				RelativePath="..\pipes.h">
+			</File>
+			<File
+				RelativePath="..\protocol.h">
 			</File>
 			<File
 				RelativePath="..\support.h">

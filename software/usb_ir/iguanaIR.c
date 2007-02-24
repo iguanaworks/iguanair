@@ -238,8 +238,8 @@ int iguanaPinSpecToData(unsigned int value, void **data)
     *data = malloc(2);
     if (data != NULL)
     {
-        ((char*)*data)[0] = value & 0x0F;
-        ((char*)*data)[1] = (value & 0xF0) >> 4;
+        ((char*)*data)[0] = (char)(value & 0x0F);
+        ((char*)*data)[1] = (char)((value & 0xF0) >> 4);
         retval = 2;
     }
 

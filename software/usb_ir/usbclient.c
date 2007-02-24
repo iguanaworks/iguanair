@@ -60,7 +60,13 @@ int interruptRecv(usbDevice *handle, void *buffer, int bufSize)
                                 buffer, bufSize,
                                 handle->list->recvTimeout);
     if (retval < 0)
+    {
         setError(handle, "Failed to read (interrupt end point)");
+#ifdef WIN32
+        /* windows is not setting errno, and is instead returning the error */
+        errno = -retval;
+#endif
+    }
     else
     {
         message(LOG_DEBUG2, "i");
@@ -119,7 +125,7 @@ bool initDeviceList(usbDeviceList *list, usbId *ids,
     bool retval = false;
 
     memset(list, 0, sizeof(usbDeviceList));
-    if (createPipePair(list->childPipe) == 0)
+    if (createPipePair(list->childPipe))
     {
         list->ids = ids;
         list->recvTimeout = recvTimeout;

@@ -13,6 +13,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igdaemon", "igdaemon.vcproj
 		{B2CA1625-68B8-47B6-A3FA-71D0B635672E} = {B2CA1625-68B8-47B6-A3FA-71D0B635672E}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "service", "service\service.vcproj", "{76A0A001-205D-4F3C-B1C4-53ED481F68F5}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -31,6 +35,10 @@ Global
 		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug.Build.0 = Debug|Win32
 		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release.ActiveCfg = Release|Win32
 		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release.Build.0 = Release|Win32
+		{76A0A001-205D-4F3C-B1C4-53ED481F68F5}.Debug.ActiveCfg = Debug|Win32
+		{76A0A001-205D-4F3C-B1C4-53ED481F68F5}.Debug.Build.0 = Debug|Win32
+		{76A0A001-205D-4F3C-B1C4-53ED481F68F5}.Release.ActiveCfg = Release|Win32
+		{76A0A001-205D-4F3C-B1C4-53ED481F68F5}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

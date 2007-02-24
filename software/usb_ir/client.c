@@ -241,7 +241,7 @@ static void setSetting(unsigned int setting, const char *pins,
     }
 }
 
-static void receiveResponse(int conn, igtask *cmd, int timeout)
+static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 {
     uint64_t end;
 
@@ -337,7 +337,7 @@ static void receiveResponse(int conn, igtask *cmd, int timeout)
     }
 }
 
-static void performTask(int conn, igtask *cmd);
+static void performTask(PIPE_PTR conn, igtask *cmd);
 
 /* valid because of pigeon hole principal */
 #define DATA_BUFFER_BASE 0x7C
@@ -409,7 +409,7 @@ static void* writeBlocks(const char *label)
 }
 
 /* some requests are handled without sending requests to the server */
-static void handleInternalTask(igtask *cmd, int conn)
+static void handleInternalTask(igtask *cmd, PIPE_PTR conn)
 {
     if (cmd->spec->code == INTERNAL_SLEEP)
     {
@@ -454,7 +454,7 @@ static void handleInternalTask(igtask *cmd, int conn)
         message(LOG_FATAL, "Unhandled internal task: %s\n", cmd->spec->text);
 }
 
-static void performTask(int conn, igtask *cmd)
+static void performTask(PIPE_PTR conn, igtask *cmd)
 {
     if (cmd->spec->internal)
         handleInternalTask(cmd, conn);
@@ -565,7 +565,7 @@ static void performTask(int conn, igtask *cmd)
     }
 }
 
-static void performQueuedTasks(int conn)
+static void performQueuedTasks(PIPE_PTR conn)
 {
     igtask *cmd;
 
@@ -648,7 +648,9 @@ static struct poptOption options[] =
     { "get-id", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETID, "Fetch the unique id from the USB device.", NULL },
     { "set-id", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETID, "Set the unique id from the USB device.", NULL },
 
+#ifndef WIN32
     POPT_AUTOHELP
+#endif
     POPT_TABLEEND
 };
 
@@ -781,7 +783,7 @@ int main(int argc, const char **argv)
 
     /* connect first */
     conn = iguanaConnect(device);
-    if (conn < 0)
+    if (conn == INVALID_PIPE)
         message(LOG_ERROR,
                 "Failed to connect to iguanaIR daemon: %s\n", strerror(errno));
     else
