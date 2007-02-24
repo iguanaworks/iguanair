@@ -431,7 +431,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
                 break;
 
             /* take care of messages from the reader */
-            if (FD_ISSET(idev->readerPipe[READ], &fds) &&
+            if (FD_ISSET(idev->readerPipe[READ], &fdsin) &&
                 ! handleReader(idev))
                 break;
             FD_SET(idev->readerPipe[READ], &fds);

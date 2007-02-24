@@ -346,7 +346,7 @@ dataPacket* removeNextPacket(iguanaDev *idev)
     if (retval == NULL)
         message(LOG_DEBUG, "Returning NULL data packet\n");
     else
-        message(LOG_DEBUG, "Returning data packet (0x%x, %d byte payload)\n",
+        message(LOG_DEBUG2, "Returning data packet (0x%x, %d byte payload)\n",
                 retval->code, retval->dataLen);
 
     LeaveCriticalSection(&idev->listLock);
@@ -389,7 +389,8 @@ void handleIncomingPackets(iguanaDev *idev)
                 /* (somewhat) quietly clean up on disconnect */
                 else if (errno == ENODEV)
                 {
-                    message(LOG_INFO, "Device %d unplugged\n", idev->usbDev->id);
+                    message(LOG_INFO,
+                            "Device %d unplugged\n", idev->usbDev->id);
                     break;
                 }
                 else if (errno != EINVAL)
@@ -435,7 +436,7 @@ void handleIncomingPackets(iguanaDev *idev)
                         current->dataLen = length - 1;
                         dataStart = buffer;
  
-                        message(LOG_DEBUG,
+                        message(LOG_DEBUG2,
                                 "Data without ctl header assuming IG_DEV_RECV.\n");
                     }
 
