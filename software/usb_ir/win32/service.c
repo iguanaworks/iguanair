@@ -10,177 +10,228 @@
 #include "pipes.h"
 #include "support.h"
 #include "protocol.h"
-#include "iguanadev.h"
-#include "igdaemon.h"
 #include "usbclient.h"
+#include "igdaemon.h"
 
 #define SERVICE_NAME "igdaemon"
 
-/* local variables */
+/* iguana local variables */
 static usbId ids[] = {
     {0x1781, 0x0938}, /* iguanaworks USB transceiver */
     END_OF_USB_ID_LIST
 };
 static PIPE_PTR commPipe[2];
 #ifdef LIBUSB_NO_THREADS
-static unsigned int recvTimeout = 100;
+  static unsigned int recvTimeout = 100;
 #else
-static unsigned int recvTimeout = 1000;
+  static unsigned int recvTimeout = 1000;
 #endif
 static unsigned int sendTimeout = 1000;
+static usbDeviceList list;
 
-
-
-
-
-
-
-
+/* guids for registering for device notifications */
 DEFINE_GUID(GUID_DEVINTERFACE_USB_HUB, 0xf18a0e88, 0xc30c, 0x11d0, 0x88,
             0x15, 0x00, 0xa0, 0xc9, 0x06, 0xbe, 0xd8);
-
-
 DEFINE_GUID(GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2,
             0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED);
 
-
+/* global variables concerning our server state */
 static SERVICE_STATUS service_status;
 static SERVICE_STATUS_HANDLE service_status_handle;
 static HDEVNOTIFY notification_handle_hub, notification_handle_dev;
-
 static HANDLE service_stop_event;
 
+/* just prototypes */
+static void WINAPI serviceMain(int argc, char **argv);
+static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
+                                   VOID *event_data, VOID *context);
+static void setServiceStatus(DWORD status, DWORD exit_code);
+static void registerNotifications(void);
+static void unregisterNotifications(void);
 
-static void WINAPI usb_service_main(int argc, char **argv);
-static DWORD WINAPI usb_service_handler(DWORD code, DWORD event_type,
-                                        VOID *event_data, VOID *context);
+static bool registerWithSCM()
+{
+    bool retval = false;
+    SC_HANDLE scm, svc;
 
-static void usb_service_run(int argc, char **argv);
-static void usb_service_set_status(DWORD status, DWORD exit_code);
-static void usb_register_notifications(void);
-static void usb_unregister_notifications(void);
+    scm = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
+    if (scm == NULL)
+        message(LOG_ERROR, "Failed to open the SCM: %d\n", GetLastError());
+    else
+    {
+        svc = CreateService(scm, "igdaemon", "Iguanaworks IR Daemon",
+                            0, SERVICE_WIN32_OWN_PROCESS,
+                            SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
+                            "\"c:\\iguanair\\public\\trunk\\software\\usb_ir\\win32\\Debug\\igdaemon.exe\"",
+                            NULL, NULL, NULL, NULL, "");
+        if (svc == NULL)
+            message(LOG_ERROR, "Failed to create the service: %d\n", GetLastError());
+        else
+        {
+            retval = true;
+            CloseServiceHandle(svc);
+        }
+        CloseServiceHandle(scm);
+    }
+
+    return retval;
+}
+
+static bool unregisterWithSCM()
+{
+    bool retval = false;
+    SC_HANDLE scm, svc;
+
+    scm = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
+    if (scm == NULL)
+        message(LOG_ERROR, "Failed to open the SCM: %d\n", GetLastError());
+    else
+    {
+        svc = OpenService(scm, "igdaemon", DELETE);
+        if (svc == NULL)
+            message(LOG_ERROR, "Failed to open the service: %d\n", GetLastError());
+        else
+        {
+            if (DeleteService(svc) == FALSE)
+                message(LOG_ERROR, "Failed to delete the service: %d\n", GetLastError());
+            else
+                retval = true;
+            CloseServiceHandle(svc);
+        }
+        CloseServiceHandle(scm);
+    }
+
+    return retval;
+}
 
 int main(int argc, char **argv)
 {
-    usbDeviceList list;
-
+    // crank up the debugging level for now
     changeLogLevel(+3);
 
     if (! initDeviceList(&list, ids, recvTimeout, sendTimeout, startWorker))
         message(LOG_ERROR, "failed to initialize device list.\n");
-    else if (! updateDeviceList(&list))
-        message(LOG_ERROR, "scan failed.\n");
     else
     {
         SERVICE_TABLE_ENTRY dispatch_table[] =
         {
-            { SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)usb_service_main },
+            { SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)serviceMain },
             { NULL, NULL }
         };
 
-        BOOL res = StartServiceCtrlDispatcher(dispatch_table);
-        DWORD error;
-        error = GetLastError();
-        res =  TRUE;
+        //openLog("c:\\igdaemon.txt");
+        if (StartServiceCtrlDispatcher(dispatch_table) == FALSE)
+        {
+            DWORD error;
+            error = GetLastError();
+            /* we could be running as a console application */
+            if (error == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
+            {
+                /* populate the device list once */
+                if (! updateDeviceList(&list))
+                    message(LOG_ERROR, "scan failed.\n");
+
+                /* just block indefinitely */
+                fscanf(stdin, "\n");
+            }
+            else
+                return error;
+        }
     }
     return 0;
 }
 
-
-static void WINAPI usb_service_main(int argc, char **argv)
+/* this function is the main function for the windows service */
+static void WINAPI serviceMain(int argc, char **argv)
 {
-    memset(&service_status, 0, sizeof(service_status));
+    message(LOG_NORMAL, "igdaemon serviceMain started\n");
 
+    /* open a handle to our server status */
+    memset(&service_status, 0, sizeof(service_status));
     service_status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
     service_status.dwCurrentState = SERVICE_START_PENDING;
     service_status.dwControlsAccepted = SERVICE_ACCEPT_STOP |
                                         SERVICE_ACCEPT_PAUSE_CONTINUE;
-
     service_status.dwWaitHint = 5000;
 
     service_status_handle = RegisterServiceCtrlHandlerEx(SERVICE_NAME,
-                                                         usb_service_handler,
+                                                         serviceHandler,
                                                          NULL);
-
     if (!service_status_handle)
         return;
 
-    usb_register_notifications();
-    usb_service_run(argc, argv);
+    /* notify the SCM that we're starting */
+    setServiceStatus(SERVICE_START_PENDING, NO_ERROR);
 
+    /* create and watch the stop event */
+    service_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (service_stop_event)
+    {
+        /* register for plug notifications */
+        registerNotifications();
+
+        /* populate the device list as soon as we have notifications */
+        if (! updateDeviceList(&list))
+            message(LOG_ERROR, "scan failed.\n");
+
+        /* tell SCM about our progress and wait for death */
+        setServiceStatus(SERVICE_RUNNING, NO_ERROR);
+        while(WaitForSingleObject(service_stop_event, INFINITE));
+        CloseHandle(service_stop_event);
+    }
+
+    /* tell the SCM that we've stopped */
+    setServiceStatus(SERVICE_STOPPED, NO_ERROR);
     return;
 }
 
-static DWORD WINAPI usb_service_handler(DWORD code, DWORD event_type,
-                                        VOID *event_data, VOID *context)
+static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
+                                   VOID *event_data, VOID *context)
 {
     switch(code)
     {
     case SERVICE_CONTROL_STOP:
-        usb_service_set_status(SERVICE_STOP_PENDING, NO_ERROR);
-        usb_unregister_notifications();
-
+        setServiceStatus(SERVICE_STOP_PENDING, NO_ERROR);
+        unregisterNotifications();
         if(service_stop_event)
             SetEvent(service_stop_event);
         break;
 
     case SERVICE_CONTROL_DEVICEEVENT:
-        if(event_type == DBT_DEVICEARRIVAL)
-        {
-            usb_unregister_notifications();
-            fprintf(stderr, "plugged\n");
-            usb_register_notifications();
-        }
-        usb_service_set_status(SERVICE_RUNNING, NO_ERROR);
+        /* receive one of these on device plug */
+        if (event_type == DBT_DEVICEARRIVAL &&
+            ! updateDeviceList(&list))
+            message(LOG_ERROR, "scan failed.\n");
         break;
 
     case SERVICE_CONTROL_PAUSE:
-        usb_service_set_status(SERVICE_PAUSE_PENDING, NO_ERROR);
-        usb_unregister_notifications();
-        usb_service_set_status(SERVICE_PAUSED, NO_ERROR);
+        setServiceStatus(SERVICE_PAUSE_PENDING, NO_ERROR);
+        unregisterNotifications();
+        setServiceStatus(SERVICE_PAUSED, NO_ERROR);
         break;
 
     case SERVICE_CONTROL_CONTINUE:
-        usb_service_set_status(SERVICE_CONTINUE_PENDING, NO_ERROR);
-        usb_register_notifications();
-        usb_service_set_status(SERVICE_RUNNING, NO_ERROR);
+        setServiceStatus(SERVICE_CONTINUE_PENDING, NO_ERROR);
+        registerNotifications();
+        setServiceStatus(SERVICE_RUNNING, NO_ERROR);
         break;
 
     default:
-      ;
+        message(LOG_ERROR, "Unknown code sent to service handler: %d\n", code);
+        break;
     }
 
     return NO_ERROR;
 }
 
-static void usb_service_run(int argc, char **argv)
-{
-    usb_service_set_status(SERVICE_START_PENDING, NO_ERROR);
-    service_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-    if(!service_stop_event)
-    {
-        usb_service_set_status(SERVICE_STOPPED, NO_ERROR);
-        return;
-    }
-
-    usb_service_set_status(SERVICE_RUNNING, NO_ERROR);
-
-    while(WaitForSingleObject(service_stop_event, INFINITE));
-
-    CloseHandle(service_stop_event);
-    usb_service_set_status(SERVICE_STOPPED, NO_ERROR);
-}
-
-static void usb_service_set_status(DWORD status, DWORD exit_code)
+static void setServiceStatus(DWORD status, DWORD exit_code)
 {
     service_status.dwCurrentState  = status;
     service_status.dwWin32ExitCode = exit_code;
-
     SetServiceStatus(service_status_handle, &service_status);
 }
 
-static void usb_register_notifications(void)
+static void registerNotifications(void)
 {
     DEV_BROADCAST_DEVICEINTERFACE dev_if;
     dev_if.dbcc_size = sizeof(dev_if);
@@ -195,7 +246,7 @@ static void usb_register_notifications(void)
                                                          DEVICE_NOTIFY_SERVICE_HANDLE);
 }
 
-static void usb_unregister_notifications(void)
+static void unregisterNotifications(void)
 {
     if(notification_handle_hub)
         UnregisterDeviceNotification(notification_handle_hub);
@@ -203,11 +254,10 @@ static void usb_unregister_notifications(void)
         UnregisterDeviceNotification(notification_handle_dev);
 }
 
-
-
-HANDLE startOverlappedAction(PIPE_PTR fd, HANDLE event, bool connect)
+/* helper function for listenToClients */
+static HANDLE startOverlappedAction(PIPE_PTR fd, HANDLE event, bool connect)
 {
-    OVERLAPPED over = { NULL };
+    OVERLAPPED over = { (ULONG_PTR)NULL };
 
     if (event == NULL)
         event = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -232,7 +282,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
     HANDLE *handles = NULL, listeners[2] = {NULL,NULL};
     OVERLAPPED over;
     char names[2][256];
-    unsigned int numNames = 1;
+    int numNames = 1, x;
     bool firstPass = true;
 
     /* create an array of names to make life simpler */
@@ -246,13 +296,13 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
     memset(&over, 0, sizeof(OVERLAPPED));
     while(true)
     {
-        int count = 1, x, numClients = 0;
+        int count = 1, numClients = 0;
         client *john;
 
         /* allocate the handles and overlap objects that I need to populate */
         handles = realloc(handles, sizeof(HANDLE) * (1 + numNames + idev->clientList.count));
         if (firstPass)
-            handles[0] = startOverlappedAction(idev->readPipe[READ], NULL, false);
+            handles[0] = startOverlappedAction(idev->readerPipe[READ], NULL, false);
 
         /* next add events for the named pipes */
         for(x = 0; x < numNames; x++)
@@ -270,7 +320,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
         }
 
         /* list the current clients last */
-        for(john = idev->clientList.head; john != NULL; john = john->header.next)
+        for(john = (client*)idev->clientList.head; john != NULL; john = (client*)john->header.next)
         {
             john->listenData = startOverlappedAction(john->fd, john->listenData, false);
             handles[count++] = john->listenData;
@@ -287,7 +337,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
 
             /* Prepare for the next pass */
             ResetEvent(handles[0]);
-            startOverlappedAction(idev->readPipe[READ], handles[0], false);
+            startOverlappedAction(idev->readerPipe[READ], handles[0], false);
         }
 
         /* now accept new clients */
@@ -301,12 +351,12 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
             }
 
         /* last, handle existing clients */
-        for(john = idev->clientList.head; john != NULL;)
+        for(john = (client*)idev->clientList.head; john != NULL;)
         {
             HANDLE event;
             client *next;
 
-            next = john->header.next;
+            next = (client*)john->header.next;
             event = john->listenData;
             if (event != NULL &&
                 WaitForSingleObject(event, 0) == WAIT_OBJECT_0 &&
@@ -318,4 +368,8 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
         firstPass = false;
     }
     free(handles);
+
+    for(x = 0; x < numNames; x++)
+        if (listeners[x] != NULL)
+            CloseHandle(listeners[x]);
 }

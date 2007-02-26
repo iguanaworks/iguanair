@@ -55,10 +55,10 @@ bool createPipePair(PIPE_PTR *pair)
 #endif
 }
 
-static int readPipeTimed(PIPE_PTR fd, void *buf, int count, int timeout)
+int readPipeTimed(PIPE_PTR fd, void *buf, int count, int timeout)
 {
     int retval = -1;
-    OVERLAPPED over = { NULL };
+    OVERLAPPED over = { (ULONG_PTR)NULL };
     DWORD read;
 
     over.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -143,7 +143,7 @@ PIPE_PTR connectToPipe(const char *name)
                         FILE_FLAG_OVERLAPPED,
                         NULL);
     if (retval == INVALID_HANDLE_VALUE)
-        retval = NULL;
+        retval = INVALID_PIPE;
     error = GetLastError();
 
     return retval;

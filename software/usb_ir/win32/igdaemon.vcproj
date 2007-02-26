@@ -124,7 +124,7 @@
 				RelativePath="..\dataPackets.c">
 			</File>
 			<File
-				RelativePath="..\iguanadev.c">
+				RelativePath="..\igdaemon.c">
 			</File>
 			<File
 				RelativePath="..\list.c">

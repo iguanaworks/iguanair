@@ -116,6 +116,7 @@ typedef struct igtask
 static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
+static const char *programName = NULL;
 
 bool parseNumber(const char *text, unsigned int *value)
 {
@@ -154,7 +155,7 @@ static bool findTaskSpec(igtask *task)
     /* start with no type specified */
     task->spec = NULL;
 
-    len = strlen(task->command);
+    len = (unsigned int)strlen(task->command);
     for(x = 0; supportedCommands[x].text != NULL; x++)
     {
         commandSpec *spec;
@@ -228,17 +229,14 @@ static void setSetting(unsigned int setting, const char *pins,
                        unsigned char *pinState)
 {
     unsigned int value;
+    int x;
+
     if (parseNumber(pins, &value))
-    {
-        int x;
         for(x = 0; x < IG_PIN_COUNT; x++)
-        {
             if (value & (1 << x))
                 pinState[x] |= setting;
             else
                 pinState[x] &= ~setting;
-        }
-    }
 }
 
 static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
@@ -303,7 +301,7 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                 switch(code)
                 {
                 case IG_DEV_GETVERSION:
-                    message(LOG_NORMAL, ": version=%d", *(int*)data);
+                    message(LOG_NORMAL, ": version=%d", ((char*)data)[1] * 256 + ((char*)data)[0]);
                     break;
 
                 case IG_DEV_GETPINS:
@@ -360,7 +358,7 @@ static void* writeBlocks(const char *label)
     unsigned int len, x, y;
     char *data, *dummy;
 
-    len = 4 + strlen(label);
+    len = 4 + (unsigned int)strlen(label);
     if (len > 16)
     {
         message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
@@ -548,7 +546,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         {
             iguanaPacket request = NULL;
 
-            request = iguanaCreateRequest(cmd->spec->code, result, data);
+            request = iguanaCreateRequest((unsigned char)cmd->spec->code, result, data);
             if (request == NULL)
                 message(LOG_ERROR,
                         "Out of memory allocating request.\n");
@@ -605,7 +603,82 @@ static void enqueueTaskById(unsigned short code, const char *arg)
         message(LOG_FATAL, "enqueueTaskById failed on code %d\n", code);
 }
 
+#ifdef WIN32
 
+static poptPrintHelp(const struct poptOption *options, FILE *pipe)
+{
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    HANDLE console;
+    int x, width = 80, optWidth = -1, pass;
+    char *buffer = NULL;
+
+    console = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (console != INVALID_HANDLE_VALUE &&
+        GetConsoleScreenBufferInfo(console, &info))
+        width = info.dwSize.X;
+
+    /* allocate enough space for a line (yes I'm leaving off the +1) */
+    buffer = (char*)malloc(width);
+    buffer[width - 1] = '\0';
+
+    fprintf(pipe, "Usage: %s [OPTION...]\n", programName);
+    /* figure out the width of the options in the first pass */
+    for(pass = 0; pass < 2; pass++)
+        for(x = 0; options[x].longName != NULL || options[x].shortName != '\0'; x++)
+        {
+            int offset;
+
+            strcpy(buffer, "  ");
+            offset = 2;
+            if (options[x].shortName != '\0')
+            {
+                offset += sprintf(buffer + offset, "-%c", options[x].shortName);
+                if (options[x].longName != NULL)
+                    offset += sprintf(buffer + offset, ", ");
+            }
+            if (options[x].longName != NULL)
+                offset += sprintf(buffer + offset, "--%s", options[x].longName);
+            if (options[x].argDescrip != NULL)
+                offset += sprintf(buffer + offset, "=%s", options[x].argDescrip);
+
+            if (pass == 1)
+            {
+                int len;
+
+                /* pad the first column */
+                while(offset < optWidth)
+                    buffer[offset++] = ' ';
+                buffer[offset] = '\0';
+
+                /* add the second */
+                len = snprintf(buffer + offset, width - offset - 1, "%s", options[x].descrip);
+                if (len == -1)
+                {
+                    char *space;
+                    space = strrchr(buffer, ' ');
+                    if (space != NULL)
+                    {
+                        space[0] = '\0';
+                        offset = strlen(buffer + optWidth) + 1;
+                        fprintf(pipe, "%s\n", buffer);
+                        memset(buffer, ' ', optWidth);
+                        strcpy(buffer + optWidth, options[x].descrip + offset);
+                    }
+                }
+                fprintf(pipe, "%s\n", buffer);
+
+            }
+            else if (offset + 5 > optWidth)
+                optWidth = offset + 5;
+        }
+}
+
+static poptPrintUsage(const struct poptOption *options, FILE *pipe)
+{
+    poptPrintHelp(options, pipe);
+}
+
+#endif
 
 static struct poptOption options[] =
 {
@@ -657,21 +730,27 @@ static struct poptOption options[] =
 static void exitOnOptError(poptContext poptCon, char *msg)
 {
     message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
-    poptPrintHelp(poptCon, stderr, 0);
+    poptPrintHelp(options, stderr);
     exit(1);
 }
 
 int main(int argc, const char **argv)
 {
-    const char **leftOvers, *device = "0";
+    const char **leftOvers, *device = "0", *temp;
     int x = 0, retval = 1;
     PIPE_PTR conn = INVALID_PIPE;
     poptContext poptCon;
 
+    temp = strrchr(argv[0], '\\');
+    if (temp == NULL)
+        programName = argv[0];
+    else
+        programName = temp + 1;
+
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)
     {
-        poptPrintUsage(poptCon, stderr, 0);
+        poptPrintUsage(options, stderr);
         exit(1);
     }
 
@@ -752,7 +831,7 @@ int main(int argc, const char **argv)
         case POPT_ERROR_BADOPT:
             if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
             {
-                poptPrintHelp(poptCon, stdout, 0);
+                poptPrintHelp(options, stdout);
                 exit(0);
             }
             exitOnOptError(poptCon, "Unknown option '%s'\n");
@@ -773,7 +852,7 @@ int main(int argc, const char **argv)
     if (leftOvers != NULL && leftOvers[0] != NULL)
     {
         message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
-        poptPrintHelp(poptCon, stderr, 0);
+        poptPrintHelp(options, stderr);
         exit(1);
     }
 

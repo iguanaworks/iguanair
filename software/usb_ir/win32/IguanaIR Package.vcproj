@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="IguanaIR Package"
+	ProjectGUID="{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}"
+	RootNamespace="IguanaIR Package"
+	Keyword="MakeFileProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="echo [GLOBAL] &gt; inno.ini
+echo Dir=$(OutDir) &gt;&gt; inno.ini
+&quot;c:\Program Files\Inno Setup 5\compil32&quot; /cc iguanaIR.iss
+del inno.ini"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				Output="IguanaIR Packaging.exe"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\iguanaIR.iss">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

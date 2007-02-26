@@ -9,13 +9,12 @@ bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg)
     return *handle != NULL;
 }
 
-bool joinThread(THREAD_PTR *handle, void **exitVal)
+void joinThread(THREAD_PTR *handle, void **exitVal)
 {
     /* wait for the thread to exit */
     WaitForSingleObject(handle, INFINITE);
     GetExitCodeThread(handle, (DWORD*)exitVal);
     CloseHandle(handle);
-    return true;
 }
 
 uint64_t microsSinceX()

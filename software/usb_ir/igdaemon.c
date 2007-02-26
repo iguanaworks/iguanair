@@ -16,9 +16,9 @@
 #include <errno.h>
 #include <signal.h>
 
+#include "base.h"
 #include "iguanaIR.h"
 #include "dataPackets.h"
-#include "base.h"
 #include "protocol.h"
 #include "usbclient.h"
 #include "igdaemon.h"
