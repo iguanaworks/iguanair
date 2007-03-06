@@ -18,10 +18,8 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="echo [GLOBAL] &gt; inno.ini
-echo Dir=$(OutDir) &gt;&gt; inno.ini
-&quot;c:\Program Files\Inno Setup 5\compil32&quot; /cc iguanaIR.iss
-del inno.ini"/>
+				BuildCommandLine="c:\python24\python setup.py $(OutDir)"
+				CleanCommandLine="del iguanaIR.iss"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -36,9 +34,6 @@ del inno.ini"/>
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath=".\iguanaIR.iss">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
