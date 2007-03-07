@@ -157,9 +157,12 @@ def collectSignals(data, minCount = -1, maxCount = -1, state = None):
 
             # populate next from the existing list
             try:
-                next = data.pop(-1)
+                next = int(data.pop(-1))
             except IndexError:
-                next = 0
+                if state is not None:
+                    next = state['gap']
+                else:
+                    next = 0
 
             for pulse in more:
                 # if we changed states output the old value
@@ -486,8 +489,11 @@ message(NORMAL, 'Gap determined to be: %d\n' % gap)
 
 # start the collector
 lock = threading.Lock()
-state = { 'lock' : lock,
-          'done' : False }
+event = threading.Event()
+state = { 'lock'  : lock,
+          'done'  : False,
+          'gap'   : int(gap),
+          'event' : event }
 reader = threading.Thread(target = collectSignals,
                           args = (data,),
                           kwargs = { 'state' : state })
@@ -499,18 +505,41 @@ except:
     state['done'] = True
     reader.join()
 
-
-
 """
+# RC5
+The remote uses the RC5 protocol.
 
+# RC6
+The remote uses the RC6 protocol.
 
-90218L, 896L, 853L, 1749L, 874L, 874L, 853L, 874L, 1749L, 1749L,
-1749L, 1770L, 853L, 874L, 1749L, 874L, 853L, 1749L, 853L, 874L,
+# RCMM
+The remote uses the RC-MM protocol (transmitting not supported).
 
-90175L, 896L, 853L, 1749L, 853L, 874L, 853L, 874L, 1749L, 1749L,
-1749L, 1770L, 874L, 874L, 1749L, 874L, 853L, 1770L, 853L, 874L,
+# SHIFT_ENC
+Obsolete flag, now a synonym for RC5. The position of the pulse (before or after the space) determines whether the bit is a one or a zero.
 
-90176L, 896L, 853L, 1749L, 874L, 874L, 853L, 874L, 1749L, 1749L,
-1749L, 1770L, 853L, 874L, 1749L, 874L, 853L, 1770L, 853L, 874L
+# SPACE_ENC
+A one and a zero can be distinguished by the length of the spaces.
+
+# REVERSE
+Reverses the bit order of the pre_data, the post_data and the codes (e.g., 0x123 becomes 0xC48). If this flag is present, the least significant bit is sent first.
+
+# NO_HEAD_REP
+The header is not sent when a signal (the button is held down) is repeated even though there is no special repeat code.
+
+# NO_FOOT_REP
+The foot is not sent when a signal is repeated (the button is held down) even though there is no special repeat code.
+
+# CONST_LENGTH
+The total signal length is always constant. The gap length now represents the length of the entire signal, and the actual gap at the end of the signal is adjusted accordingly.
+
+# RAW_CODES
+The codes are in raw format.
+
+# REPEAT_HEADER
+Send the header when the signal is repeated even though the remote has a special repeat code.
+
+# SPECIAL_TRANSMITTER
+Use the transmitter type specified for this remote. (Not supported by LIRC). 
 
 """
