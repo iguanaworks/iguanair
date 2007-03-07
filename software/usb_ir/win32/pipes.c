@@ -55,7 +55,7 @@ bool createPipePair(PIPE_PTR *pair)
 #endif
 }
 
-int readPipeTimed(PIPE_PTR fd, void *buf, int count, int timeout)
+int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
 {
     int retval = -1;
     OVERLAPPED over = { (ULONG_PTR)NULL };

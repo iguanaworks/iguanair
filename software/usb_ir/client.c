@@ -16,7 +16,9 @@
 #include <time.h>
 #include <errno.h>
 #include <popt.h>
-#include "popt-fix.h"
+#ifdef WIN32
+    #include "popt-fix.h"
+#endif
 
 #include "iguanaIR.h"
 
@@ -653,27 +655,30 @@ static struct poptOption options[] =
 static void exitOnOptError(poptContext poptCon, char *msg)
 {
     message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
-    poptPrintHelp(options, stderr);
+    poptPrintHelp(poptCon, stderr, 0);
     exit(1);
 }
 
 int main(int argc, const char **argv)
 {
-    const char **leftOvers, *device = "0", *temp;
+    const char **leftOvers, *device = "0";
     int x = 0, retval = 1;
     PIPE_PTR conn = INVALID_PIPE;
     poptContext poptCon;
 
+#ifdef WIN32
+    const char *temp;
     temp = strrchr(argv[0], '\\');
     if (temp == NULL)
         programName = argv[0];
     else
         programName = temp + 1;
+#endif
 
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)
     {
-        poptPrintUsage(options, stderr);
+        poptPrintUsage(poptCon, stderr, 0);
         exit(1);
     }
 
@@ -754,7 +759,7 @@ int main(int argc, const char **argv)
         case POPT_ERROR_BADOPT:
             if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
             {
-                poptPrintHelp(options, stdout);
+                poptPrintHelp(poptCon, stdout, 0);
                 exit(0);
             }
             exitOnOptError(poptCon, "Unknown option '%s'\n");
@@ -775,7 +780,7 @@ int main(int argc, const char **argv)
     if (leftOvers != NULL && leftOvers[0] != NULL)
     {
         message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
-        poptPrintHelp(options, stderr);
+        poptPrintHelp(poptCon, stderr, 0);
         exit(1);
     }
 
