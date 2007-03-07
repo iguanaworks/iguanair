@@ -16,6 +16,7 @@
 #include <time.h>
 #include <errno.h>
 #include <popt.h>
+#include "popt-fix.h"
 
 #include "iguanaIR.h"
 
@@ -116,7 +117,6 @@ typedef struct igtask
 static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
-static const char *programName = NULL;
 
 bool parseNumber(const char *text, unsigned int *value)
 {
@@ -602,83 +602,6 @@ static void enqueueTaskById(unsigned short code, const char *arg)
     if (supportedCommands[x].text == NULL)
         message(LOG_FATAL, "enqueueTaskById failed on code %d\n", code);
 }
-
-#ifdef WIN32
-
-static poptPrintHelp(const struct poptOption *options, FILE *pipe)
-{
-    CONSOLE_SCREEN_BUFFER_INFO info;
-    HANDLE console;
-    int x, width = 80, optWidth = -1, pass;
-    char *buffer = NULL;
-
-    console = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (console != INVALID_HANDLE_VALUE &&
-        GetConsoleScreenBufferInfo(console, &info))
-        width = info.dwSize.X;
-
-    /* allocate enough space for a line (yes I'm leaving off the +1) */
-    buffer = (char*)malloc(width);
-    buffer[width - 1] = '\0';
-
-    fprintf(pipe, "Usage: %s [OPTION...]\n", programName);
-    /* figure out the width of the options in the first pass */
-    for(pass = 0; pass < 2; pass++)
-        for(x = 0; options[x].longName != NULL || options[x].shortName != '\0'; x++)
-        {
-            int offset;
-
-            strcpy(buffer, "  ");
-            offset = 2;
-            if (options[x].shortName != '\0')
-            {
-                offset += sprintf(buffer + offset, "-%c", options[x].shortName);
-                if (options[x].longName != NULL)
-                    offset += sprintf(buffer + offset, ", ");
-            }
-            if (options[x].longName != NULL)
-                offset += sprintf(buffer + offset, "--%s", options[x].longName);
-            if (options[x].argDescrip != NULL)
-                offset += sprintf(buffer + offset, "=%s", options[x].argDescrip);
-
-            if (pass == 1)
-            {
-                int len;
-
-                /* pad the first column */
-                while(offset < optWidth)
-                    buffer[offset++] = ' ';
-                buffer[offset] = '\0';
-
-                /* add the second */
-                len = snprintf(buffer + offset, width - offset - 1, "%s", options[x].descrip);
-                if (len == -1)
-                {
-                    char *space;
-                    space = strrchr(buffer, ' ');
-                    if (space != NULL)
-                    {
-                        space[0] = '\0';
-                        offset = strlen(buffer + optWidth) + 1;
-                        fprintf(pipe, "%s\n", buffer);
-                        memset(buffer, ' ', optWidth);
-                        strcpy(buffer + optWidth, options[x].descrip + offset);
-                    }
-                }
-                fprintf(pipe, "%s\n", buffer);
-
-            }
-            else if (offset + 5 > optWidth)
-                optWidth = offset + 5;
-        }
-}
-
-static poptPrintUsage(const struct poptOption *options, FILE *pipe)
-{
-    poptPrintHelp(options, pipe);
-}
-
-#endif
 
 static struct poptOption options[] =
 {

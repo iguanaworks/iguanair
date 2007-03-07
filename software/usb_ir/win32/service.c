@@ -3,7 +3,8 @@
 
 #include <dbt.h>
 #include <initguid.h>
-
+#include <popt.h>
+#include "popt-fix.h"
 
 #include "iguanaIR.h"
 #include "base.h"
@@ -59,10 +60,14 @@ static bool registerWithSCM()
         message(LOG_ERROR, "Failed to open the SCM: %d\n", GetLastError());
     else
     {
+        char path[MAX_PATH + 2];
+        GetModuleFileName(NULL, path + 1, MAX_PATH);
+        path[0] = '"';
+        strcat(path, "\"");
+
         svc = CreateService(scm, "igdaemon", "Iguanaworks IR Daemon",
                             0, SERVICE_WIN32_OWN_PROCESS,
-                            SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
-                            "\"c:\\iguanair\\public\\trunk\\software\\usb_ir\\win32\\Debug\\igdaemon.exe\"",
+                            SERVICE_AUTO_START, SERVICE_ERROR_NORMAL, path,
                             NULL, NULL, NULL, NULL, "");
         if (svc == NULL)
             message(LOG_ERROR, "Failed to create the service: %d\n", GetLastError());
@@ -77,7 +82,7 @@ static bool registerWithSCM()
     return retval;
 }
 
-static bool unregisterWithSCM()
+static bool changeServiceState(unsigned int action)
 {
     bool retval = false;
     SC_HANDLE scm, svc;
@@ -87,15 +92,36 @@ static bool unregisterWithSCM()
         message(LOG_ERROR, "Failed to open the SCM: %d\n", GetLastError());
     else
     {
-        svc = OpenService(scm, "igdaemon", DELETE);
+        svc = OpenService(scm, "igdaemon", action);
         if (svc == NULL)
             message(LOG_ERROR, "Failed to open the service: %d\n", GetLastError());
         else
         {
-            if (DeleteService(svc) == FALSE)
-                message(LOG_ERROR, "Failed to delete the service: %d\n", GetLastError());
-            else
-                retval = true;
+            SERVICE_STATUS status;
+
+            switch(action)
+            {
+            case SERVICE_START:
+                if (StartService(svc, 0, NULL) == FALSE)
+                    message(LOG_ERROR, "Failed to start the service: %d\n", GetLastError());
+                else
+                    retval = true;
+                break;
+
+            case SERVICE_STOP:
+                if (ControlService(svc, SERVICE_CONTROL_STOP, &status) == FALSE)
+                    message(LOG_ERROR, "Failed to start the service: %d\n", GetLastError());
+                else
+                    retval = true;
+                break;
+
+            case DELETE:
+                if (DeleteService(svc) == FALSE)
+                    message(LOG_ERROR, "Failed to delete the service: %d\n", GetLastError());
+                else
+                    retval = true;
+                break;
+            }
             CloseServiceHandle(svc);
         }
         CloseServiceHandle(scm);
@@ -104,10 +130,112 @@ static bool unregisterWithSCM()
     return retval;
 }
 
+static struct poptOption options[] =
+{
+    { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
+    { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
+    { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
+    { "regsvc", 0, POPT_ARG_NONE, NULL, 'r', "Register this executable as the system igdaemon service.", NULL },
+    { "unregsvc", 0, POPT_ARG_NONE, NULL, 'u', "Remove the system igdaemon service.", NULL },
+    { "startsvc", 0, POPT_ARG_NONE, NULL, 's', "Start the system igdaemon service.", NULL },
+    { "stopsvc", 0, POPT_ARG_NONE, NULL, 't', "Stop the system igdaemon service.", NULL },
+
+    POPT_TABLEEND
+};
+
+static void exitOnOptError(poptContext poptCon, char *msg)
+{
+    message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
+    poptPrintHelp(options, stderr);
+    exit(1);
+}
+
 int main(int argc, char **argv)
 {
-    // crank up the debugging level for now
-    changeLogLevel(+3);
+    const char **leftOvers, *device = "0", *temp;
+    int x = 0, retval = 1;
+    PIPE_PTR conn = INVALID_PIPE;
+    poptContext poptCon;
+
+    temp = strrchr(argv[0], '\\');
+    if (temp == NULL)
+        programName = argv[0];
+    else
+        programName = temp + 1;
+
+    poptCon = poptGetContext(NULL, argc, argv, options, 0);
+    while(x != -1)
+    {
+        switch(x = poptGetNextOpt(poptCon))
+        {
+        case 'l':
+            openLog(poptGetOptArg(poptCon));
+            break;
+
+        case 'q':
+            changeLogLevel(-1);
+            break;
+
+        case 'v':
+            changeLogLevel(+1);
+            break;
+
+        case 'r':
+            if (registerWithSCM())
+                return 0;
+            return 1;
+
+        case 's':
+            if (changeServiceState(SERVICE_START))
+                return 0;
+            return 1;
+
+        case 't':
+            if (changeServiceState(SERVICE_STOP))
+                return 0;
+            return 1;
+
+        case 'u':
+            if (changeServiceState(DELETE))
+                return 0;
+            return 1;
+
+        /* Error handling starts here */
+        case POPT_ERROR_NOARG:
+            exitOnOptError(poptCon, "Missing argument for '%s'\n");
+            break;
+
+        case POPT_ERROR_BADNUMBER:
+            exitOnOptError(poptCon, "Need a number instead of '%s'\n");
+            break;
+
+        case POPT_ERROR_BADOPT:
+            if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
+            {
+                poptPrintHelp(options, stdout);
+                exit(0);
+            }
+            exitOnOptError(poptCon, "Unknown option '%s'\n");
+            break;
+
+        case -1:
+            break;
+        default:
+            message(LOG_FATAL,
+                    "Unexpected return value from popt: %d:%s\n",
+                    x, poptStrerror(x));
+            break;
+        }
+    }
+
+    /* what if we have extra parameters? */
+    leftOvers = poptGetArgs(poptCon);
+    if (leftOvers != NULL && leftOvers[0] != NULL)
+    {
+        message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
+        poptPrintHelp(options, stderr);
+        exit(1);
+    }
 
     if (! initDeviceList(&list, ids, recvTimeout, sendTimeout, startWorker))
         message(LOG_ERROR, "failed to initialize device list.\n");

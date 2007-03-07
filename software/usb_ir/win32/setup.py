@@ -32,21 +32,22 @@ OutputBaseFilename=IguanaIR-%(version)s
 ; compiled from C sources
 Source: "%(dir)s/igdaemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/igclient.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR.dll"; DestDir: "{app}"; Flags: ignoreversion
-
-; created by libusb's tools
-Source: "libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "libusb-win32/iguanaIR_x64.cat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "libusb-win32/iguanaIR.inf"; DestDir: "{app}"; Flags: ignoreversion
-
-; libusb libraries
-Source: "libusb-win32/libusb0.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "libusb-win32/libusb0.sys"; DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/_iguanaIR.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; popt libraries
 Source: "popt/popt1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "popt/libiconv-2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "popt/libintl-2.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+; the rest are created by libusb's tools
+Source: "libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "libusb-win32/iguanaIR_x64.cat"; DestDir: "{app}"; Flags: ignoreversion
+; TODO: the inf file goes where?
+Source: "libusb-win32/iguanaIR.inf"; DestDir: "{win}/INF"; Flags: ignoreversion
+
+; libusb libraries
+Source: "libusb-win32/libusb0.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "libusb-win32/libusb0.sys"; DestDir: "{app}"; Flags: ignoreversion
 
 ; stuff for the menus
 [Icons]
@@ -55,9 +56,16 @@ Name: "{group}\Uninstall IguanaIR"; Filename: "{uninstallexe}"
 
 ; install the daemon
 [Run]
-;Filename: "{app}\igdaemon.exe"; Parameters: "--regservice"
-;Filename: "{app}\README.TXT"; Description: "View the README file"; Flags: postinstall shellexec skipifsilent
-;Filename: "{app}\MYPROG.EXE"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked
+Filename: "{app}/igdaemon.exe"; Parameters: "--regsvc"; Flags: runhidden
+Filename: "{app}/igdaemon.exe"; Parameters: "--startsvc"; Flags: runhidden
+;Filename: "{app}/README.TXT"; Description: "View the README file"; Flags: postinstall shellexec skipifsilent
+;Filename: "{app}/MYPROG.EXE"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked
+
+; remove the daemon on uninstall
+[UninstallRun]
+Filename: "{app}/igdaemon.exe"; Parameters: "--stopsvc"; Flags: runhidden
+Filename: "{app}/igdaemon.exe"; Parameters: "--unregsvc"; Flags: runhidden
+
 """ % vars)
     out.close()
 

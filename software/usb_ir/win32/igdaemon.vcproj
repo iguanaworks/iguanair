@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libusb.lib"
+				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="libusb-win32"
@@ -69,7 +69,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;libusb-win32"
+				AdditionalIncludeDirectories="..;libusb-win32;popt"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;LIBUSB_NO_THREADS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -80,9 +80,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib libusb.lib"
+				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="libusb-win32;popt"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -131,6 +132,9 @@
 			</File>
 			<File
 				RelativePath=".\pipes.c">
+			</File>
+			<File
+				RelativePath=".\popt\popt-fix.c">
 			</File>
 			<File
 				RelativePath="..\protocol.c">

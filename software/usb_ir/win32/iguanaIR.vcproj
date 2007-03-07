@@ -70,7 +70,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;libusb-win32"
+				AdditionalIncludeDirectories="..;libusb-win32;c:\Python24\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -82,9 +82,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libusb.lib Ws2_32.lib"
-				OutputFile="$(OutDir)/iguanaIR.dll"
+				OutputFile="$(OutDir)/_iguanaIR.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;libusb-win32&quot;"
+				AdditionalLibraryDirectories="libusb-win32;c:\Python24\libs"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -96,7 +96,9 @@
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+				Description="Using swig to generate wrappers"
+				CommandLine="swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -128,6 +130,15 @@
 			</File>
 			<File
 				RelativePath="..\iguanaIR.c">
+			</File>
+			<File
+				RelativePath="..\iguanaIR_wrap.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\list.c">
@@ -162,6 +173,9 @@
 				RelativePath="..\support.h">
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\iguanaIR.i">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

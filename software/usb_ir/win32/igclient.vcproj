@@ -129,6 +129,9 @@
 				RelativePath="..\list.c">
 			</File>
 			<File
+				RelativePath=".\popt\popt-fix.c">
+			</File>
+			<File
 				RelativePath="..\support.c">
 			</File>
 		</Filter>

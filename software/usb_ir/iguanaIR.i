@@ -14,6 +14,9 @@
 %include "typemaps.i"
 
 %{
+#ifdef WIN32
+    #include <windows.h>
+#endif
 #include "iguanaIR.h"
 %}
 
@@ -56,9 +59,5 @@
     $result = PyString_FromStringAndSize($result, *$1);
 }
 
-
-/*
-void* iguanaRemoveData(iguanaPacket pkt, unsigned int *dataLength);
-*/
 
 %include iguanaIR.h
