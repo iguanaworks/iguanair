@@ -146,6 +146,9 @@
 				RelativePath="..\list.h">
 			</File>
 			<File
+				RelativePath=".\popt\popt-fix.h">
+			</File>
+			<File
 				RelativePath="..\support.h">
 			</File>
 		</Filter>

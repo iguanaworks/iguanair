@@ -172,6 +172,9 @@
 				RelativePath="..\pipes.h">
 			</File>
 			<File
+				RelativePath=".\popt\popt-fix.h">
+			</File>
+			<File
 				RelativePath="..\protocol.h">
 			</File>
 			<File
