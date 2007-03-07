@@ -42,8 +42,7 @@ Source: "popt/libintl-2.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; the rest are created by libusb's tools
 Source: "libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "libusb-win32/iguanaIR_x64.cat"; DestDir: "{app}"; Flags: ignoreversion
-; TODO: the inf file goes where?
-Source: "libusb-win32/iguanaIR.inf"; DestDir: "{win}/INF"; Flags: ignoreversion
+Source: "libusb-win32/iguanaIR.inf"; DestDir: "{app}"; Flags: ignoreversion
 
 ; libusb libraries
 Source: "libusb-win32/libusb0.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -56,6 +55,7 @@ Name: "{group}\Uninstall IguanaIR"; Filename: "{uninstallexe}"
 
 ; install the daemon
 [Run]
+Filename: "{app}/igdaemon.exe"; Parameters: "--installinf"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--regsvc"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--startsvc"; Flags: runhidden
 ;Filename: "{app}/README.TXT"; Description: "View the README file"; Flags: postinstall shellexec skipifsilent

@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <stdio.h>
 
+#include <setupapi.h>
+
 #include <dbt.h>
 #include <initguid.h>
 #include <popt.h>
@@ -130,6 +132,25 @@ static bool changeServiceState(unsigned int action)
     return retval;
 }
 
+static bool installINF()
+{
+    char path[MAX_PATH], dir[MAX_PATH], *temp;
+    GetModuleFileName(NULL, path, MAX_PATH);
+
+    temp = strrchr(path, '\\');
+    if (temp != NULL)
+    {
+        temp[1] = '\0';
+        strcpy(dir, path);
+        strcat(path, "iguanaIR.inf");
+        if (SetupCopyOEMInf(path, dir, SPOST_PATH, 0,
+                            NULL, 0, NULL, NULL))
+            return true;
+    }
+
+    return false;
+}
+
 static struct poptOption options[] =
 {
     { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
@@ -139,6 +160,7 @@ static struct poptOption options[] =
     { "unregsvc", 0, POPT_ARG_NONE, NULL, 'u', "Remove the system igdaemon service.", NULL },
     { "startsvc", 0, POPT_ARG_NONE, NULL, 's', "Start the system igdaemon service.", NULL },
     { "stopsvc", 0, POPT_ARG_NONE, NULL, 't', "Stop the system igdaemon service.", NULL },
+    { "installinf", 0, POPT_ARG_NONE, NULL, 'i', "Stop the system igdaemon service.", NULL },
 
     POPT_TABLEEND
 };
@@ -197,6 +219,11 @@ int main(int argc, char **argv)
 
         case 'u':
             if (changeServiceState(DELETE))
+                return 0;
+            return 1;
+
+        case 'i':
+            if (installINF())
                 return 0;
             return 1;
 

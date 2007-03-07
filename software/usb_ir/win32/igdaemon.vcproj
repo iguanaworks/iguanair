@@ -80,7 +80,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib"
+				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib setupapi.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="libusb-win32;popt"
