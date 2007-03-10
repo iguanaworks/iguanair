@@ -140,7 +140,7 @@ bool initDeviceList(usbDeviceList *list, usbId *ids,
 /* increment the id for each item in the list */
 static bool findId(itemHeader *item, void *userData)
 {
-    int *id = (int*)userData;
+    unsigned int *id = (unsigned int*)userData;
     if (((usbDevice*)item)->id == *id)
         (*id)++;
     return true;
@@ -210,7 +210,7 @@ bool updateDeviceList(usbDeviceList *list)
                         newDev->id = 0;
                         while(true)
                         {
-                            int prev = newDev->id;
+                            unsigned int prev = newDev->id;
                             forEach(&list->deviceList, findId, &newDev->id);
                             if (prev == newDev->id)
                                 break;

@@ -2,6 +2,10 @@
 
 #include <time.h>
 
+#ifdef __APPLE__
+    #include "darwin/clock_gettime.h"
+#endif
+
 #ifdef CLOCK_MONOTONIC
   #define CLOCK_SOURCE CLOCK_MONOTONIC
 #else

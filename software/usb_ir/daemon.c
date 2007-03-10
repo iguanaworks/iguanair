@@ -15,6 +15,9 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/param.h>
 
 #include "iguanaIR.h"
 #include "base.h"
@@ -102,54 +105,19 @@ static void workLoop()
     }
 }
 
-static bool forkOff()
-{
-    bool retval;
-
-    switch(fork())
-    {
-    case -1:
-        break;
-
-    case 0:
-        /* child process continue */
-        retval = true;
-        break;
-
-    default:
-        /* original process exit */
-        exit(0);
-    }
-
-    return retval;
-}
-
 /* based on: http://www.unixguide.net/unix/programming/1.7.shtml */
 static bool daemonize()
 {
     bool retval = false;
     message(LOG_DEBUG, "Forking into the background.\n");
 
-    if (! forkOff())
-        message(LOG_ERROR, "fork() failed: %s\n", strerror(errno));
-    else if (setsid() == -1)
-        message(LOG_ERROR, "setsid() failed: %s\n", strerror(errno));
-    else if (! forkOff())
-        message(LOG_ERROR, "second fork() failed: %s\n", strerror(errno));
-    else if (chdir("/") == -1)
-        message(LOG_ERROR, "chdir(\"/\") failed: %s\n", strerror(errno));
-    else
+    if(daemon(0, 0) == 0)
     {
         umask(0);
-        if ((stdin = freopen("/dev/null", "r", stdin)) == NULL)
-            message(LOG_ERROR, "Failed to reopen stdin", strerror(errno));
-        else if ((stdin = freopen("/dev/null", "w", stdout)) == NULL)
-            message(LOG_ERROR, "Failed to reopen stdout", strerror(errno));
-        else if ((stdin = freopen("/dev/null", "w", stderr)) == NULL)
-            message(LOG_ERROR, "Failed to reopen stderr", strerror(errno));
-        else
-            retval = true;
+        retval = true;
     }
+    else
+        message(LOG_ERROR, "daemon() failed: %s\n", strerror(errno));
 
     return retval;
 }

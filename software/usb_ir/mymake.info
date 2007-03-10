@@ -1,4 +1,4 @@
-SKIPDIRS=testdata win32 utils guiclient
+SKIPDIRS=testdata win32 utils guiclient darwin
 
 SOBJS=iguanaIR
 PYSWIG=iguanaIR
@@ -11,7 +11,7 @@ igclient=client.o list.o
 #         base.o support.o
 
 CPPFLAGS=-D_DEBUG
-CFLAGS=-Wall -g -pedantic
+CFLAGS=-Wall -g -pedantic -Wextra
 
 iguanaIR.o-CPPFLAGS=-DIGUANAIR_EXPORTS
 iguanaIR-LDFLAGS=-lrt

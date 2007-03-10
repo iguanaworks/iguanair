@@ -103,7 +103,7 @@ static versionedType types[] =
     {0, 0, {IG_DEV_BIGRECV, IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
 
     /* terminate the list */
-    {0}
+    {0, 0, {0, 0, 0, false, 0}}
 };
 
 static void queueDataPacket(iguanaDev *idev, dataPacket *current)
@@ -130,7 +130,7 @@ static bool sendData(iguanaDev *idev,
                      const void *buffer, int size, bool addTerminator)
 {
     bool retval = true;
-    unsigned int x, count, lastSize;
+    int x, count, lastSize;
     char *lastPacket = NULL;
 
     /* compute the packet count and size of last one */

@@ -97,7 +97,7 @@ static commandSpec supportedCommands[] =
     {"internal get id", true,  INTERNAL_GETID,   0,         false, false},
     {"internal set id", true,  INTERNAL_SETID,   0,         true,  false},
 
-    {NULL}
+    {NULL,false,0,0,false,false}
 };
 
 typedef struct igtask
@@ -510,7 +510,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             if (cmd->isSubTask)
             {
                 /* this frees data allocated in the caller */
-                data = cmd->arg;
+                data = (void*)cmd->arg;
                 result = 68;
             }
             /* read block from cmd->arg */
@@ -521,7 +521,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         case IG_DEV_BULKPINS:
         {
             unsigned int x;
-            data = malloc(64);
+            data = (void*)malloc(64);
             result = 64;
 
             for(x = 0; x < 15 && cmd->arg[x] != '\0'; x++)

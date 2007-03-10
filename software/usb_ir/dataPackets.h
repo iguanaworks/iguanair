@@ -14,7 +14,7 @@
 
 #include "list.h"
 
-#define DATA_PACKET_INIT {{NULL,NULL},0,0,NULL}
+#define DATA_PACKET_INIT {{NULL,NULL,NULL},0,0,NULL}
 typedef struct dataPacket
 {
     /* used internally for queuing incoming packets*/
