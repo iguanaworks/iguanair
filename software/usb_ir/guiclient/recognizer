@@ -137,14 +137,6 @@ def collectSignals(data, minCount = -1, maxCount = -1, state = None):
           (state is None or not state['done']):
 
         resp = iguanaIR.readResponse(conn, 10000)
-
-        # we can spin hard because the removeData call appears to
-        # block the process, not just the thread.  TODO: actually it
-        # is not clear at all what the problem is....  Specifically,
-        # it interacts badly with a sleep down below... how bizarre.
-        if state is not None:
-            time.sleep(0.1)
-
         if iguanaIR.responseIsError(resp):
             print 'Error response.'
         else:

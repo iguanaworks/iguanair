@@ -23,7 +23,6 @@
 %rename(connect) iguanaConnect;
 %rename(createRequest) iguanaCreateRequest;
 %rename(writeRequest) iguanaWriteRequest;
-%rename(readResponse) iguanaReadResponse;
 %rename(responseIsError) iguanaResponseIsError;
 %rename(removeData) iguanaRemoveData;
 
@@ -59,5 +58,24 @@
     $result = PyString_FromStringAndSize($result, *$1);
 }
 
+
+/* remove the old definition of iguanaReadResponse and insert one that
+ * properly releases the GIL before blocking. */
+%ignore iguanaReadResponse;
+%inline %{
+iguanaPacket readResponse(PIPE_PTR connection, unsigned int timeout)
+{
+    iguanaPacket retval;
+
+    /* Release the python lock while we wait for a response event,
+     * otherwise threads in Python can block while one thread loops on
+     * a call to the readResponse function. */
+    Py_BEGIN_ALLOW_THREADS;
+    retval = iguanaReadResponse(connection, timeout);
+    Py_END_ALLOW_THREADS;
+
+    return retval;
+}
+%}
 
 %include iguanaIR.h
