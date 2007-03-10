@@ -3,7 +3,7 @@
 %define uid   213
 
 Name:           iguanaIR
-Version:        0.30
+Version:        0.31
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
@@ -13,7 +13,7 @@ URL:            http://iguanaworks.net/ir
 Source0:        http://iguanaworks.net/ir/releases/%{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 PreReq:         /sbin/chkconfig, /sbin/service
-Requires:       libusb >= 0.1.11
+Requires:       libusb >= 0.1.11 lirc >= 0.8.1
 
 %description
 This package provides igdaemon and igclient, the programs necessary to
