@@ -263,6 +263,39 @@ int main(int argc, const char **argv)
     return retval;
 }
 
+static bool mkdirs(char *path)
+{
+    bool retval = false;
+    char *slash;
+
+    slash = strrchr(path, '/');
+    if (slash == NULL)
+    {
+        *((char*)NULL) = 5;
+        
+        retval = true;
+    }
+    else
+    {
+        slash[0] = '\0';
+        while(true)
+        {
+            /* make the new directory */
+            if (mkdir(path,
+                      S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
+                retval = true;
+            /* try to create the parent path if that was the problem */
+            else if (errno == 2 && mkdirs(path))
+                continue;
+
+            break;
+        }
+        slash[0] = '/';
+    }
+
+    return retval;
+}
+
 static int startListening(const char *name, const char *alias)
 {
     int sockfd, attempt = 0;
@@ -302,6 +335,8 @@ static int startListening(const char *name, const char *alias)
                     message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
                 }
             }
+            else if (errno == 2 && mkdirs(server.sun_path))
+                retry = true;
             else
                 message(LOG_ERROR,
                         "failed to bind server socket: %s\n", strerror(errno));
