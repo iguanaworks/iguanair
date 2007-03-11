@@ -78,24 +78,25 @@ ifeq ($(_SYSTEM_SET_),)
   CXX += -D$(SYSVAR)
   export CXX
 
-  # set some defaults for freebsd
+  # set some defaults
   ifeq ($(SYSTEM),freebsd)
     MAKE=gmake
   endif
-
-  SED=sed
-  export MAKE
-  export SED
-
   ifeq ($(SYSTEM),darwin)
     GCC_SHARED_ARG=-dynamiclib
     SO_SUFFIX=dylib
+    SED=gsed
   else
     GCC_SHARED_ARG=-shared
     SO_SUFFIX=so
+    SED=sed
   endif
+
+  # export those defaults
   export GCC_SHARED_ARG
   export SO_SUFFIX
+  export MAKE
+  export SED
 
   # verbose output of the compile time system name
   ifneq ($(V),0)
@@ -463,7 +464,13 @@ $(DEPFILE): $(__THISFILE__) $(INFOFILE) $(__TOPFILE__)
 	echo >> $@
 	echo "$(__OBJECTDEPS__)" | tr ";" "\n" | $(SED) 's/^ //' >> $@
 	echo "#GCC detected dependencies" >> $@
-#	echo $(CC) -MM -MP $(CPPFLAGS) $(foreach target, $(patsubst %,%.o-CPPFLAGS,$(basename $(GCCSRCS))), $($(target))) $(GCCSRCS)
+	$(CC) -MM -MP $(CPPFLAGS) $(foreach target, $(patsubst %,%.o-CPPFLAGS,$(basename $(GCCSRCS))), $($(target))) $(GCCSRCS) 2>/dev/null | \
+	                tr '\n' ' ' | \
+	                $(SED) -e 's/ [ ]*/ /g' \
+	                       -e 's/\([^: ]*.h\):/\n_FOUND_\1/g' \
+	                       -e 's/\([^: ]*.o\):/\n$$(INTDIR)\/\1:/g' | \
+	                cat > temp.txt
+
 	$(CC) -MM -MP $(CPPFLAGS) $(foreach target, $(patsubst %,%.o-CPPFLAGS,$(basename $(GCCSRCS))), $($(target))) $(GCCSRCS) 2>/dev/null | \
 	                tr '\n' ' ' | \
 	                $(SED) -e 's/ [ ]*/ /g' \

@@ -13,14 +13,26 @@ igclient=client.o list.o
 CPPFLAGS=-D_DEBUG
 CFLAGS=-Wall -g -pedantic -Wextra
 
+# TODO: make the visibility default to hidden....
 iguanaIR.o-CPPFLAGS=-DIGUANAIR_EXPORTS
-iguanaIR-LDFLAGS=-lrt
 
+# set up LDFLAGS for each target
+ifeq ($(SYSTEM),linux)
+  iguanaIR-LDFLAGS=-lrt
+endif
 igclient-LDFLAGS=-L. -liguanaIR
-
 igdaemon-LDFLAGS=-lusb -lpthread -L. -liguanaIR
-
 LDFLAGS=-lpopt
+
+# darwin is a little special
+ifeq ($(SYSTEM),darwin)
+  UNAME=$(shell uname -p 2>/dev/null)
+  CPPFLAGS+=-Idarwin/$(UNAME)/include
+  LDFLAGS+=-Ldarwin/$(UNAME)/lib
+
+  # drop Python building for darwin
+  PYSWIG=
+endif
 
 # Older versions of libusb do not play with threads at all nicely.
 # This driver was actually developed on such a version of libusb.

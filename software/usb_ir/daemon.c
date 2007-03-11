@@ -13,6 +13,7 @@
 
 #include <popt.h>
 #include <signal.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -41,7 +42,7 @@ static unsigned int recvTimeout = 1000;
 #endif
 static unsigned int sendTimeout = 1000;
 
-static void quitHandler(int sig)
+static void quitHandler(int UNUSED(sig))
 {
     closePipe(commPipe[WRITE]);
 }

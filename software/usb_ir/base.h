@@ -28,6 +28,10 @@
 
     /* lock defines */
     #define LOCK_PTR CRITICAL_SECTION
+
+    /* windows has no way to flag specific variables as unused */
+    #define UNUSED(a) a
+
 #else
     #include <stdint.h>
     #include <unistd.h>
@@ -43,6 +47,13 @@
     #define InitializeCriticalSection(a) pthread_mutex_init((a), NULL)
     #define EnterCriticalSection pthread_mutex_lock
     #define LeaveCriticalSection pthread_mutex_unlock
+
+    /* gcc 3.3 has problems with __attribute__ ((unused)) on variables */
+    #if (__GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4))
+        #define UNUSED(a) a
+    #else
+        #define UNUSED(a) a __attribute__((unused))
+    #endif
 
 #endif
 

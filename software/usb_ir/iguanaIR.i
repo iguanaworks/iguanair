@@ -50,12 +50,12 @@
 
 %typemap(out) unsigned char*
 {
-    $result = $1;
+    $result = (PyObject*)$1;
 }
 
 %typemap(argout) unsigned int *dataLength
 {
-    $result = PyString_FromStringAndSize($result, *$1);
+    $result = PyString_FromStringAndSize((char*)$result, *$1);
 }
 
 

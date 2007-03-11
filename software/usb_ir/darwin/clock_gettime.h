@@ -7,7 +7,7 @@
 #define _IGUANAWORKS_EMUL_CLOCK_GETTIME
 #include <mach/mach_time.h>
 #define CLOCK_MONOTONIC 1
-static inline int clock_gettime(int unused, struct timespec *tp) {
+static inline int clock_gettime(int UNUSED(clock), struct timespec *tp) {
 	static mach_timebase_info_data_t mtid;
 	static struct timeval tv;
 	static uint64_t first_mat;
