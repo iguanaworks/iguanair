@@ -469,13 +469,6 @@ $(DEPFILE): $(__THISFILE__) $(INFOFILE) $(__TOPFILE__)
 	                $(SED) -e 's/ [ ]*/ /g' \
 	                       -e 's/\([^: ]*.h\):/\n_FOUND_\1/g' \
 	                       -e 's/\([^: ]*.o\):/\n$$(INTDIR)\/\1:/g' | \
-	                cat > temp.txt
-
-	$(CC) -MM -MP $(CPPFLAGS) $(foreach target, $(patsubst %,%.o-CPPFLAGS,$(basename $(GCCSRCS))), $($(target))) $(GCCSRCS) 2>/dev/null | \
-	                tr '\n' ' ' | \
-	                $(SED) -e 's/ [ ]*/ /g' \
-	                       -e 's/\([^: ]*.h\):/\n_FOUND_\1/g' \
-	                       -e 's/\([^: ]*.o\):/\n$$(INTDIR)\/\1:/g' | \
 	                sort -u | \
 	                tr '\n' '!' | \
 	                $(SED) -e 's/!_FOUND_\([^!]*\)/\1/g' \
