@@ -90,6 +90,10 @@ fi
 %ghost %{pydir}/*.pyo
 
 %changelog
+* Sat Mar 10 2007 Joseph Dunn <jdunn@iguanaworks.net> 0.31-1
+- First release with tentative win32 and darwin support.  Darwin needs
+  some work, and windows needs to interface with applications.
+
 * Thu Feb 1 2007 Joseph Dunn <jdunn@iguanaworks.net> 0.30-1
 - Added a utility to change the frequency on firmware version 3, and
   had to make iguanaRemoveData accessible to python code.
