@@ -400,7 +400,9 @@ p  s p  p s  p s  p s  s p  p s  s p  p s  p s  s p  s p  p s  p s
 
 class SpaceEncoded(decoder):
     name = 'SpaceEncoder'
-    header = [8,4,1]
+    #header = [8,4,1]
+    header = [17,8,1]
+    #header = [17,4,1]
 
     def decodeStep(self, pos):
         if pos % 2 == 0:
@@ -425,7 +427,7 @@ def handleTransmissions(binned):
     while True:
         lock.acquire()
 
-        codes = divideCodes(data, gap)
+        codes = divideCodes(data, gap, 0.60)
         lastCode = codes[-1][:]
         sanitizeCodes(codes, binned, smallest)
         for x in range(len(codes)):
@@ -493,11 +495,13 @@ reader.start()
 
 try:
     handleTransmissions(binned)
-except:
+finally:
     state['done'] = True
     reader.join()
 
 """
+List of things supported by WinLirc.
+
 # RC5
 The remote uses the RC5 protocol.
 
