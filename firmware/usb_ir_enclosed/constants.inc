@@ -56,9 +56,8 @@ CTL_TX_OVERFLOW: 	EQU 0x30 ;transmit code is too long, throwing it out
 
 RX_PIN_CR: EQU P05CR ; control reg for rx pin
 
-TX_PIN_CR: EQU P12CR  ;control reg for tx pin
 TX_BANK:   EQU P1DATA ;which set is the transmit pin in?
-TX_MASK:   EQU 0x04   ;which pins to drive high for ir tx
+TX_MASK:   EQU 0x0C   ;which pins to drive high for ir tx
 
 BURST_DELAY: EQU 30 ;delay loops between GPIO transfers in burst mode
 
