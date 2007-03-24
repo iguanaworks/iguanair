@@ -7,13 +7,10 @@ REGSEL_PIN = 0x04
 RW_PIN     = 0x02
 ENABLE_PIN = 0x01
 
-# version SHOULD be detected automatically
-version = 2
-
 import iguanaIR
 conn = iguanaIR.connect('0')
 
-def deviceTransaction(type, data = None):
+def deviceTransaction(type, data = ''):
     retval = False
     req = iguanaIR.createRequest(type, data)
     if not iguanaIR.writeRequest(req, conn):
@@ -22,6 +19,9 @@ def deviceTransaction(type, data = None):
         resp = iguanaIR.readResponse(conn, 10000)
         if iguanaIR.responseIsError(resp):
             print 'Error response.'
+        elif type == iguanaIR.IG_DEV_GETVERSION:
+            data = iguanaIR.removeData(resp)
+            retval = ord(data[0]) + (ord(data[1]) << 8)
         else:
             retval = True
     return retval
@@ -76,6 +76,10 @@ def bulkWriteString(text):
     bulkWriteCommands(text, False)
 
 def initLCD():
+    global version
+    # detect the version nice an early
+    version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
+
     # set all the pins to outputs
     deviceTransaction(iguanaIR.IG_DEV_SETCONFIG0, chr(iguanaIR.IG_OUTPUT) * 4)
     deviceTransaction(iguanaIR.IG_DEV_SETCONFIG1, chr(iguanaIR.IG_OUTPUT) * 4)

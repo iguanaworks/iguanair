@@ -134,6 +134,7 @@ bool parseNumber(const char *text, unsigned int *value)
     {
         int x;
         retval = true;
+        *value = 0;
         for(x = 1; text[x] != '\0'; x++)
             if (text[x] != '0' && text[x] != '1')
             {
