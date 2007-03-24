@@ -124,20 +124,20 @@ main_recv:
 	jz main_rx_off
 	cmp A, CTL_TX ;transmit a code
 	jz main_transmit ;receive code, ack and transmit
-;	cmp A, CTL_SET_PINS ;set the GPIO pins
-;	jz main_set_pins
-;	cmp A, CTL_BURST ;set the GPIO pins in a sequence
-;	jz main_burst
-;	cmp A, CTL_GET_PINS ;get the GPIO pin state
-;	jz main_get_pins
-;	cmp A, CTL_GET_CFG0_PINS ;get GPIO configuration
-;	jz main_get_cfg0_pins
-;	cmp A, CTL_SET_CFG0_PINS ;set GPIO configuration
-;	jz main_set_cfg0_pins
-;	cmp A, CTL_GET_CFG1_PINS ;get GPIO configuration
-;	jz main_get_cfg1_pins
-;	cmp A, CTL_SET_CFG1_PINS ;set GPIO configuration
-;	jz main_set_cfg1_pins
+	cmp A, CTL_SET_PINS ;set the GPIO pins
+	jz main_loop; NOT IN THIS VERSION
+	cmp A, CTL_BURST ;set the GPIO pins in a sequence
+	jz main_loop; NOT IN THIS VERSION
+	cmp A, CTL_GET_PINS ;get the GPIO pin state
+	jz main_loop; NOT IN THIS VERSION
+	cmp A, CTL_GET_CFG0_PINS ;get GPIO configuration
+	jz main_loop; NOT IN THIS VERSION
+	cmp A, CTL_SET_CFG0_PINS ;set GPIO configuration
+	jz main_loop; NOT IN THIS VERSION
+	cmp A, CTL_GET_CFG1_PINS ;get GPIO configuration
+	jz main_loop; NOT IN THIS VERSION
+	cmp A, CTL_SET_CFG1_PINS ;set GPIO configuration
+	jz main_loop; NOT IN THIS VERSION
 	cmp A, CTL_PROG ;program a block of flash
 	jz main_prog
 	cmp A, CTL_EXEC ;call an arbitrary address

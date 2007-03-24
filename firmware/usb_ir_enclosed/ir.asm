@@ -245,7 +245,8 @@ org TXPROG_ADDR
 ;code format: first bit is 1 for on, 0 for off
 ;next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
 transmit_code:
-	; read a byte describing channel selection
+	; read a byte describing channel selection, and make sure it only specifies valid channels
+	and [control_pkt + CDATA + 1], TX_MASK
 	mov [tx_pins], [control_pkt + CDATA + 1]
 	; if the byte was 0 then transmit on all channels
 	mov A, [tx_pins]
