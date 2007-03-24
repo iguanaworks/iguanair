@@ -1,0 +1,9 @@
+-a -f project.dep -p./lib/obj/ -o.o -- -IC:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include -I./lib -IC:/PROGRA~1/CYPRES~1/PSOCDE~1/tools/include/CY7C63~2 -- 
+lib/psocconfig.asm   
+lib/psocconfigtbl.asm   
+lib/usb.asm   
+lib/usb_cls_hid.asm   
+lib/usb_descr.asm   
+lib/usb_drv.asm   
+lib/usb_std.asm   
+lib/usbint.asm 
