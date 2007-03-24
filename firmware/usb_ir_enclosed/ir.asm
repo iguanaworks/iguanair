@@ -20,10 +20,13 @@ export twrap_int
 
 AREA bss
 
+tx_pins:
+	BLK 1 ;pins to use for current tx
 tx_state:
 	BLK 1 ;state of tx (on or off)
 tx_temp:
 	BLK 1 ;tx temp variable
+
 rx_high:
 	BLK 1 ;received data high byte
 rx_low:
@@ -242,10 +245,17 @@ org TXPROG_ADDR
 ;code format: first bit is 1 for on, 0 for off
 ;next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
 transmit_code:
+	; read a byte describing channel selection
+	mov [tx_pins], [control_pkt + CDATA + 1]
+	; if the byte was 0 then transmit on all channels
+	mov A, [tx_pins]
+	jnz tx_start
+	mov [tx_pins], TX_MASK
+tx_start:
 	mov [buffer_ptr], buffer ;reset to start of buffer
 	mov [tx_state], 0 ;clear tx state
 	mov [tmp2], [control_pkt + CDATA] ;get number of bytes to transmit
-	mov A, [tmp2] ;get zero flag set if tmp2 is zero
+	mov A, [tmp2] ; set zero flag if tmp2 is zero
 tx_loop:
 	jz tx_done ;if zero byte, we're done
 	mvi A, [buffer_ptr] ;move buffer data into A, increment pointer
@@ -259,8 +269,9 @@ tx_loop:
 	jz tx_on ;if on, jump to tx_on, else fall through
 	mov [tx_state], 0; clear tx
 	jmp tx_pulse ;start sending pulse
+
 tx_on:
-	mov [tx_state], TX_MASK ;mask on tx bits
+	mov [tx_state], [tx_pins] ;mask on tx bits; TODO: changed timing!!!
 	jmp tx_pulse ;start sending pulse--this jump seems redundant,
 	             ;but is there to make timing the same on both branches
 

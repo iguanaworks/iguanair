@@ -40,20 +40,20 @@ pins_reset:
 	;clear the data registers
 	mov REG[P0DATA], 0
 	mov REG[P1DATA], 0
-	; set the tx pin to on in the new design
+	; default the tx pins to on in the new design
 	mov REG[TX_BANK], TX_MASK
-	
-	;clear the config registers for pins we use
-	;port 0, pins 0-3
-	mov REG[P00CR], 0
-	mov REG[P01CR], 0
-	mov REG[P02CR], 0
-	mov REG[P03CR], 0
-	;port 1, pins 3-6
-	;mov REG[P13CR], 0
-	mov REG[P14CR], 0
-	mov REG[P15CR], 0
-	mov REG[P16CR], 0
+
+	; clear the config registers for pins we use
+	; port 0, pins 0-3
+;	mov REG[P00CR], 0
+;	mov REG[P01CR], 0
+;	mov REG[P02CR], 0
+;	mov REG[P03CR], 0
+	; port 1, pins 3-6
+;	mov REG[P13CR], 0
+;	mov REG[P14CR], 0
+;	mov REG[P15CR], 0
+;	mov REG[P16CR], 0
 
 	ret
 

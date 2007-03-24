@@ -32,7 +32,7 @@ BUFFER_SIZE: EQU 144 ;size of code buffer
 ;the code buffer, no matter where it is in memory.  We can take advantage of that
 ;fact when writing user-defined code that needs a packet buffer.
 
-PACKET_SIZE: EQU 8 ;size of packets to send
+PACKET_SIZE:   EQU 8 ;size of packets to send
 CTL_BASE_SIZE: EQU 4 ;base size of control packets (w/o data)
 
 ;control codes
@@ -56,8 +56,8 @@ CTL_TX_OVERFLOW: 	EQU 0x30 ;transmit code is too long, throwing it out
 
 RX_PIN_CR: EQU P05CR ; control reg for rx pin
 
-TX_BANK:   EQU P1DATA ;which set is the transmit pin in?
-TX_MASK:   EQU 0x0C   ;which pins to drive high for ir tx
+TX_BANK:   EQU P1DATA ;which set are the transmit pins in?
+TX_MASK:   EQU 0x0C   ;all pins that can tx
 
 BURST_DELAY: EQU 30 ;delay loops between GPIO transfers in burst mode
 

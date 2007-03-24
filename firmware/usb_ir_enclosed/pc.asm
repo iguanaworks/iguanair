@@ -123,9 +123,18 @@ read_wait:
 	ret ;return packet length
 
 ;FUNCTION read_control
-;receives a control packet; returns the control code
+;receives a control packet, returning the control code
 ;puts a copy of code and data into control_packet
 read_control:
+	; zero the entire control_pkt
+	mov X, 0
+  zero_loop:
+	mov [X + control_pkt], 0
+	inc X
+	mov A, X
+	cmp A, PACKET_SIZE
+	jnz zero_loop
+
 	;we already know the packet is pending (from check_recv), so just read it
 	mov [tmp], control_pkt + CCODE ;set pointer to where control code goes in packet
 	mov A, 0x2; ;check endpoint 2

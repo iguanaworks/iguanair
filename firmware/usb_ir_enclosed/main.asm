@@ -52,12 +52,14 @@ flash_addr:
 AREA text
 
 _main:
-	mov REG[P12CR], 0x01 ;enable output on tx channel 1
-	mov REG[P13CR], 0x01 ;enable output on tx channel 2
-;	mov REG[P14CR], 0x01 ;enable output on tx channel 1
-;	mov REG[P15CR], 0x01 ;enable output on tx channel 2
-;	mov REG[P16CR], 0x01 ;enable output on tx channel 3
-;	mov REG[P17CR], 0x01 ;enable output on tx channel 4
+; two channels on the prototype
+	mov REG[P12CR], 0x01 ;enable output on tx channel 0
+	mov REG[P13CR], 0x01 ;enable output on tx channel 1
+; all four on the final version
+;	mov REG[P14CR], 0x01 ;enable output on tx channel 0
+;	mov REG[P15CR], 0x01 ;enable output on tx channel 1
+;	mov REG[P16CR], 0x01 ;enable output on tx channel 2
+;	mov REG[P17CR], 0x01 ;enable output on tx channel 3
 
 	;configure capture
 	mov REG[RX_PIN_CR], 0b00000010 ;configure port pin: pullup enabled
@@ -122,20 +124,20 @@ main_recv:
 	jz main_rx_off
 	cmp A, CTL_TX ;transmit a code
 	jz main_transmit ;receive code, ack and transmit
-	cmp A, CTL_SET_PINS ;set the GPIO pins
-	jz main_set_pins
-	cmp A, CTL_BURST ;set the GPIO pins in a sequence
-	jz main_burst
-	cmp A, CTL_GET_PINS ;get the GPIO pin state
-	jz main_get_pins
-	cmp A, CTL_GET_CFG0_PINS ;get GPIO configuration
-	jz main_get_cfg0_pins
-	cmp A, CTL_SET_CFG0_PINS ;set GPIO configuration
-	jz main_set_cfg0_pins
-	cmp A, CTL_GET_CFG1_PINS ;get GPIO configuration
-	jz main_get_cfg1_pins
-	cmp A, CTL_SET_CFG1_PINS ;set GPIO configuration
-	jz main_set_cfg1_pins
+;	cmp A, CTL_SET_PINS ;set the GPIO pins
+;	jz main_set_pins
+;	cmp A, CTL_BURST ;set the GPIO pins in a sequence
+;	jz main_burst
+;	cmp A, CTL_GET_PINS ;get the GPIO pin state
+;	jz main_get_pins
+;	cmp A, CTL_GET_CFG0_PINS ;get GPIO configuration
+;	jz main_get_cfg0_pins
+;	cmp A, CTL_SET_CFG0_PINS ;set GPIO configuration
+;	jz main_set_cfg0_pins
+;	cmp A, CTL_GET_CFG1_PINS ;get GPIO configuration
+;	jz main_get_cfg1_pins
+;	cmp A, CTL_SET_CFG1_PINS ;set GPIO configuration
+;	jz main_set_cfg1_pins
 	cmp A, CTL_PROG ;program a block of flash
 	jz main_prog
 	cmp A, CTL_EXEC ;call an arbitrary address
@@ -183,7 +185,7 @@ main_rx_off:
 	jmp main_loop
 
 main_transmit:
-	lcall rx_disable;disable timer interrupt, clear rx state
+	lcall rx_disable  ;disable timer interrupt, clear rx state
 	lcall read_buffer ;receive the code--returns 0 if read overflow
 	jz main_tover
 	lcall transmit_code ;transmit
