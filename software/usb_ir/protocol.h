@@ -47,6 +47,9 @@ typedef struct iguanaDev
     /* need to know what protocol version to support. */
     uint16_t version;
 
+    /* what channels should we use in transmit? default 0 ==> ALL*/
+    unsigned char channels;
+
     /* might as well keep the list of clients here */
     listHeader clientList;
 

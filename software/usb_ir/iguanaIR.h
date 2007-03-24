@@ -67,6 +67,7 @@ enum
     IG_DEV_BULKPINS   = 0x0E,
     IG_DEV_GETID      = 0x0F, /* not a real type, only a response */
     IG_DEV_RESET      = 0xFF,
+    IG_DEV_CHANNELS   = 0x11,
 
     /* "from device" codes */
     IG_DEV_RECV       = 0x10,

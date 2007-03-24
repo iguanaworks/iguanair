@@ -50,6 +50,11 @@ static bool handleClientRequest(dataPacket *request, client *target)
         }
         break;
 
+    case IG_DEV_CHANNELS:
+        target->idev->channels = request->data[0];
+        retval = true;
+        break;
+
     case IG_DEV_SEND:
     {
         unsigned char *codes;

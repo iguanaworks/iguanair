@@ -76,6 +76,7 @@ static commandSpec supportedCommands[] =
     {"bulk pins",       false, IG_DEV_BULKPINS,        0,      true,  false},
     {"get id",          false, IG_DEV_GETID,           0,      false, false},
     {"reset",           false, IG_DEV_RESET,           0,      false, false},
+    {"set channels",    false, IG_DEV_CHANNELS,        0,      true,  true},
 
     {"get config 0",    false, IG_DEV_GETCONFIG0,      0,      false, false},
     {"get config 1",    false, IG_DEV_GETCONFIG1,      0,      false, false},
@@ -473,6 +474,21 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             recvOn = false;
             break;
 
+        case IG_DEV_CHANNELS:
+        {
+            unsigned int value;
+
+            /* translate cmd->pins */
+            if (parseNumber(cmd->arg, &value))
+            {
+                if (value > 0x0F)
+                    message(LOG_ERROR, "Only %d channels are available, invalid channel specification.\n", IG_PIN_COUNT);
+                else
+                    result = iguanaPinSpecToData(value, &data);
+            }
+            break;
+        }
+
         case IG_DEV_SETCONFIG0:
             result = IG_PIN_COUNT / 2;
             data = malloc(sizeof(pinState) / 2);
@@ -626,6 +642,7 @@ static struct poptOption options[] =
     { "execute", '\0', POPT_ARG_NONE, NULL, IG_DEV_EXECUTE, "Execute code starting at address 0x1fc0 on the device.", "address" },
     { "lcd-text", '\0', POPT_ARG_STRING, NULL, IG_DEV_BULKPINS, "Send a bulk transfer of pin settings to write the argument to an LCD.", "string" },
     { "reset", '\0', POPT_ARG_NONE, NULL, IG_DEV_RESET, "Reset the USB device.", NULL },
+    { "set-channels", '\0', POPT_ARG_STRING, NULL, IG_DEV_CHANNELS, "Set which channels are used during transmits.", "channels" },
 
     /* commands that actually store and load the pin configuration */
     { "get-pin-config", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETPINS, "Retrieve the internal pin state.", NULL },
@@ -698,6 +715,7 @@ int main(int argc, const char **argv)
         case IG_DEV_EXECUTE:
         case IG_DEV_BULKPINS:
         case IG_DEV_RESET:
+        case IG_DEV_CHANNELS:
 
         /* internal commands */
         case INTERNAL_GETOUTPINS:
