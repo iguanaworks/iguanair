@@ -483,9 +483,13 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             if (parseNumber(cmd->arg, &value))
             {
                 if (value > 0x0F)
-                    message(LOG_ERROR, "Only %d channels are available, invalid channel specification.\n", IG_PIN_COUNT);
+                    message(LOG_ERROR, "Only 4 channels are possible, invalid channel specification.\n");
                 else
-                    result = iguanaPinSpecToData(value, &data);
+                {
+                    data = malloc(1);
+                    ((char*)data)[0] = value << 4;
+                    result = 1;
+                }
             }
             break;
         }

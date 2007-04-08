@@ -83,7 +83,7 @@ enum
     IG_CTL_FROMDEV    = 0xDC,
 
     /* Maximum firmware version supported by this driver. */
-    MAX_VERSION = 3
+    MAX_VERSION = 4
 };
 
 /* manage a connection to the server */

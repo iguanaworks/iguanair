@@ -3,7 +3,7 @@
 %define uid   213
 
 Name:           iguanaIR
-Version:        0.31
+Version:        0.32
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 

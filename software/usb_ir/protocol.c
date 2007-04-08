@@ -96,7 +96,7 @@ static versionedType types[] =
     {3, 0, {IG_DEV_BULKPINS,   CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_GETID,      CTL_TODEV,   NO_PAYLOAD,  true,  12}},
     {0, 0, {IG_DEV_RESET,      CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_CHANNELS,   CTL_TODEV,   2,           true,  NO_PAYLOAD}},
+    {0, 0, {IG_DEV_CHANNELS,   CTL_TODEV,   1,           true,  NO_PAYLOAD}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,    IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -247,10 +247,13 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
         else
         {
             if (idev->version >= 3)
+            {
                 msg[length++] = request->dataLen;
-            /* select which channels to transmit on */
-            if (request->code == IG_DEV_SEND)
-                msg[length++] = idev->channels;
+
+                /* select which channels to transmit on */
+                if (request->code == IG_DEV_SEND)
+                    msg[length++] = idev->channels;
+            }
         }
 
 #ifdef LIBUSB_NO_THREADS

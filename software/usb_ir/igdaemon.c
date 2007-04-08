@@ -51,6 +51,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
         break;
 
     case IG_DEV_CHANNELS:
+/* TODO: need to check that we match the protocol BEFORE this */
         target->idev->channels = request->data[0];
         retval = true;
         break;
