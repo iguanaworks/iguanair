@@ -1,8 +1,9 @@
 #!/bin/sh
+rm -r debinary
+rm -r debinary64
+
 make clean
 make
-rm -r debinary
-
 ##Set Revision Number, default is 0
 if [ "$1" == "" ]; then
 REV=0
@@ -16,8 +17,10 @@ ARCH=`uname -m | sed 's/i\([456]\)86/i386/'`
 
 #directory for making the .deb
 BASE=debinary
+BASE64=debinary64
 version=`grep '^Version:' iguanaIR.spec | sed 's/^Version:\s*//'`
 NAME="iguanaIR-$version-$REV.$ARCH.deb"
+NAME64="iguanaIR-$version-$REV.amd64.deb"
 mkdir $BASE
 mkdir $BASE/DEBIAN
 
@@ -95,7 +98,8 @@ mkdir $BASE/lib/udev/devices/iguanaIR
 
 mkdir $BASE/usr
 mkdir $BASE/usr/bin
-cp igclient igdaemon initLCD $BASE/usr/bin/
+#cp igclient igdaemon initLCD $BASE/usr/bin/
+cp igclient igdaemon $BASE/usr/bin/
 mkdir $BASE/usr/include
 cp iguanaIR.h  $BASE/usr/include/
 mkdir $BASE/usr/lib
@@ -109,3 +113,40 @@ cp AUTHORS LICENSE WHY notes.txt protocols.txt $BASE/usr/share/doc/iguanaIR/
 
 
 dpkg -b $BASE $NAME
+
+
+
+if [ -a  "$2" ];then
+
+versioncheck=`echo "$2"|grep x86_64|grep iguanaIR-$version`
+
+if [ -z "$versioncheck" ];then
+echo "x86_64 rpm package wrong version"
+else
+
+
+echo "amd64"
+cp -a $BASE $BASE64
+echo "Architecture: amd64">>$BASE64/DEBIAN/control2
+grep -v "Architecture:" $BASE64/DEBIAN/control >> $BASE64/DEBIAN/control2
+mv $BASE64/DEBIAN/control2 $BASE64/DEBIAN/control
+
+
+mkdir temp64
+cp $2 temp64
+cd temp64
+rpm2cpio $2 |cpio -idv
+cp usr/bin/igclient ../$BASE64/usr/bin/
+cp usr/bin/igdaemon ../$BASE64/usr/bin/
+cp usr/lib64/libiguanaIR.so ../$BASE64/usr/lib/
+cd ..
+rm -r temp64
+
+
+
+
+dpkg -b $BASE64 $NAME64
+
+fi
+fi
+
