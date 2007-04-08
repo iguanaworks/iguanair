@@ -8,7 +8,7 @@
 ;See COPYING for license details.
 
 ;version ID indicates the firmware version loaded on this chip
-VERSION_ID_LOW:  EQU 0x03 ;firmware version ID low byte
+VERSION_ID_LOW:  EQU 0x04 ;firmware version ID low byte
 VERSION_ID_HIGH: EQU 0x00 ;firmware version ID high byte
 
 ;flash programming stuff
@@ -57,7 +57,7 @@ CTL_TX_OVERFLOW: 	EQU 0x30 ;transmit code is too long, throwing it out
 RX_PIN_CR: EQU P05CR ; control reg for rx pin
 
 TX_BANK:   EQU P1DATA ;which set are the transmit pins in?
-TX_MASK:   EQU 0x0C   ;all pins that can tx
+TX_MASK:   EQU 0xF0   ;all pins that can tx
 
 BURST_DELAY: EQU 30 ;delay loops between GPIO transfers in burst mode
 

@@ -52,14 +52,11 @@ flash_addr:
 AREA text
 
 _main:
-; two channels on the prototype
-	mov REG[P12CR], 0x01 ;enable output on tx channel 0
-	mov REG[P13CR], 0x01 ;enable output on tx channel 1
-; all four on the final version
-;	mov REG[P14CR], 0x01 ;enable output on tx channel 0
-;	mov REG[P15CR], 0x01 ;enable output on tx channel 1
-;	mov REG[P16CR], 0x01 ;enable output on tx channel 2
-;	mov REG[P17CR], 0x01 ;enable output on tx channel 3
+    ; four channels on the final version
+	mov REG[P14CR], 0x01 ;enable output on tx channel 0
+	mov REG[P15CR], 0x01 ;enable output on tx channel 1
+	mov REG[P16CR], 0x01 ;enable output on tx channel 2
+	mov REG[P17CR], 0x01 ;enable output on tx channel 3
 
 	;configure capture
 	mov REG[RX_PIN_CR], 0b00000010 ;configure port pin: pullup enabled
