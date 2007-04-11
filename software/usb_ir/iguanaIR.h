@@ -90,7 +90,8 @@ enum
 IGUANAIR_API PIPE_PTR iguanaConnect(const char *name);
 IGUANAIR_API void iguanaClose(PIPE_PTR connection);
 
-/* requests and responses are represented by opaque handles */
+/* requests and responses are represented by opaque handles, so
+ * functions are needed to access these objects */
 typedef void* iguanaPacket;
 IGUANAIR_API iguanaPacket iguanaCreateRequest(unsigned char code,
                                               unsigned int dataLength,
@@ -107,6 +108,7 @@ IGUANAIR_API iguanaPacket iguanaReadResponse(PIPE_PTR connection,
                                              unsigned int timeout);
 IGUANAIR_API bool iguanaResponseIsError(const iguanaPacket response);
 
+/* a few helper functions for dealing with function arguments */
 IGUANAIR_API int iguanaReadPulseFile(const char *filename, void **pulses);
 IGUANAIR_API int iguanaReadBlockFile(const char *filename, void **data);
 IGUANAIR_API int iguanaPinSpecToData(unsigned int value, void **data);

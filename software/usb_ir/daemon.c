@@ -36,9 +36,9 @@ static usbId ids[] = {
 static mode_t devMode = 0777;
 static PIPE_PTR commPipe[2];
 #ifdef LIBUSB_NO_THREADS
-static unsigned int recvTimeout = 100;
+  static unsigned int recvTimeout = 100;
 #else
-static unsigned int recvTimeout = 1000;
+  static unsigned int recvTimeout = 1000;
 #endif
 static unsigned int sendTimeout = 1000;
 
@@ -66,14 +66,14 @@ static void workLoop()
     else if (signal(SIGHUP, scanHandler) == SIG_ERR)
         message(LOG_ERROR, "failed to install SIGHUP handler.\n");
     else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-        message(LOG_ERROR, "failed to install SIGPIPE handler.\n");
+        message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
     else if (! createPipePair(commPipe))
         message(LOG_ERROR, "failed to open communication pipe.\n");
     else
     {
         bool quit = false;
 
-        /* trigger initial scan */
+        /* trigger the initial device scan */
         scanHandler(SIGHUP);
 
         /* now wait for commands */
@@ -85,9 +85,9 @@ static void workLoop()
             {
             /* error */
             default:
-                message(LOG_ERROR, "Command read failed.\n");
-                break;
-
+                message(LOG_ERROR,
+                        "Command read failed: %s\n", strerror(errno));
+                /* fall through and quit */
             /* close, signalling a shutdown */
             case 0:
                 quit = true;
@@ -104,23 +104,6 @@ static void workLoop()
         /* wait for all the workers to finish */
         reapAllChildren(&list);
     }
-}
-
-/* based on: http://www.unixguide.net/unix/programming/1.7.shtml */
-static bool daemonize()
-{
-    bool retval = false;
-    message(LOG_DEBUG, "Forking into the background.\n");
-
-    if(daemon(0, 0) == 0)
-    {
-        umask(0);
-        retval = true;
-    }
-    else
-        message(LOG_ERROR, "daemon() failed: %s\n", strerror(errno));
-
-    return retval;
 }
 
 static struct poptOption options[] =
@@ -150,7 +133,7 @@ static void exitOnOptError(poptContext poptCon, char *msg)
 
 int main(int argc, const char **argv)
 {
-    int x, retval = 1;
+    int exitval = 0, x;
     bool runAsDaemon = true;
     const char *pidFile = NULL, **leftOvers;
     poptContext poptCon;
@@ -222,45 +205,41 @@ int main(int argc, const char **argv)
         exit(1);
     }
 
-
-
-    for(x = 1; x < argc; x++)
+    /* run as a daemon if requested and possible */
+    if (runAsDaemon)
     {
+        message(LOG_DEBUG, "Forking into the background.\n");
+        if (daemon(0, 0) == 0)
+            umask(0);
+        else
+        {
+            message(LOG_ERROR, "daemon() failed: %s\n", strerror(errno));
+            exitval = 1;
+        }
     }
 
-    /* run as a daemon if requested and possible */
-    if (runAsDaemon && ! daemonize())
-        message(LOG_ERROR, "Failed to daemonize.\n");
-    else
+    /* write the pid out if requested */
+    if (exitval == 0 && pidFile != NULL)
     {
-        bool success = false;
-
-        /* write the pid out if requested */
-        if (pidFile != NULL)
+        FILE *pf;
+        pf = fopen(pidFile, "w");
+        if (pf == NULL)
         {
-            FILE *pf;
-            pf = fopen(pidFile, "w");
-            if (pf == NULL)
-                message(LOG_ERROR, "Failed to open pid file.\n");
-            else
-            {
-                fprintf(pf, "%d\n", getpid());
-                fclose(pf);
-                success = true;
-            }
+            message(LOG_ERROR, "Failed to open pid file.\n");
+            exitval = 2;
         }
         else
-            success = true;
-
-        if (success)
         {
-            /* wait for user signals */
-            workLoop();
-            retval = 0;
+            fprintf(pf, "%d\n", getpid());
+            fclose(pf);
         }
     }
 
-    return retval;
+    /* if startup succeeded wait for user signals */
+    if (exitval == 0)
+        workLoop();
+
+    return exitval;
 }
 
 static bool mkdirs(char *path)
