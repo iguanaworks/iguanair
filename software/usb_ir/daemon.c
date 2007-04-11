@@ -264,7 +264,7 @@ static bool mkdirs(char *path)
                       S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
                 retval = true;
             /* try to create the parent path if that was the problem */
-            else if (errno == 2 && mkdirs(path))
+            else if (errno == ENOENT && mkdirs(path))
                 continue;
 
             break;
@@ -301,7 +301,7 @@ static int startListening(const char *name, const char *alias)
                 /* check that the socket has something listening */
                 int testconn;
                 testconn = iguanaConnect(name);
-                if (testconn == -1 && errno == 111 && attempt == 1)
+                if (testconn == -1 && errno == ECONNREFUSED && attempt == 1)
                 {
                     /* if not, try unlinking the pipe and trying again */
                     unlink(server.sun_path);
@@ -314,7 +314,8 @@ static int startListening(const char *name, const char *alias)
                     message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
                 }
             }
-            else if (errno == 2 && mkdirs(server.sun_path))
+            /* attempt to make the directory if we get ENOENT */
+            else if (errno == ENOENT && mkdirs(server.sun_path))
                 retry = true;
             else
                 message(LOG_ERROR,
