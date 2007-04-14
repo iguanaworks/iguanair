@@ -464,10 +464,19 @@ void handleIncomingPackets(iguanaDev *idev)
                             length = interruptRecv(idev->usbDev,
                                                    buffer,
                                                    idev->maxPacketSize);
-/* TODO: timeouts should never happen, but can cause a CRASH */
-                            memcpy(current->data + current->dataLen,
-                                   buffer, length);
-                            current->dataLen += length;
+                            /* timeouts should never happen, but handle it */
+                            if (length > 0 && length <= idev->maxPacketSize)
+                            {
+                                memcpy(current->data + current->dataLen,
+                                       buffer, length);
+                                current->dataLen += length;
+                            }
+                            else
+                            {
+                                message(LOG_ERROR,
+                                        "Invalid length %d\n", length);
+                                break;
+                            }
                         }
                     }
                     else

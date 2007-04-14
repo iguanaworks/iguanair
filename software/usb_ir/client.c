@@ -344,7 +344,8 @@ static void performTask(PIPE_PTR conn, igtask *cmd);
 /* valid because of pigeon hole principal */
 #define DATA_BUFFER_BASE 0x7C
 
-static unsigned int assembleData(char *dst, const char *src, unsigned int len, unsigned char target)
+static unsigned int assembleData(char *dst, const char *src,
+                                 unsigned int len, unsigned char target)
 {
     unsigned int x, y = 0;
     for(x = 0; x < len; x++)
@@ -357,53 +358,66 @@ static unsigned int assembleData(char *dst, const char *src, unsigned int len, u
     return y;
 }
 
+/* total of 12 bytes will be read from the device when the constructed
+ * code is called. */
 static void* writeBlocks(const char *label)
 {
-    unsigned int len, x, y;
+    unsigned int x, y = 4;
     char *data, *dummy;
+    size_t len;
 
-    len = 4 + (unsigned int)strlen(label);
-    if (len > 16)
-    {
-        message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
-        len = 16;
-    }
-
-    dummy = malloc(len + 1);
-    dummy[0] = IG_CTL_START;
-    dummy[1] = IG_CTL_START;
-    dummy[2] = (char)IG_CTL_FROMDEV;
-    dummy[3] = IG_DEV_GETID;
-    strncpy(dummy + 4, label, len - 4);
-    dummy[len] = '\0';
-    label = dummy;
-
+    /* must allocate the data since we free it later */
     data = malloc(68);
-    memset(data, 0, 68);
-    data[0] = 0x7f;
+    /* fill the page with halt commands */
+    memset(data, 0x30, 68);
+    /* which page get's written? */
+    data[0] = 0x7F;
+    data[1] = data[2] = data[3] = 0;
 
-    y = 4;
-    for(x = 0; x < 2; x++)
+    len = 4 + strlen(label);
+    if (len > 4)
     {
-        if ((x + 1) * 8 > len)
-        {
-            int amount;
-            char buffer[8] = { 0 };
+        int amount = 8;
+        char zeros[8] = { 0 };
 
-            amount = len % 8;
+        /* generate the 12 bytes worth of transmission data */
+        if (len > 16)
+        {
+            message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
+            len = 16;
+        }
+
+        /* construct the bytes that will travel over the wire */
+        dummy = malloc(len + 1);
+        dummy[0] = IG_CTL_START;
+        dummy[1] = IG_CTL_START;
+        dummy[2] = (char)IG_CTL_FROMDEV;
+        dummy[3] = IG_DEV_GETID;
+        strncpy(dummy + 4, label, len - 4);
+        dummy[len] = '\0';
+        label = dummy;
+
+        /* assemble the code to transmit the bytes (max 2 passes for
+         * 12 bytes) */
+        for(x = 0; x < 2; x++)
+        {
+            if ((x + 1) * 8 > len)
+                amount = len % 8;
+
+            /* record up to 8 bytes of the label*/
             y += assembleData(data + y, label + x * 8, amount,
                               DATA_BUFFER_BASE);
-            y += assembleData(data + y, buffer, 8 - amount,
+            /* pad the rest of the packet with 0s */
+            y += assembleData(data + y, zeros, 8 - amount,
                               DATA_BUFFER_BASE + amount);
-        }
-        else
-            y += assembleData(data + y, label + x * 8, 8, DATA_BUFFER_BASE);
 
-        data[y++] = 0x57;
-        data[y++] = DATA_BUFFER_BASE;
-        data[y++] = 0x7C;
-        data[y++] = 0x00;
-        data[y++] = 0x68;
+            /* code to actually send an 8 byte packet */
+            data[y++] = 0x57;
+            data[y++] = DATA_BUFFER_BASE;
+            data[y++] = 0x7C;
+            data[y++] = 0x00;
+            data[y++] = 0x68;
+        }
     }
     data[y++] = 0x7F;
 

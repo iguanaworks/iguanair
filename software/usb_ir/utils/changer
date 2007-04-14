@@ -1,0 +1,302 @@
+#!/usr/bin/python -tt
+import warnings
+import traceback
+import sys
+import re
+import StringIO
+import time
+
+import iguanaIR
+
+#output "constants"
+FATAL  = 0
+ERROR  = 1
+WARN   = 2
+ALWAYS = 2.5
+NORMAL = 3
+INFO   = 4
+DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+#local variables
+currentLevel = NORMAL
+logFile = None
+freqText = None
+devName = '0'
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = ERROR
+
+    #exit with appropriate value
+    if level == FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]... FREQUENCY" + """
+
+-d
+--device : Specify the device id to reprogram.
+
+-h
+--help : Print this usage message.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-q
+--quiet : Decrease verbosity.
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(FATAL, msg + usage)
+    message(ALWAYS, usage)
+    dieCleanly(ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-d" or arg == "--device":
+        index += 1
+        devName = sys.argv[index]
+    elif arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > FATAL:
+            currentLevel -= 1
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    elif freqText is None:
+        freqText = arg
+    else:
+        printUsage("Unknown argument: " + arg + "\n")
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
+def parseFrequency(freqText):
+    # parse the specified frequency
+    freq = None
+    match = re.match('^[0-9\.]+', freqText)
+    if match:
+        countText = match.group(0)
+        freq = float(countText)
+        freqText = freqText[len(countText):].lower().strip()
+        if freqText == 'khz' or freqText == 'k':
+            freq *= 1000
+        elif freqText == 'mhz' or freqText == 'm':
+            freq *= 1000000
+        elif freqText != 'hz' and freqText != '':
+            freq = None
+    return freq
+
+if freqText is None:
+    message(FATAL, "A frequency must be specified (i.e. 38k, 56kHz)\n")
+
+freq = parseFrequency(freqText)
+if freq is None:
+    message(FATAL, "Unparsable frequency specification: %s\n" % freqText)
+
+# Compute the cycles for any specified frequency.  This requires
+# dividing the length of time of a pulse in the requested frequency by
+# the length of time in a cycle at the current clock speed.
+cycles = (1 / freq) / (1 / parseFrequency('24MHz')) / 2
+message(INFO, '%s requires %s cycles on and off.\n' % (freqText, cycles))
+cycles = int(round(cycles))
+message(INFO, '    approximating to %s\n' % (cycles))
+
+# divide the computed values into 4 and 7 clock components
+# Try the highest number of 4s, and then count down until we hit
+# something that is divisible by 7.  We use 4s as the main counter
+# specifically because the delay 4 actually requires less space on the
+# flash for a given delay.
+cycles -= 4 + 5 + 6 + 6 + 5 + 4 + (21 * 2) + 5
+fours = cycles / 4
+while (cycles - fours * 4) % 7 != 0:
+    fours -= 1
+sevens = (cycles - fours * 4) / 7
+
+message(INFO, 'Using (constants taken from ir.asm):\n    4 + 5 + 6 + 6 + 5 + 4 + (21 + %s * 7) + (21 + %s * 4) + 5 = %s\n' % (sevens, fours, 4 + 5 + 6 + 6 + 5 + 4 + sevens * 7 + fours * 4 + 21 * 2 + 5))
+
+# make sure these values are in range for this device
+if fours > 100 or sevens > 7:
+    message(FATAL, "This device cannot handle that frequency.\n")
+
+# compute the offsets to change the jumps to
+#############################################
+# Delay instruction facts:
+# op         | delay | size | base addr
+#------------+-------+------+----------
+# nop        |   4   |  1   |   1cc2
+# cmp A, [0] |   7   |  2   |   1c5d
+#############################################
+replace = {
+    'label'   : None,
+    'fours'   : chr(0xc2 - 1 * fours),
+    'sevens'  : chr(0x5d - 2 * sevens),
+    'unlabel' : None
+}
+
+message(INFO, "Computed jumps:\n    foursDelay = 0x1c%x\n    sevensDelay = 0x1c%x\n" % (ord(replace['fours']), ord(replace['sevens'])))
+
+conn = iguanaIR.connect(devName)
+
+# detect the version before we try to write it
+def deviceTransaction(type, data = ''):
+    retval = False
+    req = iguanaIR.createRequest(type, data)
+    if not iguanaIR.writeRequest(req, conn):
+        print 'Failed to write packet.'
+    else:
+        resp = iguanaIR.readResponse(conn, 10000)
+        if iguanaIR.responseIsError(resp):
+            print 'Error response.'
+        elif type == iguanaIR.IG_DEV_GETVERSION:
+            data = iguanaIR.removeData(resp)
+            retval = ord(data[0]) + (ord(data[1]) << 8)
+        else:
+            retval = iguanaIR.removeData(resp)
+            #retval = True
+    return retval
+
+version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
+if version != 4:
+    message(FATAL, "This script can only adjust the frequency for devices loaded with firmware version 4.\n")
+
+message(INFO, "Found device version %d\n" % version)
+
+def writePage(blockText, subValue = None):
+    valueOffset = 0
+    page = None
+    data = ''
+    offset = 0
+
+    # read the blockData and convert into a page of memory with the
+    # value substituted.
+    for line in StringIO.StringIO(blockText):
+        parts = line.split()
+        if len(parts) == 1:
+            page = int(parts[0], 16) / 64
+        else:
+            for byte in parts:
+                try:
+                    data += chr(int(byte, 16))
+                except ValueError:
+                    if subValue is None:
+                        raise
+                    data += subValue[valueOffset]
+                    valueOffset += 1
+                offset += 1
+
+    # write the actual block to the device
+    retval = deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK,
+                               chr(page) + chr(0) + chr(0) + chr(0) + data)
+    return retval
+
+blockData = {'label' : """
+1ff0
+55 7c 00 55 7d 00 55 7e dc 55 7f 0f 55 80 2f 55
+81 50 55 82 52 55 83 4f 57 7c 7c 00 68 55 7c 47
+55 7d 52 55 7e 41 55 7f 4d 55 80 4d 55 81 49 55
+82 4e 55 83 2f 57 7c 7c 00 68 7f 30 30 30 30 30
+""",
+# this block data is specific to firmware version 4
+             'fours' : """
+1c00
+26 a7 f0 5f 02 a7 51 02 b0 04 55 02 f0 55 08 12
+55 03 00 5f 10 a6 51 10 a0 32 3e 08 53 04 21 7f
+64 5c 51 04 21 80 a0 06 55 03 00 80 06 5f 03 02
+80 01 5b a0 10 5d 01 32 03 60 01 79 7c 1c XX 7c
+""",
+# this block data is specific to firmware version 4
+             'sevens' : """
+1c40
+1c XX 8f ef 41 01 f0 7a 10 8f ce 41 01 f0 7f 3a
+00 3a 00 3a 00 3a 00 3a 00 3a 00 3a 00 7f 40 40
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40
+""",
+
+             'unlabel' : """
+1ff0
+7f 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+"""}
+
+# need to manipulate the label to ensure we can reconnect to it
+oldLabel = deviceTransaction(iguanaIR.IG_DEV_GETID)
+if oldLabel:
+    oldLabel += (12 - len(oldLabel)) * chr(0)
+    blockData['unlabel'] = """
+1ff0
+55 7c 00 55 7d 00 55 7e dc 55 7f 0f 55 80 XX 55
+81 XX 55 82 XX 55 83 XX 57 7c 7c 00 68 55 7c XX
+55 7d XX 55 7e XX 55 7f XX 55 80 XX 55 81 XX 55
+82 XX 55 83 XX 57 7c 7c 00 68 7f 30 30 30 30 30
+"""
+    replace['unlabel'] = oldLabel
+
+# all data is computed, now do 4 page writes
+for type in ('label', 'fours', 'sevens', 'unlabel'):
+    message(NORMAL, "Executing stage '%s'... " % type)
+    if not writePage(blockData[type], replace[type]):
+        message(FATAL, "Writeblock for %s failed\n" % type)
+    elif type != 'unlabel':
+        message(NORMAL, "Success\n")
+        message(INFO, "Waiting for device to re-enumerate.\n")
+        time.sleep(3)
+        conn = iguanaIR.connect('|PROGRAMMIN|')
+        message(INFO, "Made connection on file descriptor %d\n" % conn)
+
+message(NORMAL, "Successfully set the delay loop to %s\n" % freqText)
