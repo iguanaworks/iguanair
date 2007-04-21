@@ -1,6 +1,8 @@
 #!/bin/sh
 rm -r debinary
 rm -r debinary64
+rm -r pdebinary
+rm -r pdebinary64
 
 make clean
 make
@@ -17,12 +19,18 @@ ARCH=`uname -m | sed 's/i\([456]\)86/i386/'`
 
 #directory for making the .deb
 BASE=debinary
+PBASE=pdebinary
 BASE64=debinary64
+PBASE64=pdebinary64
 version=`grep '^Version:' iguanaIR.spec | sed 's/^Version:\s*//'`
 NAME="iguanaIR-$version-$REV.$ARCH.deb"
+PNAME="iguanaIR-python-$version-$REV.$ARCH.deb"
 NAME64="iguanaIR-$version-$REV.amd64.deb"
+PNAME64="iguanaIR-python-$version-$REV.amd64.deb"
 mkdir $BASE
+mkdir $PBASE
 mkdir $BASE/DEBIAN
+mkdir $PBASE/DEBIAN
 
 ##make the DEBIAN/control file
 echo "Package: iguanaIR" > $BASE/DEBIAN/control
@@ -41,11 +49,37 @@ Conflicts:
 Replaces:
 Provides: iguanaIR
 Description: This is the IguanaWorks IR USB client. Software allows you
-             to controll your IguanaWorks IR USB device. Includes software for use
+             to control your IguanaWorks IR USB device. Includes software for use
              with lirc.
  .
  More info.
 ">> $BASE/DEBIAN/control
+
+
+##make the Python  DEBIAN/control file
+echo "Package: iguanaIR-python" > $PBASE/DEBIAN/control
+echo "Version: $version-$REV" >> $PBASE/DEBIAN/control
+echo "Section: utils
+Priority: optional
+Architecture: $ARCH
+Essential: no
+Depends: iguanaIR (>= $version), iguanaIR (<= $version-9999999), python (>= 2.4), python (<< 2.5)
+Pre-Depends: 
+Recommends: 
+Suggests:
+Installed-Size: 100
+Maintainer: IguanaWorks [support@iguanaworks.net]
+Conflicts:
+Replaces:
+Provides: iguanaIR-python
+Description: This package provides the swig-generated Python module for interfacing
+	with the Iguanaworks USB IR transceiver.
+ .
+ More info.
+">> $PBASE/DEBIAN/control
+
+
+
 
 #Make the DEBIAN/postrm file
 echo "#!/bin/sh
@@ -54,6 +88,8 @@ update-rc.d iguanaIR remove ||true
 rmdir /dev/iguanaIR 2>/dev/null||true
 userdel iguanair||true" > $BASE/DEBIAN/postrm
 chmod a+x $BASE/DEBIAN/postrm
+
+
 
 #Make the DEBIAN/prerm file
 echo "#!/bin/sh
@@ -98,7 +134,18 @@ mkdir $BASE/lib/udev/devices/iguanaIR
 
 mkdir $BASE/usr
 mkdir $BASE/usr/bin
-#cp igclient igdaemon initLCD $BASE/usr/bin/
+
+## Python stuff
+mkdir $PBASE/usr
+mkdir $PBASE/usr/lib
+mkdir $PBASE/usr/lib/python2.4
+mkdir $PBASE/usr/lib/python2.4/site-packages
+
+cp iguanaIR.py $PBASE/usr/lib/python2.4/site-packages/
+cp _iguanaIR.so $PBASE/usr/lib/python2.4/site-packages/
+## End Python Stuff
+
+
 cp igclient igdaemon $BASE/usr/bin/
 mkdir $BASE/usr/include
 cp iguanaIR.h  $BASE/usr/include/
@@ -112,8 +159,11 @@ mkdir $BASE/usr/share/doc/iguanaIR
 cp AUTHORS LICENSE WHY notes.txt protocols.txt $BASE/usr/share/doc/iguanaIR/
 
 
-dpkg -b $BASE $NAME
 
+
+
+dpkg -b $BASE $NAME
+dpkg -b $PBASE $PNAME
 
 
 if [ -a  "$2" ];then
@@ -142,11 +192,42 @@ cp usr/lib64/libiguanaIR.so ../$BASE64/usr/lib/
 cd ..
 rm -r temp64
 
-
-
-
 dpkg -b $BASE64 $NAME64
 
 fi
 fi
+
+
+if [ -a  "$3" ];then
+
+versioncheck=`echo "$3"|grep x86_64|grep iguanaIR-python-$version`
+
+if [ -z "$versioncheck" ];then
+echo "x86_64 rpm package wrong version"
+else
+
+
+echo "Python: amd64"
+cp -a $PBASE $PBASE64
+echo "Architecture: amd64">>$PBASE64/DEBIAN/control2
+grep -v "Architecture:" $PBASE64/DEBIAN/control >> $PBASE64/DEBIAN/control2
+mv $PBASE64/DEBIAN/control2 $PBASE64/DEBIAN/control
+
+
+mkdir ptemp64
+cp $3 ptemp64
+cd ptemp64
+rpm2cpio $3 |cpio -idv
+cp usr/lib/python2.4/site-packages/_iguanaIR.so ../$PBASE64/usr/lib/python2.4/site-packages/
+cp usr/lib/python2.4/site-packages/iguanaIR.py ../$PBASE64/usr/lib/python2.4/site-packages/
+cp usr/lib/python2.4/site-packages/iguanaIR.pyc ../$PBASE64/usr/lib/python2.4/site-packages/
+cd ..
+rm -r ptemp64
+
+dpkg -b $PBASE64 $PNAME64
+
+fi
+fi
+
+
 
