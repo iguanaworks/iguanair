@@ -31,6 +31,7 @@ currentLevel = NORMAL
 logFile = None
 freqText = None
 devName = '0'
+waitSecs = 3
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -86,6 +87,9 @@ def printUsage(msg = None):
 
 -v
 --verbose : Increase verbosity.
+
+-w
+--wait : Length of time to wait (default %s seconds).  If this script fails to connect after writing a page, try increasing this value.
 """
 
     if msg != None:
@@ -112,6 +116,9 @@ while index < len(sys.argv):
             currentLevel -= 1
     elif arg == "-v" or arg == "--verbose":
         currentLevel += 1
+    elif arg == "-w" or arg == "--wait":
+        index += 1
+        waitSecs = int(sys.argv[index])
     elif freqText is None:
         freqText = arg
     else:
@@ -295,7 +302,7 @@ for type in ('label', 'fours', 'sevens', 'unlabel'):
     elif type != 'unlabel':
         message(NORMAL, "Success\n")
         message(INFO, "Waiting for device to re-enumerate.\n")
-        time.sleep(3)
+        time.sleep(waitSecs)
         conn = iguanaIR.connect('|PROGRAMMIN|')
         message(INFO, "Made connection on file descriptor %d\n" % conn)
 
