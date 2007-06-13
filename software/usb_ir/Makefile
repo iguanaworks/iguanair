@@ -619,16 +619,21 @@ $(DOCDIR)/%.ps: %.dvi
 	wmf2eps -o $@ $<
 
 # how to build python swig stuff
+ifeq ($(LIBDIR),.)
+  PYOUT=
+else
+  PYOUT= -outdir $(LIBDIR)
+endif
 %_wrap.c: %.i
-	swig ${CPPFLAGS} -python -outdir $(LIBDIR) $<
+	swig ${CPPFLAGS} -python $(PYOUT) $<
 
 %_wrap.c: %.i %.h
-	swig ${CPPFLAGS} -python -outdir $(LIBDIR) $<
+	swig ${CPPFLAGS} -python $(PYOUT) $<
 
 # NOTE: cannot turn off strict-aliasing or pointer cast to different
 # size warnings
 $(LIBDIR)/_%.$(SO_SUFFIX): %_wrap.c $(LIBDIR)/lib%.$(SO_SUFFIX)
-	$(CC) $(GCC_SHARED_ARG) $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $(CPPFLAGS) $($(<:%.c=%.o)-CFLAGS) -I/usr/include/python2.4 $< -L$(LIBDIR) -l$(patsubst %_wrap.c,%,$<) -o $@
+	$(CC) $(GCC_SHARED_ARG) $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $(CPPFLAGS) $($(<:%.c=%.o)-CFLAGS) -I/usr/include/python$(shell python -V 2>&1 | sed 's/.* \(.\..\).*/\1/') $< -L$(LIBDIR) -l$(patsubst %_wrap.c,%,$<) -o $@
 
 override define SAMPLE
 #This is a sample $(INFOFILE) file.  This file lists

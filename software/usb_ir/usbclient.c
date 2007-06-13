@@ -21,6 +21,13 @@
 #include "support.h"
 #include "usbclient.h"
 
+/* depending on whether usb_device->devnum exists */
+#if 0
+  #define DEVNUM(dev) (dev->devnum)
+#else
+  #define DEVNUM(dev) (dev->bus->location)
+#endif
+
 static void setError(usbDevice *handle, char *error)
 {
     if (handle != NULL)
@@ -82,6 +89,8 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize)
 
     message(LOG_DEBUG2, "o");
     appendHex(LOG_DEBUG2, buffer, bufSize);
+
+    setError(handle, NULL);
     retval = usb_interrupt_write(handle->device,
                                  handle->epOut->bEndpointAddress,
                                  buffer, bufSize,
@@ -182,7 +191,7 @@ bool updateDeviceList(usbDeviceList *list)
                     while(devPos != NULL &&
                           (devPos->busIndex < busIndex ||
                            (devPos->busIndex == busIndex &&
-                            devPos->devIndex < dev->devnum)))
+                            devPos->devIndex < DEVNUM(dev))))
                         /* used to release devices here, since they
                          * are no longer used, however, this races
                          * with reinsertion of the device, and
@@ -194,7 +203,7 @@ bool updateDeviceList(usbDeviceList *list)
                     /* append or insert a new device */
                     if (devPos == NULL ||
                         devPos->busIndex != busIndex ||
-                        devPos->devIndex != dev->devnum)
+                        devPos->devIndex != DEVNUM(dev))
                     {
                         bool success = false;
                         usbDevice *newDev = NULL;
@@ -204,7 +213,7 @@ bool updateDeviceList(usbDeviceList *list)
                         /* basic stuff */
                         newDev->list = list;
                         newDev->busIndex = busIndex;
-                        newDev->devIndex = dev->devnum;
+                        newDev->devIndex = DEVNUM(dev);
 
                         /* determine the id (reusing if possible) */
                         newDev->id = 0;

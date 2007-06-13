@@ -237,10 +237,12 @@ static void setSetting(unsigned int setting, const char *pins,
 
     if (parseNumber(pins, &value))
         for(x = 0; x < IG_PIN_COUNT; x++)
+        {
             if (value & (1 << x))
                 pinState[x] |= setting;
             else
                 pinState[x] &= ~setting;
+        }
 }
 
 static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)

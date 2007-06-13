@@ -35,12 +35,16 @@
 #else
     #include <stdint.h>
     #include <unistd.h>
+    /* need __USE_GNU to get pthread_yield */
+    #define __USE_GNU
     #include <pthread.h>
+    #undef __USE_GNU
 
     /* thread defines */
     #define THREAD_PTR pthread_t
     #define startThread(a, b, c) (pthread_create((a), NULL, (b), (c)) == 0)
     #define joinThread(a,b) (void)pthread_join((a), (b))
+    #define SwitchToThread() pthread_yield()
 
     /* lock defines */
     #define LOCK_PTR pthread_mutex_t
