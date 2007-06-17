@@ -11,6 +11,7 @@
  * See COPYING for license details.
  */
 
+#include <stdlib.h>
 #include <popt.h>
 #include <signal.h>
 #include <string.h>
