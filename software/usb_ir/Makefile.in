@@ -53,7 +53,10 @@ igclient: client.o list.o
 	cc $(CPPFLAGS) $^ -lpopt -L. -liguanaIR -o $@
 
 %.o: %.c
-	cc -c $(CPPFLAGS) $(CFLAGS) $^ -o $@
+	cc -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+
+# need a special dependency for config.h
+base.o: base.c config.h
 
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i
 	swig $(CPPFLAGS) -python $^
@@ -79,14 +82,18 @@ install: all
 clean:
 	rm -f *~ *.o *iguanaIR.so *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient
 
-# automatic re-running of configure if the ocnfigure.in file has changed
+.PHONY: cleaner mrproper distclean realclean
+cleaner mrproper distclean realclean: clean
+	rm -f Makefile
+
+# automatic re-running of configure if the configure.in file has changed
 #${srcdir}/configure: configure.in aclocal.m4
 ${srcdir}/configure: configure.in
 	cd ${srcdir} && autoconf
 
-# autoheader might not change config.h.in, so touch a stamp file
 ${srcdir}/config.h.in: stamp-h.in
 
+# autoheader might not change config.h.in, so touch a stamp file
 #${srcdir}/stamp-h.in: configure.in aclocal.m4
 ${srcdir}/stamp-h.in: configure.in
 	cd ${srcdir} && autoheader

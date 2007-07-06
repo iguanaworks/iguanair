@@ -53,4 +53,4 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([clock_gettime floor gettimeofday memset mkdir select socket strchr strdup strerror strrchr strspn strstr])
 
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+AC_OUTPUT(stamp-h)

@@ -1,6 +1,8 @@
 #ifndef _BASE_
 #define _BASE_
 
+#include "config.h"
+
 #ifdef WIN32
     typedef int bool;
     #define PIPE_PTR HANDLE
