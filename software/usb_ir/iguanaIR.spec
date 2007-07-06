@@ -3,8 +3,8 @@
 %define uid   213
 
 Name:           iguanaIR
-Version:        0.33
-Release:        1
+Version:        0.33pre2
+Release:        1.itv
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
 Group:          System Environment/Daemons
@@ -35,7 +35,7 @@ with the Iguanaworks USB IR transceiver.
 
 
 %build
-#% configure
+%configure
 make %{?_smp_mflags}
 
 
