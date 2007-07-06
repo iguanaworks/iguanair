@@ -82,9 +82,13 @@ install: all
 clean:
 	rm -f *~ *.o *iguanaIR.so *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient
 
-.PHONY: cleaner mrproper distclean realclean
-cleaner mrproper distclean realclean: clean
-	rm -f Makefile
+.PHONY: distclean
+distclean: clean
+	rm -f Makefile stamp-h config.h
+
+.PHONY: cleanest
+cleanest: distclean
+	rm -rf configure autom4te.cache
 
 # automatic re-running of configure if the configure.in file has changed
 #${srcdir}/configure: configure.in aclocal.m4
