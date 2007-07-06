@@ -3,7 +3,7 @@
 %define uid   213
 
 Name:           iguanaIR
-Version:        0.32
+Version:        0.33
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
@@ -13,7 +13,7 @@ URL:            http://iguanaworks.net/ir
 Source0:        http://iguanaworks.net/ir/releases/%{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 PreReq:         /sbin/chkconfig, /sbin/service
-Requires:       libusb >= 0.1.11 lirc >= 0.8.1
+Requires:       libusb >= 0.1.10 lirc >= 0.8.1
 
 %description
 This package provides igdaemon and igclient, the programs necessary to
@@ -52,7 +52,9 @@ rm -rf $RPM_BUILD_ROOT
 
 # must create the user and group before files are put down
 %pre
-/usr/sbin/useradd -M --uid %{uid} --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
+#TODO: stupid to not support the long versions
+/usr/sbin/useradd -M -u %{uid} -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
+#/usr/sbin/useradd -M --uid %{uid} --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
 
 # must add the service after the files are placed
 %post
@@ -80,14 +82,16 @@ fi
 %{_libdir}/lib%{name}.so
 /etc/rc.d/init.d/%{name}
 %config /etc/default/%{name}
-/etc/udev/rules.d/%{name}.rules
-%attr(755, iguanair, iguanair) /etc/udev/devices/%{name}
-#/etc/hotplug/usb/%{name}*
+# TODO: autoconf must decide!
+#/etc/udev/rules.d/%{name}.rules
+#%attr(755, iguanair, iguanair) /etc/udev/devices/%{name}
+/etc/hotplug/usb/%{name}*
 /usr/include/%{name}.h
 
 %files python
 %{pydir}/*
-%ghost %{pydir}/*.pyo
+# TODO: autoconf needed!
+#%ghost %{pydir}/*.pyo
 
 %changelog
 * Sat Mar 10 2007 Joseph Dunn <jdunn@iguanaworks.net> 0.31-1

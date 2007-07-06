@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if [ "${ACTION}" == "add" ]; then
+    chown iguanair:iguanair ${DEVICE}
+    /etc/init.d/iguanaIR rescan
+fi

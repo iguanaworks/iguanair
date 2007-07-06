@@ -1,0 +1,104 @@
+SHELL = /bin/sh
+VPATH = @srcdir@
+
+subdirs = @subdirs@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = $(exec_prefix)/bin
+infodir = $(prefix)/info
+libdir = $(prefix)/lib/gnudl
+mandir = $(prefix)/man/man1
+
+CC = @CC@
+CPPFLAGS = @CPPFLAGS@
+CFLAGS = $(CPPFLAGS) @CFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+INSTALL = @INSTALL@
+
+
+CPPFLAGS=-DLINUX -D_DEBUG
+CFLAGS=-Wall -pedantic -g
+# -Wextra
+
+# Older versions of libusb do not play with threads at all nicely.
+# This driver was actually developed on such a version of libusb.
+# However, in later versions threads seem to not eat the responses for
+# URBs intended for other threads.  By defining LIBUSB_NO_THREADS you
+# can request the slower (around 1/4 the speed for USB transaction
+# heavy workloads), but safer, behavior where 2 threads never use the
+# same libusb object at once.
+#
+# version 0.1.8 and earlier need more than this (i.e. NOT SUPPORTED)
+# version 0.1.10a and earlier need this
+# version 0.1.11 and later do not need this; works with kernel-2.6.5 and later
+# version 0.1.12 only works with kernel-2.6.10 and later
+#
+#CPPFLAGS+=-DLIBUSB_NO_THREADS
+
+.PHONY: all
+all: igclient igdaemon _iguanaIR.so
+
+igclient: libiguanaIR.so
+
+libiguanaIR.so: iguanaIR.o support.o dataPackets.o pipes.o base.o
+	cc -shared $(CPPFLAGS) $^ -lpopt -lrt -o $@
+
+igdaemon: daemon.o igdaemon.o usbclient.o protocol.o list.o
+	cc $(CPPFLAGS) $(CFLAGS) $^ -lpopt -lrt -lusb -lpthread -L. -liguanaIR -o $@
+
+igclient: client.o list.o
+	cc $(CPPFLAGS) $^ -lpopt -L. -liguanaIR -o $@
+
+%.o: %.c
+	cc -c $(CPPFLAGS) $(CFLAGS) $^ -o $@
+
+iguanaIR_wrap.c iguanaIR.py: iguanaIR.i
+	swig $(CPPFLAGS) -python $^
+
+_iguanaIR.so: iguanaIR_wrap.c
+	cc $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long -I/usr/include/python2.5 $^ -L. -liguanaIR -o $@
+
+
+.PHONY: install
+install: all
+	install -D iguanaIR.init $(DESTDIR)/etc/rc.d/init.d/iguanaIR
+	install -D --mode=0644 iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
+	install -D iguanaIR.h $(DESTDIR)/usr/include/iguanaIR.h
+#	install -D --mode 644 plug-trigger/udev/iguanaIR.rules \
+#	                      $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
+#	install --mode 755 -d $(DESTDIR)/etc/udev/devices/iguanaIR
+	install -D --mode 644 plug-trigger/hotplug/iguanaIR.usermap \
+	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR.usermap
+	install -D --mode 755 plug-trigger/hotplug/iguanaIR \
+	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR
+
+.PHONY: clean
+clean:
+	rm -f *~ *.o *iguanaIR.so *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient
+
+# automatic re-running of configure if the ocnfigure.in file has changed
+#${srcdir}/configure: configure.in aclocal.m4
+${srcdir}/configure: configure.in
+	cd ${srcdir} && autoconf
+
+# autoheader might not change config.h.in, so touch a stamp file
+${srcdir}/config.h.in: stamp-h.in
+
+#${srcdir}/stamp-h.in: configure.in aclocal.m4
+${srcdir}/stamp-h.in: configure.in
+	cd ${srcdir} && autoheader
+	echo timestamp > ${srcdir}/stamp-h.in
+
+config.h: stamp-h
+
+stamp-h: config.h.in config.status
+	./config.status
+
+Makefile: Makefile.in config.status
+	./config.status
+
+config.status: configure
+	./config.status --recheck
