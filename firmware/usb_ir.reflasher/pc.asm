@@ -29,22 +29,6 @@ export wait_for_IN_ready
 export buffer
 export control_pkt
 
-AREA BOTTOM(ROM,ABS,CON)
-	org read_buffer
-	ljmp read_buffer_body
-
-	org check_read
-	ljmp check_read_body
-
-	org write_control
-	ljmp write_control_body
-
-	org read_control
-	ljmp read_control_body
-
-	org wait_for_IN_ready
-	ljmp wait_for_IN_ready_body
-
 AREA bss
 buffer:
 	BLK BUFFER_SIZE ; the main data buffer
@@ -63,7 +47,7 @@ AREA text
 ; read a specified amount of data into the buffer
 ; size is specified in control packet data byte 0
 ; returns 1 if read ok, 0 if read overflow
-read_buffer_body:
+read_buffer:
 	mov [buffer_ptr], buffer ;reset to start of buffer
 	mov A, [control_pkt + CDATA] ;get number of bytes to read
 	;check against buffer size
@@ -96,7 +80,7 @@ rb_overflow: ;had an overflow
 ; FUNCTION check_read
 ; returns 1 if there is data to receive, 0 otherwise
 ; also makes sure the endpoint stays enabled
-check_read_body:
+check_read:
 	; disable ints to avoid race condition
 	and F, 0xFE ; clear global interrupt bit
 
@@ -145,7 +129,7 @@ read_packet:
 ;FUNCTION read_control
 ;  receives a control packet, returning the control code
 ;  puts a copy of code and data into control_packet
-read_control_body:
+read_control:
 	; zero the entire control_pkt
 	mov X, 0
   rc_loop:
@@ -217,14 +201,14 @@ read_control_body:
 ;writes a control packet
 ;argument: A is packet size
 ;pre: control packet already contains a valid control packet
-write_control_body:
+write_control:
 	mov [tmp1], A ;store packet size
 	;load packet header: 2 zero bytes followed by DC
 	mov [control_pkt + 0], 0
 	mov [control_pkt + 1], 0
 	mov [control_pkt + 2], TO_PC
 
-	call wait_for_IN_ready_body
+	call wait_for_IN_ready
 
 	;now send the packet
 	mov [USB_APIEPNumber], IN  ; set to IN endpoint
@@ -233,11 +217,11 @@ write_control_body:
 	lcall USB_XLoadEP          ; send packet
 	ret
 
-wait_for_IN_ready_body:
+wait_for_IN_ready:
 	mov A, [halted]        ; check for halt condition
 	jnz soft_reset         ; go to known state after halt
 	mov A, IN
 	lcall USB_bGetEPState  ; check IN endpoint state
 	cmp A, IN_BUFFER_EMPTY ; compare -- if equal, zero flag set
-	jnz wait_for_IN_ready_body  ; not equal, keep waiting
+	jnz wait_for_IN_ready  ; not equal, keep waiting
 	ret

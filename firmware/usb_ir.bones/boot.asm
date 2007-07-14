@@ -168,7 +168,6 @@ export __psoc_config_start
 ;  CPU is operating at 3 MHz, change to 12 MHz
 ;  IO Bank is Bank0
 ;-----------------------------------------------------------------------------
-    org CODE_START; shove this code as high as possible as well
 __Start:
 
 IF ( WATCHDOG_ENABLE )             ; WDT selected in Global Params

@@ -27,18 +27,18 @@
 include ".\lib\GlobalParams.inc"
 include "m8c.inc"
 include "m8ssc.inc"
+include "constants.inc"
 
 ;-----------------------------------------------------------------------------
 ; Optimization flags
 ;-----------------------------------------------------------------------------
-C_LANGUAGE_SUPPORT: equ 1   ;Set to 0 to optimize for ASM only
+C_LANGUAGE_SUPPORT: equ 0   ;Set to 0 to optimize for ASM only
 
 ;-----------------------------------------------------------------------------
 ; Export Declarations
 ;-----------------------------------------------------------------------------
 
 export __Start
-export _write_data
 export __Exit
 export __bss_start
 
@@ -58,7 +58,7 @@ export __psoc_config_start
 ; services the interrupt (or causes it to be serviced).
 ;
 ;-----------------------------------------------------------------------------
-
+; interrupt vector cannot move, but everything else can be moved up in memory
     AREA    TOP(ROM,ABS,CON)
 
     org 0                   ;Reset Interrupt Vector
@@ -168,11 +168,7 @@ export __psoc_config_start
 ;  CPU is operating at 3 MHz, change to 12 MHz
 ;  IO Bank is Bank0
 ;-----------------------------------------------------------------------------
-    org 68h
-;Our fixed vectors, for funcs that shouldn't change addresses
-_write_data: 
-   ljmp write_data
-   
+    org CODE_START; shove this code as high as possible as well
 __Start:
 
 IF ( WATCHDOG_ENABLE )             ; WDT selected in Global Params
@@ -298,6 +294,7 @@ __data_start:
     AREA InterruptRAM      (RAM, REL, CON)   ; Interrupts, on Page 0
     AREA bss               (RAM, REL, CON)   ; general use
 __bss_start:
+
 ;-----------------------------------------------------------------------------
 ; End of the boot code
 ;-----------------------------------------------------------------------------
