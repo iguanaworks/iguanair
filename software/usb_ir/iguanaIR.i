@@ -25,6 +25,7 @@
 %rename(writeRequest) iguanaWriteRequest;
 %rename(responseIsError) iguanaResponseIsError;
 %rename(removeData) iguanaRemoveData;
+%rename(readPulseFile) iguanaReadPulseFile;
 
 %typemap(default) (unsigned int dataLength, void *data)
 {
@@ -58,6 +59,20 @@
     $result = PyString_FromStringAndSize((char*)$result, *$1);
 }
 
+%typemap(in, numinputs=0) void **pulses (void *pulses)
+{
+    $1 = &pulses;
+}
+%typemap(argout) void **pulses
+{
+    PyObject *list;
+
+    list = PyList_New(0);
+    PyList_Append(list, $result);
+    PyList_Append(list, PyString_FromStringAndSize(*$1, PyInt_AsLong($result) * 4));
+
+    $result = list;
+}
 
 /* remove the old definition of iguanaReadResponse and insert one that
  * properly releases the GIL before blocking. */
