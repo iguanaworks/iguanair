@@ -1,0 +1,324 @@
+#!/usr/bin/python -tt
+import warnings
+import traceback
+import subprocess
+import time
+import sys
+import signal
+import os
+import errno
+import tempfile
+
+#output "constants"
+FATAL  = 0
+ERROR  = 1
+WARN   = 2
+ALWAYS = 2.5
+NORMAL = 3
+INFO   = 4
+DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+#local variables
+currentLevel = NORMAL
+logFile = None
+#delays = [0, 100, 50, 25, 10]
+delays = [0, 1, 1, 1, 1]
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = ERROR
+
+    #exit with appropriate value
+    if level == FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
+
+-h
+--help : Print this usage message.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-q
+--quiet : Decrease verbosity.
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(FATAL, msg + usage)
+    message(ALWAYS, usage)
+    dieCleanly(ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > FATAL:
+            currentLevel -= 1
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    else:
+        printUsage("Unknown argument: " + arg + "\n")
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
+def reloadSerialDriver():
+    #TODO: need to try with hardware carrier first, then try software
+    #carrier.  For each send try both.  Then we know which it tests
+    #as.  If it tests as software then we must try hardware a few
+    #times to make sure it's not both...
+
+    modprobe = subprocess.Popen(('modprobe', '-r', 'lirc_serial'),
+                                stdin = subprocess.PIPE,
+                                stdout = subprocess.PIPE,
+                                stderr = subprocess.STDOUT)
+    modprobe.stdin.close()
+    modprobe.wait()
+    if modprobe.returncode != 0:
+        message(FATAL, "Failed to unload the serial driver.\n")
+
+    modprobe = subprocess.Popen(('modprobe', 'lirc_serial'),
+                                stdin = subprocess.PIPE,
+                                stdout = subprocess.PIPE,
+                                stderr = subprocess.STDOUT)
+    modprobe.stdin.close()
+    modprobe.wait()
+    if modprobe.returncode != 0:
+        message(FATAL, "Failed to load the serial driver.\n")
+
+    connected = False
+    dmesg = subprocess.Popen(('dmesg'),
+                             stdin = subprocess.PIPE,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT)
+    dmesg.stdin.close()
+    for line in dmesg.stdout:
+        if line == 'lirc_serial: auto-detected active high receiver\n':
+            connected = False
+        elif line == 'lirc_serial: auto-detected active low receiver\n':
+            connected = True
+    dmesg.wait()
+
+    return connected
+
+setserial = subprocess.Popen(('setserial', '/dev/ttyS0', 'uart', 'none'),
+                             stdin = subprocess.PIPE,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT)
+setserial.stdin.close()
+setserial.wait()
+if setserial.returncode == 201:
+    message(FATAL, "Permission denied when trying disable the uart.\n")
+elif setserial.returncode != 0:
+    message(FATAL, "Failed to disable the uart.\n")
+
+# For some reason the following lines make it fail...
+#space 100
+#pulse 1000
+testdata = """pulse 10000
+space 200
+pulse 2000
+space 300
+pulse 3000
+space 400
+pulse 4000
+space 500
+pulse 5000
+space 4000
+pulse 400
+space 3000
+pulse 300
+space 2000
+pulse 200
+"""
+testfile = tempfile.NamedTemporaryFile()
+testfile.write(testdata)
+testfile.flush()
+
+def attemptReceive():
+    time.sleep(0.25)
+    message(NORMAL, "Attempting receive.\n")
+    mode2 = subprocess.Popen(('mode2', '-d', '/dev/lirc0'),
+                             stdin = subprocess.PIPE,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT)
+    mode2.stdin.close()
+
+    count = len(testdata.split('\n'))
+    # give mode2 time to start since it doesnt say when it is ready
+    time.sleep(0.5)
+    # now transmit some test data
+    igclient = subprocess.Popen(('igclient', '--send', testfile.name),
+                                stdin = subprocess.PIPE,
+                                stdout = subprocess.PIPE,
+                                stderr = subprocess.STDOUT)
+    igclient.wait()
+    time.sleep(0.5)
+    os.kill(mode2.pid, signal.SIGINT)
+    for line in igclient.stdout:
+        if line != 'send: success\n':
+            message(FATAL, "igclient error: " + line)
+
+    # check mode2 output after killing the process
+    os.kill(mode2.pid, signal.SIGINT)
+    for line in iter(mode2.stdout.readline, ''):
+        if not line.startswith('pulse') and \
+           not line.startswith('space'):
+            message(WARN, "mode2 output: " + line)
+        else:
+            message(DEBUG, "mode2 output: " + line)
+        count -= 1
+        if count == 0:
+            break
+
+    os.kill(mode2.pid, signal.SIGTERM)
+    mode2.wait()
+    if count == 0:
+        message(NORMAL, "  success\n")
+        return True
+    return False
+
+def attemptTransmission(remote, code):
+    message(NORMAL, "Attempting transmission.\n")
+    lircd = subprocess.Popen(('lircd', '-n', '-d', '/dev/lirc0'),
+                             stdin = subprocess.PIPE,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT)
+    lircd.stdin.close()
+
+    # lircd is now started, so try and transmit
+    start = time.time()
+    count = 0
+    while True:
+        # sleep some amount of time
+        if count < len(delays):
+            time.sleep(delays[count])
+        else:
+            time.sleep(1)
+
+        ig = subprocess.Popen(('igclient','--receiver-on','--sleep', '1'),
+                              stdin = subprocess.PIPE,
+                              stdout = subprocess.PIPE,
+                              stderr = subprocess.STDOUT)
+        ig.stdin.close()
+        pulses = 0
+        for line in iter(ig.stdout.readline, ''):
+            if line == 'receiver on: success\n':
+                irsend = subprocess.Popen(('irsend', 'send_once', remote,
+                                           code),
+                                          stdin = subprocess.PIPE)
+                irsend.stdin.close()
+                irsend.wait()
+                if irsend.returncode != 0:
+                    message(FATAL, "irsend failed: %d\n" % irsend.returncode)
+                else:
+                    message(INFO, "irsend success after %d seconds\n" % (time.time() - start))
+            elif line.startswith("  pulse: "):
+                pulses += 1
+            elif not line.startswith("  space: ") and \
+                 not line.startswith("received ") and \
+                 line != "sleep (1.000): success\n" and \
+                 line != 'receiver off: success\n':
+                message(ERROR, "igclient error: " + line)
+
+        if pulses > 50:
+            message(NORMAL,
+                    "  success after %d seconds\n" % (time.time() - start))
+            break
+        elif pulses > 5 and pulses < 25:
+            message(WARN, "  only saw %d pulses\n" % pulses)
+        count += 1
+        if count == 80:
+            break
+
+    # not sure why I don't have to kill lircd....
+    try:
+        os.kill(lircd.pid, signal.SIGTERM)
+    except OSError, inst:
+        if inst[0] != errno.ESRCH:
+            raise
+    lircd.wait()
+
+    return count != 80
+
+while True:
+    try:
+        message(NORMAL, "Searching for device.\n")
+        while True:
+            connected = reloadSerialDriver()
+            if connected:
+                failed = False
+                if not attemptReceive():
+                    message(NORMAL, "Receive FAILED, ")
+                    failed = True
+                if not attemptTransmission('panasonic', 'power'):
+                    message(NORMAL, "Transmission FAILED, ")
+                    failed = True
+
+                if not failed:
+                    message(NORMAL, "Device PASSED, ")
+                raise KeyboardInterrupt, 'faked'
+            else:
+                message(DEBUG, "Device not found.\n")
+    except KeyboardInterrupt, inst:
+        if str(inst) != 'faked':
+            message(NORMAL, "Interrupted, ")
+        message(NORMAL, "test another? [Y/n]\n")
+        
+        line = sys.stdin.readline()
+        if line[:-1] and not line.lower().startswith('y'):
+            break
