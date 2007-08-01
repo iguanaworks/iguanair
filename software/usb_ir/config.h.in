@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
-/* Define to 1 if you have the `clock_gettime' function. */
-#undef HAVE_CLOCK_GETTIME
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -180,6 +177,9 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
+
+/* use the available clock_gettime */
+#undef USE_CLOCK_GETTIME
 
 /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef was allowed, the

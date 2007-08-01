@@ -50,7 +50,21 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([clock_gettime floor gettimeofday memset mkdir select socket strchr strdup strerror strrchr strspn strstr])
+AC_CHECK_FUNCS([floor gettimeofday memset mkdir select socket strchr strdup strerror strrchr strspn strstr])
 
+# Allow the user to override clock_gettime detection
+AC_ARG_ENABLE(clock_gettime,
+  [  --disable-clock_gettime do not use clock_gettime even if it exists],
+  [ if test x$enableval = xno; then
+        DISABLE_CLOCK_GETTIME=1
+    fi ],
+)
+if ! test x$DISABLE_CLOCK_GETTIME = x1; then
+    AC_CHECK_FUNC(clock_gettime,
+        AC_DEFINE(USE_CLOCK_GETTIME, 1, [use the available clock_gettime])
+    )
+fi
+
+# Output some files
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(stamp-h)

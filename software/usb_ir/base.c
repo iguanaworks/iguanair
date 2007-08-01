@@ -10,7 +10,7 @@
   #define CLOCK_SOURCE CLOCK_REALTIME
 #endif
 
-#if HAVE_CLOCK_GETTIME
+#if USE_CLOCK_GETTIME
 #include <time.h>
 
 uint64_t microsSinceX()
@@ -37,6 +37,6 @@ uint64_t microsSinceX()
 }
 
 #else
-#error Not supported mechanism for subsecond timing found.
+#error No supported mechanism for subsecond timing found.
 
 #endif

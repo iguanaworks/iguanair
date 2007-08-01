@@ -2,6 +2,9 @@
 %define pydir /usr/lib/python%{pyver}/site-packages
 %define uid   213
 
+# some features can be disabled during the rpm build
+%{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
+
 Name:           iguanaIR
 Version:        0.33pre2
 Release:        1.itv
@@ -35,7 +38,8 @@ with the Iguanaworks USB IR transceiver.
 
 
 %build
-%configure
+echo %{?_disable_clock_gettime}
+%configure %{?_disable_clock_gettime}
 make %{?_smp_mflags}
 
 
