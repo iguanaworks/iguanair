@@ -19,9 +19,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `iguanaIR' library (-liguanaIR). */
-#undef HAVE_LIBIGUANAIR
-
 /* Define to 1 if you have the `popt' library (-lpopt). */
 #undef HAVE_LIBPOPT
 
@@ -30,9 +27,6 @@
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
-
-/* Define to 1 if you have the `usb' library (-lusb). */
-#undef HAVE_LIBUSB
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -138,6 +132,9 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
+/* version of libusb */
+#undef LIBUSB_VERSION
+
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
@@ -156,6 +153,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* version of python */
+#undef PYTHON_VERSION
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE

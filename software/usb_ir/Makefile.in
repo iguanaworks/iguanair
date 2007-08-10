@@ -13,15 +13,10 @@ mandir = $(prefix)/man/man1
 
 CC = @CC@
 CPPFLAGS = @CPPFLAGS@
-CFLAGS = $(CPPFLAGS) @CFLAGS@
+CFLAGS = @CFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
-
-
-CPPFLAGS=-DLINUX -D_DEBUG
-CFLAGS=-Wall -pedantic -g
-# -Wextra
 
 # Older versions of libusb do not play with threads at all nicely.
 # This driver was actually developed on such a version of libusb.
@@ -44,16 +39,16 @@ all: igclient igdaemon _iguanaIR.so
 igclient: libiguanaIR.so
 
 libiguanaIR.so: iguanaIR.o support.o dataPackets.o pipes.o base.o
-	cc -shared $(CPPFLAGS) $^ -lpopt -lrt -o $@
+	$(CC) -shared $(CPPFLAGS) $^ -lpopt -lrt -o $@
 
 igdaemon: daemon.o igdaemon.o usbclient.o protocol.o list.o
-	cc $(CPPFLAGS) $(CFLAGS) $^ -lpopt -lrt -lusb -lpthread -L. -liguanaIR -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LIBS) -lusb -L. -liguanaIR -o $@
 
 igclient: client.o list.o
-	cc $(CPPFLAGS) $^ -lpopt -L. -liguanaIR -o $@
+	$(CC) $(CPPFLAGS) $^ -lpopt -L. -liguanaIR -o $@
 
 %.o: %.c
-	cc -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 # need a special dependency for config.h
 base.o: base.c config.h
@@ -62,7 +57,7 @@ iguanaIR_wrap.c iguanaIR.py: iguanaIR.i
 	swig $(CPPFLAGS) -python $^
 
 _iguanaIR.so: iguanaIR_wrap.c
-	cc $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long -I/usr/include/python2.5 $^ -L. -liguanaIR -o $@
+	$(CC) $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long -I/usr/include/python2.5 $^ -L. -liguanaIR -o $@
 
 
 .PHONY: install
@@ -80,36 +75,46 @@ install: all
 
 .PHONY: clean
 clean:
-	rm -f *~ *.o *iguanaIR.so *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient
+	rm -f *~ *.o *iguanaIR.so *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
 
 .PHONY: distclean
 distclean: clean
-	rm -f Makefile stamp-h config.h
+	rm -f Makefile config.h
 
 .PHONY: cleanest
 cleanest: distclean
 	rm -rf configure autom4te.cache
 
-# automatic re-running of configure if the configure.in file has changed
-#${srcdir}/configure: configure.in aclocal.m4
-${srcdir}/configure: configure.in
-	cd ${srcdir} && autoconf
 
-${srcdir}/config.h.in: stamp-h.in
 
-# autoheader might not change config.h.in, so touch a stamp file
-#${srcdir}/stamp-h.in: configure.in aclocal.m4
-${srcdir}/stamp-h.in: configure.in
-	cd ${srcdir} && autoheader
-	echo timestamp > ${srcdir}/stamp-h.in
 
-config.h: stamp-h
 
-stamp-h: config.h.in config.status
-	./config.status
+AUTOCONF=autoconf
+ACLOCAL=aclocal
+ifeq ($(SYSTEM),freebsd)
+    AUTOCONF=autoconf259
+    ACLOCAL=aclocal19
+endif
+
+.PHONY: dist devel-cleaner
+dist: configure
+devel-clean: distclean
+	rm -rf autoconf/autom4te.cache autoconf/aclocal.m4 
+
+# rules to rebuild the configure script
+M4S=$(filter-out autoconf/aclocal.m4, $(wildcard autoconf/*.m4))
+autoconf/aclocal.m4: $(M4S)
+	cd autoconf; $(ACLOCAL)
+
+configure: autoconf/configure.ac autoconf/aclocal.m4
+	cd autoconf; $(AUTOCONF) -o ../configure configure.ac
+
+config.status: configure
+	./config.status --recheck
 
 Makefile: Makefile.in config.status
 	./config.status
 
-config.status: configure
-	./config.status --recheck
+config.h: stamp-h
+stamp-h: config.h.in config.status
+	./config.status
