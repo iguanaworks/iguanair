@@ -9,9 +9,8 @@
 ;See COPYING for license details.
 
 include "m8c.inc"       ; part specific constants and macros
-;include "memory.inc"    ; Constants & macros for SMM/LMM and Compiler
 include "PSoCAPI.inc"   ; PSoC API definitions for all User Modules
-include "constants.inc"
+include "loader.inc"
 
 ; don't use the send/recv terms; those refer to the IR device!
 ; by convention, the PC interface uses these terms:
@@ -24,10 +23,6 @@ export check_read
 export write_control
 export read_control
 export wait_for_IN_ready
-
-; exported variables
-export buffer
-export control_pkt
 
 AREA BOTTOM(ROM,ABS,CON)
 	org read_buffer
@@ -44,19 +39,6 @@ AREA BOTTOM(ROM,ABS,CON)
 
 	org wait_for_IN_ready
 	ljmp wait_for_IN_ready_body
-
-AREA bss
-buffer:
-	BLK BUFFER_SIZE ; the main data buffer
-
-; intentionally overlap the control packet buffer with the
-; bytes needed for reflashing pages so that we KNOW what is
-; being destroyed by the functions used for flashing.
-; NOTE: does not get counted in "RAM % full"
-AREA pkt_bss               (RAM, ABS, CON)
-    org FIRST_FLASH_VAR
-control_pkt:
-	BLK PACKET_SIZE ; control packet buffer
 
 AREA text
 ; FUNCTION read_buffer

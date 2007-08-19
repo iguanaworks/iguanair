@@ -27,7 +27,6 @@
 include ".\lib\GlobalParams.inc"
 include "m8c.inc"
 include "m8ssc.inc"
-include "constants.inc"
 
 ;-----------------------------------------------------------------------------
 ; Optimization flags

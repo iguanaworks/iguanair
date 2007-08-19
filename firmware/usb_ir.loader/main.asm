@@ -16,26 +16,19 @@
 include "m8c.inc"         ; part specific constants and macros
 include "memory.inc"      ; Constants & macros for SMM/LMM and Compiler
 include "PSoCAPI.inc"     ; PSoC API definitions for all User Modules
-include "constants.inc"
-VERSION_ID_HIGH: EQU 0x01 ; firmware version ID high byte (bootloader)
+include "loader.inc"
+VERSION_ID_HIGH: EQU 0x01 ; firmware version ID high byte (bootloader version)
 
 ; exported functions
 export _main
 export soft_reset
 
 ; exported variables
-export buffer_ptr
 export halted
-
-; exported temporary variables
-export tmp1
-export tmp2
 
 AREA bss
 
 ; real variables
-buffer_ptr:
-	BLK 1 ;current index into buffer
 write_ptr:
 	BLK 1 ;current index where we are writing from buffer to USB
 buf_size:
@@ -43,11 +36,7 @@ buf_size:
 halted:
 	BLK 1 ;true if endpoint was halted
 
-; temporary storage locations
-tmp1:
-	BLK 1
-tmp2:
-	BLK 1
+; used to pass the flash address to the write function
 flash_addr:
 	BLK 1
 

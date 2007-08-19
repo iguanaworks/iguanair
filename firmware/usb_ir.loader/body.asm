@@ -1,4 +1,4 @@
-include "constants.inc"
+include "loader.inc"
 
 ; default implementations do nothing
 area bodyentry (ROM, ABS, CON)
