@@ -105,7 +105,7 @@ main_recv:
 	cmp A, CTL_RST     ; reset command
 	jz main_reset
 
-;	lcall body_handler ; default behavior--unknown code
+	lcall body_handler ; default behavior--unknown code
 	jmp main_loop
 
 main_getversion:
@@ -121,9 +121,9 @@ main_getversion:
 	jmp main_loop
 
 main_prog:
-	mov [flash_addr], [control_pkt + CDATA] ;read the flash block address
-	mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ;set up to read right number of bytes into buffer
-	lcall read_buffer ;get the block
+	mov [flash_addr], [control_pkt + CDATA]     ; save the flash block address
+	mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; set up to read right number of bytes
+	lcall read_buffer                           ; read the block
 
 	; ack the receive
 	mov [control_pkt + CCODE], CTL_PROG

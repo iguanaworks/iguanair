@@ -31,7 +31,6 @@
 				<SOURCE_FILE NAME="globalparams.h" TYPE="LibraryIncludeFile" LANGUAGE="ASM" OVERLAY_NAME="" FILEMODTIME="22774984" LIBTIME="1243884"/>
 				<SOURCE_FILE NAME="body.asm" TYPE="UserSourceModule" LANGUAGE="ASM" OVERLAY_NAME=""/>
 				<SOURCE_FILE NAME="body.inc" TYPE="UserIncludeFile" LANGUAGE="ASM" OVERLAY_NAME=""/>
-				<SOURCE_FILE NAME="ir.asm" TYPE="UserSourceModule" LANGUAGE="ASM" OVERLAY_NAME=""/>
 			</SOURCE_FILE_LIST>
 			<LIB_FILE_LIST>
 				<LIB_FILE NAME="libPSoC.a" TYPE="UserLibrary">

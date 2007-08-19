@@ -9,7 +9,7 @@
 ;See COPYING for license details.
 
 include "m8c.inc"       ; part specific constants and macros
-include "memory.inc"    ; Constants & macros for SMM/LMM and Compiler
+;include "memory.inc"    ; Constants & macros for SMM/LMM and Compiler
 include "PSoCAPI.inc"   ; PSoC API definitions for all User Modules
 include "constants.inc"
 
@@ -64,33 +64,54 @@ AREA text
 ; size is specified in control packet data byte 0
 ; returns 1 if read ok, 0 if read overflow
 read_buffer_body:
-	mov [buffer_ptr], buffer ;reset to start of buffer
-	mov A, [control_pkt + CDATA] ;get number of bytes to read
-	;check against buffer size
-	jz rb_done   ; if no data to read, we're done
-	mov [tmp1], A ; bytes left in tmp
-rb_frag: //get each fragment (packet)
-	lcall read_packet; get packet--puts packet length in A
-	mov X, EP2DATA ;set start of data fifo
-	mov [tmp2], A; bytes to copy for this packet
-rb_loop: //copy the bytes of this packet
-	;check for overflow
-	cmp [buffer_ptr], buffer + BUFFER_SIZE
-	jz rb_overflow ;more data, but buffer full (tx overflow)
-	mov A, REG[X]; move data into A
-	mvi [buffer_ptr], A ;move data into packet
-	dec [tmp1]; one less byte total
-	jz rb_done; done with receive
-	dec [tmp2]; one less byte to copy in this packet
-	jz rb_frag; done with fragment, get next packet
-	inc X; increment data pointer
-	jmp rb_loop ;keep copying from this packet
-rb_done: ;we're done receiving
-	mov A, 1 ;return code ok
+	mov [buffer_ptr], buffer     ; reset to start of buffer
+	mov A, [control_pkt + CDATA] ; get number of bytes to read
+	jz rb_done                   ; if no data to read, we're done
+	mov [tmp1], A                ; keep number of bytes left in tmp1
+
+  ; get each fragment (packet)
+  rb_frag:
+	mov A, [halted]       ; check for halt condition
+	jnz soft_reset        ; go to known state after halt
+	mov A, OUT            ; check OUT endpoint
+	lcall USB_bGetEPState ; check state
+	CMP A, EVENT_PENDING  ; compare--if equal, zero flag set
+	jnz rb_frag           ; not equal, keep waiting
+
+	; get packet length
+	mov A, OUT            ; check OUT endpoint
+	lcall USB_bGetEPCount ; packet length now in A
+	mov [tmp2], A         ; store packet length
+
+	; re-enable OUT endpoint
+	MOV    A, OUT
+	lcall  USB_EnableEP
+
+    ; set start of data fifo
+	mov X, EP2DATA
+
+  ; copy the bytes of this packet
+  rb_loop:
+	cmp [buffer_ptr], buffer + BUFFER_SIZE ; check for overflow
+	jz rb_overflow      ; more data, but buffer full (tx overflow)
+	mov A, REG[X]       ; move data into A
+	mvi [buffer_ptr], A ; move data into buffer
+	dec [tmp1]          ; one less byte total
+	jz rb_done          ; done with receive
+	dec [tmp2]          ; one less byte to copy in this packet
+	jz rb_frag          ; done with fragment, get next packet
+	inc X               ; increment data pointer
+	jmp rb_loop         ; keep copying from this packet
+
+  ; we're done receiving
+  rb_done:
+	mov A, [tmp1] ; return code ok
 	ret
-rb_overflow: ;had an overflow
-	mov [control_pkt + CDATA], BUFFER_SIZE ;record the number of bytes actually read
-	mov A, 0 ;return code overflow
+
+  ; had an overflow
+  rb_overflow:
+	mov [control_pkt + CDATA], BUFFER_SIZE ; record the number of bytes actually read
+	mov A, 0                               ; return code overflow
 	ret
 
 ; FUNCTION check_read
@@ -118,29 +139,6 @@ check_read_body:
   cr_done:
 	or  F, 0x1 ;re-enable global interrupts
 	ret
-
-;FUNCTION read_packet
-;  returns packet length
-read_packet:
-	; wait for receive
-  rp_wait:
-	mov A, [halted]       ; check for halt condition
-	jnz soft_reset        ; go to known state after halt
-	mov A, OUT            ; check OUT endpoint
-	lcall USB_bGetEPState ; check state
-	CMP A, EVENT_PENDING  ; compare--if equal, zero flag set
-	jnz rp_wait           ; not equal, keep waiting
-
-	; get packet length
-	mov A, OUT            ; check OUT endpoint
-	lcall USB_bGetEPCount ; packet length now in A
-	mov [tmp1], A         ; store packet length
-
-	; re-enable OUT endpoint
-	MOV		A, OUT
-	lcall  USB_EnableEP
-	mov A, [tmp1] ; restore packet length
-	ret ; return packet length
 
 ;FUNCTION read_control
 ;  receives a control packet, returning the control code
