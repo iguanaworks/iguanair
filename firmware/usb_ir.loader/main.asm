@@ -23,38 +23,23 @@ VERSION_ID_HIGH: EQU 0x01 ; firmware version ID high byte (bootloader version)
 export _main
 export soft_reset
 
-; exported variables
-export halted
-
-AREA bss
-
-; real variables
-write_ptr:
-	BLK 1 ;current index where we are writing from buffer to USB
-buf_size:
-	BLK 1 ;amount of data currently in buffer
-halted:
-	BLK 1 ;true if endpoint was halted
-
-; used to pass the flash address to the write function
-flash_addr:
-	BLK 1
-
 AREA text
-
 _main:
-	mov A, 0 ;put arg 0 for USB_start
-	lcall USB_Start ;enable USB device
-	or  F, 0x1 ;enable global interrupts
+    or [loader_flags], FLAG_BODY_INIT ; set the body init flag
 
-;wait for usb enumeration
+	mov A, 0        ; put arg 0 for USB_start
+	lcall USB_Start ; enable USB device
+	or  F, 0x1      ; enable global interrupts
+
+; wait for usb enumeration
 config_loop:
 	lcall USB_bGetConfiguration
 	jz config_loop ; if return val was zero, try again
 
 ; now we're connected
 soft_reset:
-	mov [halted], 0 ; clear halt flag that Linux sets
+	and [loader_flags], ~FLAG_HALTED    ; clear halt flag that Linux sets
+	or  [loader_flags], FLAG_BODY_RESET ; set the body reset flag
 
 	; clear the IN endpoint by sending 0-byte packet
 	mov [USB_APIEPNumber], 0x1 ; set to endpoint 1
@@ -68,8 +53,9 @@ soft_reset:
 
 main_loop:
     ; halt condition 
-	mov A, [halted]; check for halt condition
-	jnz soft_reset ; go to known state after halt
+	mov A, [loader_flags] ; check for halt condition
+	and A, FLAG_HALTED
+	jnz soft_reset        ; go to known state after halt
 
 	; check for data from host
 	lcall check_read ; see if there is a transmission from the host
@@ -104,13 +90,13 @@ main_getversion:
 	lcall get_version_low
 	mov [control_pkt + CDATA], A
 	; high byte is defined in here
-	mov [control_pkt + CDATA+1], VERSION_ID_HIGH
+	mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
 	mov A, CTL_BASE_SIZE + 2
 	lcall write_control
 	jmp main_loop
 
 main_prog:
-	mov [flash_addr], [control_pkt + CDATA]     ; save the flash block address
+	mov [tmp3], [control_pkt + CDATA]     ; save the flash block address
 	mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; set up to read right number of bytes
 	lcall read_buffer                           ; read the block
 
@@ -135,7 +121,7 @@ main_prog:
 ; checksum an individual page much like the ssc checksum function
 main_chksum:
 	; read a page of flash
-	mov [flash_addr], [control_pkt + CDATA]
+	mov [tmp3], [control_pkt + CDATA]
 	mov A, 0x01 ;read block code
 	call exec_ssc
 
@@ -165,11 +151,11 @@ main_chksum:
 
 main_reset:
 	lcall USB_Stop ; have to do this first, or we loop sending 0 length packets....
-	mov [flash_addr], 0x0
+	mov [tmp3], 0x0
 	mov A, 0 ;reset code
 	call exec_ssc
 
-; pre: flash_addr holds the block index
+; pre: tmp3 holds the block index
 ;      A holds the ssc code
 exec_ssc:
 	; store the ssc code
@@ -181,7 +167,7 @@ exec_ssc:
 	mov A, X
 	add A, 3                    ; just following directions from datasheet
 	mov [KEY2], A
-	mov [BLOCKID], [flash_addr] ; set which flash block to write
+	mov [BLOCKID], [tmp3] ; set which flash block to write
 	mov [POINTER], buffer       ; write data to the buffer
 	mov [CLOCK], 0x00           ; guessing at the right clock divider
 	mov [DELAY], 0xAC           ; this is a guess, since datasheet says use 0x56 for 12MHz

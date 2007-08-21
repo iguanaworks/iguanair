@@ -9,30 +9,38 @@
 
 include "m8c.inc"       ; part specific constants and macros
 include "memory.inc"    ; Constants & macros for SMM/LMM and Compiler
-include "constants.inc"
-include "body.asm"
+include "loader.inc"
+include "body.inc"
 
-export rx_enable
+; exported functions
 export rx_disable
+export rx_reset
 export transmit_code
 export tcap_int
 export twrap_int
+export write_signal
+
+; exported variables
+export rx_on
+export rx_fill
+export buf_size
 
 AREA bss
-
+rx_on:
+    BLK 1 ; is the receiver on?
 tx_pins:
-	BLK 1 ;pins to use for current tx
+	BLK 1 ; pins to use for current tx
 tx_state:
-	BLK 1 ;state of tx (on or off)
+	BLK 1 ; state of tx (on or off)
 tx_temp:
-	BLK 1 ;tx temp variable
+	BLK 1 ; tx temp variable
 
 rx_high:
-	BLK 1 ;received data high byte
+	BLK 1 ; received data high byte
 rx_low:
-	BLK 1 ;received data low byte
+	BLK 1 ; received data low byte
 rx_pulse:
-	BLK 1 ;high bit is 1 if this is a pulse, 0 for space
+	BLK 1 ; high bit is 1 if this is a pulse, 0 for space
 
 rx_overflow:
 	BLK 1
@@ -44,42 +52,96 @@ write_ptr:
 	BLK 1
 
 AREA text
+; FUNCTION: get_byte
+;   puts the next byte off the rx buffer into A
+get_byte:
+	mvi A, [write_ptr]                    ; read byte, increment ptr
+	cmp [write_ptr], buffer + BUFFER_SIZE ; check for end of buffer
+	jz get_wrap
+  get_dec:
+	; we want to decrement buffer atomically
+	and F, 0xFE    ; clear global interrupt bit
+	dec [buf_size] ; decrement buffer size
+	; if we no longer have a full packet worth of data, clear rx_fill flag
+	cmp [buf_size], PACKET_SIZE - 1
+	jz get_clear
+  get_decdone:
+	or  F, 0x1 ; re-enable global interrupts
+	jmp get_done
+  get_clear:
+	mov [rx_fill], 0
+	jmp get_decdone
 
-;FUNCTION rx_enable enables the IR receiver
-rx_enable:
-	mov [rx_overflow], 0; clear rx overflow flag
-	mov [rx_fill], 0 ;clear fill flag
-	mov [write_ptr], buffer ;reset write ptr to start of buffer
-	mov [buffer_ptr], buffer; reset rx ptr to start of buffer
-	mov [buf_size], 0 ;reset size to 0
+  get_wrap:
+	mov [write_ptr], buffer ;wrap around to start of buffer
+	jmp get_dec	
 
-	;enable the timer capture interrupt
+  get_done:
+	ret
+
+; FUNCTION: write_signal
+;   writes one packet's worth of signal data from the rx buffer to host
+write_signal:
+	; we use the control packet buffer to send the data
+	mov X, PACKET_SIZE - 1  ; bytes to copy (last is fill)
+	mov [tmp1], control_pkt ; packet pointer
+  ws_ld_loop:
+	lcall get_byte          ; get next byte
+	mvi [tmp1], A
+	dec X
+	jnz ws_ld_loop
+
+	; put buffer fill level in last byte
+	mov A, [buf_size]
+	mvi [tmp1], A
+
+	; send the data packet
+	mov X, control_pkt ; packet pointer
+	mov A, PACKET_SIZE ; packet size
+	lcall write_data   ; send the data
+	ret
+
+
+; FUNCTION: rx_reset enables the IR receiver
+rx_reset:
+	mov A, [rx_on]   ; check if rx should be enabled
+	jz rx_reset_done ; rx should be off, we're done
+
+	mov [rx_overflow], 0     ; clear rx overflow flag
+	mov [rx_fill], 0         ; clear fill flag
+	mov [write_ptr], buffer  ; reset write ptr to start of buffer
+	mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
+	mov [buf_size], 0        ; reset size to 0
+
+	; enable the timer capture interrupt
 	mov A, REG[INT_MSK1]
-	or A, 0b10000000 ;tcap interrupt enable
+	or A, 0b10000000     ; tcap interrupt enable
 	mov REG[INT_MSK1], A
 
-	;enable the timer wrap interrupt
+	; enable the timer wrap interrupt
 	mov A, REG[INT_MSK2]
-	or A, 0b00000010 ;twrap interrupt enable
+	or A, 0b00000010     ; twrap interrupt enable
 	mov REG[INT_MSK2], A
 
-	ret;
+  rx_reset_done:
+	ret
 
-;FUNCTION rx_disable disables the IR receiver
+; FUNCTION rx_disable disables the IR receiver
 rx_disable:
-	;disable the timer interrupt
+	; disable the timer interrupt
 	mov A, REG[INT_MSK1]
-	and A, ~0b10000000 ;tcap interrupt enable
+	and A, ~0b10000000   ; tcap interrupt enable
 	mov REG[INT_MSK1], A
 
-	;disable the timer wrap interrupt
+	; disable the timer wrap interrupt
 	mov A, REG[INT_MSK2]
-	and A, ~0b00000010 ;twrap interrupt enable
+	and A, ~0b00000010   ; twrap interrupt enable
 	mov REG[INT_MSK2], A
 
-	mov [rx_fill], 0 ;clear fill flag
-	mov [rx_overflow], 0; clear rx overflow flag
-	ret;
+	mov [rx_fill], 0     ; clear fill flag
+	mov [rx_overflow], 0 ; clear rx overflow flag
+	mov [rx_on], 0x0     ; note that rx is off
+	ret
 
 ;FUNCTION buf_load
 ;puts value into the circular buffer
@@ -92,28 +154,28 @@ buf_load:
 	inc [buf_size]
 	cmp [buf_size], PACKET_SIZE ;see if we have enough data to send to host
 	jz bl_fill
-bl_check_wrap:
+  bl_check_wrap:
 	cmp [buffer_ptr], buffer + BUFFER_SIZE ;check for end of buffer
 	jz bl_wrap
 	jmp bl_done
 
-bl_oflow:
-	;set the rx overflow flag, clear buffers
+  bl_oflow:
+	; set the rx overflow flag, clear buffers
 	mov [rx_overflow], 1
-	mov [write_ptr], buffer ;reset write ptr to start of buffer
-	mov [buffer_ptr], buffer; reset rx ptr to start of buffer
-	mov [buf_size], 0 ;reset size to 0
+	mov [write_ptr], buffer  ; reset write ptr to start of buffer
+	mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
+	mov [buf_size], 0        ; reset size to 0
 	jmp bl_done
 
-bl_fill:
-	mov [rx_fill], 1 ;set fill flag to true
+  bl_fill:
+	mov [rx_fill], 1  ; set fill flag to true
 	jmp bl_check_wrap
 
-bl_wrap:
-	mov [buffer_ptr], buffer ;wrap around to start of buffer
+  bl_wrap:
+	mov [buffer_ptr], buffer ; wrap around to start of buffer
 	jmp bl_done
 
-bl_done:
+  bl_done:
 	ret
 
 
@@ -189,70 +251,55 @@ ld_big_done:
 
 
 
-;INTERRUPT
-;timer/capture interrupt handler
+; INTERRUPT: timer/capture interrupt handler
 tcap_int:
 	PUSH A
 
-	mov A, REG[TCAPINTS] ;read capture interrupt status
-	and A, 0x1 ;true if  this is a rising edge
-	jnz tcap_rise
+	; read the timer in temporary variables
+	mov A, REG[FRTMRL] ; load low-order byte
+	mov [rx_low], A    ; store
+	mov A, REG[FRTMRH] ; load high-order byte
+	mov [rx_high], A   ; store
 
-	;if here, it's a falling edge
-tcap_rx_fall:
-	;here we have the start of a pulse, aka end of a space
-	;read the timer and store in packet buffer
-	mov A, REG[FRTMRL] ;read low-order byte
-	mov [rx_low], A ;store
-	mov A, REG[FRTMRH] ;read high-order byte
-	mov [rx_high], A ;store
+    ; check if we have a rising or falling edge
+	mov A, REG[TCAPINTS] ; read capture interrupt status
+	and A, 0x1           ; true if  this is a rising edge
+	jnz tcapi_rise
+
+  ; if here, it's a falling edge
+  tcap_rx_fall:
 	mov [rx_pulse], 0x80 ; set pulse bit to indicate space
-	lcall load_value ;load into data buffer
+	jmp tcapi_done
 
+  ; found a rising edge
+  tcapi_rise:
+	mov [rx_pulse], 0  ; clear pulse bit to indicate pulse
+	jmp tcapi_done
 
-	jmp tcap_done
+  tcapi_done:
+	lcall load_value        ; store into data buffer
+	mov REG[FRTMRL], 0      ; reset timer low byte
+	mov REG[FRTMRH], 0      ; reset timer high byte
+	mov REG[TCAPINTS], 0x0F ; clear int status
 
-tcap_rise:
-	;if here, we have the end of a pulse
-	;read the timer and store in packet buffer
-	mov A, REG[FRTMRL] ;read low-order byte
-	mov [rx_low], A ;store
-	mov A, REG[FRTMRH] ;read high-order byte
-	mov [rx_high], A ;store
-	mov [rx_pulse], 0 ; clear pulse bit to indicate pulse
-	lcall load_value ;load into data buffer
-
-	jmp tcap_done
-
-tcap_done:
-	mov REG[FRTMRL], 0;reset timer low byte
-	mov REG[FRTMRH], 0;reset timer high byte
-	mov REG[TCAPINTS], 0x0F ;clear int status
 	POP A
-	reti ;done
+	reti ; done
 
-;INTERRUPT
-;timer wrap interrupt handler
-
+; INTERRUPT: timer wrap interrupt handler
 twrap_int:
 	push A
 
-	;load an 0x80 to indicate full-length space
+	; load an 0x80 to indicate full-length space
 	mov A, 0x80
 	lcall buf_load
 
 	pop A
-	reti ;done
+	reti ; done
 
-;put the transmit code at a known location in memory, so we can overwrite it without
-;too much difficulty via the PROG command (to change the carrier frequency, for example)
-;AREA txprog (ROM,ABS)
-;org TXPROG_ADDR
-
-;FUNCTION transmit_code
-;transmit the code over IR
-;code format: first bit is 1 for on, 0 for off
-;next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
+; FUNCTION: transmit_code
+; transmit the code over IR
+; code format: first bit is 1 for on, 0 for off
+; next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
 transmit_code:
 	; read a byte describing channel selection, and make sure it only specifies valid channels
 	and [control_pkt + CDATA + 1], TX_MASK
@@ -261,18 +308,18 @@ transmit_code:
 	mov A, [tx_pins]
 	jnz tx_start
 	mov [tx_pins], TX_MASK
-tx_start:
-	mov [buffer_ptr], buffer ;reset to start of buffer
-	mov [tx_state], 0 ;clear tx state
-	mov [tmp2], [control_pkt + CDATA] ;get number of bytes to transmit
-	mov A, [tmp2] ; set zero flag if tmp2 is zero
-tx_loop:
-	jz tx_done ;if zero byte, we're done
-	mvi A, [buffer_ptr] ;move buffer data into A, increment pointer
-	mov [tx_temp], A ;store byte
-	and A, 0x7F ;mask off the pulse length bits
-	asl A ;shift left to multiply by two due to carrier division
-	mov X, A ;store pulse length in X
+  tx_start:
+	mov [buffer_ptr], buffer          ; reset to start of buffer
+	mov [tx_state], 0                 ; clear tx state
+	mov [tmp2], [control_pkt + CDATA] ; get number of bytes to transmit
+	mov A, [tmp2]                     ; set zero flag if tmp2 is zero
+  tx_loop:
+	jz tx_done          ; if zero byte, we're done
+	mvi A, [buffer_ptr] ; move buffer data into A, increment pointer
+	mov [tx_temp], A    ; store byte
+	and A, 0x7F         ; mask off the pulse length bits
+	asl A               ; shift left to multiply by two due to carrier division
+	mov X, A            ; store pulse length in X
 
 	mov A, [tx_temp]; get original byte back
 	and A, 0x80; mask off pulse on/off bit
@@ -280,12 +327,12 @@ tx_loop:
 	mov [tx_state], 0; clear tx
 	jmp tx_pulse ;start sending pulse
 
-tx_on:
+  tx_on:
 	mov [tx_state], [tx_pins] ;mask on tx bits; TODO: changed timing!!!
 	jmp tx_pulse ;start sending pulse--this jump seems redundant,
 	             ;but is there to make timing the same on both branches
 
-tx_pulse: ;ready to send a pulse.  Need to AND in 38KHz carrier
+  tx_pulse: ;ready to send a pulse.  Need to AND in 38KHz carrier
 	mov A, X ;put pulse length into A, to make zero flag valid			[4 cycles]
 	jz tx_end_pulse; this pulse is done                   				[5 cycles]
 	mov A, REG[TX_BANK] ;get current register state						[6 cycles]
@@ -299,12 +346,12 @@ tx_pulse: ;ready to send a pulse.  Need to AND in 38KHz carrier
 
 	jmp tx_pulse ;continue the pulse									[5 cycles]
 
-tx_end_pulse:
-	and REG[TX_BANK], TX_MASK ;make sure tx pins are off
-	dec [tmp2] ;decrement remaining byte count
-	jmp tx_loop ;go to the next pulse
+  tx_end_pulse:
+	and REG[TX_BANK], TX_MASK ; make sure tx pins are off
+	dec [tmp2]                ; decrement remaining byte count
+	jmp tx_loop               ; go to the next pulse
 
-tx_done:
+  tx_done:
 	and REG[TX_BANK], TX_MASK ;make sure tx pins are off
 	ret ;done
 

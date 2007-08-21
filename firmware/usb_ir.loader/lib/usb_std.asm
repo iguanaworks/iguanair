@@ -22,6 +22,9 @@ include "m8c.inc"
 include "USB_macros.inc"
 include "USB.inc"
 
+;MODIFIED: halt include added by J. Dunn
+;include "loader.inc"
+
 ;-----------------------------------------------
 ;  Global Symbols
 ;-----------------------------------------------
@@ -877,9 +880,9 @@ USB_CB_h2d_std_ep_01:
     JMP     .done    
 .in:
     MOV     REG[X + USB_EP0MODE], USB_MODE_NAK_IN  ; NAK the endpoint
-.done:    
+.done:
 	;MODIFIED: halt flag added by B. Shucker
-	mov [halted], 0x1 ;set halt flag    
+	mov [loader_flags], 0x1 ; set halt flag
     JMP     USB_NoDataStageControlTransfer_Local_Std
 ENDIF
 ;-----------------------------------------------------------------------------

@@ -39,6 +39,9 @@ AREA BOTTOM(ROM,ABS,CON)
 
 	org wait_for_IN_ready
 	ljmp wait_for_IN_ready_body
+	
+	org write_data
+	ljmp write_data_body
 
 AREA text
 ; FUNCTION read_buffer
@@ -53,7 +56,8 @@ read_buffer_body:
 
   ; get each fragment (packet)
   rb_frag:
-	mov A, [halted]       ; check for halt condition
+	mov A, [loader_flags] ; check for halt condition
+	and A, FLAG_HALTED
 	jnz soft_reset        ; go to known state after halt
 	mov A, OUT            ; check OUT endpoint
 	lcall USB_bGetEPState ; check state
@@ -193,31 +197,43 @@ read_control_body:
 	mov A, [tmp1]
 	ret
 
-;FUNCTION write_control
-;writes a control packet
-;argument: A is packet size
-;pre: control packet already contains a valid control packet
-write_control_body:
-	mov [tmp1], A ;store packet size
-	;load packet header: 2 zero bytes followed by DC
-	mov [control_pkt + 0], 0
-	mov [control_pkt + 1], 0
-	mov [control_pkt + 2], TO_PC
-
-	call wait_for_IN_ready_body
-
-	;now send the packet
-	mov [USB_APIEPNumber], IN  ; set to IN endpoint
-	mov [USB_APICount], [tmp1] ; set packet size
-	mov X, control_pkt         ; put packet address into X
-	lcall USB_XLoadEP          ; send packet
-	ret
-
+; FUNCTION: 
 wait_for_IN_ready_body:
-	mov A, [halted]        ; check for halt condition
+	mov A, [loader_flags]  ; check for halt condition
+	and A, FLAG_HALTED
 	jnz soft_reset         ; go to known state after halt
 	mov A, IN
 	lcall USB_bGetEPState  ; check IN endpoint state
 	cmp A, IN_BUFFER_EMPTY ; compare -- if equal, zero flag set
 	jnz wait_for_IN_ready_body  ; not equal, keep waiting
+	ret
+
+; FUNCTION: write_control
+; writes a control packet back to the PC (using write_data)
+;   pre: control_pkt[CCODE] is a valid response code
+;        A contains the packet size
+write_control_body:
+	; load packet header: 2 zero bytes followed by DC
+	mov [control_pkt + 0], 0
+	mov [control_pkt + 1], 0
+	mov [control_pkt + 2], TO_PC
+
+	mov X, control_pkt  ; store a pointer to the data
+	jmp write_data_body ; jmp to the actual worker
+
+; FUNCTION: write_data
+; write a packet back to the PC
+;   pre: X contains pointer to data
+;        A contains the packet size
+write_data_body:
+	mov [tmp1], A ; store packet size
+	mov [tmp2], X ; store data pointer
+
+	call wait_for_IN_ready_body
+
+	; now send the packet
+	mov [USB_APIEPNumber], IN  ; set to IN endpoint
+	mov [USB_APICount], [tmp1] ; set packet size
+	mov X, [tmp2]              ; retrieve data pointer
+	lcall USB_XLoadEP          ; send packet
 	ret

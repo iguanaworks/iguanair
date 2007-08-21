@@ -1,3 +1,5 @@
+include "loader.inc"
+
 ;-----------------------------------------------------------------------------
 ; RAM segments for C CONST, static & global items
 ;-----------------------------------------------------------------------------
@@ -34,4 +36,5 @@ __data_start:
     AREA virtual_registers (RAM, REL, CON)   ; Temp vars of C compiler
     AREA InterruptRAM      (RAM, REL, CON)   ; Interrupts, on Page 0
     AREA bss               (RAM, REL, CON)   ; general use
+  BLK BODY_SKIP_BYTES - 3
 __bss_start:
