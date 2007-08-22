@@ -84,11 +84,16 @@ main_recv:
 	jmp main_loop
 
 main_getversion:
+	; fetch the low byte of the version by loading the body page
+	; read a page of flash
+	mov [tmp3], BODY_JUMPS / 64
+	mov A, 0x01   ; read block code
+	call exec_ssc
+
 	; send control packet with version id
 	mov [control_pkt + CCODE], CTL_VERSION
-	; fetch the low byte of the version from body.asm
-	lcall get_version_low
-	mov [control_pkt + CDATA], A
+	; store the correct byte from the previously read page
+	mov [control_pkt + CDATA], [buffer + 4 + 1]
 	; high byte is defined in here
 	mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
 	mov A, CTL_BASE_SIZE + 2
