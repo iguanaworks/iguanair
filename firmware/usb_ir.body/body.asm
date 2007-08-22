@@ -5,7 +5,10 @@ include "body.inc"
 VERSION_ID_LOW:  equ 0x01 ; firmware version ID low byte (code body)
 
 
-
+; FUNCTION: body_main
+;  API used by the loader to call into the body.
+;  pre: A contains a control code
+;       ctl_packet contains the whole control packet
 body_main:
 	; save the control code
 	mov [tmp1], A
@@ -20,6 +23,8 @@ body_main:
 	mov REG[P15CR], 0x01 ; channel 1
 	mov REG[P16CR], 0x01 ; channel 2
 	mov REG[P17CR], 0x01 ; channel 3
+	; but make sure the pins are set high because the LEDs are active low
+	mov REG[TX_BANK], TX_MASK
 
 	; configure capture
 	mov REG[RX_PIN_CR], 0b00000010 ; configure port pin: pullup enabled
@@ -38,11 +43,11 @@ body_main:
 	and A, FLAG_BODY_RESET
 	jz bm_was_reset
 
-;	mov [rx_overflow], 0 ; clear rx overflow flag
+;    mov [rx_overflow], 0 ; clear rx overflow flag
 	mov [rx_on], 0       ; rx starts in the off state
 	mov [rx_fill], 0     ; clear fill flag
 	lcall rx_disable     ; make sure receiver is off
-;	lcall pins_reset     ; clear GPIO pin state
+;    lcall pins_reset     ; clear GPIO pin state
 
   bm_was_reset:
     ; reload the control code
@@ -171,10 +176,12 @@ get_buf_size_body:
 
 
 
-; pin down the entry points 
+; implementation of the body jump table located at BODY_JUMPS
+; Do not modify this code unless you KNOW what you are doing!
 area bodyentry (ROM, ABS, CON)
 org body_handler
-	ljmp body_main
+	jmp body_main
 
-org get_version_low
-	ljmp get_version_low_body
+org body_version
+	mov A, VERSION_ID_LOW
+	ret
