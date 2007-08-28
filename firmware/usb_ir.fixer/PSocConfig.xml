@@ -1,0 +1,468 @@
+<PSOC_DEVICE_DB>
+	<PSOC_CONFIG_LIST>
+		<PSOC_CONFIG NAME="usb_ir" BASE_DEVICE="CY7C63813-PXC" SOURCE_GEN_TIME="1140989101" CONFIG_SAVE_TIME="1140989101" CONFIG_SAVE_DATE="Sun Feb 26 14:25:01 2006
+" VERSION="4.0" DESCRIPTION="" PACKAGE_TYPE="" PACKAGE_SHAPE="2" LOOP_CONFIG_INIT="Disable" UM_INT_GEN_CONTROL="Disable" CONFIG_NAME_PREPEND="Enable" DESIGN_VERSION="" DOC_FILENAME="" DEVICE_DISPLAY_NAME="">
+			<DESIGN_FILE_LIST/>
+			<USER_MODULE_LIST>
+				<USER_MODULE NAME="USB" INSTANCE_NAME="USB" VERSION="1.5">
+					<SHAPE SHAPE_TYPE="BLOCKLIST" COLOR_INDEX="0" NAME="USBHIDCY7C63">
+						<RESOURCE_LIST>
+							<RESOURCE NAME="EP0" TYPE="USB_EP0" DEVICE_RESOURCE_NAME="EPT0"/>
+							<RESOURCE NAME="EP1" TYPE="USB_EP1" DEVICE_RESOURCE_NAME="EPT1"/>
+							<RESOURCE NAME="EP2" TYPE="USB_EP2" DEVICE_RESOURCE_NAME="EPT2"/>
+							<RESOURCE NAME="SIE_ACT" TYPE="USB_SIE" DEVICE_RESOURCE_NAME="USB_SIE"/>
+							<RESOURCE NAME="SIE_RESET" TYPE="USB_XCVR" DEVICE_RESOURCE_NAME="USB_RESET"/>
+						</RESOURCE_LIST>
+					</SHAPE>
+					<PARAMETER_LIST>
+						<PARAMETER NAME="DSHID_Class" VALUE="HID"/>
+						<PARAMETER NAME="DSHID_NumDataEndpoints" VALUE="2"/>
+						<PARAMETER NAME="DSHID_SupportsBULK" VALUE="Disabled"/>
+						<PARAMETER NAME="DSHID_SupportsINT" VALUE="Enabled"/>
+						<PARAMETER NAME="DSHID_SupportsISOC" VALUE="Disabled"/>
+						<PARAMETER NAME="DSHID_bNumDevices" VALUE="1"/>
+						<PARAMETER NAME="DSHID_bNumHIDReports" VALUE="0"/>
+						<PARAMETER NAME="DSHID_bNumInterfaces" VALUE="1"/>
+						<PARAMETER NAME="DSHID_bNumStringDescrs" VALUE="2"/>
+						<PARAMETER NAME="DSHID_bWizardRan" VALUE="1"/>
+						<PARAMETER NAME="DSHID_hASMHeaderCode" VALUE=""/>
+						<PARAMETER NAME="DSHID_hCHeaderCode" VALUE=""/>
+						<PARAMETER NAME="DSHID_hfDescriptors" VALUE="AREA  UserModules     (ROM,REL,CON)
+;----------------------------------------------------------------------
+; Descriptor Dispatch Tables
+;   The following tables provide the dispatching pointers and
+;   descriptor lengths necessary for the request handler to
+;   respond to USB requests.
+;----------------------------------------------------------------------
+
+;----------------------------------------------------------------------
+; Device Dispatch Table
+;   for User Module: (USB)
+;----------------------------------------------------------------------
+AREA  func_lit     (ROM,REL,CON)
+EXPORT USB_DEVICE_LOOKUP
+.LITERAL
+USB_DEVICE_LOOKUP:                               ;
+  LT_START    1                                  ; Number of devices defined for USB
+  LT_ENTRY    USB_D0_CONFIG_LOOKUP, USB_D0_CONFIG_DESCR_TABLE
+.ENDLITERAL
+
+;----------------------------------------------------------------------
+; Configuration Dispatch Table
+;   for Device: (USB_D0)
+;----------------------------------------------------------------------
+AREA  func_lit     (ROM,REL,CON)
+EXPORT USB_D0_CONFIG_LOOKUP
+.LITERAL
+USB_D0_CONFIG_LOOKUP:                            ;
+  LT_START    1                                  ; Number of configurations
+  LT_ENTRY    USB_D0_C1_EP_SETUP, USB_D0_C1_INTERFACE_LOOKUP
+.ENDLITERAL
+
+;----------------------------------------------------------------------
+; Endpoint Setup Table
+; 
+; This table provides the data to configure the endpoint mode registers
+; for IN/OUT direction.
+;----------------------------------------------------------------------
+AREA  func_lit     (ROM,REL,CON)
+.LITERAL
+USB_D0_C1_EP_SETUP:                              ;
+  DB    USB_DIR_IN                               ; Endpoint EP1(IN)
+  DB    USB_DIR_OUT                              ; Endpoint EP2(OUT)
+.ENDLITERAL
+
+;----------------------------------------------------------------------
+; Interface Lookup Table
+; 
+; This table is indexed by interface number.
+;
+;----------------------------------------------------------------------
+EXPORT USB_D0_C1_INTERFACE_RPT_LOOKUP
+.LITERAL
+USB_D0_C1_INTERFACE_RPT_LOOKUP:                  ;
+  DW    0                                        ; HID Class Reports not defined for this interface
+.ENDLITERAL
+
+;----------------------------------------------------------------------
+; HID Class Descriptor transfer descriptor table
+;----------------------------------------------------------------------
+AREA  func_lit     (ROM,REL,CON)
+EXPORT USB_D0_C1_HID_CLASS_DESCR_TABLE
+.LITERAL
+USB_D0_C1_HID_CLASS_DESCR_TABLE:                 ;
+  TD_START_TABLE 1                               ; Number of interfaces/HID Class Descriptors
+  TD_ENTRY       USB_DS_ROM, DESCR_SIZE_HID_CLASS, USB_D0_C1_I0_HID_DESCR_START, NULL_PTR
+.ENDLITERAL
+
+;----------------------------------------------------------------------
+; Configuration Descriptor Table
+;  for (USB_D0)
+;
+;	This table provides transfer descriptors for each USB Configuration
+; Descriptor
+;----------------------------------------------------------------------
+AREA  func_lit     (ROM,REL,CON)
+.LITERAL
+USB_D0_CONFIG_DESCR_TABLE:                       ;
+  TD_START_TABLE 1                               ; Number of configurations
+  TD_ENTRY       USB_DS_ROM, USB_D0_C1_DESCR_SIZE, USB_D0_C1_DESCR_START, NULL_PTR
+.ENDLITERAL
+
+;----------------------------------------------------------------------
+; Device Descriptor Table
+;
+;	This table provides transfer descriptors for each USB Device Descriptor
+;----------------------------------------------------------------------
+AREA  func_lit     (ROM,REL,CON)
+EXPORT USB_DEVICE_DESCR_TABLE
+.LITERAL
+USB_DEVICE_DESCR_TABLE:                          
+  TD_START_TABLE 1                               ; Number of devices
+  TD_ENTRY       USB_DS_ROM, USB_D0_DESCR_SIZE, USB_D0_DESCR_START, NULL_PTR
+.ENDLITERAL
+;----------------------------------------------------------------------
+;----------------------------------------------------------------------
+; Interface 0 RAM Allocation (Reused across configurations)
+;----------------------------------------------------------------------
+IF WIZARD_DEFINED_REPORT_STORAGE
+AREA  bss     (RAM,REL,CON)
+;----------------------------------------------------------------------
+; RAM allocation for IN Reports.
+;----------------------------------------------------------------------
+EXPORT _USB_INTERFACE_0_IN_RPT_DATA
+EXPORT USB_INTERFACE_0_IN_RPT_DATA
+_USB_INTERFACE_0_IN_RPT_DATA:                    
+USB_INTERFACE_0_IN_RPT_DATA:                     
+  BLK  8                                         ;
+;----------------------------------------------------------------------
+; RAM allocation for OUT Reports.
+;----------------------------------------------------------------------
+EXPORT _USB_INTERFACE_0_OUT_RPT_DATA
+EXPORT USB_INTERFACE_0_OUT_RPT_DATA
+_USB_INTERFACE_0_OUT_RPT_DATA:                   
+USB_INTERFACE_0_OUT_RPT_DATA:                    
+  BLK  8                                         ;
+;----------------------------------------------------------------------
+; RAM allocation for FEATURE Reports.
+;----------------------------------------------------------------------
+EXPORT _USB_INTERFACE_0_FEATURE_RPT_DATA
+EXPORT USB_INTERFACE_0_FEATURE_RPT_DATA
+_USB_INTERFACE_0_FEATURE_RPT_DATA:               
+USB_INTERFACE_0_FEATURE_RPT_DATA:                
+  BLK  8                                         ;
+;----------------------------------------------------------------------
+ENDIF  ; WIZARD_DEFINED_REPORT_STORAGE
+;----------------------------------------------------------------------
+; Device Descriptor (USB_D0)
+; This marks the beginning of the Device Descriptor.  This descriptor
+; concatenates all of the descriptors in the following format:
+;	Device Descriptor
+;		Configuration Descriptor (1)
+;	  	Interface 1 Descriptor
+;				HID Descriptor 1
+;			  	Endpoint Descriptor(s)
+;			Interface 2 Descriptor
+;				HID Descriptor 2
+;					Endpoint Descriptor(s)
+;		Configuration Descriptor (2)
+;			Interface/HID/Endpoint...
+;----------------------------------------------------------------------
+AREA  UserModules     (ROM,REL,CON)
+.LITERAL
+USB_D0_DESCR_START:                              ;
+  DB    18                                       ; Device Descriptor Length (18)
+  DB    1                                        ; bDescriptorType: DEVICE
+  DWL   0200H                                    ; bcdUSB (ver 2.0)
+  DB    0                                        ; bDeviceClass
+  DB    0                                        ; bDeviceSubClass 
+  DB    0                                        ; bDeviceProtocol 
+  DB    8                                        ; bMaxPacketSize0
+  DWL   1781H                                    ; idVendor
+  DWL   0938H                                    ; idProduct
+  DWL   0000H                                    ; bcdDevice
+  DB    STR_HASH_2                               ; iManufacturer
+  DB    STR_HASH_3                               ; iProduct
+  DB    STR_HASH_0                               ; iSerialNumber
+  DB    1                                        ; bNumConfigurations
+USB_D0_DESCR_END:                                ;
+USB_D0_DESCR_SIZE:  EQU    USB_D0_DESCR_END - USB_D0_DESCR_START
+
+;----------------------------------------------------------------------
+; Configuration Descriptor (USB_D0_C1)
+; This marks the beginning of the Configuration Descriptor.  This descriptor
+; concatenates all of the descriptors in the following format:
+; Configuration Descriptor
+;	Interface 1 Descriptor
+;		HID Descriptor 1
+;			Endpoint Descriptor(s)
+;	Interface 2 Descriptor
+;		HID Descriptor 2
+;			Endpoint Descriptor(s)
+;----------------------------------------------------------------------
+USB_D0_C1_DESCR_START:                           ;
+  DB    9                                        ; Configuration Descriptor Length (9)
+  DB    2                                        ; bDescriptorType: CONFIGURATION
+  DWL   USB_D0_C1_DESCR_SIZE                     ; wTotalLength
+  DB    1                                        ; bNumInterfaces
+  DB    1                                        ; bConfigurationValue
+  DB    STR_HASH_0                               ; iConfiguration
+  DB    80H | (0 &lt;&lt; 6) | (0 &lt;&lt; 5)                ; bmAttributes &gt;
+  DB    50                                       ; bMaxPower
+;----------------------------------------------------------------------
+; Interface Descriptor (USB_D0_C1_I0)
+;----------------------------------------------------------------------
+  DB    9                                        ; Interface Descriptor Length (9)
+  DB    4                                        ; bDescriptorType: INTERFACE
+  DB    0                                        ; bInterfaceNumber (zero based)
+  DB    0                                        ; bAlternateSetting
+  DB    2                                        ; bNumEndpoints
+  DB    0                                        ; bInterfaceClass
+  DB    0                                        ; bInterfaceSubClass
+  DB    0                                        ; bInterfaceProtocol
+  DB    STR_HASH_0                               ; iInterface
+;----------------------------------------------------------------------
+; HID Class Descriptor (USB_D0_C1_I0)
+;----------------------------------------------------------------------
+USB_D0_C1_I0_HID_DESCR_START:                    
+  DB    9                                        ; bLength--HID Class Descriptor Length (9)
+  DB    0x21                                     ; bDescriptorType: HID Class
+  DWL   0x0111                                   ; bcdHID
+  DB    0                                        ; bCountryCode
+  DB    1                                        ; bNumDescriptors
+  DB    34                                       ; bDescriptorType
+  DWL   0                                        ; wDescriptorLength (No report was selected in the setup wizard)
+;----------------------------------------------------------------------
+; Endpoint Descriptor (USB_D0_C1_I0_E0)
+;----------------------------------------------------------------------
+  DB    7                                        ; Endpoint Descriptor Length (7)
+  DB    5                                        ; bDescriptorType: ENDPOINT
+  DB    (EP1 | USB_DIR_IN)                       ; bEndpointAddress
+  DB    3                                        ; bmAttributes
+  DWL   8                                        ; wMaxPacketSize
+  DB    10                                       ; bInterval
+;----------------------------------------------------------------------
+; Endpoint Descriptor (USB_D0_C1_I0_E1)
+;----------------------------------------------------------------------
+  DB    7                                        ; Endpoint Descriptor Length (7)
+  DB    5                                        ; bDescriptorType: ENDPOINT
+  DB    (EP2 | USB_DIR_OUT)                      ; bEndpointAddress
+  DB    3                                        ; bmAttributes
+  DWL   8                                        ; wMaxPacketSize
+  DB    10                                       ; bInterval
+;----------------------------------------------------------------------
+USB_D0_C1_DESCR_END:
+USB_D0_C1_DESCR_SIZE:	EQU	(USB_D0_C1_DESCR_END - USB_D0_C1_DESCR_START)
+.ENDLITERAL
+;----------------------------------------------------------------------
+; HID Class Report Descriptors
+;
+; This section contains the HID Class Report Descriptors generated
+; by the USB User Module Descriptor Generator
+;
+;----------------------------------------------------------------------
+;----------------------------------------------------------------------
+; USB String Descriptors
+;
+; This section contains the USB String Descriptors generated
+; by the USB User Module Descriptor Generator
+;
+; Note:  The string labels are internally generated by the
+; descriptor generator
+;
+; Descriptors that reference string descriptors, use a hashed
+; symbol that is set in an EQU directive with each string
+; descriptor.
+;----------------------------------------------------------------------
+STR_HASH_0:  EQU    0                            ; String Hash for the null string
+AREA  UserModules     (ROM,REL,CON)
+EXPORT USB_StringTable
+.LITERAL
+USB_StringTable:                                 
+  TD_START_TABLE 3                               ; Number of USB Strings
+  TD_ENTRY       USB_DS_ROM, LANGID_DESCR_SIZE, LANGID_DESCR_START, NULL_PTR
+  TD_ENTRY       USB_DS_ROM, STRING_2_DESCR_SIZE, STRING_2_DESCR_START, NULL_PTR
+  TD_ENTRY       USB_DS_ROM, STRING_3_DESCR_SIZE, STRING_3_DESCR_START, NULL_PTR
+;----------------------------------------------------------------------
+; LANGID Descriptor
+;----------------------------------------------------------------------
+LANGID_DESCR_START:                              
+  DB    ((1 * 2) + 2)                            ; bLength (N+2)
+  DB    3                                        ; bDescriptorType (STRING)
+  DWL   1033                                     ;
+LANGID_DESCR_END:                                
+LANGID_DESCR_SIZE:  EQU    (LANGID_DESCR_END - LANGID_DESCR_START)
+;----------------------------------------------------------------------
+; String Desciptor
+;----------------------------------------------------------------------
+STR_HASH_2:  EQU    1                            ; String Hash
+STRING_2_DESCR_START:                            
+  DB    STRING_2_DESCR_SIZE                      ; bLength
+  DB    3                                        ; bDescriptorType (STRING)
+  DSU   &quot;IguanaWorks&quot;                            ;
+STRING_2_DESCR_END:                              
+STRING_2_DESCR_SIZE:  EQU    (STRING_2_DESCR_END - STRING_2_DESCR_START)
+;----------------------------------------------------------------------
+; String Desciptor
+;----------------------------------------------------------------------
+STR_HASH_3:  EQU    2                            ; String Hash
+STRING_3_DESCR_START:                            
+  DB    STRING_3_DESCR_SIZE                      ; bLength
+  DB    3                                        ; bDescriptorType (STRING)
+  DSU   &quot;USB Test Device&quot;                        ;
+STRING_3_DESCR_END:                              
+STRING_3_DESCR_SIZE:  EQU    (STRING_3_DESCR_END - STRING_3_DESCR_START)
+.ENDLITERAL
+"/>
+						<PARAMETER NAME="DSHID_xmlDESCR" VALUE="&lt;USB_ROOT NEXT_HASH=&quot;1&quot; INSTANCE_NAME=&quot;USB&quot;&gt;&lt;USB_DEVICE NAME=&quot;D0&quot; NUMBER=&quot;0&quot; NEXT_HASH=&quot;1&quot; CLASS=&quot;0&quot; SUBCLASS=&quot;0&quot; PROTOCOL=&quot;0&quot; VENDOR_STRING=&quot;2&quot; PRODUCT_STRING=&quot;3&quot; SN_STRING=&quot;0&quot; MAX_PACKET_SIZE=&quot;8&quot; VENDOR_ID=&quot;1781&quot; PRODUCT_ID=&quot;0938&quot; DEVICE_RELEASE=&quot;0000&quot;&gt;&lt;USB_CONFIGURATION NAME=&quot;C1&quot; NUMBER=&quot;1&quot; NEXT_HASH=&quot;1&quot; CONFIGURATION_STRING=&quot;0&quot; MAX_POWER=&quot;100&quot; SELF_POWERED=&quot;0&quot; REMOTE_WAKEUP=&quot;0&quot; STRING=&quot;0&quot;&gt;&lt;USB_INTERFACE NAME=&quot;I0&quot; NUMBER=&quot;0&quot; NEXT_HASH=&quot;0&quot; INTERFACE_STRING=&quot;0&quot; CLASS=&quot;0&quot; SUBCLASS=&quot;0&quot; PROTOCOL=&quot;0&quot; STRING=&quot;0&quot;&gt;&lt;USB_HID NUMBER=&quot;DEFAULT&quot; HID_DESCR_TYPE=&quot;34&quot; COUNTRY_CODE=&quot;0&quot; HID_REPORT=&quot;0&quot;/&gt;&lt;USB_ENDPOINT NAME=&quot;E0&quot; NUMBER=&quot;0&quot; ADDRESS=&quot;EP1&quot; MAX_PACKET_SIZE=&quot;8&quot; INTERVAL=&quot;10&quot; DIRECTION=&quot;IN&quot; TRANSFER_TYPE=&quot;3&quot; SYNC_TYPE=&quot;0&quot; USAGE_TYPE=&quot;0&quot;/&gt;&lt;USB_ENDPOINT NAME=&quot;E1&quot; NUMBER=&quot;1&quot; ADDRESS=&quot;EP2&quot; MAX_PACKET_SIZE=&quot;8&quot; INTERVAL=&quot;10&quot; DIRECTION=&quot;OUT&quot; TRANSFER_TYPE=&quot;3&quot; SYNC_TYPE=&quot;0&quot; USAGE_TYPE=&quot;0&quot;/&gt;&lt;/USB_INTERFACE&gt;&lt;/USB_CONFIGURATION&gt;&lt;/USB_DEVICE&gt;&lt;/USB_ROOT&gt;
+"/>
+						<PARAMETER NAME="DSHID_xmlHID" VALUE="&lt;HID_REPORT_ROOT NAME=&quot;USB&quot; NEXT_HASH=&quot;0&quot;/&gt;
+"/>
+						<PARAMETER NAME="DSHID_xmlSTRING" VALUE="&lt;STRING_ROOT INSTANCE_NAME=&quot;USB&quot; NEXT_HASH=&quot;3&quot; DATE_SAVED=&quot;Sun Feb 26 14:24:53 MST 2006&quot;&gt;&lt;USB_STRING_DESCR STRING_VALUE=&quot;IguanaWorks&quot; HASH=&quot;2&quot;/&gt;&lt;USB_STRING_DESCR STRING_VALUE=&quot;USB Test Device&quot; HASH=&quot;3&quot;/&gt;&lt;USB_LANGID_DESCR LANGID_VALUE=&quot;1033&quot; HASH=&quot;1&quot;/&gt;&lt;/STRING_ROOT&gt;
+"/>
+						<PARAMETER NAME="DSHID_xmlVENDOR" VALUE=""/>
+						<PARAMETER NAME="FORCE_Port" VALUE="Port_1"/>
+						<PARAMETER NAME="IntDispatchMode" VALUE="ActiveStatus"/>
+						<PARAMETER NAME="InterruptAPI" VALUE="Enable"/>
+					</PARAMETER_LIST>
+				</USER_MODULE>
+			</USER_MODULE_LIST>
+			<DEVICE_DATA>
+				<GLOBAL_RESOURCE_LIST>
+					<RESOURCE NAME="8 Bit Capture Prescaler" VALUE="1"/>
+					<RESOURCE NAME="CLKOUT Source" VALUE="Internal (24 MHz)"/>
+					<RESOURCE NAME="CPU Clock" VALUE="Internal (24 MHz)"/>
+					<RESOURCE NAME="CPU Clock / N" VALUE="1"/>
+					<RESOURCE NAME="Capture Clock" VALUE="Internal (24 MHz)"/>
+					<RESOURCE NAME="Capture Clock / N" VALUE="6"/>
+					<RESOURCE NAME="Capture Edge" VALUE="Latest"/>
+					<RESOURCE NAME="Low V Detect" VALUE="4.44 - 4.53 V"/>
+					<RESOURCE NAME="Timer Clock" VALUE="TCAP"/>
+					<RESOURCE NAME="Timer Clock / N" VALUE="4"/>
+					<RESOURCE NAME="USB Clock" VALUE="Internal (24 MHz)"/>
+					<RESOURCE NAME="USB Clock / 2" VALUE="Enable"/>
+					<RESOURCE NAME="V Keep-alive" VALUE="Disable"/>
+					<RESOURCE NAME="V Reg" VALUE="Disable"/>
+					<RESOURCE NAME="V Reset" VALUE="4.4V"/>
+					<RESOURCE NAME="Watchdog Enable" VALUE="Disable"/>
+				</GLOBAL_RESOURCE_LIST>
+				<RESERVED_RESOURCE_LIST>
+					<RESOURCE NAME="" VALUE="" TYPE=""/>
+					<RESOURCE NAME="COUNTER_16" VALUE="" TYPE="COUNTER_16"/>
+					<RESOURCE NAME="EPT0" VALUE="" TYPE="USB_EP0"/>
+					<RESOURCE NAME="EPT1" VALUE="" TYPE="USB_EP1"/>
+					<RESOURCE NAME="EPT2" VALUE="" TYPE="USB_EP2"/>
+					<RESOURCE NAME="Port_0_0" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_0_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_0_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_1" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_1_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_1_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_2" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_2_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_2_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_3" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_3_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_3_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_4" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_4_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_4_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_5" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_5_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_5_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_6" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_6_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_6_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_7" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_7_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_0_7_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_0" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_0_Drive" VALUE="Open Drain" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_0_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_1" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_1_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_1_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_2" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_2_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_2_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_3" VALUE="5V Input-TTL" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_3_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_3_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_4" VALUE="5V Input-TTL" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_4_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_4_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_5" VALUE="5V Input-TTL" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_5_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_5_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_6" VALUE="5V Input-TTL" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_6_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_6_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_7" VALUE="Input-CMOS" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_7_Drive" VALUE="Push/Pull" TYPE="PIN"/>
+					<RESOURCE NAME="Port_1_7_Interrupt" VALUE="DisableInt" TYPE="PIN"/>
+					<RESOURCE NAME="SPI_RX_A" VALUE="" TYPE="SPI_RX"/>
+					<RESOURCE NAME="SPI_TX_A" VALUE="" TYPE="SPI_TX"/>
+					<RESOURCE NAME="TIMER_1MS" VALUE="" TYPE="TIMER_1MS"/>
+					<RESOURCE NAME="TIMER_CAP_A" VALUE="" TYPE="TIMER_CAP"/>
+					<RESOURCE NAME="TIMER_CAP_B" VALUE="" TYPE="TIMER_CAP"/>
+					<RESOURCE NAME="TIMER_PRG" VALUE="" TYPE="TIMER_PRG"/>
+					<RESOURCE NAME="TIMER_SLEEP" VALUE="" TYPE="TIMER_SLEEP"/>
+					<RESOURCE NAME="USB_RESET" VALUE="" TYPE="USB_XCVR"/>
+					<RESOURCE NAME="USB_SIE" VALUE="" TYPE="USB_SIE"/>
+				</RESERVED_RESOURCE_LIST>
+				<GLOBAL_REGISTER_LIST>
+					<REGISTER NAME="CLKIOCR" VALUE="0" ADDR="32" DATASHEET_NAME="CLKIOCR"/>
+					<REGISTER NAME="CPUCLKCR" VALUE="0" ADDR="30" DATASHEET_NAME="CPUCLKCR"/>
+					<REGISTER NAME="OSC_CR0" VALUE="3" ADDR="1e0" DATASHEET_NAME="OSC_CR0"/>
+					<REGISTER NAME="P00CR" VALUE="0" ADDR="5" DATASHEET_NAME="P00CR"/>
+					<REGISTER NAME="P01CR" VALUE="0" ADDR="6" DATASHEET_NAME="P01CR"/>
+					<REGISTER NAME="P02CR" VALUE="0" ADDR="7" DATASHEET_NAME="P02CR"/>
+					<REGISTER NAME="P03CR" VALUE="0" ADDR="8" DATASHEET_NAME="P03CR"/>
+					<REGISTER NAME="P04CR" VALUE="0" ADDR="9" DATASHEET_NAME="P04CR"/>
+					<REGISTER NAME="P05CR" VALUE="0" ADDR="a" DATASHEET_NAME="P05CR"/>
+					<REGISTER NAME="P06CR" VALUE="0" ADDR="b" DATASHEET_NAME="P06CR"/>
+					<REGISTER NAME="P07CR" VALUE="0" ADDR="c" DATASHEET_NAME="P07CR"/>
+					<REGISTER NAME="P10CR" VALUE="0" ADDR="d" DATASHEET_NAME="P10CR"/>
+					<REGISTER NAME="P11CR" VALUE="0" ADDR="e" DATASHEET_NAME="P11CR"/>
+					<REGISTER NAME="P12CR" VALUE="0" ADDR="f" DATASHEET_NAME="P12CR"/>
+					<REGISTER NAME="P13CR" VALUE="0" ADDR="10" DATASHEET_NAME="P13CR"/>
+					<REGISTER NAME="P14CR" VALUE="0" ADDR="11" DATASHEET_NAME="P14CR"/>
+					<REGISTER NAME="P15CR" VALUE="0" ADDR="12" DATASHEET_NAME="P15CR"/>
+					<REGISTER NAME="P16CR" VALUE="0" ADDR="13" DATASHEET_NAME="P16CR"/>
+					<REGISTER NAME="P17CR" VALUE="0" ADDR="14" DATASHEET_NAME="P17CR"/>
+					<REGISTER NAME="P20CR" VALUE="0" ADDR="15" DATASHEET_NAME="P20CR"/>
+					<REGISTER NAME="P30CR" VALUE="0" ADDR="16" DATASHEET_NAME="P30CR"/>
+					<REGISTER NAME="SPICR" VALUE="0" ADDR="3d" DATASHEET_NAME="SPICR"/>
+					<REGISTER NAME="TCAPINTE" VALUE="0" ADDR="2b" DATASHEET_NAME="TCAPINTE"/>
+					<REGISTER NAME="TMRCLKCR" VALUE="8f" ADDR="31" DATASHEET_NAME="TMRCLKCR"/>
+					<REGISTER NAME="TMRCR" VALUE="0" ADDR="2a" DATASHEET_NAME="TMRCR"/>
+					<REGISTER NAME="VLDCR" VALUE="14" ADDR="1e3" DATASHEET_NAME="VLDCR"/>
+					<REGISTER NAME="VREGCR" VALUE="0" ADDR="73" DATASHEET_NAME="VREGCR"/>
+				</GLOBAL_REGISTER_LIST>
+				<PIN_DESC_LIST>
+					<PIN_DESC PIN_NUMBER="1" PIN_LABEL="P1[3]" PIN_SELECT="5V Input-TTL" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_3" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="2" PIN_LABEL="P1[4]" PIN_SELECT="5V Input-TTL" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_4" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="3" PIN_LABEL="P1[5]" PIN_SELECT="5V Input-TTL" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_5" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="4" PIN_LABEL="P1[6]" PIN_SELECT="5V Input-TTL" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_6" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="5" PIN_LABEL="P1[7]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_7" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="6" PIN_LABEL="P0[7]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_7" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="7" PIN_LABEL="P0[6]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_6" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="8" PIN_LABEL="P0[5]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_5" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="9" PIN_LABEL="P0[4]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_4" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="10" PIN_LABEL="P0[3]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_3" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="11" PIN_LABEL="P0[2]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_2" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="12" PIN_LABEL="P0[1]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_1" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="13" PIN_LABEL="P0[0]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_0_0" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="14" PIN_LABEL="VSS" PIN_SELECT="" PIN_DRIVE="" PIN_CUSTOM_NAME="" PIN_INTERRUPT=""/>
+					<PIN_DESC PIN_NUMBER="15" PIN_LABEL="P1[0]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Open Drain" PIN_CUSTOM_NAME="Port_1_0" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="16" PIN_LABEL="P1[1]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_1" PIN_INTERRUPT="DisableInt"/>
+					<PIN_DESC PIN_NUMBER="17" PIN_LABEL="VDD" PIN_SELECT="" PIN_DRIVE="" PIN_CUSTOM_NAME="" PIN_INTERRUPT=""/>
+					<PIN_DESC PIN_NUMBER="18" PIN_LABEL="P1[2]" PIN_SELECT="Input-CMOS" PIN_DRIVE="Push/Pull" PIN_CUSTOM_NAME="Port_1_2" PIN_INTERRUPT="DisableInt"/>
+				</PIN_DESC_LIST>
+			</DEVICE_DATA>
+			<CONFIG_PREFERENCES>
+				<SELECTED_USER_MODULE_LIST/>
+			</CONFIG_PREFERENCES>
+		</PSOC_CONFIG>
+	</PSOC_CONFIG_LIST>
+</PSOC_DEVICE_DB>
