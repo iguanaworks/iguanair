@@ -71,7 +71,8 @@ write_data:         EQU LOADER_JUMPS + 4 * 5
 ; next the code body functions
 ; version ID indicates the firmware version loaded on this chip
 BODY_JUMPS:     EQU 0x0C00
-body_handler:   EQU BODY_JUMPS + 4 * 0
-body_version:   EQU BODY_JUMPS + 4 * 1
-body_tcap_int:  EQU BODY_JUMPS + 4 * 2
-body_twrap_int: EQU BODY_JUMPS + 4 * 3
+body_version:   EQU BODY_JUMPS + 4 * 0
+body_handler:   EQU BODY_JUMPS + 4 * 1
+body_loop:      EQU BODY_JUMPS + 4 * 2
+body_tcap_int:  EQU BODY_JUMPS + 4 * 3
+body_twrap_int: EQU BODY_JUMPS + 4 * 4

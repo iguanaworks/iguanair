@@ -61,8 +61,12 @@ main_loop:
 	lcall check_read ; see if there is a transmission from the host
 	jnz main_recv    
 
-	; repeat main loop
-	jmp main_loop
+	; only call the body loop if the body has successfully initialized
+	mov A, [loader_flags] ; check for halt condition
+	and A, FLAG_BODY_INIT
+	jnz main_loop ; repeat main loop if body has not init'd
+
+	lcall body_loop
 
 ; there is a transmission, so receive and handle it
 main_recv:
@@ -93,7 +97,7 @@ main_getversion:
 	; send control packet with version id
 	mov [control_pkt + CCODE], CTL_VERSION
 	; store the correct byte from the previously read page
-	mov [control_pkt + CDATA], [buffer + 4 + 1]
+	mov [control_pkt + CDATA], [buffer + 1]
 	; high byte is defined in here
 	mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
 	mov A, CTL_BASE_SIZE + 2

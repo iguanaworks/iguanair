@@ -11,6 +11,9 @@ VERSION_ID_LOW:  equ 0x00 ; firmware version ID low byte (code body)
 body_main:
     ret
 
+body_loop_body:
+    ret
+
 body_tcap_int_handler:
     reti
 
@@ -20,12 +23,15 @@ body_twrap_int_handler:
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
 area bodyentry (ROM, ABS, CON)
-org body_handler
-    jmp body_main
-
 org body_version
     mov A, VERSION_ID_LOW
     ret
+
+org body_handler
+    jmp body_main
+
+org body_loop
+    jmp body_loop_body
 
 org body_tcap_int
     jmp body_tcap_int_handler
