@@ -119,7 +119,7 @@ export __psoc_config_start
     reti
 
     org 3Ch                 ;Timer Capture 0 Interrupt Vector
-    // call	void_handler
+    ljmp body_tcap_int
     reti
 	
     org 40h                 ;Timer Capture 1 Interrupt Vector
@@ -127,7 +127,7 @@ export __psoc_config_start
     reti
 
     org 44h                 ;Free Running Counter Wrap Interrupt Vector
-    // call	void_handler
+    ljmp body_twrap_int
     reti
 
     org 48h                 ;INT 2 Interrupt Vector
