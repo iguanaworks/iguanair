@@ -16,6 +16,7 @@ FLAG_BODY_RESET: EQU 0x04
 CTL_VERSION:		EQU 0x01 ; get the firmware version
 CTL_PROG:			EQU 0x02 ; program a block of flash
 CTL_CHKSUM:			EQU 0x03 ; checksum a block of flash
+CTL_INVALID_ARG:	EQU 0x04 ; bad argument
 CTL_RST:			EQU	0xFF ; reset requested
 
 ; USB read/write constants

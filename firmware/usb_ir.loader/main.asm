@@ -17,7 +17,8 @@ include "m8c.inc"         ; part specific constants and macros
 include "memory.inc"      ; Constants & macros for SMM/LMM and Compiler
 include "PSoCAPI.inc"     ; PSoC API definitions for all User Modules
 include "loader.inc"
-VERSION_ID_HIGH: EQU 0x01 ; firmware version ID high byte (bootloader version)
+VERSION_ID_HIGH:  EQU 0x01 ; firmware version ID high byte (bootloader version)
+MAGIC_WRITE_BYTE: EQU 0x42 ; random magic value (meaning of life, but hex)
 
 ; exported functions
 export _main
@@ -67,6 +68,7 @@ main_loop:
 	jnz main_loop ; repeat main loop if body has not init'd
 
 	lcall body_loop
+	jmp main_loop ; jump back to main loop now that body has run
 
 ; there is a transmission, so receive and handle it
 main_recv:
@@ -105,11 +107,23 @@ main_getversion:
 	jmp main_loop
 
 main_prog:
-	mov [tmp3], [control_pkt + CDATA]     ; save the flash block address
+	mov [tmp3], [control_pkt + CDATA]           ; save the flash block address
 	mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; set up to read right number of bytes
 	lcall read_buffer                           ; read the block
 
+	; protect the first 48 pages with a special code
+	cmp [control_pkt + CDATA + 1], MAGIC_WRITE_BYTE
+    jz ack_then_write
+    cmp [tmp3], 48
+    jnc ack_then_write
+    ; throw an error
+	mov [control_pkt + CCODE], CTL_INVALID_ARG
+	mov A, CTL_BASE_SIZE
+	lcall write_control
+	jmp main_prog_done
+
 	; ack the receive
+  ack_then_write:
 	mov [control_pkt + CCODE], CTL_PROG
 	mov A, CTL_BASE_SIZE
 	lcall write_control
@@ -125,6 +139,7 @@ main_prog:
 	mov A, 0x02 ;write block code
 	call exec_ssc
 
+  main_prog_done:
 	jmp main_loop ; read the next packet
 
 ; checksum an individual page much like the ssc checksum function
