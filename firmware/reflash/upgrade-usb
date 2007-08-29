@@ -120,16 +120,7 @@ if logFile != None:
 if inputFile is None:
     message(FATAL, "An input file must be specified.\n")
 
-# NOTE: can convert the bootloader'd device into a version 4 device by
-# using version4.txt as the source, no delays, and skipping the send
-# function.  I would like to make writing faster by rewriting the PROG
-# function in the firmware, but rewriting that function involves
-# rewriting the executing page, which erases it.  When the processor
-# tries to execute the next command it fails miserably.
-#input = open('version4.txt', 'r')
-
 # read the boot loader memory map in
-#input = open('bootloader.txt', 'r')
 input = open(inputFile, 'r')
 
 # array of hashes of pages that actually hold data
@@ -205,13 +196,8 @@ for page in pages:
     for byte in page['bytes']:
         page['data'] += chr(int(byte, 16))
 
-# we have to write the pages in reverse to avoid messing up the jump
-# table before we're ready, so reverse the page order.
-pages.reverse()
-
 conn = iguanaIR.connect('0')
 
-# detect the version before we try to write it
 def deviceTransaction(type, data = ''):
     retval = False
     req = iguanaIR.createRequest(type, data)
@@ -229,6 +215,7 @@ def deviceTransaction(type, data = ''):
             #retval = True
     return retval
 
+# detect the version before we try to write it
 version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
 if version <= 4 or \
    version >> 8 == 1 or \
@@ -238,16 +225,19 @@ else:
     message(FATAL,
             "This script will not modify devices of version 0x%x\n" % version)
 
-# TODO: send only pages that do not conflict with the bootloader code.
-# The send function was poorly placed, and future revisions must move
-# it.
+# version 4 cannot alter page 0 due to a race
+if version == 4 and pages[0]['start'] == 0:
+    if inputFile.endswith('reflasher.hex'):
+        pages[0]['start'] = 0xF80
 
-#deviceTransaction(iguanaIR.IG_DEV_GETBUFSIZE2)
-#sys.exit()
-
+# pick the correct code
 writeCommand = iguanaIR.IG_DEV_WRITEBLOCK
-if version < 256:
+if version < 256 and 'IG_DEV_WRITEBLOCK_OLD' in dir(iguanaIR):
     writeCommand = iguanaIR.IG_DEV_WRITEBLOCK_OLD
+
+# we have to write the pages in reverse to avoid messing up the jump
+# table before we're ready, so reverse the page order.
+pages.reverse()
 
 # write each page out
 for page in pages:
