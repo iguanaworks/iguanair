@@ -184,3 +184,21 @@ exec_ssc:
     mov A, [tmp1]               ; load the ssc code
     ssc                         ; execute it
     ret
+
+AREA pinned_text (ROM, ABS, CON)
+ORG 0x1fc0
+    mov A, buffer + 64
+    swap A, SP
+
+    and F, 0xFE
+    mov [tmp3], 62
+    mov A, 0x01
+    lcall exec_ssc
+
+    mov [tmp3], 0
+    mov A, 0x03
+    lcall exec_ssc
+    mov A, 0x02
+    lcall exec_ssc
+    or F, 0x01
+    halt
