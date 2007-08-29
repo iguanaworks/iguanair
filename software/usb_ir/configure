@@ -6376,12 +6376,14 @@ done
 CPPFLAGS=" -DLINUX"
 CFLAGS="-Wall -pedantic"
 
-{ echo "$as_me:$LINENO: checking CFLAGS for gcc -fvomit-frame" >&5
-echo $ECHO_N "checking CFLAGS for gcc -fvomit-frame... $ECHO_C" >&6; }
-if test "${ac_cv_cflags_gcc_option__fvomit_frame+set}" = set; then
+# AX_CFLAGS_GCC_OPTION(-Wextra)
+# TODO: really just want this when we NEED -fpic
+{ echo "$as_me:$LINENO: checking CFLAGS for gcc -fpic" >&5
+echo $ECHO_N "checking CFLAGS for gcc -fpic... $ECHO_C" >&6; }
+if test "${ac_cv_cflags_gcc_option__fpic+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_cv_cflags_gcc_option__fvomit_frame="no, unknown"
+  ac_cv_cflags_gcc_option__fpic="no, unknown"
 
  ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -6390,7 +6392,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
  ac_save_CFLAGS="$CFLAGS"
-for ac_arg in "-pedantic -Werror % -fvomit-frame"     "-pedantic % -fvomit-frame %% no, obsolete"     #
+for ac_arg in "-pedantic -Werror % -fpic"     "-pedantic % -fpic %% no, obsolete"     #
 do CFLAGS="$ac_save_CFLAGS "`echo $ac_arg | sed -e 's,%%.*,,' -e 's,%,,'`
    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -6424,7 +6426,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  ac_cv_cflags_gcc_option__fvomit_frame=`echo $ac_arg | sed -e 's,.*% *,,'` ; break
+  ac_cv_cflags_gcc_option__fpic=`echo $ac_arg | sed -e 's,.*% *,,'` ; break
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -6443,30 +6445,28 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_cflags_gcc_option__fvomit_frame" >&5
-echo "${ECHO_T}$ac_cv_cflags_gcc_option__fvomit_frame" >&6; }
-case ".$ac_cv_cflags_gcc_option__fvomit_frame" in
+{ echo "$as_me:$LINENO: result: $ac_cv_cflags_gcc_option__fpic" >&5
+echo "${ECHO_T}$ac_cv_cflags_gcc_option__fpic" >&6; }
+case ".$ac_cv_cflags_gcc_option__fpic" in
      .ok|.ok,*)  ;;
    .|.no|.no,*)  ;;
    *)
-   if echo " $CFLAGS " | grep " $ac_cv_cflags_gcc_option__fvomit_frame " 2>&1 >/dev/null
-   then { (echo "$as_me:$LINENO: : CFLAGS does contain \$ac_cv_cflags_gcc_option__fvomit_frame") >&5
-  (: CFLAGS does contain $ac_cv_cflags_gcc_option__fvomit_frame) 2>&5
+   if echo " $CFLAGS " | grep " $ac_cv_cflags_gcc_option__fpic " 2>&1 >/dev/null
+   then { (echo "$as_me:$LINENO: : CFLAGS does contain \$ac_cv_cflags_gcc_option__fpic") >&5
+  (: CFLAGS does contain $ac_cv_cflags_gcc_option__fpic) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }
-   else { (echo "$as_me:$LINENO: : CFLAGS=\"\$CFLAGS \$ac_cv_cflags_gcc_option__fvomit_frame\"") >&5
-  (: CFLAGS="$CFLAGS $ac_cv_cflags_gcc_option__fvomit_frame") 2>&5
+   else { (echo "$as_me:$LINENO: : CFLAGS=\"\$CFLAGS \$ac_cv_cflags_gcc_option__fpic\"") >&5
+  (: CFLAGS="$CFLAGS $ac_cv_cflags_gcc_option__fpic") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }
-                      CFLAGS="$CFLAGS $ac_cv_cflags_gcc_option__fvomit_frame"
+                      CFLAGS="$CFLAGS $ac_cv_cflags_gcc_option__fpic"
    fi
  ;;
 esac
 
-
-# -Wextra
 
 # enable and disable debugging
 # Check whether --enable-debug was given.
