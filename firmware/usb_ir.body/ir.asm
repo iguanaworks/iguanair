@@ -26,8 +26,7 @@ export rx_fill
 export buf_size
 
 AREA bss
-rx_on:
-    BLK 1 ; is the receiver on?
+;;; transmission variables
 tx_pins:
     BLK 1 ; pins to use for current tx
 tx_state:
@@ -35,6 +34,19 @@ tx_state:
 tx_temp:
     BLK 1 ; tx temp variable
 
+;;; reception variables
+rx_on:
+    BLK 1 ; is the receiver on?
+rx_overflow:
+    BLK 1 ; mark when receive overflows
+rx_fill:
+    BLK 1 ; mark when we have PACKET_SIZE bytes because there is no jgt
+buf_size:
+    BLK 1 ; number of bytes in buffer (or waste one for cicular buffer)
+read_ptr:
+    BLK 1 ; where to read data from in the circular buffer
+
+;;; temporary variables used in interrupt handlers
 rx_high:
     BLK 1 ; received data high byte
 rx_low:
@@ -42,46 +54,66 @@ rx_low:
 rx_pulse:
     BLK 1 ; high bit is 1 if this is a pulse, 0 for space
 
-rx_overflow:
-    BLK 1
-rx_fill:
-    BLK 1
-buf_size:
-    BLK 1
-write_ptr:
-    BLK 1
-
 AREA text
 ; FUNCTION: get_byte
 ;   puts the next byte off the rx buffer into A
 get_byte:
-    mvi A, [write_ptr]                    ; read byte, increment ptr
-    cmp [write_ptr], buffer + BUFFER_SIZE ; check for end of buffer
-    jz get_wrap
-  get_dec:
+    mvi A, [read_ptr]                    ; read byte, increment ptr
+    cmp [read_ptr], buffer + BUFFER_SIZE ; check for end of buffer
+    jnz gb_dec
+    mov [read_ptr], buffer ; wrap around to start of buffer
+
+  gb_dec:
     ; we want to decrement buffer atomically
-    and F, 0xFE    ; clear global interrupt bit
-    dec [buf_size] ; decrement buffer size
+    and F, 0xFE ; clear global interrupt bit
+
+    ; decrement carefully
+    dec [buf_size]
     ; if we no longer have a full packet worth of data, clear rx_fill flag
     cmp [buf_size], PACKET_SIZE - 1
-    jz get_clear
-  get_decdone:
-    or  F, 0x1 ; re-enable global interrupts
-    jmp get_done
-  get_clear:
+    jnz gb_decdone
     mov [rx_fill], 0
-    jmp get_decdone
 
-  get_wrap:
-    mov [write_ptr], buffer ;wrap around to start of buffer
-    jmp get_dec    
+  gb_decdone:
+    or  F, 0x1 ; re-enable global interrupts
+    ret
 
-  get_done:
+; FUNCTION: put_byte
+; puts value into the circular buffer
+;   pre: A is value to load
+; does not modify A
+put_byte:
+    cmp [buf_size], BUFFER_SIZE ; check for overflow
+    jz pb_oflow                 ; jmp handle overflow
+    mvi [buffer_ptr], A         ; load the data
+    inc [buf_size]              ; increment the data count
+    cmp [buf_size], PACKET_SIZE ; see if we have enough data to send to host
+    jnz pb_check_wrap           ; we don't, do nothing to the flag
+    mov [rx_fill], 1            ; we do, set fill flag to true
+
+  pb_check_wrap:
+    cmp [buffer_ptr], buffer + BUFFER_SIZE ; check for end of buffer
+    jnz pb_done                            ; done if we didn't hit the end
+    mov [buffer_ptr], buffer               ; wrap around to start of buffer
+    jmp pb_done
+
+  pb_oflow:
+    ; set the rx overflow flag, clear buffers
+    mov [rx_overflow], 1     ; set the overflow flag
+    mov [read_ptr], buffer   ; reset read ptr to start of buffer
+    mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
+    mov [buf_size], 0        ; reset size to 0
+
+  pb_done:
     ret
 
 ; FUNCTION: write_signal
 ;   writes one packet's worth of signal data from the rx buffer to host
 write_signal:
+    ; see if there is data ready
+    cmp [rx_fill], 0
+    jz ws_done
+
     ; we use the control packet buffer to send the data
     mov X, PACKET_SIZE - 1  ; bytes to copy (last is fill)
     mov [tmp1], control_pkt ; packet pointer
@@ -99,19 +131,20 @@ write_signal:
     mov X, control_pkt ; packet pointer
     mov A, PACKET_SIZE ; packet size
     lcall write_data   ; send the data
+  ws_done:
     ret
-
 
 ; FUNCTION: rx_reset enables the IR receiver
 rx_reset:
-    mov A, [rx_on]   ; check if rx should be enabled
-    jz rx_reset_done ; rx should be off, we're done
-
-    mov [rx_overflow], 0     ; clear rx overflow flag
+    ; reset a pile of variables related to reception
+    mov [rx_overflow], 0     ; clear overflow flag
     mov [rx_fill], 0         ; clear fill flag
-    mov [write_ptr], buffer  ; reset write ptr to start of buffer
+    mov [read_ptr], buffer   ; reset write ptr to start of buffer
     mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
     mov [buf_size], 0        ; reset size to 0
+
+    mov A, [rx_on] ; check if rx should be enabled
+    jz rx_disable  ; disable if necessary
 
     ; enable the timer capture interrupt
     mov A, REG[INT_MSK1]
@@ -138,51 +171,17 @@ rx_disable:
     and A, ~0b00000010   ; twrap interrupt enable
     mov REG[INT_MSK2], A
 
-    mov [rx_fill], 0     ; clear fill flag
-    mov [rx_overflow], 0 ; clear rx overflow flag
-    mov [rx_on], 0x0     ; note that rx is off
+    ; make sure the active LOW transmit LEDs are OFF
+    mov A, REG[TX_BANK]
+    or  A, TX_MASK
+    mov REG[TX_BANK], A
+
     ret
-
-;FUNCTION buf_load
-;puts value into the circular buffer
-;arg: a is value to load
-;does not modify A
-buf_load:
-    cmp [buf_size], BUFFER_SIZE ;check for overflow
-    jz bl_oflow
-    mvi [buffer_ptr], A ;load the data
-    inc [buf_size]
-    cmp [buf_size], PACKET_SIZE ;see if we have enough data to send to host
-    jz bl_fill
-  bl_check_wrap:
-    cmp [buffer_ptr], buffer + BUFFER_SIZE ;check for end of buffer
-    jz bl_wrap
-    jmp bl_done
-
-  bl_oflow:
-    ; set the rx overflow flag, clear buffers
-    mov [rx_overflow], 1
-    mov [write_ptr], buffer  ; reset write ptr to start of buffer
-    mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
-    mov [buf_size], 0        ; reset size to 0
-    jmp bl_done
-
-  bl_fill:
-    mov [rx_fill], 1  ; set fill flag to true
-    jmp bl_check_wrap
-
-  bl_wrap:
-    mov [buffer_ptr], buffer ; wrap around to start of buffer
-    jmp bl_done
-
-  bl_done:
-    ret
-
 
 ;FUNCTION load_value
 ;loads a received value into the data buffer
-;arg: rx_high and rx_low have the raw timer data
-;    rx_pulse has the pulse bit set correctly
+; pre: rx_high and rx_low have the raw timer data
+;      rx_pulse has the pulse bit set correctly
 ;returns: 1 if ok, 0 if overflow
 load_value:
     push X
@@ -207,7 +206,7 @@ load_value:
     ;TODO: this gives us some minor inaccuracy
     ;decrement raw value by one, so our range is 1-128 instead of 0-127
     dec [rx_low]
-ld_skip_dec:
+  ld_skip_dec:
     ;last bit of final result is the pulse bit
     mov A, [rx_low]
     and A, 0x7F ;clear pulse bit in case it's already set
@@ -237,15 +236,15 @@ ld_skip_dec:
     or A, 0x7F; load max value
 
     ;loop and load the right number of max value packets
-ld_big_loop:
-    lcall buf_load ;load A into buffer
+  ld_big_loop:
+    lcall put_byte ;load A into buffer
     dec X
     jnz ld_big_loop
 
-ld_big_done:
+  ld_big_done:
     ;send the remainder
     mov A, [rx_low] ;get the remainder byte
-    lcall buf_load ;load A into buffer
+    lcall put_byte ;load A into buffer
     pop X
     ret
 
@@ -291,7 +290,7 @@ twrap_int:
 
     ; load an 0x80 to indicate full-length space
     mov A, 0x80
-    lcall buf_load
+    lcall put_byte
 
     pop A
     reti ; done

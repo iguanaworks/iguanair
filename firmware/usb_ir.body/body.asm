@@ -24,19 +24,19 @@ body_main:
     mov REG[P15CR], 0x01 ; channel 1
     mov REG[P16CR], 0x01 ; channel 2
     mov REG[P17CR], 0x01 ; channel 3
-    ; but make sure the pins are set high because the LEDs are active low
+    ; but make sure the pins are set high because the LEDs are active LOW
     mov REG[TX_BANK], TX_MASK
 
     ; configure capture
     mov REG[RX_PIN_CR], 0b00000010 ; configure port pin: pullup enabled
-    mov REG[TMRCLKCR], 0b11001111  ; timer to 3MHz
-    mov REG[TMRCR], 0b00001000     ; 16 bit mode
-    mov REG[TCAPINTE], 0b00000011  ; configure rise and fall interrupts
-    ; but don't actually enable the interrupt yet
+    mov REG[TMRCLKCR],  0b11001111 ; timer to 3MHz
+    mov REG[TMRCR],     0b00001000 ; 16 bit mode
+    mov REG[TCAPINTE],  0b00000011 ; configure rise and fall interrupts
+    ; but don't actually enable the interrupts yet
 
-    ; clear the flag
+    ; clear the initialize flag
     mov A, [loader_flags]
-    and A, ~FLAG_BODY_RESET
+    and A, ~FLAG_BODY_INIT
     mov [loader_flags], A
 
   bm_was_initialized:
@@ -45,11 +45,16 @@ body_main:
     jz bm_was_reset
 
     ; SOFT RESET
-;    mov [rx_overflow], 0 ; clear rx overflow flag
-    mov [rx_on], 0       ; rx starts in the off state
-    mov [rx_fill], 0     ; clear fill flag
-    lcall rx_disable     ; make sure receiver is off
+    mov [rx_on], 0   ; rx starts in the off state
+    lcall rx_reset   ; make sure receiver state matches
 ;    lcall pins_reset     ; clear GPIO pin state
+
+    ; clear the soft reset flag
+    mov A, [loader_flags]
+    and A, ~FLAG_BODY_RESET
+    mov [loader_flags], A
+
+
 
   bm_was_reset:
     ; reload the control code
@@ -97,7 +102,10 @@ body_main:
     mov A, CTL_BASE_SIZE
     lcall write_control
   bm_ret:
-;    lcall write_signal ; write back received data
+    ret                ; return to main recv
+
+body_loop_body:
+    lcall write_signal ; write back received data
     ret                ; return to main loop
 
 recv_on_body:
@@ -124,14 +132,11 @@ send_body:
 
     ; send overflow instead of ack
     mov [control_pkt + CCODE], CTL_OVERSEND
-    mov [control_pkt + CDATA], [buf_size]
 
     ; send ack
     mov A, CTL_BASE_SIZE + 1
     lcall write_control
     jmp bm_ret
-
-
 
 set_channels_body:
     jmp bm_ret
@@ -165,20 +170,26 @@ execute_body:
 
 get_buf_size_body:
     mov [control_pkt + CCODE], CTL_GETBUFSIZE
-    mov [control_pkt + CTL_BASE_SIZE], BUFFER_SIZE
+    mov [control_pkt + CDATA], BUFFER_SIZE
     mov A, CTL_BASE_SIZE + 1
     lcall write_control
     jmp bm_ret
 
-
-
-
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
 area bodyentry (ROM, ABS, CON)
-org body_handler
-    jmp body_main
-
 org body_version
     mov A, VERSION_ID_LOW
     ret
+
+org body_handler
+    jmp body_main
+
+org body_loop
+    jmp body_loop_body
+
+org body_tcap_int
+    jmp tcap_int
+
+org body_twrap_int
+    jmp twrap_int
