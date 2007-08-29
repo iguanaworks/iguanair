@@ -112,7 +112,9 @@ main_prog:
     ; wait for ack to go through so that the control_pkt buffer is unused
     lcall wait_for_IN_ready
 
-    ; do a block erase
+    ; disable ints to avoid race condition on page 0
+    and F, 0xFE
+        
     mov A, 0x03 ;erase block code
     call exec_ssc
 
@@ -120,6 +122,9 @@ main_prog:
     mov A, 0x02 ;write block code
     call exec_ssc
 
+    ; re-enable interrupts
+    or F, 0x01
+        
   main_prog_done:
     jmp main_loop ; read the next packet
 

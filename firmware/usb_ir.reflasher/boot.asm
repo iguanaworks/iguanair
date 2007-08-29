@@ -123,38 +123,6 @@ export __psoc_config_start
     // call	void_handler
     reti
 	
-    org 40h                 ;Timer Capture 1 Interrupt Vector
-    // call	void_handler
-    reti
-
-    org 44h                 ;Free Running Counter Wrap Interrupt Vector
-    // call	void_handler
-    reti
-
-    org 48h                 ;INT 2 Interrupt Vector
-    ljmp    INT2_ISR
-    reti
-
-    org 4Ch                 ;PS2 Data Low
-    // call	void_handler
-    reti
-
-    org 50h                 ;GPIO Port 2 Interrupt Vector
-    ljmp    PORT2_ISR
-    reti
-
-    org 54h                 ;GPIO Port 3 Interrupt Vector
-    ljmp    PORT3_ISR
-    reti
-
-    org 58h                 ;Reserved
-    // call	void_handler
-    reti
-
-    org 5Ch                 ;Reserved
-    // call	void_handler
-    reti
-
 ;-----------------------------------------------------------------------------
 ;  Start of Execution
 ;  CPU is operating at 3 MHz, change to 12 MHz
