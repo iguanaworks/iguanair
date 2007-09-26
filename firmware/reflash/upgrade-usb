@@ -162,7 +162,7 @@ for line in input:
             appendPage(address + 64, bytes[64:])
 
             if pad != '00':
-                message(LOG_FATAL, "pad is not 00: %s\n" % pad)
+                message(FATAL, "pad is not 00: %s\n" % pad)
         # parse the output of the read command from the programmer
         else:
             bytes = line.split()
@@ -196,7 +196,41 @@ for page in pages:
     for byte in page['bytes']:
         page['data'] += chr(int(byte, 16))
 
-conn = iguanaIR.connect('0')
+conn = None
+def connect(timeout = 0):
+    global conn
+
+    # check every quarter second
+    sleepTime = 0.25
+    timeoutStart = timeout
+
+    start = None
+    while timeout > 0:
+        # list the possible devices
+        devices = os.listdir('/dev/iguanaIR')
+        devices.sort()
+
+        # no change, so lets just run on
+        if len(devices) == 0:
+            pass
+        elif start is None:
+            start = devices[0]
+        elif len(devices) == 1 and \
+             start and start != devices[0]:
+            break
+
+        # delay and count down the timeout
+        time.sleep(sleepTime)
+        timeout -= sleepTime
+
+    devices = os.listdir('/dev/iguanaIR')
+    if len(devices) != 1:
+        message(ERROR, "This script should only be used with a single device installed.\n")
+    message(INFO,
+            'Device list after %s seconds: %s\n' % (timeoutStart - timeout,
+                                                    devices))
+    conn = iguanaIR.connect(devices[0])
+connect()
 
 def deviceTransaction(type, data = ''):
     retval = False
@@ -205,14 +239,16 @@ def deviceTransaction(type, data = ''):
         print 'Failed to write packet.'
     else:
         resp = iguanaIR.readResponse(conn, 10000)
-        if iguanaIR.responseIsError(resp):
-            print 'Error response.'
+        if resp is None:
+            message(ERROR, "No response received.\n")
+        elif iguanaIR.responseIsError(resp):
+            message(ERROR,
+                    'Error response code: 0x%s\n' % iguanaIR.code(resp))
         elif type == iguanaIR.IG_DEV_GETVERSION:
             data = iguanaIR.removeData(resp)
             retval = ord(data[0]) + (ord(data[1]) << 8)
         else:
             retval = iguanaIR.removeData(resp)
-            #retval = True
     return retval
 
 # detect the version before we try to write it
@@ -225,9 +261,10 @@ else:
     message(FATAL,
             "This script will not modify devices of version 0x%x\n" % version)
 
-# version 4 cannot alter page 0 due to a race
-if version == 4 and pages[0]['start'] == 0:
+# version 4 and earlier cannot alter page 0 due to a race
+if version <= 4 and pages[0]['start'] == 0:
     if inputFile.endswith('reflasher.hex'):
+        message(INFO, "Moving page 0 to 0xF80.\n")
         pages[0]['start'] = 0xF80
 
 # pick the correct code
@@ -249,5 +286,11 @@ for page in pages:
     else:
         message(FATAL, "FAILED!!\n")
 
+    # if we're in an older device delay and reconnect
+    if version <= 4:
+        connect(5)
+
 # reset the device (it may have already)
-deviceTransaction(iguanaIR.IG_DEV_RESET)
+if version > 4:
+    message(INFO, "Rebooting the device.\n")
+    deviceTransaction(iguanaIR.IG_DEV_RESET)

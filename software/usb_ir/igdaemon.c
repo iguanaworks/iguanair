@@ -36,12 +36,14 @@ static bool handleClientRequest(dataPacket *request, client *target)
     switch(request->code)
     {
     case IG_DEV_RECVON:
+    case IG_DEV_RAWRECVON:
+        request->code = IG_DEV_RECVON;
         if (target->idev->receiverCount > 0)
             retval = true;
         break;
 
     case IG_DEV_RECVOFF:
-        target->receiving = false;
+        target->receiving = 0;
         if (target->idev->receiverCount > 0)
         {
             target->idev->receiverCount--;
@@ -89,7 +91,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
         if (request->code == IG_DEV_RECVON)
         {
             target->idev->receiverCount++;
-            target->receiving = true;
+            target->receiving = request->code;
         }
 
         if (response != NULL)
@@ -252,7 +254,7 @@ static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
         {
             memset(newClient, 0, sizeof(client));
             newClient->idev = idev;
-            newClient->receiving = false;
+            newClient->receiving = 0;
             newClient->fd = clientFd;
             insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
         }
@@ -262,20 +264,21 @@ static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
 static bool tellReceivers(itemHeader *item, void *userData)
 {
     client *me = (client*)item;
+    receiveInfo *info;
 
-    if (me->receiving)
+    info = (receiveInfo*)userData;
+    if ((me->receiving == IG_DEV_RECVON    && ! info->translated) ||
+        (me->receiving == IG_DEV_RAWRECVON &&   info->translated))
     {
-        if (! writeDataPacket((dataPacket*)userData, me->fd))
+        if (! writeDataPacket(info->packet, me->fd))
             message(LOG_ERROR, "Failed to send packet to receiver.\n");
         else
         {
-            dataPacket *packet = (dataPacket*)userData;
-
             message(LOG_DEBUG3, "Sent receivers: ");
-            appendHex(LOG_DEBUG3, (char*)packet + offsetof(dataPacket, code),
+            appendHex(LOG_DEBUG3, (char*)info->packet + offsetof(dataPacket, code),
                       offsetof(dataPacket, data) - offsetof(dataPacket, code));
-            if (packet->dataLen > 0)
-                appendHex(LOG_DEBUG3, packet->data, packet->dataLen);
+            if (info->packet->dataLen > 0)
+                appendHex(LOG_DEBUG3, info->packet->data, info->packet->dataLen);
         }
     }
 
@@ -307,11 +310,20 @@ static bool handleReader(iguanaDev *idev)
         case IG_DEV_RECV:
         {
             uint32_t *pulses;
+            receiveInfo info;
+
+            /* inform any users that want raw receive data */
+            info.packet = packet;
+            info.translated = false;
+            forEach(&idev->clientList, tellReceivers, &info);
+
+            /* translate, then tell interested users about the data */
             pulses = iguanaDevToPulses(packet->data, &packet->dataLen);
             free(packet->data);
             packet->data = (unsigned char*)pulses;
 
-            forEach(&idev->clientList, tellReceivers, packet);
+            info.translated = true;
+            forEach(&idev->clientList, tellReceivers, &info);
             break;
         }
 

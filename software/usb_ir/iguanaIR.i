@@ -26,6 +26,7 @@
 %rename(responseIsError) iguanaResponseIsError;
 %rename(removeData) iguanaRemoveData;
 %rename(readPulseFile) iguanaReadPulseFile;
+%rename(code) iguanaCode;
 
 %typemap(default) (unsigned int dataLength, void *data)
 {

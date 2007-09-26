@@ -68,6 +68,7 @@ enum
     IG_DEV_GETID      = 0x0F, /* not a real type, only a response */
     IG_DEV_RESET      = 0xFF,
     IG_DEV_CHANNELS   = 0x11,
+    IG_DEV_RAWRECVON  = 0x12,
 
     /* "from device" codes */
     IG_DEV_RECV       = 0x10,
@@ -75,8 +76,11 @@ enum
     IG_DEV_BIGSEND    = 0x30,
 
     /* for interpretting codes */
-    IG_PULSE_BIT = 0x01000000,
+    IG_PULSE_BIT  = 0x01000000,
     IG_PULSE_MASK = 0x00FFFFFF,
+    /* to handle raw signal data */
+    IG_RAWSPACE_BIT  = 0x80,
+    IG_RAWSPACE_MASK = 0x7F,
 
     /* a couple protocol enums are needed by client.c */
     IG_CTL_START      = 0x0000,

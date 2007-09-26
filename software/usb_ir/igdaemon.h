@@ -13,6 +13,12 @@
 #ifndef _IGDAEMON_
 #define _IGDAEMON_
 
+typedef struct receiveInfo
+{
+    struct dataPacket *packet;
+    bool translated;
+} receiveInfo;
+
 typedef struct client
 {
     itemHeader header;
@@ -25,7 +31,7 @@ typedef struct client
 
     /* whether recv-related messages should be returned to this
      * client */
-    bool receiving;
+    int receiving;
 
     /* used by listenToClients */
     void *listenData;

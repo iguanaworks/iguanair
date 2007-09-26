@@ -134,7 +134,7 @@ static void exitOnOptError(poptContext poptCon, char *msg)
 
 int main(int argc, const char **argv)
 {
-    int exitval = 0, x;
+    int exitval = 0, x = 0;
     bool runAsDaemon = true;
     const char *pidFile = NULL, **leftOvers;
     poptContext poptCon;

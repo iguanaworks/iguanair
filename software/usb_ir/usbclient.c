@@ -21,11 +21,13 @@
 #include "support.h"
 #include "usbclient.h"
 
-/* depending on whether usb_device->devnum exists */
-#if 0
-  #define DEVNUM(dev) (dev->devnum)
-#else
+/* We want to use the constantly incrementing devnum if it exists.
+ * This functionality was introduced in version 0.1.9 of libusb.
+ */
+#if LIBUSB_VERSION < 109
   #define DEVNUM(dev) (dev->bus->location)
+#else
+  #define DEVNUM(dev) (dev->devnum)
 #endif
 
 static void setError(usbDevice *handle, char *error)
