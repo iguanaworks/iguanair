@@ -198,7 +198,12 @@ def attemptReceive():
                              stderr = subprocess.STDOUT)
     mode2.stdin.close()
 
-    count = len(testdata.split('\n'))
+    # record the values we're trying to transmit
+    values = []
+    for line in testdata.splitlines():
+        values.append(int(line.split()[1]))
+    count = len(values) + 1
+
     # give mode2 time to start since it doesnt say when it is ready
     time.sleep(0.5)
     # now transmit some test data
@@ -215,21 +220,40 @@ def attemptReceive():
 
     # check mode2 output after killing the process
     os.kill(mode2.pid, signal.SIGINT)
+    pos = -1
+    total = 0
     for line in iter(mode2.stdout.readline, ''):
         if not line.startswith('pulse') and \
            not line.startswith('space'):
             message(WARN, "mode2 output: " + line)
         else:
-            message(DEBUG, "mode2 output: " + line)
+            text = "mode2 output: " + line[:-1]
+            if pos >= 0:
+                text += ' (%d)' % values[pos]
+            message(DEBUG, text + '\n')
+
+            parts = line.split()
+            if (pos % 2 == 1 and parts[0] != 'space') or \
+               (pos % 2 == 0 and parts[0] != 'pulse'):
+                message(ERROR, 'Received pulses do not line up.\n')
+            elif pos >= 0:
+                value = abs(int(parts[1]) - values[pos])
+                message(INFO, 'Received length is off by %d\n' % value)
+                total += value
+            pos += 1
         count -= 1
         if count == 0:
             break
 
     os.kill(mode2.pid, signal.SIGTERM)
     mode2.wait()
-    if count == 0:
-        message(NORMAL, "  success\n")
+    total /= float(len(values))
+    if total < 60:
+#    if count == 0:
+        message(NORMAL, "  success (avg miss: %s uS)\n" % total)
         return True
+
+    message(NORMAL, "  failed (avg miss: %s uS, missed %d)\n" % (total, count))
     return False
 
 def attemptTransmission(remote, code):
