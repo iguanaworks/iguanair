@@ -170,7 +170,7 @@ elif setserial.returncode != 0:
 #space 100
 #pulse 1000
 testdata = """pulse 10000
-space 200
+space 250
 pulse 2000
 space 300
 pulse 3000
@@ -183,7 +183,7 @@ pulse 400
 space 3000
 pulse 300
 space 2000
-pulse 200
+pulse 250
 """
 testfile = tempfile.NamedTemporaryFile()
 testfile.write(testdata)
@@ -248,7 +248,7 @@ def attemptReceive():
     os.kill(mode2.pid, signal.SIGTERM)
     mode2.wait()
     total /= float(len(values))
-    if total < 60:
+    if total < 75:
 #    if count == 0:
         message(NORMAL, "  success (avg miss: %s uS)\n" % total)
         return True
