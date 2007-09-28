@@ -23,7 +23,35 @@
 
 PIPE_PTR iguanaConnect(const char *name)
 {
-    return connectToPipe(name);
+    PIPE_PTR conn;
+
+    conn = connectToPipe(name);
+    if (conn != INVALID_PIPE)
+    {
+        uint16_t clientVersion = IG_PROTOCOL_VERSION;
+        dataPacket *request;
+
+        /* check versions of the client and server */
+        request = iguanaCreateRequest(IG_EXCH_VERSIONS, 2, &clientVersion);
+        if (request &&
+            iguanaWriteRequest(request, conn))
+        {
+            dataPacket *response;
+            response = iguanaReadResponse(conn, 10000);
+            if (iguanaResponseIsError(response))
+            {
+                message(LOG_ERROR, "Server did not understand version request, aborting.  Is the igdaemon is up to date?\n");
+                iguanaClose(conn);
+                errno = 0;
+                conn = INVALID_PIPE;
+            }
+            freeDataPacket(response);
+        }
+        request->data = NULL;
+        freeDataPacket(request);
+    }
+
+    return conn;
 }
 
 void iguanaClose(PIPE_PTR connection)

@@ -830,8 +830,11 @@ int main(int argc, const char **argv)
     /* connect first */
     conn = iguanaConnect(device);
     if (conn == INVALID_PIPE)
-        message(LOG_ERROR,
-                "Failed to connect to iguanaIR daemon: %s\n", strerror(errno));
+    {
+        if (errno != 0)
+            message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s\n",
+                    strerror(errno));
+    }
     else
     {
         igtask cmd;

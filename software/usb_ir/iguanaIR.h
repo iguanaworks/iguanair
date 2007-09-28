@@ -12,6 +12,9 @@
 #ifndef _IGUANA_IR_
 #define _IGUANA_IR_
 
+/* the protocol between the client and server must be versioned */
+#define IG_PROTOCOL_VERSION 1
+
 /* hate including headers from headers, but we need a bool */
 #ifdef WIN32
     typedef int bool;
@@ -47,6 +50,10 @@
 
 enum
 {
+    /* Let the client and daemon check their versions.  should be the
+       first thing sent by the client. */
+    IG_EXCH_VERSIONS = 0xFE,
+
     /* used in response packets */
     IG_DEV_ERROR      = 0x00,
 

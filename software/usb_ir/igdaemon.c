@@ -35,6 +35,16 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     switch(request->code)
     {
+    case IG_EXCH_VERSIONS:
+    {
+        uint16_t *version = ((uint16_t*)(request->data));
+        message(LOG_INFO,
+                "Found client using protocol version %d\n", *version);
+        *version = IG_PROTOCOL_VERSION;
+        retval = true;
+        break;
+    }
+
     case IG_DEV_RECVON:
     case IG_DEV_RAWRECVON:
         request->code = IG_DEV_RECVON;
@@ -71,7 +81,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
     }
 
     if (retval)
-        message(LOG_INFO, "Device transaction skipped: %d\n", request->code);
+        message(LOG_INFO, "Device transaction skipped: 0x%x\n", request->code);
     else if (! deviceTransaction(target->idev, request, &response))
     {
         if (request->code == IG_DEV_RESET)

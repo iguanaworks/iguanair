@@ -73,6 +73,9 @@ typedef struct versionedType
 /* packet type information */
 static versionedType types[] =
 {
+    /* exchanging the versions of the client and server */
+    {0, 0, {IG_EXCH_VERSIONS, CTL_TODEV, 2, true, 2}},
+
     {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
     {0, 0, {IG_DEV_SEND,       CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RECVON,     CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
