@@ -262,6 +262,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         else
             msg[CODE_OFFSET] = request->code;
 
+        /* SEND and BULKPINS do not get their data packed into the
+           request packet, unlike everything else. */
         if (request->code != IG_DEV_SEND &&
             request->code != IG_DEV_BULKPINS)
         {
@@ -273,16 +275,13 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             length += sent;
         }
         /* as of version 3 SEND and BULKPINS require a length argument */
-        else
+        else if (idev->version >= 3)
         {
-            if (idev->version >= 3)
-            {
-                msg[length++] = request->dataLen;
+            msg[length++] = request->dataLen;
 
-                /* select which channels to transmit on */
-                if (request->code == IG_DEV_SEND)
-                    msg[length++] = idev->channels;
-            }
+            /* select which channels to transmit on */
+            if (request->code == IG_DEV_SEND)
+                msg[length++] = idev->channels;
         }
 
 #ifdef LIBUSB_NO_THREADS
