@@ -199,7 +199,8 @@ static packetType* findTypeEntry(unsigned char code, uint16_t version)
 static bool payloadMatch(unsigned char spec, unsigned char length)
 {
     return ((spec == NO_PAYLOAD && length == 0) ||
-            spec == ANY_PAYLOAD || spec == length);
+            spec == ANY_PAYLOAD ||
+            spec == length);
 }
 
 bool supportedVersion(int version)

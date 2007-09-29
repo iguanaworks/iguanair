@@ -283,18 +283,20 @@ static bool tellReceivers(itemHeader *item, void *userData)
     receiveInfo *info;
 
     info = (receiveInfo*)userData;
-    if ((me->receiving == IG_DEV_RECVON    && ! info->translated) ||
-        (me->receiving == IG_DEV_RAWRECVON &&   info->translated))
+    if ((me->receiving == IG_DEV_RECVON    &&   info->translated) ||
+        (me->receiving == IG_DEV_RAWRECVON && ! info->translated))
     {
         if (! writeDataPacket(info->packet, me->fd))
             message(LOG_ERROR, "Failed to send packet to receiver.\n");
         else
         {
             message(LOG_DEBUG3, "Sent receivers: ");
-            appendHex(LOG_DEBUG3, (char*)info->packet + offsetof(dataPacket, code),
+            appendHex(LOG_DEBUG3,
+                      (char*)info->packet + offsetof(dataPacket, code),
                       offsetof(dataPacket, data) - offsetof(dataPacket, code));
             if (info->packet->dataLen > 0)
-                appendHex(LOG_DEBUG3, info->packet->data, info->packet->dataLen);
+                appendHex(LOG_DEBUG3,
+                          info->packet->data, info->packet->dataLen);
         }
     }
 
