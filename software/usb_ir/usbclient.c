@@ -248,6 +248,9 @@ bool updateDeviceList(usbDeviceList *list)
                         /* grab error if there was one */
                         if (!success)
                         {
+                            if (errno == EBUSY)
+                                message(LOG_ERROR,
+                                        "Is igdaemon already running?\n");
                             printError(LOG_ERROR,
                                        "updateDeviceList failed", newDev);
                             return false;

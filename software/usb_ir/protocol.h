@@ -60,6 +60,9 @@ typedef struct iguanaDev
 #endif
 } iguanaDev;
 
+/* use the protocol table to see if the version is supported */
+bool supportedVersion(int version);
+
 /* check that the client is using the proper protocol */
 struct packetType* checkIncomingProtocol(iguanaDev *idev,
                                          struct dataPacket *request,

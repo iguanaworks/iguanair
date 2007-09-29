@@ -199,6 +199,19 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
             spec == ANY_PAYLOAD || spec == length);
 }
 
+bool supportedVersion(int version)
+{
+    int x;
+
+    /* mediocre test to see if we support this device */
+    for(x = 0; types[x].type.code != IG_DEV_ANY_CODE; x++)
+        if (version <= types[x].start ||
+            version <= types[x].end)
+            return true;
+
+    return false;
+}
+
 packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
                                   bool nullResponse)
 {

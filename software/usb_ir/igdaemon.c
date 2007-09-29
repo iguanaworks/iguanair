@@ -217,7 +217,7 @@ static bool checkVersion(iguanaDev *idev)
 
             message(LOG_INFO, "Found device version %d\n", idev->version);
             /* ensure we have an acceptable version */
-            if (idev->version > MAX_VERSION)
+            if (supportedVersion(idev->version))
                 message(LOG_ERROR,
                         "Unsupported hardware version %d\n", idev->version);
             else

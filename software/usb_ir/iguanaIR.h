@@ -91,10 +91,7 @@ enum
 
     /* a couple protocol enums are needed by client.c */
     IG_CTL_START      = 0x0000,
-    IG_CTL_FROMDEV    = 0xDC,
-
-    /* Maximum firmware version supported by this driver. */
-    MAX_VERSION = 4
+    IG_CTL_FROMDEV    = 0xDC
 };
 
 /* manage a connection to the server */
