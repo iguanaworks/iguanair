@@ -52,10 +52,7 @@ enum
     MAX_PULSE_LENGTH = 1023, /* before translation */
 
     /* highest value of a data byte in the IR code protocol */
-    MAX_DATA_BYTE = 127,
-
-    /* Highest version supported by this driver */
-    MAX_VERSION = 4
+    MAX_DATA_BYTE = 127
 };
 
 typedef struct packetType
@@ -80,7 +77,7 @@ static versionedType types[] =
     {0, 0, {IG_EXCH_VERSIONS, CTL_TODEV, 2, true, 2}},
 
     /* use the upper version bound to list the MAX_VERSION */
-    {0, MAX_VERSION, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
+    {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
 
     /* device functionality */
     {0, 0, {IG_DEV_SEND,       CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
@@ -207,14 +204,10 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
 
 bool supportedVersion(int version)
 {
-    int x;
-
-    /* mediocre test to see if we support this device */
-    for(x = 0; types[x].type.code != IG_DEV_ANY_CODE; x++)
-        if (version <= types[x].start ||
-            version <= types[x].end)
-            return true;
-
+    /* simply check a hard coded mechanism to see if the version is
+     * supported. */
+    if (version >= 1 && version <= 4)
+        return true;
     return false;
 }
 
