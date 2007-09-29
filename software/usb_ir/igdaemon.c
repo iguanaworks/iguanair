@@ -33,13 +33,19 @@ static bool handleClientRequest(dataPacket *request, client *target)
     bool retval = false;
     dataPacket *response = NULL;
 
+    /* return false if the incoming packet does not match the protocol */
+    if (checkIncomingProtocol(target->idev, request, false) == NULL)
+        return false;
+
     switch(request->code)
     {
+    /* this should be the first packet sent by new clients */
     case IG_EXCH_VERSIONS:
     {
         uint16_t *version = ((uint16_t*)(request->data));
         message(LOG_INFO,
                 "Found client using protocol version %d\n", *version);
+        target->version = *version;
         *version = IG_PROTOCOL_VERSION;
         retval = true;
         break;

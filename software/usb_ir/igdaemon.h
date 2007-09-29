@@ -33,6 +33,9 @@ typedef struct client
      * client */
     int receiving;
 
+    /* protocol version that should be used with this client */
+    uint16_t version;
+
     /* used by listenToClients */
     void *listenData;
 } client;

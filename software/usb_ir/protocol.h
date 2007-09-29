@@ -60,6 +60,11 @@ typedef struct iguanaDev
 #endif
 } iguanaDev;
 
+/* check that the client is using the proper protocol */
+struct packetType* checkIncomingProtocol(iguanaDev *idev,
+                                         struct dataPacket *request,
+                                         bool nullResponse);
+
 /* do a transfer and receive the response */
 bool deviceTransaction(iguanaDev *idev,
                        struct dataPacket *request,

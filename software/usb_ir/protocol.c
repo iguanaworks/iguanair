@@ -199,11 +199,9 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
             spec == ANY_PAYLOAD || spec == length);
 }
 
-bool deviceTransaction(iguanaDev *idev,      /* required */
-                       dataPacket *request,  /* required */
-                       dataPacket **response) /* optional */
+packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
+                                  bool nullResponse)
 {
-    bool retval = false;
     packetType *type;
 
     type = findTypeEntry(request->code, idev->version);
@@ -217,10 +215,24 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
         message(LOG_ERROR,
                 "Request size does not match type specification (%d != %d)\n",
                 request->dataLen, type->outData);
-    else if (type->inData != NO_PAYLOAD && response == NULL)
+    else if (type->inData != NO_PAYLOAD && nullResponse)
         message(LOG_ERROR,
                 "Response NULL, but type specifies a return payload\n");
     else
+        return type;
+
+    return NULL;
+}
+
+bool deviceTransaction(iguanaDev *idev,       /* required */
+                       dataPacket *request,   /* required */
+                       dataPacket **response) /* optional */
+{
+    bool retval = false;
+    packetType *type;
+
+    type = checkIncomingProtocol(idev, request, response == NULL);
+    if (type)
     {
         unsigned char msg[MAX_PACKET_SIZE] = {IG_CTL_START, IG_CTL_START,
                                               CTL_TODEV};
@@ -275,7 +287,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
             printError(LOG_ERROR,
                        "failed to write control packet", idev->usbDev);
         /* if there is more data need to transmit the data stream
-         * before releasing the devLock */
+           before releasing the devLock */
         else if (request->dataLen > sent &&
                  ! sendData(idev,
                             request->data + sent, request->dataLen - sent,
@@ -295,7 +307,7 @@ bool deviceTransaction(iguanaDev *idev,      /* required */
 #endif
 
             /* using sendTimeout to ensure reader has necessary time
-             * to recieve the ack */
+               to recieve the ack */
             amount = notified(idev->responsePipe[READ],
                               idev->usbDev->list->sendTimeout);
             if (amount < 0)
