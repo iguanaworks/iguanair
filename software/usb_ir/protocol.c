@@ -52,7 +52,10 @@ enum
     MAX_PULSE_LENGTH = 1023, /* before translation */
 
     /* highest value of a data byte in the IR code protocol */
-    MAX_DATA_BYTE = 127
+    MAX_DATA_BYTE = 127,
+
+    /* Highest version supported by this driver */
+    MAX_VERSION = 4
 };
 
 typedef struct packetType
@@ -76,7 +79,10 @@ static versionedType types[] =
     /* exchanging the versions of the client and server */
     {0, 0, {IG_EXCH_VERSIONS, CTL_TODEV, 2, true, 2}},
 
-    {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
+    /* use the upper version bound to list the MAX_VERSION */
+    {0, MAX_VERSION, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
+
+    /* device functionality */
     {0, 0, {IG_DEV_SEND,       CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RECVON,     CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RAWRECVON,  CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
