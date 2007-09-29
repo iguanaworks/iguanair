@@ -47,7 +47,7 @@ igdaemon: daemon.o igdaemon.o usbclient.o protocol.o list.o
 igclient: client.o list.o
 	$(CC) $(CPPFLAGS) $^ -lpopt -L. -liguanaIR -o $@
 
-%.o: %.c Makefile
+%.o: %.c Makefile iguanaIR.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 # need a special dependency for config.h
