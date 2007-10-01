@@ -21,6 +21,7 @@
 #include "usbclient.h"
 #include "dataPackets.h"
 #include "protocol.h"
+#include "compatibility.h"
 
 /* internal protocol constants */
 enum
@@ -34,8 +35,6 @@ enum
     /*IG_CTL_START      = 0x0000,*/
     CTL_TODEV      = 0xCD,
     /*CTL_FROMDEV    = 0xDC,*/
-    IG_DEV_TO_MASK    = 0x0F,
-    IG_DEV_FROM_MASK  = 0xF0,
     IG_DEV_ANY_CODE   = 0x00,
 
     /* constants for packetType table */
@@ -114,12 +113,12 @@ static versionedType types[] =
     {0, 0, {0, 0, 0, false, 0}}
 };
 
-static void queueDataPacket(iguanaDev *idev, dataPacket *current)
+static void queueDataPacket(iguanaDev *idev, dataPacket *current, bool fromDev)
 {
     message(LOG_DEBUG3, "Notifying of packet.\n");
 
     EnterCriticalSection(&idev->listLock);
-    if (current->code & IG_DEV_FROM_MASK)
+    if (fromDev)
     {
         insertItem(&idev->recvList, NULL, (itemHeader*)current);
         if (! notify(idev->readerPipe[WRITE]))
@@ -251,16 +250,24 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                                               CTL_TODEV};
         uint64_t then, now;
         int length = MIN_CODE_LENGTH, result, sent = 0;
+        uint8_t oldCode;
 
 #ifdef LIBUSB_NO_THREADS
         bool unlocked = false;
 #endif
+
+        oldCode = request->code;
+        if (! translateDevice(request, idev->version, false))
+            message(LOG_ERROR, "Failed to translate code for device.\n");
 
         /* finish creating the packet */
         if (request->code == IG_DEV_GETID)
             msg[CODE_OFFSET] = IG_DEV_EXECUTE;
         else
             msg[CODE_OFFSET] = request->code;
+
+        request->code = oldCode;
+
 
         /* SEND and BULKPINS do not get their data packed into the
            request packet, unlike everything else. */
@@ -322,6 +329,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                to recieve the ack */
             amount = notified(idev->responsePipe[READ],
                               idev->usbDev->list->sendTimeout);
+
             if (amount < 0)
                 message(LOG_ERROR, "Failed to read control ack\n");
             else if (amount > 0)
@@ -466,6 +474,12 @@ void handleIncomingPackets(iguanaDev *idev)
 
                         message(LOG_DEBUG,
                                 "Received ctl header: 0x%x\n", current->code);
+
+
+                        /* translate the incoming packet code */
+                        if (! translateDevice(current, idev->version, true))
+                            message(LOG_ERROR,
+                                    "Failed to translate code for device.\n");
                     }
                     else
                     {
@@ -526,7 +540,8 @@ void handleIncomingPackets(iguanaDev *idev)
                         current->data = (unsigned char*)temp;
                     }
 
-                    queueDataPacket(idev, current);
+                    queueDataPacket(idev, current,
+                                    type->direction != CTL_TODEV);
                     current = NULL;
                 }
             }

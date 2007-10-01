@@ -25,6 +25,7 @@
 #include "igdaemon.h"
 #include "support.h"
 #include "pipes.h"
+#include "compatibility.h"
 
 bool readLabels = true;
 
@@ -32,6 +33,10 @@ static bool handleClientRequest(dataPacket *request, client *target)
 {
     bool retval = false;
     dataPacket *response = NULL;
+
+    /* translate the newly read data packet code */
+    if (! translateClient(request, target->version, true))
+        return false;
 
     /* return false if the incoming packet does not match the protocol */
     if (checkIncomingProtocol(target->idev, request, false) == NULL)
@@ -68,7 +73,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
         }
         break;
 
-    case IG_DEV_CHANNELS:
+    case IG_DEV_GETCHANNELS:
 /* TODO: need to check that we match the protocol BEFORE this */
         target->idev->channels = request->data[0];
         retval = true;

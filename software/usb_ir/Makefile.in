@@ -41,7 +41,7 @@ igclient: libiguanaIR.so
 libiguanaIR.so: iguanaIR.o support.o dataPackets.o pipes.o base.o
 	$(CC) -shared $(CPPFLAGS) $^ -lpopt -lrt -o $@
 
-igdaemon: daemon.o igdaemon.o usbclient.o protocol.o list.o
+igdaemon: daemon.o igdaemon.o usbclient.o protocol.o list.o compatibility.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LIBS) -lusb -L. -liguanaIR -o $@
 
 igclient: client.o list.o
