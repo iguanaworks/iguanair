@@ -222,7 +222,8 @@ packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
         message(LOG_ERROR,
                 "Unknown packet type in request: 0x%x\n", request->code);
     else if (type->direction != CTL_TODEV)
-        message(LOG_ERROR, "Cannot request to send a FROMDEV packet.\n");
+        message(LOG_ERROR, "Cannot request to send a FROMDEV packet (0x%x %x %x).\n",
+                request->code, CTL_TODEV, type->direction);
     else if (! payloadMatch(type->outData, request->dataLen))
         message(LOG_ERROR,
                 "Request size does not match type specification (%d != %d)\n",

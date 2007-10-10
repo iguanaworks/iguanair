@@ -103,7 +103,9 @@ enum
 };
 
 /* manage a connection to the server */
-IGUANAIR_API PIPE_PTR iguanaConnect(const char *name);
+#define iguanaConnect(a) iguanaConnect_real(a, IG_PROTOCOL_VERSION)
+IGUANAIR_API PIPE_PTR iguanaConnect_real(const char *name,
+                                         unsigned int protocol);
 IGUANAIR_API void iguanaClose(PIPE_PTR connection);
 
 /* requests and responses are represented by opaque handles, so

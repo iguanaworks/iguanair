@@ -127,6 +127,10 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
     }
 
+    /* translate the newly read data packet code before returning */
+    if (! translateClient(request, target->version, false))
+        return false;
+
     return retval;
 }
 

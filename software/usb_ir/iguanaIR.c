@@ -21,37 +21,50 @@
 #include "protocol.h"
 #include "dataPackets.h"
 
-PIPE_PTR iguanaConnect(const char *name)
+PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
 {
-    PIPE_PTR conn;
+    PIPE_PTR conn = INVALID_PIPE;
 
-    conn = connectToPipe(name);
-    if (conn != INVALID_PIPE)
+    if (protocol != IG_PROTOCOL_VERSION)
+        message(LOG_ERROR, "Client application was not built against a protocol-compatible library.  Aborting connect iguanaConnect.\n");
+    else
     {
-        uint16_t clientVersion = IG_PROTOCOL_VERSION;
-        dataPacket *request;
-
-        /* check versions of the client and server */
-        request = iguanaCreateRequest(IG_EXCH_VERSIONS, 2, &clientVersion);
-        if (request &&
-            iguanaWriteRequest(request, conn))
+        conn = connectToPipe(name);
+        if (conn != INVALID_PIPE)
         {
-            dataPacket *response;
-            response = iguanaReadResponse(conn, 10000);
-            if (iguanaResponseIsError(response))
+            uint16_t clientVersion = IG_PROTOCOL_VERSION;
+            dataPacket *request;
+
+            /* check versions of the client and server */
+            request = iguanaCreateRequest(IG_EXCH_VERSIONS, 2, &clientVersion);
+            if (request &&
+                iguanaWriteRequest(request, conn))
             {
-                message(LOG_ERROR, "Server did not understand version request, aborting.  Is the igdaemon is up to date?\n");
-                iguanaClose(conn);
-                errno = 0;
-                conn = INVALID_PIPE;
+                dataPacket *response;
+                response = iguanaReadResponse(conn, 10000);
+                if (iguanaResponseIsError(response))
+                {
+                    message(LOG_ERROR, "Server did not understand version request, aborting.  Is the igdaemon is up to date?\n");
+                    iguanaClose(conn);
+                    errno = 0;
+                    conn = INVALID_PIPE;
+                }
+                freeDataPacket(response);
             }
-            freeDataPacket(response);
+            request->data = NULL;
+            freeDataPacket(request);
         }
-        request->data = NULL;
-        freeDataPacket(request);
     }
 
     return conn;
+}
+
+/* Interesting way to force old clients to connect and reveal a
+   version 0 protocol. */
+#undef iguanaConnect
+PIPE_PTR iguanaConnect(const char *name)
+{
+    return iguanaConnect_real(name, 0);
 }
 
 void iguanaClose(PIPE_PTR connection)
