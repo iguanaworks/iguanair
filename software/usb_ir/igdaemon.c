@@ -289,12 +289,16 @@ static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
 static bool tellReceivers(itemHeader *item, void *userData)
 {
     client *me = (client*)item;
-    receiveInfo *info;
+    receiveInfo *info = (receiveInfo*)userData;
 
-    info = (receiveInfo*)userData;
     if ((me->receiving == IG_DEV_RECVON    &&   info->translated) ||
-        (me->receiving == IG_DEV_RAWRECVON && ! info->translated))
+        (me->receiving == IG_DEV_RAWRECVON && ! info->translated) ||
+        (me->receiving != IG_DEV_RAWRECVON && me->receiving != IG_DEV_RECVON))
     {
+        /* translate the packet code before returning it */
+        if (! translateClient(info->packet, me->version, false))
+            return false;
+
         if (! writeDataPacket(info->packet, me->fd))
             message(LOG_ERROR, "Failed to send packet to receiver.\n");
         else
@@ -307,6 +311,10 @@ static bool tellReceivers(itemHeader *item, void *userData)
                 appendHex(LOG_DEBUG3,
                           info->packet->data, info->packet->dataLen);
         }
+
+        /* translate the packet code BACK before continuing */
+        if (! translateClient(info->packet, me->version, true))
+            return false;
     }
 
     return true;
@@ -330,6 +338,7 @@ static bool handleReader(iguanaDev *idev)
     case 1:
     {
         dataPacket *packet;
+        receiveInfo info;
 
         packet = removeNextPacket(idev);
         switch(packet->code)
@@ -337,7 +346,6 @@ static bool handleReader(iguanaDev *idev)
         case IG_DEV_RECV:
         {
             uint32_t *pulses;
-            receiveInfo info;
 
             /* inform any users that want raw receive data */
             info.packet = packet;
@@ -356,16 +364,20 @@ static bool handleReader(iguanaDev *idev)
 
         case IG_DEV_BIGRECV:
             message(LOG_ERROR, "Receive too large from USB device.\n");
-            forEach(&idev->clientList, tellReceivers, packet);
+            info.packet = packet;
+            info.translated = false;
+            forEach(&idev->clientList, tellReceivers, &info);
             break;
 
+/*
         case IG_DEV_BIGSEND:
             message(LOG_ERROR, "Send too large for USB device.\n");
             break;
+*/
 
         default:
             message(LOG_ERROR,
-                    "Unexpected code (0x%x) with %d data bytes from usb: ",
+                    "Unexpected code (0x%x) with %d data bytes from usb\n",
                     packet->code, packet->dataLen);
             if (packet->dataLen != 0)
                 appendHex(LOG_ERROR, packet->data, packet->dataLen);
