@@ -73,7 +73,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
         }
         break;
 
-    case IG_DEV_GETCHANNELS:
+    case IG_DEV_SETCHANNELS:
 /* TODO: need to check that we match the protocol BEFORE this */
         target->idev->channels = request->data[0];
         retval = true;
@@ -246,7 +246,8 @@ static char* getID(iguanaDev *idev)
 
     request.code = IG_DEV_GETID;
     if (! deviceTransaction(idev, &request, &response))
-        message(LOG_ERROR, "Failed to get id.\n");
+        message(LOG_INFO,
+                "Failed to get id.  Device may not have one assigned.\n");
     else
     {
         retval = (char*)iguanaRemoveData(response, NULL);

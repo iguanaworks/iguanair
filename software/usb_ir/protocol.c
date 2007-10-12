@@ -95,14 +95,14 @@ static versionedType types[] =
     {0, 0, {IG_DEV_SETCONFIG1, CTL_TODEV,   4,           true, NO_PAYLOAD}},
 
     /* supporting functions */
-    {0, 0, {IG_DEV_GETBUFSIZE, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
-    {0, 0, {IG_DEV_WRITEBLOCK, CTL_TODEV,   68,          true,  NO_PAYLOAD}},
-    {0, 0, {IG_DEV_EXECUTE,    CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
-    {2, 2, {IG_DEV_BULKPINS,   CTL_TODEV,   64,          true,  NO_PAYLOAD}},
-    {3, 0, {IG_DEV_BULKPINS,   CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
-    {0, 0, {IG_DEV_GETID,      CTL_TODEV,   NO_PAYLOAD,  true,  12}},
-    {0, 0, {IG_DEV_RESET,      CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_CHANNELS,   CTL_TODEV,   1,           true,  NO_PAYLOAD}},
+    {0, 0, {IG_DEV_GETBUFSIZE,  CTL_TODEV,   NO_PAYLOAD,  true,  1}},
+    {0, 0, {IG_DEV_WRITEBLOCK,  CTL_TODEV,   68,          true,  NO_PAYLOAD}},
+    {0, 0, {IG_DEV_EXECUTE,     CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
+    {2, 2, {IG_DEV_BULKPINS,    CTL_TODEV,   64,          true,  NO_PAYLOAD}},
+    {3, 0, {IG_DEV_BULKPINS,    CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
+    {0, 0, {IG_DEV_GETID,       CTL_TODEV,   NO_PAYLOAD,  true,  12}},
+    {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
+    {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,    IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -368,7 +368,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 LeaveCriticalSection(&idev->listLock);
             }
             else
-                message(LOG_ERROR, "No response from device.\n");
+                message(LOG_INFO,
+                        "Timeout while waiting for response from device.\n");
         }
 
 #ifdef LIBUSB_NO_THREADS
@@ -441,7 +442,14 @@ void handleIncomingPackets(iguanaDev *idev)
                             "Device %d unplugged\n", idev->usbDev->id);
                     break;
                 }
-                else if (errno != EINVAL)
+                /* (somewhat) quietly released during shutdown */
+                else if (idev->usbDev->removed)
+                {
+                    message(LOG_INFO,
+                            "Device %d released\n", idev->usbDev->id);
+                    break;
+                }
+                else /* if (errno != EINVAL) */
                     /* log the usb error associated with the problem */
                     printError(LOG_ERROR,
                                "can't read from USB device", idev->usbDev);

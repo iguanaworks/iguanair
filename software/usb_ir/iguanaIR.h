@@ -97,7 +97,6 @@ enum
     IG_DEV_EXECUTE    = 0x0D,
     IG_DEV_BULKPINS   = 0x0E,
     IG_DEV_GETID      = 0x0F,
-    IG_DEV_CHANNELS   = 0x11,
     IG_DEV_BIGRECV    = 0x20,
     IG_DEV_BIGSEND    = 0x30
 };
