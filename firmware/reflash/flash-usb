@@ -71,6 +71,8 @@ def message(level, msg):
 def printUsage(msg = None):
     usage = "Usage: " + sys.argv[0] + """ [OPTION]... <FILE>
 
+--device-version : Print the device version and then quit.
+
 -h
 --help : Print this usage message.
 

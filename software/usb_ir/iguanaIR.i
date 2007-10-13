@@ -20,7 +20,6 @@
 #include "iguanaIR.h"
 %}
 
-%rename(connect) iguanaConnect;
 %rename(createRequest) iguanaCreateRequest;
 %rename(writeRequest) iguanaWriteRequest;
 %rename(responseIsError) iguanaResponseIsError;
@@ -91,6 +90,17 @@ iguanaPacket readResponse(PIPE_PTR connection, unsigned int timeout)
     Py_END_ALLOW_THREADS;
 
     return retval;
+}
+%}
+
+/* Remove the old connect call and replace it with a call with a
+ * default value. */
+%rename(connect) iguanaConnect_python;
+%ignore iguanaConnect_real;
+%inline %{
+PIPE_PTR iguanaConnect_python(const char *name)
+{
+    return iguanaConnect(name);
 }
 %}
 

@@ -6,8 +6,8 @@
 %{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
 Name:           iguanaIR
-Version:        0.33pre2
-Release:        1.itv
+Version:        0.90
+Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
 Group:          System Environment/Daemons
@@ -87,9 +87,10 @@ fi
 /etc/rc.d/init.d/%{name}
 %config /etc/default/%{name}
 # TODO: autoconf must decide!
-#/etc/udev/rules.d/%{name}.rules
-#%attr(755, iguanair, iguanair) /etc/udev/devices/%{name}
-/etc/hotplug/usb/%{name}*
+/etc/udev/rules.d/%{name}.rules
+%attr(755, iguanair, iguanair) /etc/udev/devices/%{name}
+# This is for fairly old versions of Fedora....
+#/etc/hotplug/usb/%{name}*
 /usr/include/%{name}.h
 
 %files python
