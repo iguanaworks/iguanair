@@ -1,0 +1,214 @@
+#!/usr/bin/python -tt
+import warnings
+import traceback
+import glob
+import sys
+import os
+
+import subprocess
+#import flash-usb
+
+#output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+FlasherVersion = 0xFF00
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+null = open('/dev/null', 'r+')
+
+# local variables
+currentLevel = LOG_NORMAL
+logFile = None
+usb_ir = None
+loader = None
+body = None
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
+
+-h
+--help : Print this usage message.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-q
+--quiet : Decrease verbosity.
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(LOG_FATAL, msg + usage)
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "--loader":
+        index += 1
+        loader = sys.argv[index]
+    elif arg == "--body":
+        index += 1
+        body = sys.argv[index]
+    elif arg == "--old-firmware":
+        index += 1
+        usb_ir = sys.argv[index]
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > LOG_FATAL:
+            currentLevel -= 1
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    else:
+        printUsage("Unknown argument: " + arg + "\n")
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
+def findLatest(type):
+    latest = None
+    latestVersion = None
+    for hex in glob.glob(os.path.join(sys.path[0], 'hex', '%s-*.hex' % type)):
+        version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
+        if latestVersion is None:
+            latestVersion = version
+
+        if latest is None or \
+           version > latestVersion:
+            latest = hex
+
+    return latest
+
+if usb_ir is None:
+    if loader is None:
+        # find the most recent loader
+        loader = findLatest('loader')
+
+    if loader is None:
+        usb_ir = findLatest('usb_ir_enclosed')
+        if usb_ir is None:
+            usb_ir = findLatest('usb_ir')
+    elif body is None:
+        body = findLatest('body')
+
+def flashusb(hexFile):
+    totalPages = None
+    deviceVersion = None
+    page = None
+
+    flasher = subprocess.Popen((os.path.join(sys.path[0], 'flash-usb'),
+                                hexFile, '-v', '--do-not-be-stupid'),
+                               stdin = subprocess.PIPE,
+                               stdout = subprocess.PIPE,
+                               stderr = subprocess.STDOUT)
+    flasher.stdin.close()
+    for line in iter(flasher.stdout.readline, ''):
+        if line.startswith('INFO: Writing page'):
+            sys.stdout.write('  %s\r' % line.strip()[:-1].split()[-1])
+            message(LOG_DEBUG, 'flash-usb: ' + line)
+        elif line.strip().endswith('pages that contain data.'):
+            totalPages = line.split()[2]
+        elif 'Found device version' in line:
+            deviceVersion = int(line.split()[-1], 0)
+        elif not line.startswith('INFO: Rebooting the device.'):
+            message(LOG_DEBUG, line)
+
+    flasher.wait()
+
+    return deviceVersion
+
+def deviceVersion():
+    version = None
+    while not version:
+        version = flashusb('--device-version')
+        if not version:
+            message(LOG_ERROR,
+                    "Please unplug and replug the device before continuing.\n")
+            message(LOG_ERROR, "  Press any key to continue.\n")
+            sys.stdin.readline()
+
+    return version
+
+if deviceVersion() != FlasherVersion:
+    # no matter what happens next we need to put the reflasher on first
+    sys.stdout.write('Writing reflasher to the device:\n')
+    flashusb(os.path.join(sys.path[0], 'hex', 'reflasher.hex'))
+    version = deviceVersion()
+
+# put on the usb_ir if that's the final target version
+if usb_ir is not None:
+    sys.stdout.write('Writing usb_ir to the device:\n')
+    flashusb(usb_ir)
+    version = deviceVersion()
+# put on the boot loader and the correct body
+else:
+    sys.stdout.write('Writing loader to the device:\n')
+    flashusb(loader)
+    version = deviceVersion()
+    sys.stdout.write('Writing body to the device:\n')
+    flashusb(body)
+    version = deviceVersion()
