@@ -224,7 +224,7 @@ static bool checkVersion(iguanaDev *idev)
         {
             idev->version = (response->data[1] << 8) + response->data[0];
 
-            message(LOG_INFO, "Found device version %d\n", idev->version);
+            message(LOG_INFO, "Found device version 0x%x\n", idev->version);
             /* ensure we have an acceptable version */
             if (! supportedVersion(idev->version))
                 message(LOG_ERROR,
@@ -425,7 +425,10 @@ static void* workLoop(void *instance)
 
     /* now actually free the malloc'd data */
     free(idev->usbDev);
+
+    /* TODO: illegal to free this here since it holds the worker pointer, can't release because it would deadlock.  arg */
     free(idev);
+    makeParentJoin();
 
     return NULL;
 }

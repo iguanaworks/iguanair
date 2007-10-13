@@ -33,7 +33,7 @@ void insertItem(listHeader *list, itemHeader *pos, itemHeader *item);
 /* return a pointer to the firstItem */
 const itemHeader* firstItem(listHeader *list);
 
-/* actualyl remove the first item */
+/* actually remove the first item */
 itemHeader* removeFirstItem(listHeader *list);
 
 /* remove object at pos (uses internal list pointer) */

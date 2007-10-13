@@ -106,11 +106,13 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize)
 void releaseDevice(usbDevice *handle)
 {
     if (handle != NULL &&
-        ! handle->removed)
+        handle->removed == INVALID_THREAD_PTR)
     {
-        setError(handle, NULL);
+        /* record the removal */
+        handle->removed = true;
 
         /* close the usb interface and handle */
+        setError(handle, NULL);
         if (usb_release_interface(handle->device, 0) < 0 && errno != ENODEV)
             setError(handle, "Failed to release interface");
         else if (usb_close(handle->device) < 0)
@@ -122,10 +124,6 @@ void releaseDevice(usbDevice *handle)
 
         /* remove the device from the list */
         removeItem((itemHeader*)handle);
-
-        /* record the removal */
-        handle->removed = true;
-        handle->list->count--;
     }
 }
 
@@ -152,7 +150,9 @@ bool initDeviceList(usbDeviceList *list, usbId *ids,
 static bool findId(itemHeader *item, void *userData)
 {
     unsigned int *id = (unsigned int*)userData;
-    if (((usbDevice*)item)->id == *id)
+    usbDevice *usbDev = (usbDevice*)item;
+
+    if (usbDev->removed == INVALID_THREAD_PTR && usbDev->id == *id)
         (*id)++;
     return true;
 }
@@ -260,7 +260,7 @@ bool updateDeviceList(usbDeviceList *list)
                     }
                 }
 
-    /* if none were found remove the rest */
+    /* if none were found remove the rest TODO: necessary?*/
     if (count == 0)
         releaseDevices(list);
 

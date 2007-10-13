@@ -206,7 +206,9 @@ bool supportedVersion(int version)
 {
     /* simply check a hard coded mechanism to see if the version is
      * supported. */
-    if (version >= 1 && version <= 4)
+    if ((version >= 1 && version <= 4) ||
+        version == 0xFF00 ||
+        (version >= 0x0100 && version < 0x0200))
         return true;
     return false;
 }
@@ -443,7 +445,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     break;
                 }
                 /* (somewhat) quietly released during shutdown */
-                else if (idev->usbDev->removed)
+                else if (idev->usbDev->removed != INVALID_THREAD_PTR)
                 {
                     message(LOG_INFO,
                             "Device %d released\n", idev->usbDev->id);
@@ -504,7 +506,9 @@ void handleIncomingPackets(iguanaDev *idev)
 
                     /* if the type demands more data then read it here */
                     type = findTypeEntry(current->code, idev->version);
-                    if (type->inData != NO_PAYLOAD &&
+                    if (type == NULL)
+                        message(LOG_ERROR, "Unknown packet type received from device: 0x%x\n", current->code);
+                    else if (type->inData != NO_PAYLOAD &&
                         type->inData > current->dataLen)
                     {
                         current->data = (unsigned char*)malloc(type->inData);
@@ -550,7 +554,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     }
 
                     queueDataPacket(idev, current,
-                                    type->direction != CTL_TODEV);
+                                    ! type || type->direction != CTL_TODEV);
                     current = NULL;
                 }
             }

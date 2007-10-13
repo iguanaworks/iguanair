@@ -43,4 +43,8 @@ bool wouldOutput(int level);
 int message(int level, char *format, ...);
 void appendHex(int level, void *location, unsigned int length);
 
+/* used during shutdown to clean up threads */
+void setParentPipe(PIPE_PTR pp);
+void makeParentJoin();
+
 #endif

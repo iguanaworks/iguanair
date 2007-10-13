@@ -25,6 +25,7 @@
 
     /* thread defines */
     #define THREAD_PTR HANDLE
+    #define INVALID_THREAD_PTR NULL
     bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
     void joinThread(THREAD_PTR *handle, void **exitVal);
 
@@ -44,6 +45,7 @@
 
     /* thread defines */
     #define THREAD_PTR pthread_t
+    #define INVALID_THREAD_PTR 0
     #define startThread(a, b, c) (pthread_create((a), NULL, (b), (c)) == 0)
     #define joinThread(a,b) (void)pthread_join((a), (b))
     #define SwitchToThread() pthread_yield()

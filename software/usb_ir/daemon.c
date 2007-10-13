@@ -35,7 +35,7 @@ static usbId ids[] = {
     END_OF_USB_ID_LIST
 };
 static mode_t devMode = 0777;
-static PIPE_PTR commPipe[2];
+PIPE_PTR commPipe[2];
 #ifdef LIBUSB_NO_THREADS
   static unsigned int recvTimeout = 100;
 #else
@@ -50,7 +50,8 @@ static void quitHandler(int UNUSED(sig))
 
 static void scanHandler(int sig)
 {
-    writePipe(commPipe[WRITE], &sig, 1);
+    int x = INVALID_THREAD_PTR;
+    writePipe(commPipe[WRITE], &x, sizeof(THREAD_PTR));
 }
 
 static void workLoop()
@@ -74,15 +75,18 @@ static void workLoop()
     {
         bool quit = false;
 
+        setParentPipe(commPipe[WRITE]);
+
         /* trigger the initial device scan */
         scanHandler(SIGHUP);
 
         /* now wait for commands */
         while(! quit)
         {
-            char cmd;
+            THREAD_PTR thread;
+            void *exitVal;
 
-            switch(readPipe(commPipe[READ], &cmd, 1))
+            switch(readPipe(commPipe[READ], &thread, sizeof(THREAD_PTR)))
             {
             /* error */
             default:
@@ -95,8 +99,10 @@ static void workLoop()
                 break;
 
             /* command read (right now only support scan) */
-            case 1:
-                if (! updateDeviceList(&list))
+            case sizeof(THREAD_PTR):
+                if (thread != INVALID_THREAD_PTR)
+                    joinThread(thread, &exitVal);
+                else if (! updateDeviceList(&list))
                     message(LOG_ERROR, "scan failed.\n");
                 break;
             }

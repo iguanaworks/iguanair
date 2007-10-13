@@ -35,9 +35,6 @@ typedef struct client
 
     /* protocol version that should be used with this client */
     uint16_t version;
-
-    /* used by listenToClients */
-    void *listenData;
 } client;
 
 typedef bool (*handleReaderFunc)(iguanaDev *idev);

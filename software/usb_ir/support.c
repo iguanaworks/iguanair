@@ -158,3 +158,18 @@ void appendHex(int level, void *location, unsigned int length)
         retval += fprintf(out, "\n");
     }
 }
+
+static PIPE_PTR parentPipe;
+
+void setParentPipe(PIPE_PTR pp)
+{
+    parentPipe = pp;
+}
+
+void makeParentJoin()
+{
+    THREAD_PTR thread;
+
+    thread = pthread_self();
+    writePipe(parentPipe, &thread, sizeof(THREAD_PTR));
+}

@@ -49,8 +49,8 @@ typedef struct usbDevice
     /* usbclient and libusb errors */
     char *error, *usbError;
 
-    /* flagged when device is removed from list */
-    volatile bool removed;
+    /* set when device is logically removed from list */
+    bool removed;
 } usbDevice;
 
 /* called when a new device is found by a list */
