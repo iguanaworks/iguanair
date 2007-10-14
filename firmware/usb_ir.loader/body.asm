@@ -1,5 +1,19 @@
+;**************************************************************************
+; * body.asm ***************************************************************
+; **************************************************************************
+; *
+; * 
 ; Use this file as a starting point for applications.  Just populate the
 ;   body_main function.
+; *
+; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+; * Author: Joseph Dunn <jdunn@iguanaworks.net>
+; *
+; * Distributed under the GPL version 2.
+; * See LICENSE for license details.
+; */
+
+
 include "loader.inc"
 
 VERSION_ID_LOW:  equ 0x00 ; firmware version ID low byte (code body)

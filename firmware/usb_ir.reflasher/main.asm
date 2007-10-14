@@ -1,12 +1,19 @@
-;main.asm
-;
-;Main program
-;
-;Copyright (C) 2006, Brian Shucker <brian@iguanaworks.net>
-;Copyright (C) 2007, Joseph Dunn <jdunn@iguanaworks.net>
-;
-;Distribute under the GPL version 2.
-;See COPYING for license details.
+;**************************************************************************
+; * main.asm ***************************************************************
+; **************************************************************************
+; *
+; * 
+; * Main program
+; *
+; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+; * Original Author: Brian Shucker <brian@iguanaworks.net>
+; * Maintainer: Joseph Dunn <jdunn@iguanaworks.net>
+; *
+; * Distributed under the GPL version 2.
+; * See LICENSE for license details.
+; */
+
+
 
 ; define the start of relocatable code to move this as far back as possible.
 ; Project -> Settings -> Linker -> Relocatable start address:

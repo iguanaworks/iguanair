@@ -1,11 +1,17 @@
-;constants.inc
-;
-;Constant declarations
-;
-;Copyright (C) 2007, Joseph Dunn <jdunn@iguanaworks.net>
-;
-;Distribute under the GPL version 2.
-;See COPYING for license details.
+;**************************************************************************
+; * loader.inc ***************************************************************
+; **************************************************************************
+; *
+; * 
+; * PC transceiver functions (the USB port)
+; *
+; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+; * Author: Joseph Dunn <jdunn@iguanaworks.net>
+; *
+; * Distributed under the GPL version 2.
+; * See LICENSE for license details.
+; */
+
 
 ; flag bits provided by the loader
 FLAG_HALTED:     EQU 0x01

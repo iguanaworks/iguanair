@@ -1,11 +1,17 @@
-;ir.asm
-;
-;IR transceiver functions
-;
-;Copyright (C) 2006, Brian Shucker <brian@iguanaworks.net>
-;
-;Distribute under the GPL version 2.
-;See COPYING for license details.
+;**************************************************************************
+; * ir.asm ***************************************************************
+; **************************************************************************
+; *
+; * IR transceiver functions
+; *
+; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+; * Original Author: Brian Shucker <brian@iguanaworks.net>
+; * Maintainer: Joseph Dunn <jdunn@iguanaworks.net>
+; *
+; * Distributed under the GPL version 2.
+; * See LICENSE for license details.
+; */
+
 
 include "m8c.inc"       ; part specific constants and macros
 include "memory.inc"    ; Constants & macros for SMM/LMM and Compiler
