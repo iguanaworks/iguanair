@@ -1,5 +1,16 @@
-/* This file provides functions to allow the driver to support older
-   versions of the protocol. */
+/****************************************************************************
+ ** compatibility.c *********************************************************
+ ****************************************************************************
+ *
+ * This file provides functions to allow the driver to support older 
+ * versions of the protocol. 
+ *
+ * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the GPL version 2.
+ * See LICENSE for license details.
+ */
 
 #include <stdint.h>
 #include "iguanaIR.h"

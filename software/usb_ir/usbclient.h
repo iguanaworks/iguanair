@@ -4,10 +4,11 @@
  *
  * Header for the lowest level interface to the USB device.
  *
- * Copyright (C) 2006, Joseph Dunn <jdunn@iguanaworks.net>
+ * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
- * Distribute under the GPL version 2.
- * See COPYING for license details.
+ * Distributed under the GPL version 2.
+ * See LICENSE for license details.
  */
 #ifndef _USBCLIENT_
 #define _USBCLIENT_
