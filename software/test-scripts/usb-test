@@ -280,13 +280,20 @@ pulse 448
 
     deviceTransaction(iguanaIR.IG_DEV_SEND, data)
 
+default = 'S'
 while True:
     try:
         type = None
         while type is None:
-            message(LOG_NORMAL, "Sockets, hybrid, or LEDs? [S/h/l]\n")
+            message(LOG_NORMAL, "Sockets, hybrid, or LEDs? %s\n" % '[s/h/l]'.replace(default.lower(), default))
             line = sys.stdin.readline()
-            if not line[:-1] or line[0].lower() == 's':
+            if not line[:-1]:
+                line = default
+
+            if line[0].lower() in 'shl':
+                default = line[0].upper()
+
+            if line[0].lower() == 's':
                 type = 'sockets'
                 plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
                 leds = ()
@@ -313,7 +320,8 @@ while True:
         if plugs:
             message(LOG_NORMAL, "Doing sockets tests.\n")
             for channels in plugs:
-                deviceTransaction(iguanaIR.IG_DEV_CHANNELS, chr(channels << 4))
+                deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
+                                  chr(channels << 4))
                 sendPanasonicPower()
                 time.sleep(0.1)
 
@@ -322,7 +330,8 @@ while True:
             for channels in leds:
                 message(LOG_NORMAL, "Press enter to send panasonic power on channel %s.\n" % channels)
                 line = sys.stdin.readline()
-                deviceTransaction(iguanaIR.IG_DEV_CHANNELS, chr(channels << 4))
+                deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
+                                  chr(channels << 4))
                 sendPanasonicPower()
                 if len(leds) == 1:
                     message(LOG_NORMAL, "Press enter to send again.\n")
@@ -330,7 +339,8 @@ while True:
                     message(LOG_NORMAL,
                             "Flip, then press enter to send again.\n")
                 line = sys.stdin.readline()
-                deviceTransaction(iguanaIR.IG_DEV_CHANNELS, chr(channels << 4))
+                deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
+                                  chr(channels << 4))
                 sendPanasonicPower()
 
     except KeyboardInterrupt:
