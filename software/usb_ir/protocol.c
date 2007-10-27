@@ -80,20 +80,25 @@ static versionedType types[] =
     {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
 
     /* device functionality */
-    {0, 0, {IG_DEV_SEND,       CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RECVON,     CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RAWRECVON,  CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RECVOFF,    CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_GETFEATURES, CTL_TODEV,   NO_PAYLOAD,  true, 1}},
+    {0, 0, {IG_DEV_SEND,        CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_RECVON,      CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_RAWRECVON,   CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_RECVOFF,     CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
 
     /* 1 bit per pin of state */
-    {0, 0, {IG_DEV_GETPINS,    CTL_TODEV,   NO_PAYLOAD,  true, 2}},
-    {0, 0, {IG_DEV_SETPINS,    CTL_TODEV,   2,           true, NO_PAYLOAD}},
+    {0,     3, {IG_DEV_GETPINS,    CTL_TODEV,   NO_PAYLOAD, true, 2}},
+    {0x101, 0, {IG_DEV_GETPINS,    CTL_TODEV,   NO_PAYLOAD, true, 2}},
+    {0,     3, {IG_DEV_SETPINS,    CTL_TODEV,   2,          true, NO_PAYLOAD}},
+    {0x101, 0, {IG_DEV_SETPINS,    CTL_TODEV,   2,          true, NO_PAYLOAD}},
 
     /* 1 byte per pin, in the register format */
-    {0, 0, {IG_DEV_GETCONFIG0, CTL_TODEV,   NO_PAYLOAD,  true, 4}},
-    {0, 0, {IG_DEV_SETCONFIG0, CTL_TODEV,   4,           true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_GETCONFIG1, CTL_TODEV,   NO_PAYLOAD,  true, 4}},
-    {0, 0, {IG_DEV_SETCONFIG1, CTL_TODEV,   4,           true, NO_PAYLOAD}},
+    {0x101, 0, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 16}},
+    {0x101, 0, {IG_DEV_SETPINCONFIG, CTL_TODEV, 16,         true, NO_PAYLOAD}},
+    {0, 0x003, {IG_DEV_GETCONFIG0,   CTL_TODEV, NO_PAYLOAD, true, 4}},
+    {0, 0x003, {IG_DEV_SETCONFIG0,   CTL_TODEV, 4,          true, NO_PAYLOAD}},
+    {0, 0x003, {IG_DEV_GETCONFIG1,   CTL_TODEV, NO_PAYLOAD, true, 4}},
+    {0, 0x003, {IG_DEV_SETCONFIG1,   CTL_TODEV, 4,          true, NO_PAYLOAD}},
 
     /* supporting functions */
     {0, 0, {IG_DEV_GETBUFSIZE,  CTL_TODEV,   NO_PAYLOAD,  true,  1}},
@@ -106,9 +111,9 @@ static versionedType types[] =
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
 
     /* "from device" codes */
-    {0, 0, {IG_DEV_RECV,    IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
-    {0, 0, {IG_DEV_BIGSEND, IG_CTL_FROMDEV, NO_PAYLOAD,  false, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_BIGRECV, IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
+    {0, 0, {IG_DEV_RECV,     IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
+    {0, 0, {IG_DEV_OVERSEND, IG_CTL_FROMDEV, NO_PAYLOAD,  false, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_OVERRECV, IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
 
     /* terminate the list */
     {0, 0, {0, 0, 0, false, 0}}

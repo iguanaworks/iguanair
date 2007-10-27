@@ -43,9 +43,9 @@ uint8_t equivalence[][2] = {
     { IG_DEV_RAWRECVON  , IG_DEV_RAWRECVON },
 
     /* "from device" codes */
-    { IG_DEV_RECV      , 0x10 },
-    { IG_DEV_BIGRECV   , IG_DEV_BIGRECV },
-    { IG_DEV_BIGSEND   , IG_DEV_BIGSEND },
+    { IG_DEV_RECV       , 0x10 },
+    { IG_DEV_OVERRECV   , IG_DEV_OVERRECV },
+    { IG_DEV_OVERSEND   , IG_DEV_OVERSEND },
 
     /* used as the terminator too */
     { IG_EXCH_VERSIONS , IG_EXCH_VERSIONS },

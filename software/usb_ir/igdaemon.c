@@ -180,7 +180,8 @@ static bool handleClient(client *me)
 
         if (! writeDataPacket(&request, me->fd))
         {
-            message(LOG_INFO, "FAILED to write packet back to client.\n");
+            message(LOG_INFO, "FAILED to write packet back to client: 0x%x\n",
+                    request.code);
             releaseClient(me);
             retval = false;
         }
@@ -363,7 +364,7 @@ static bool handleReader(iguanaDev *idev)
             break;
         }
 
-        case IG_DEV_BIGRECV:
+        case IG_DEV_OVERRECV:
             message(LOG_ERROR, "Receive too large from USB device.\n");
             info.packet = packet;
             info.translated = false;

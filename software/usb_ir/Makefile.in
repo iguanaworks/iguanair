@@ -56,8 +56,8 @@ igclient: client.o list.o
 # need a special dependency for config.h
 base.o: base.c config.h
 
-iguanaIR_wrap.c iguanaIR.py: iguanaIR.i
-	swig $(CPPFLAGS) -python $^
+iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h
+	swig $(CPPFLAGS) -python $<
 
 _iguanaIR.so: iguanaIR_wrap.c
 	$(CC) $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long -I/usr/include/python2.5 $^ -L. -liguanaIR -o $@

@@ -66,6 +66,7 @@ static commandSpec supportedCommands[] =
     {"final check", false, FINAL_CHECK, 0, false, false},
 
     {"get version",     false, IG_DEV_GETVERSION,      0,      false, false},
+    {"get features",    false, IG_DEV_GETFEATURES,     0,      false, false},
     {"send",            false, IG_DEV_SEND,            0,      true,  false},
     {"receiver on",     false, IG_DEV_RECVON,          0,      false, false},
     {"receiver off",    false, IG_DEV_RECVOFF,         0,      false, false},
@@ -309,6 +310,10 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                 {
                 case IG_DEV_GETVERSION:
                     message(LOG_NORMAL, ": version=%d", ((char*)data)[1] * 256 + ((char*)data)[0]);
+                    break;
+
+                case IG_DEV_GETFEATURES:
+                    message(LOG_NORMAL, ": features=%d", ((char*)data)[0]);
                     break;
 
                 case IG_DEV_GETPINS:
@@ -653,7 +658,8 @@ static struct poptOption options[] =
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
 
     /* device commands */
-    { "get-version", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETVERSION, "Return the version of the device.", NULL },
+    { "get-version", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETVERSION, "Return the version of the device firmware.", NULL },
+    { "get-features", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETFEATURES, "Return the features associated w/ this device.", NULL },
     { "send", '\0', POPT_ARG_STRING, NULL, IG_DEV_SEND, "Send the pulses and spaces from a file.", "filename" },
     { "receiver-on", '\0', POPT_ARG_NONE, NULL, IG_DEV_RECVON, "Enable the receiver on the usb device.", NULL },
     { "receiver-off", '\0', POPT_ARG_NONE, NULL, IG_DEV_RECVOFF, "Disable the receiver on the usb device.", NULL },
@@ -727,6 +733,7 @@ int main(int argc, const char **argv)
         {
         /* device commands */
         case IG_DEV_GETVERSION:
+        case IG_DEV_GETFEATURES:
         case IG_DEV_SEND:
         case IG_DEV_RECVON:
         case IG_DEV_RECVOFF:

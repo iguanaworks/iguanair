@@ -58,27 +58,39 @@ enum
     /* used in response packets */
     IG_DEV_ERROR      = 0x00,
 
-    /* "to device" codes, bootloader functions first */
-    IG_DEV_GETVERSION = 0x01,
-    IG_DEV_WRITEBLOCK = 0x02,
-    IG_DEV_RESET      = 0xFF,
+    /* FILE:loader.inc bootloader functions */
+    IG_DEV_GETVERSION  = 0x01,
+    IG_DEV_WRITEBLOCK  = 0x02,
+    IG_DEV_CHECKSUM    = 0x03,
+    IG_DEV_INVALID_ARG = 0x04,
+    IG_DEV_RESET       = 0xFF,
 
-    /* functions provided by the standard "body" code */
-    IG_DEV_RECVON      = 0x10,
-    IG_DEV_RECVOFF     = 0x11,
-    IG_DEV_RECV        = 0x12,
-    IG_DEV_SEND        = 0x13,
-    IG_DEV_GETCHANNELS = 0x14,
-    IG_DEV_SETCHANNELS = 0x15,
-    IG_DEV_GETBUFSIZE  = 0x1C,
-    IG_DEV_RAWRECVON   = 0x1D,
+    /* FILE:body.inc standard "body" functions */
+    IG_DEV_GETFEATURES  = 0x10,
+    IG_DEV_GETBUFSIZE   = 0x11,
+    IG_DEV_RECVON       = 0x12,
+    IG_DEV_RAWRECVON    = 0x13,
+    IG_DEV_RECVOFF      = 0x14,
+    IG_DEV_SEND         = 0x15,
+    IG_DEV_GETCHANNELS  = 0x16,
+    IG_DEV_SETCHANNELS  = 0x17,
+    IG_DEV_GETPINCONFIG = 0x18,
+    IG_DEV_SETPINCONFIG = 0x19,
+    IG_DEV_GETPINS      = 0x1A,
+    IG_DEV_SETPINS      = 0x1B,
+    IG_DEV_BULKPINS     = 0x1C,
+    IG_DEV_EXECUTE      = 0x1D,
+    IG_DEV_GETID        = 0x1E,
 
-    /* error codes */
-    IG_DEV_OVERSEND    = 0x1E,
+    /* FILE:body.inc packets initiated by the device */
+    IG_DEV_RECV         = 0x30,
+    IG_DEV_OVERRECV     = 0x31,
+    IG_DEV_OVERSEND     = 0x32,
 
     /* for interpretting codes */
     IG_PULSE_BIT  = 0x01000000,
     IG_PULSE_MASK = 0x00FFFFFF,
+
     /* to handle raw signal data */
     IG_RAWSPACE_BIT  = 0x80,
     IG_RAWSPACE_MASK = 0x7F,
@@ -87,19 +99,17 @@ enum
     IG_CTL_START      = 0x0000,
     IG_CTL_FROMDEV    = 0xDC,
 
+    /* device feature flags, 0 means old style device */
+    IG_HAS_LEDS    = 0x01,
+    IG_HAS_BOTH    = 0x02,
+    IG_HAS_SOCKETS = 0x04,
+    IG_HAS_LCD     = 0x08,
 
-    /* TEMPORARY!!!!!!!!!!!!!! */
-    IG_DEV_GETPINS    = 0x05,
-    IG_DEV_SETPINS    = 0x06,
+    /* used to include support for old protocol */
     IG_DEV_GETCONFIG0 = 0x07,
     IG_DEV_SETCONFIG0 = 0x08,
     IG_DEV_GETCONFIG1 = 0x09,
-    IG_DEV_SETCONFIG1 = 0x0A,
-    IG_DEV_EXECUTE    = 0x0D,
-    IG_DEV_BULKPINS   = 0x0E,
-    IG_DEV_GETID      = 0x0F,
-    IG_DEV_BIGRECV    = 0x20,
-    IG_DEV_BIGSEND    = 0x30
+    IG_DEV_SETCONFIG1 = 0x0A
 };
 
 /* manage a connection to the server */
