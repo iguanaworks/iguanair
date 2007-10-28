@@ -1,5 +1,5 @@
-;**************************************************************************
-; * ir.asm ***************************************************************
+; **************************************************************************
+; * ir.asm *****************************************************************
 ; **************************************************************************
 ; *
 ; * IR transceiver functions
@@ -338,20 +338,151 @@ transmit_code:
     jmp tx_pulse              ; start sending pulse--this jump seems redundant,
                         ; but is there to make timing the same on both branches
 
-  tx_pulse:  ; ready to send a pulse.  Need to AND in 38KHz carrier
-    mov A, X ;put pulse length into A, to make zero flag valid            [4 cycles]
-    jz tx_end_pulse; this pulse is done                                   [5 cycles]
-    mov A, REG[TX_BANK] ;get current register state                        [6 cycles]
-    xor A, [tx_state]; if on, we're toggling.  If off, doing nothing    [6 cycles]
-    mov REG[TX_BANK], A; write change to register                        [5 cycles]
-    dec X ;decrement remaining pulse length                                [4 cycles]
+  tx_pulse: ; ready to send a pulse.  Need to AND in a XX kHz carrier
+    mov A, X            ; put pulse length into A. zero flag valid   [4 cycles]
+    jz tx_end_pulse     ; this pulse is done                         [5 cycles]
+    mov A, REG[TX_BANK] ; get current register state                 [6 cycles]
+    xor A, [tx_state]   ; if on, toggle, else doing nothing          [6 cycles]
+    mov REG[TX_BANK], A ; write change to register                   [5 cycles]
+    dec X               ; decrement remaining pulse length           [4 cycles]
 
-    ;now we need to delay to get a total of 316 clocks
-    lcall delay4_38k;                                                    [21 cycles (including ret), + delay]
-    lcall delay7_38k;                                                    [21 cycles (including ret), + delay]
+;this is a set of 7-clock delays.  You jump into it at different points in
+;order to get different length delays.
+    ; load the bytes to skip for 4 delays
+    mov A, [control_pkt + CDATA + 2] ; load the 7s delay             [5 cycles]
+    ; A + argument + (PC + 1) = A + 1 + PC + 1 = A + PC + 2 = cmp
+    jacc 1                           ; jump to the precise offset    [7 cycles]
 
-    jmp tx_pulse ;continue the pulse                                    [5 cycles]
+    ; 7 cmps for a possible delay of 7 * 7 = 49 cycles
+    cmp A, [0]
+    cmp A, [0]
+    cmp A, [0]
+    cmp A, [0]
+    cmp A, [0]
+    cmp A, [0]
+    cmp A, [0]
 
+;this is a set of 4-clock delays.  You jump into it at different points in
+;order to get different length delays.
+    ; load the bytes to skip for 4 delays
+    mov A, [control_pkt + CDATA + 3] ; load the 4s delay             [5 cycles]
+    ; A + argument + (PC + 1) = A + 1 + PC + 1 = A + PC + 2 = nop
+    jacc 1                           ; jump to the precise offset    [7 cycles]
+
+    ; 100 nops for a possible delay of 4 * 100 = 400 cycles
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    jmp tx_pulse ; continue the pulse                                [5 cycles]
+
+  ; end of the transmit function
   tx_end_pulse:
     and REG[TX_BANK], TX_MASK ; make sure tx pins are off
     dec [tmp2]                ; decrement remaining byte count
@@ -361,135 +492,3 @@ transmit_code:
     and REG[TX_BANK], TX_MASK ;make sure tx pins are off
     ret ;done
 
-;this is a set of 7-clock delays.  You jump into it at different points in
-;order to get different length delays.
-delay7:
-    cmp A, [0]
-    cmp A, [0]
-    cmp A, [0]
-    cmp A, [0]
-delay7_56k:
-    cmp A, [0]
-    cmp A, [0]
-delay7_38k:
-delay7_40k:
-    cmp A, [0]
-    ret
-
-;this is a set of 4-clock delays.  You jump into it at different points in
-;order to get different length delays.
-delay4:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-delay4_38k:
-    nop
-    nop
-    nop
-    nop
-delay4_40k:
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-delay4_56k:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    ret ; go back from whence you came

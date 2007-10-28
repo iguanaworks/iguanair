@@ -48,7 +48,6 @@ enum
     /* masks for encoding and decoding the usb data */
     STATE_MASK  = 0x80,
     LENGTH_MASK = 0x7F,
-    CARRIER_RATE = 38000,
     MAX_PULSE_LENGTH = 1023, /* before translation */
 
     /* highest value of a data byte in the IR code protocol */
@@ -108,7 +107,10 @@ static versionedType types[] =
     {3, 0, {IG_DEV_BULKPINS,    CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_GETID,       CTL_TODEV,   NO_PAYLOAD,  true,  12}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
+    {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
+    {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD,  true,  1}},
+    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 1,           true,  NO_PAYLOAD}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,     IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -208,6 +210,70 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
             spec == length);
 }
 
+/* There are some magic numbers in this function, and here are the
+   explanations:
+
+   Clock is running at 24 Mhz
+   24000000 cycles/second
+
+   Want a 38 kHz carrier:
+   38000 peaks/second = 76000 transitions/second
+
+   24000000 / 76000 = 315.8 cycles / transition
+
+   Each loop has overhead (counted from code lines):
+   4 + 5 + 6 + 6 + 5 + 4 + (5 + 7) + (5 + 7) + 5 = 59
+
+   Break down the remaining delay into components or 7 and 4:
+   316 - 59 = 257 = 7 * 3 + 4 * 59
+
+   Compute the number of bytes to jump for each delay:
+   delay 7 ==> 2 bytes
+   delay 4 ==> 1 byte
+   total of 7 delays of 7 in code
+   total of 100 delays of 4 in code
+
+   Final values needed for the transmission:
+   delay 7 * 3 = 6 bytes
+   delay 4 * 59 = 59 bytes
+   FINAL: delay (6, 59)
+*/
+static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
+{
+    unsigned char sevens, fours;
+    unsigned int cycles;
+
+    /* TODO: sanity checks on the translation to ensure we don't overflow */
+
+    /* Compute the cycles for any specified frequency.  This requires
+       dividing the length of time of a pulse in the requested
+       frequency by the length of time in a cycle at the current clock
+       speed.
+    */
+    cycles = (int)(((1.0 / (carrier * 1000)) / (1.0 / 24000000) / 2) + 0.5);
+
+    /* Divide the computed values into 4 and 7 clock components.  Try
+       the highest number of 4s, and then count down until we hit
+       something that is divisible by 7.  We use 4s as the main
+       counter specifically because the delay 4 actually requires less
+       space on the flash for a given delay.
+    */
+    cycles -= 4 + 5 + 6 + 6 + 5 + 4 + (5 + 7) + (5 + 7) + 5;
+    if (cycles > 400)
+        fours = 100;
+    else
+        fours = cycles / 4;
+    while ((cycles - fours * 4) % 7 != 0)
+    {
+        fours -= 1;
+        sevens = (cycles - fours * 4) / 7;
+    }
+
+    /* store byte offsets for transmission */
+    delays[0] = (7 - sevens) * 2;
+    delays[1] = (100 - fours) * 1;
+}
+
 bool supportedVersion(int version)
 {
     /* simply check a hard coded mechanism to see if the version is
@@ -297,7 +363,17 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
 
             /* select which channels to transmit on */
             if (request->code == IG_DEV_SEND)
+            {
                 msg[length++] = idev->channels;
+
+                /* is the carrier frequency finally adjustable? */
+                if (idev->version > 4)
+                {
+                    /* compute the delay length off the carrier */
+                    computeCarrierDelays(idev->carrier, msg + length);
+                    length += 2;
+                }
+            }
         }
 
 #ifdef LIBUSB_NO_THREADS
@@ -659,7 +735,7 @@ uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
     return retval;
 }
 
-unsigned char* pulsesToIguanaSend(uint32_t *sendCode, int *length)
+unsigned char* pulsesToIguanaSend(int carrier, uint32_t *sendCode, int *length)
 {
     int x, codeLength = 0, inSpace = 0;
     unsigned char *codes = NULL;
@@ -669,7 +745,7 @@ unsigned char* pulsesToIguanaSend(uint32_t *sendCode, int *length)
     {
         uint32_t cycles, numBytes;
         cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
-                            1000000.0 * CARRIER_RATE + 0.5);
+                            1000000.0 * carrier * 1000 + 0.5);
         numBytes = (cycles / MAX_DATA_BYTE) + 1;
         cycles %= MAX_DATA_BYTE;
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
-
-#**************************************************************************
-# * upgrade-usb ***********************************************************
+#
+# **************************************************************************
+# ** upgrade-usb ***********************************************************
 # **************************************************************************
 # *
 # * TODO: DESCRIBE AND DOCUMENT THIS FILE
@@ -13,14 +13,13 @@
 # * See LICENSE for license details.
 # */
 
-
-
 import warnings
 import traceback
 import time
 import glob
 import sys
 import os
+import re
 
 import iguanaIR
 
@@ -54,6 +53,8 @@ UNSAFE = False
 usb_ir = None
 loader = None
 body = None
+fullFlash = False
+features = 0
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -95,6 +96,8 @@ def message(level, msg):
 def printUsage(msg = None):
     usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
 
+--blank-pages : Write out blank pages in addition to code pages.
+
 -h
 --help : Print this usage message.
 
@@ -117,8 +120,20 @@ def printUsage(msg = None):
 index = 1
 while index < len(sys.argv):
     arg = sys.argv[index]
-    if arg == "--device-version":
+    if arg == "--blank-pages":
+        fullFlash = True
+    elif arg == "--device-version":
         printVersion = True
+    elif arg == "--feature":
+        index += 1
+        feature = sys.argv[index]
+        for name in dir(iguanaIR):
+            if name.startswith('IG_HAS_') and \
+               name[7:] == feature.upper():
+                features |= eval('iguanaIR.IG_HAS_%s' % feature.upper())
+                break
+        else:
+            message(LOG_FATAL, "Unknown feature: %s\n" % feature)
     elif arg == "-h" or arg == "--help":
         printUsage()
     elif arg == "--loader":
@@ -179,7 +194,9 @@ def connect(timeout = 0):
         timeout -= sleepTime
 
     devices = os.listdir('/dev/iguanaIR')
-    if len(devices) != 1:
+    if len(devices) == 0:
+        message(LOG_FATAL, "Device not found.  Please plug the device in and try again.\n")
+    elif len(devices) != 1:
         message(LOG_ERROR, "This script should only be used with a single device installed.\n")
     message(LOG_DEBUG,
             'Device list after %s seconds: %s\n' % (timeoutStart - timeout,
@@ -332,7 +349,7 @@ def writePagesToDevice(pages):
     for page in pages:
         count += 1
         # write a page
-        sys.stdout.write("  Writing page %d (%d/%d)  \r" % (page['start'] / 64,
+        sys.stdout.write("\r  Writing page %d (%d/%d)  " % (page['start'] / 64,
                                                             count, len(pages)))
         sys.stdout.flush()
         if deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']):
@@ -349,11 +366,37 @@ def writePagesToDevice(pages):
         message(LOG_INFO, "Rebooting the device.\n")
         deviceTransaction(iguanaIR.IG_DEV_RESET)
 
-def writeHexFile(filename):
+def writeHexFile(filename, fullFlash = False, setFeatures = False):
+    blanks = []
+
     # read the firmware memory map in
     pages = readPages(open(filename, 'r'))
+
+    if fullFlash:
+        blanks = range(128)
+        for page in pages:
+            blanks.remove(page['start'] / 64)
+
+    # place the features if necessary
+    if setFeatures:
+        message(LOG_INFO, "Setting features to 0x%x\n" % features)
+        for page in pages:
+            if page['start'] == 0xC00:
+                page['bytes'][61] = '%2.2x' % features
+
+    # write out the code pages
     preparePages(pages)
     writePagesToDevice(pages)
+
+    # prepare and write out the blank pages if requested
+    pages = []
+    for page in blanks:
+        pages.append({'start' : page * 64,
+                      'bytes' : ['30'] * 64 })
+    if pages:
+        sys.stdout.write('Blanking pages on the device:\n')
+        preparePages(pages)
+        writePagesToDevice(pages)
 
 def writeReflasher():
     # detect the version before we try to write it
@@ -389,20 +432,27 @@ if usb_ir is None:
     elif body is None:
         body = findLatest('body')
 
-writeReflasher()
+# not necessary when only writing the body
+keepLoader = False
+if not usb_ir and \
+   (deviceVersion() >> 8) == int(re.split('(\d+)', loader)[-2]):
+    keepLoader = True
+else:
+    writeReflasher()
 
 # put on the usb_ir if that's the final target version
 if usb_ir is not None:
     sys.stdout.write('Writing usb_ir to the device:\n')
-    writeHexFile(usb_ir)
+    writeHexFile(usb_ir, fullFlash)
     deviceVersion(0x0004)
 
 # put on the boot loader and the correct body
 else:
-    sys.stdout.write('Writing loader to the device:\n')
-    writeHexFile(loader)
-    version = deviceVersion(0x0100)
+    if not keepLoader:
+        sys.stdout.write('Writing loader to the device:\n')
+        writeHexFile(loader, fullFlash)
+        version = deviceVersion(0x0100)
 
     sys.stdout.write('Writing body to the device:\n')
-    writeHexFile(body)
+    writeHexFile(body, setFeatures = (features != 0))
     version = deviceVersion(0x0101)

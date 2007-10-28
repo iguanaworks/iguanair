@@ -73,9 +73,27 @@ static bool handleClientRequest(dataPacket *request, client *target)
         }
         break;
 
+    case IG_DEV_GETCHANNELS:
+        request->data = (unsigned char*)malloc(1);
+        request->data[0] = target->idev->channels >> 4;
+        request->dataLen = 1;
+        retval = true;
+        break;
+
     case IG_DEV_SETCHANNELS:
-/* TODO: need to check that we match the protocol BEFORE this */
-        target->idev->channels = request->data[0];
+        target->idev->channels = request->data[0] << 4;
+        retval = true;
+        break;
+
+    case IG_DEV_GETCARRIER:
+        request->data = (unsigned char*)malloc(1);
+        request->data[0] = target->idev->carrier;
+        request->dataLen = 1;
+        retval = true;
+        break;
+
+    case IG_DEV_SETCARRIER:
+        target->idev->carrier = request->data[0];
         retval = true;
         break;
 
@@ -83,7 +101,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
     {
         unsigned char *codes;
         request->dataLen /= sizeof(uint32_t);
-        codes = pulsesToIguanaSend((uint32_t*)request->data,
+        codes = pulsesToIguanaSend(target->idev->carrier,
+                                   (uint32_t*)request->data,
                                    &request->dataLen);
         free(request->data);
         request->data = codes;
@@ -445,6 +464,7 @@ void startWorker(usbDevice *dev)
     else
     {
         memset(idev, 0, sizeof(iguanaDev));
+        idev->carrier = 38;
         InitializeCriticalSection(&idev->listLock);
 #ifdef LIBUSB_NO_THREADS
         InitializeCriticalSection(&idev->devLock);

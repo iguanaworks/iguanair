@@ -49,7 +49,9 @@ enum
     INTERNAL_SETSINKPINS,
     INTERNAL_SETHOLDPINS,
 
-    FINAL_CHECK = 0xFFFF
+    FINAL_CHECK = 0xFFFF,
+
+    CHANNEL_MASK = 0x0F
 }; 
 
 typedef struct commandSpec
@@ -66,24 +68,31 @@ static commandSpec supportedCommands[] =
     {"final check", false, FINAL_CHECK, 0, false, false},
 
     {"get version",     false, IG_DEV_GETVERSION,      0,      false, false},
-    {"get features",    false, IG_DEV_GETFEATURES,     0,      false, false},
-    {"send",            false, IG_DEV_SEND,            0,      true,  false},
-    {"receiver on",     false, IG_DEV_RECVON,          0,      false, false},
-    {"receiver off",    false, IG_DEV_RECVOFF,         0,      false, false},
-    {"get pins",        false, IG_DEV_GETPINS,         0,      false, false},
-    {"set pins",        false, IG_DEV_SETPINS,         0,      true,  true},
-    {"get buffer size", false, IG_DEV_GETBUFSIZE,      0,      false, false},
     {"write block",     false, IG_DEV_WRITEBLOCK,      0,      true,  false},
-    {"execute code",    false, IG_DEV_EXECUTE,         0,      false, false},
-    {"bulk pins",       false, IG_DEV_BULKPINS,        0,      true,  false},
-    {"get id",          false, IG_DEV_GETID,           0,      false, false},
+    {"checksum block",  false, IG_DEV_WRITEBLOCK,      0,      true,  false},
     {"reset",           false, IG_DEV_RESET,           0,      false, false},
-    {"set channels",    false, IG_DEV_SETCHANNELS,        0,      true,  true},
+
+    {"get features",    false, IG_DEV_GETFEATURES,     0,      false, false},
+    {"get buffer size", false, IG_DEV_GETBUFSIZE,      0,      false, false},
+    {"receiver on",     false, IG_DEV_RECVON,          0,      false, false},
+    {"raw receiver on", false, IG_DEV_RAWRECVON,       0,      false, false},
+    {"receiver off",    false, IG_DEV_RECVOFF,         0,      false, false},
+    {"send",            false, IG_DEV_SEND,            0,      true,  false},
+    {"get channels",    false, IG_DEV_GETCHANNELS,     0,      false, false},
+    {"set channels",    false, IG_DEV_SETCHANNELS,     0,      true,  true},
+    {"get carrier",     false, IG_DEV_GETCARRIER,      0,      false, false},
+    {"set carrier",     false, IG_DEV_SETCARRIER,      0,      true,  false},
 
     {"get config 0",    false, IG_DEV_GETCONFIG0,      0,      false, false},
     {"get config 1",    false, IG_DEV_GETCONFIG1,      0,      false, false},
     {"set config 0",    false, IG_DEV_SETCONFIG0,      0,      false, false},
     {"set config 1",    false, IG_DEV_SETCONFIG1,      0,      false, false},
+
+    {"get pins",        false, IG_DEV_GETPINS,         0,      false, false},
+    {"set pins",        false, IG_DEV_SETPINS,         0,      true,  true},
+    {"bulk pins",       false, IG_DEV_BULKPINS,        0,      true,  false},
+    {"execute code",    false, IG_DEV_EXECUTE,         0,      false, false},
+    {"get id",          false, IG_DEV_GETID,           0,      false, false},
 
     {"get output pins", true,  INTERNAL_GETOUTPINS, IG_OUTPUT, false, false},
     {"set output pins", true,  INTERNAL_SETOUTPINS, IG_OUTPUT, true,  true},
@@ -316,6 +325,18 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     message(LOG_NORMAL, ": features=%d", ((char*)data)[0]);
                     break;
 
+                case IG_DEV_GETBUFSIZE:
+                    message(LOG_NORMAL, ": size=%d", *(unsigned char*)data);
+                    break;
+
+                case IG_DEV_GETCHANNELS:
+                    message(LOG_NORMAL, ": channels=0x%2.2x", *(char*)data);
+                    break;
+
+                case IG_DEV_GETCARRIER:
+                    message(LOG_NORMAL, ": carrier=%dkHz", *(char*)data);
+                    break;
+
                 case IG_DEV_GETPINS:
                     message(LOG_NORMAL,
                             ": 0x%2.2x", iguanaDataToPinSpec(data));
@@ -331,10 +352,6 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 
                 case IG_DEV_GETID:
                     message(LOG_NORMAL, ": id=%s", (char*)data);
-                    break;
-
-                case IG_DEV_GETBUFSIZE:
-                    message(LOG_NORMAL, ": size=%d", *(unsigned char*)data);
                     break;
                 }
                 /* success means stop */
@@ -498,18 +515,23 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             break;
 
         case IG_DEV_SETCHANNELS:
+        case IG_DEV_SETCARRIER:
         {
             unsigned int value;
 
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
             {
-                if (value > 0x0F)
-                    message(LOG_ERROR, "Only 4 channels are possible, invalid channel specification.\n");
+                if (cmd->spec->code == IG_DEV_SETCHANNELS &&
+                    value != (CHANNEL_MASK & value))
+                    message(LOG_ERROR, "Too many channels specified.\n");
+                else if (cmd->spec->code == IG_DEV_SETCARRIER &&
+                         (value < 25 && value > 100))
+                    message(LOG_ERROR, "Carrier frequency must be between 25 and 100 kHz.\n");
                 else
                 {
                     data = malloc(1);
-                    ((char*)data)[0] = value << 4;
+                    ((char*)data)[0] = value;
                     result = 1;
                 }
             }
@@ -670,7 +692,10 @@ static struct poptOption options[] =
     { "execute", '\0', POPT_ARG_NONE, NULL, IG_DEV_EXECUTE, "Execute code starting at address 0x1fc0 on the device.", "address" },
     { "lcd-text", '\0', POPT_ARG_STRING, NULL, IG_DEV_BULKPINS, "Send a bulk transfer of pin settings to write the argument to an LCD.", "string" },
     { "reset", '\0', POPT_ARG_NONE, NULL, IG_DEV_RESET, "Reset the USB device.", NULL },
+    { "get-channels", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCHANNELS, "Check which channels are used during transmits.", NULL },
     { "set-channels", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCHANNELS, "Set which channels are used during transmits.", "channels" },
+    { "get-carrier", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCARRIER, "Check the carrier frequency for transmits.", NULL },
+    { "set-carrier", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCARRIER, "Set the carrier frequency for transmits.", "carrier (kHz)" },
 
     /* commands that actually store and load the pin configuration */
     { "get-pin-config", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETPINS, "Retrieve the internal pin state.", NULL },
@@ -744,7 +769,10 @@ int main(int argc, const char **argv)
         case IG_DEV_EXECUTE:
         case IG_DEV_BULKPINS:
         case IG_DEV_RESET:
+        case IG_DEV_GETCHANNELS:
         case IG_DEV_SETCHANNELS:
+        case IG_DEV_GETCARRIER:
+        case IG_DEV_SETCARRIER:
 
         /* internal commands */
         case INTERNAL_GETOUTPINS:

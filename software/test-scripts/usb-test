@@ -285,15 +285,19 @@ while True:
     try:
         type = None
         while type is None:
-            message(LOG_NORMAL, "Sockets, hybrid, or LEDs? %s\n" % '[s/h/l]'.replace(default.lower(), default))
+            message(LOG_NORMAL, "Old, sockets, hybrid, or LEDs? %s\n" % '[o/s/h/l]'.replace(default.lower(), default))
             line = sys.stdin.readline()
             if not line[:-1]:
                 line = default
 
-            if line[0].lower() in 'shl':
+            if line[0].lower() in 'oshl':
                 default = line[0].upper()
 
-            if line[0].lower() == 's':
+            if line[0].lower() == 'o':
+                type = 'old'
+                plugs = ()
+                leds = (0x0,)
+            elif line[0].lower() == 's':
                 type = 'sockets'
                 plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
                 leds = ()
@@ -310,8 +314,8 @@ while True:
         conn = iguanaIR.connect('0')
         message(LOG_NORMAL, "Looking for a device.\n")
         version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
-        if version != 4:
-            message(LOG_ERROR, "This script only tests version 4\n")
+        if version != 3 and version != 4:
+            message(LOG_ERROR, "This script only tests versions 3 and 4\n")
             continue
 
         message(LOG_NORMAL, "Checking receiver.\n")

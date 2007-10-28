@@ -13,11 +13,6 @@
 ; * See LICENSE for license details.
 ; */
 
-
-
-
-
-
 ; define the start of relocatable code to move this as far back as possible.
 ; Project -> Settings -> Linker -> Relocatable start address:
 ;          '%x' % (8192 - (CODESIZE / 64 + 1 + 1) * 64)
@@ -190,7 +185,7 @@ main_chksum:
 	jmp main_loop
 
 main_reset:
-	lcall USB_Stop ; have to do this first, or we loop sending 0 length packets....
+	lcall USB_Stop ; do this first, or we loop sending 0 length packets....
 	mov [tmp3], 0x0
 	mov A, 0 ;reset code
 	call exec_ssc
@@ -202,15 +197,15 @@ exec_ssc:
 	mov [tmp1], A
 
 	;now set up the parameter block for the SROM call
-	mov [KEY1], 0x3A;
-	mov X, SP                   ; get stack pointer
+	mov [KEY1], 0x3A
+	mov X, SP             ; get stack pointer
 	mov A, X
-	add A, 3                    ; just following directions from datasheet
+	add A, 3              ; just following directions from datasheet
 	mov [KEY2], A
 	mov [BLOCKID], [tmp3] ; set which flash block to write
-	mov [POINTER], buffer       ; write data to the buffer
-	mov [CLOCK], 0x00           ; guessing at the right clock divider
-	mov [DELAY], 0xAC           ; this is a guess, since datasheet says use 0x56 for 12MHz
-	mov A, [tmp1]               ; load the ssc code
-	ssc                         ; execute it
+	mov [POINTER], buffer ; write data to the buffer
+	mov [CLOCK], 0x00     ; guessing at the right clock divider
+	mov [DELAY], 0xAC     ; a guess, datasheet says use 0x56 for 12MHz
+	mov A, [tmp1]         ; load the ssc code
+	ssc                   ; execute it
 	ret

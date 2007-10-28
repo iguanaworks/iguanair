@@ -51,6 +51,9 @@ typedef struct iguanaDev
     /* what channels should we use in transmit? default 0 ==> ALL*/
     unsigned char channels;
 
+    /* what carrier frequency should we transmit at?  default 38k */
+    unsigned char carrier;
+
     /* might as well keep the list of clients here */
     listHeader clientList;
 
@@ -85,6 +88,7 @@ bool findDeviceEndpoints(iguanaDev *idev);
 
 /* translation of data for transmission */
 uint32_t* iguanaDevToPulses(unsigned char *code, int *length);
-unsigned char* pulsesToIguanaSend(uint32_t *sendCode, int *length);
+unsigned char* pulsesToIguanaSend(int carrier,
+                                  uint32_t *sendCode, int *length);
 
 #endif

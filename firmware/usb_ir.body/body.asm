@@ -11,7 +11,6 @@
 ; * See LICENSE for license details.
 ; */
 
-
 include "m8c.inc"    ; part specific constants and macros
 include "loader.inc"
 include "body.inc"
@@ -74,6 +73,12 @@ body_main:
     ; reload the control code
     mov A, [tmp1]
 
+    cmp A, CTL_GETFEATURES
+    jz get_features_body
+
+    cmp A, CTL_GETBUFSIZE
+    jz get_buf_size_body
+
     ; receive functions
     cmp A, CTL_RECVON
     jz recv_on_body
@@ -105,8 +110,6 @@ body_main:
     jz getid_body
     cmp A, CTL_EXECUTE
     jz execute_body
-    cmp A, CTL_GETBUFSIZE
-    jz get_buf_size_body
 
     ; that's everything we handle
     jmp bm_ret
@@ -121,6 +124,21 @@ body_main:
 body_loop_body:
     lcall write_signal ; write back received data
     ret                ; return to main loop
+
+get_features_body:
+    mov [control_pkt + CCODE], CTL_GETFEATURES
+    call get_feature_list
+    mov [control_pkt + CDATA], A
+    mov A, CTL_BASE_SIZE + 1
+    lcall write_control
+    jmp bm_ret
+
+get_buf_size_body:
+    mov [control_pkt + CCODE], CTL_GETBUFSIZE
+    mov [control_pkt + CDATA], BUFFER_SIZE
+    mov A, CTL_BASE_SIZE + 1
+    lcall write_control
+    jmp bm_ret
 
 recv_on_body:
     mov [rx_on], 0x1 ; note that rx should be on
@@ -171,6 +189,24 @@ get_pins_body:
     jmp bm_ret
 
 set_pins_body:
+    ; disable ints to avoid race conditions on the port
+    and F, 0xFE ; clear global interrupt bit
+
+    ; load the P0 value into A
+    mov A, [control_pkt + CDATA + 0]
+    ; write out value
+    mov REG[P0DATA], A
+
+    ; load the P1 value into A
+    mov A, [control_pkt + CDATA + 1]
+    ; mask off the USB lines so the user cannot break that
+    and A, 0xFC
+    ; write out value
+    mov REG[P1DATA], A
+
+    ; re-enable global interrupts
+    or  F, 0x1
+
     jmp bm_ret
 
 bulk_pins_body:
@@ -182,12 +218,7 @@ getid_body:
 execute_body:
     jmp bm_ret
 
-get_buf_size_body:
-    mov [control_pkt + CCODE], CTL_GETBUFSIZE
-    mov [control_pkt + CDATA], BUFFER_SIZE
-    mov A, CTL_BASE_SIZE + 1
-    lcall write_control
-    jmp bm_ret
+
 
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
@@ -207,3 +238,8 @@ org body_tcap_int
 
 org body_twrap_int
     jmp twrap_int
+
+org BODY_JUMPS + 60
+  get_feature_list:
+    mov A, 0
+    ret

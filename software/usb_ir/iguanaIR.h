@@ -72,15 +72,17 @@ enum
     IG_DEV_RAWRECVON    = 0x13,
     IG_DEV_RECVOFF      = 0x14,
     IG_DEV_SEND         = 0x15,
-    IG_DEV_GETCHANNELS  = 0x16,
-    IG_DEV_SETCHANNELS  = 0x17,
-    IG_DEV_GETPINCONFIG = 0x18,
-    IG_DEV_SETPINCONFIG = 0x19,
-    IG_DEV_GETPINS      = 0x1A,
-    IG_DEV_SETPINS      = 0x1B,
-    IG_DEV_BULKPINS     = 0x1C,
-    IG_DEV_EXECUTE      = 0x1D,
-    IG_DEV_GETID        = 0x1E,
+    IG_DEV_GETCHANNELS  = 0x16, /* internal to client/daemon */
+    IG_DEV_SETCHANNELS  = 0x17, /* internal to client/daemon */
+    IG_DEV_GETCARRIER   = 0x18, /* internal to client/daemon */
+    IG_DEV_SETCARRIER   = 0x19, /* internal to client/daemon */
+    IG_DEV_GETPINCONFIG = 0x1A,
+    IG_DEV_SETPINCONFIG = 0x1B,
+    IG_DEV_GETPINS      = 0x1C,
+    IG_DEV_SETPINS      = 0x1D,
+    IG_DEV_BULKPINS     = 0x1E,
+    IG_DEV_EXECUTE      = 0x1F,
+    IG_DEV_GETID        = 0x20,
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,
@@ -99,7 +101,7 @@ enum
     IG_CTL_START      = 0x0000,
     IG_CTL_FROMDEV    = 0xDC,
 
-    /* device feature flags, 0 means old style device */
+    /* FILE:body.inc device feature flags, 0 means old style device */
     IG_HAS_LEDS    = 0x01,
     IG_HAS_BOTH    = 0x02,
     IG_HAS_SOCKETS = 0x04,
