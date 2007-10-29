@@ -32,8 +32,6 @@ enum
 {
     /* use the upper buye of the short to not overlap with DEV_ commands */
     INTERNAL_SLEEP = 0x100,
-    INTERNAL_GETID = 0x101,
-    INTERNAL_SETID = 0x102,
 
     INTERNAL_GETPINS = 0x110,
     INTERNAL_GETOUTPINS,
@@ -51,8 +49,11 @@ enum
 
     FINAL_CHECK = 0xFFFF,
 
-    CHANNEL_MASK = 0x0F
-}; 
+    CHANNEL_MASK = 0x0F,
+
+    /* valid because we use the last 8 bytes of RAM as packet scratch space */
+    PACKET_BUFFER_BASE = 0xF8
+};
 
 typedef struct commandSpec
 {
@@ -60,7 +61,7 @@ typedef struct commandSpec
     bool internal;
     unsigned short code;
     unsigned char bit;
-    bool needsArg, parsePins;
+    bool needsArg, parsePins;  /* TODO: needsArg may be junk now */
 } commandSpec;
 
 static commandSpec supportedCommands[] =
@@ -93,6 +94,7 @@ static commandSpec supportedCommands[] =
     {"bulk pins",       false, IG_DEV_BULKPINS,        0,      true,  false},
     {"execute code",    false, IG_DEV_EXECUTE,         0,      false, false},
     {"get id",          false, IG_DEV_GETID,           0,      false, false},
+    {"set id",          false, IG_DEV_SETID,           0,      true,  false},
 
     {"get output pins", true,  INTERNAL_GETOUTPINS, IG_OUTPUT, false, false},
     {"set output pins", true,  INTERNAL_SETOUTPINS, IG_OUTPUT, true,  true},
@@ -106,8 +108,6 @@ static commandSpec supportedCommands[] =
     {"set threshold pins", true,INTERNAL_SETHOLDPINS, IG_THRESHOLD, true,  true},
 
     {"sleep",           true,  INTERNAL_SLEEP,   0,         true,  false},
-    {"internal get id", true,  INTERNAL_GETID,   0,         false, false},
-    {"internal set id", true,  INTERNAL_SETID,   0,         true,  false},
 
     {NULL,false,0,0,false,false}
 };
@@ -131,6 +131,8 @@ typedef struct igtask
 static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
+
+static void performTask(PIPE_PTR conn, igtask *cmd);
 
 bool parseNumber(const char *text, unsigned int *value)
 {
@@ -364,91 +366,6 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
     }
 }
 
-static void performTask(PIPE_PTR conn, igtask *cmd);
-
-/* valid because of pigeon hole principal */
-#define DATA_BUFFER_BASE 0x7C
-
-static unsigned int assembleData(char *dst, const char *src,
-                                 unsigned int len, unsigned char target)
-{
-    unsigned int x, y = 0;
-    for(x = 0; x < len; x++)
-    {
-        dst[y++] = 0x55;
-        dst[y++] = target++;
-        dst[y++] = src[x];
-    }
-
-    return y;
-}
-
-/* total of 12 bytes will be read from the device when the constructed
- * code is called. */
-static void* writeBlocks(const char *label)
-{
-    unsigned int x, y = 4;
-    char *data, *dummy;
-    size_t len;
-
-    /* must allocate the data since we free it later */
-    data = malloc(68);
-    /* fill the page with halt commands */
-    memset(data, 0x30, 68);
-    /* which page get's written? */
-    data[0] = 0x7F;
-    data[1] = data[2] = data[3] = 0;
-
-    len = 4 + strlen(label);
-    if (len > 4)
-    {
-        int amount = 8;
-        char zeros[8] = { 0 };
-
-        /* generate the 12 bytes worth of transmission data */
-        if (len > 16)
-        {
-            message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
-            len = 16;
-        }
-
-        /* construct the bytes that will travel over the wire */
-        dummy = malloc(len + 1);
-        dummy[0] = IG_CTL_START;
-        dummy[1] = IG_CTL_START;
-        dummy[2] = (char)IG_CTL_FROMDEV;
-        dummy[3] = IG_DEV_GETID;
-        strncpy(dummy + 4, label, len - 4);
-        dummy[len] = '\0';
-        label = dummy;
-
-        /* assemble the code to transmit the bytes (max 2 passes for
-         * 12 bytes) */
-        for(x = 0; x < 2; x++)
-        {
-            if ((x + 1) * 8 > len)
-                amount = len % 8;
-
-            /* record up to 8 bytes of the label*/
-            y += assembleData(data + y, label + x * 8, amount,
-                              DATA_BUFFER_BASE);
-            /* pad the rest of the packet with 0s */
-            y += assembleData(data + y, zeros, 8 - amount,
-                              DATA_BUFFER_BASE + amount);
-
-            /* code to actually send an 8 byte packet */
-            data[y++] = 0x57;
-            data[y++] = DATA_BUFFER_BASE;
-            data[y++] = 0x7C;
-            data[y++] = 0x00;
-            data[y++] = 0x68;
-        }
-    }
-    data[y++] = 0x7F;
-
-    return data;
-}
-
 /* some requests are handled without sending requests to the server */
 static void handleInternalTask(igtask *cmd, PIPE_PTR conn)
 {
@@ -463,23 +380,6 @@ static void handleInternalTask(igtask *cmd, PIPE_PTR conn)
         }
         else
             message(LOG_ERROR, "failed to parse sleep time.\n");
-    }
-    else if (cmd->spec->code == INTERNAL_GETID)
-    {
-        igtask subtask;
-        subtask.command = "get id";
-        subtask.isSubTask = true;
-        findTaskSpec(&subtask);
-        performTask(conn, &subtask);
-    }
-    else if (cmd->spec->code == INTERNAL_SETID)
-    {
-        igtask subtask;
-        subtask.command = "write block";
-        subtask.isSubTask = true;
-        findTaskSpec(&subtask);
-        subtask.arg = writeBlocks(cmd->arg);
-        performTask(conn, &subtask);
     }
     else if ((cmd->spec->code & INTERNAL_GETPINS) == INTERNAL_GETPINS)
     {
@@ -571,6 +471,13 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             result *= sizeof(uint32_t);
             break;
 
+        case IG_DEV_SETID:
+            result = strlen(cmd->arg) + 1;
+            if (result > 13)
+                message(LOG_WARN, "Label is too long and will be truncated to 12 characters.\n");
+            data = strdup(cmd->arg);
+            break;
+
         case IG_DEV_WRITEBLOCK:
             if (cmd->isSubTask)
             {
@@ -613,7 +520,8 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         {
             iguanaPacket request = NULL;
 
-            request = iguanaCreateRequest((unsigned char)cmd->spec->code, result, data);
+            request = iguanaCreateRequest((unsigned char)cmd->spec->code,
+                                          result, data);
             if (request == NULL)
                 message(LOG_ERROR,
                         "Out of memory allocating request.\n");
@@ -713,8 +621,8 @@ static struct poptOption options[] =
     { "get-threshold-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETHOLDPINS, "Check which pins are set to be thresholds.", NULL },
     { "set-threshold-pins", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETHOLDPINS, "Set which pins should be thresholds.", "pins" },
     { "sleep", '\0', POPT_ARG_INT, NULL, INTERNAL_SLEEP, "Sleep for X seconds.", "seconds" },
-    { "get-id", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETID, "Fetch the unique id from the USB device.", NULL },
-    { "set-id", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETID, "Set the unique id from the USB device.", NULL },
+    { "get-id", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETID, "Fetch the unique id from the USB device.", NULL },
+    { "set-id", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETID, "Set the unique id from the USB device.", NULL },
 
 #ifndef WIN32
     POPT_AUTOHELP
@@ -766,13 +674,15 @@ int main(int argc, const char **argv)
         case IG_DEV_SETPINS:
         case IG_DEV_GETBUFSIZE:
         case IG_DEV_WRITEBLOCK:
-        case IG_DEV_EXECUTE:
-        case IG_DEV_BULKPINS:
         case IG_DEV_RESET:
         case IG_DEV_GETCHANNELS:
         case IG_DEV_SETCHANNELS:
         case IG_DEV_GETCARRIER:
         case IG_DEV_SETCARRIER:
+        case IG_DEV_BULKPINS:
+        case IG_DEV_EXECUTE:
+        case IG_DEV_GETID:
+        case IG_DEV_SETID:
 
         /* internal commands */
         case INTERNAL_GETOUTPINS:
@@ -786,8 +696,6 @@ int main(int argc, const char **argv)
         case INTERNAL_GETHOLDPINS:
         case INTERNAL_SETHOLDPINS:
         case INTERNAL_SLEEP:
-        case INTERNAL_GETID:
-        case INTERNAL_SETID:
             enqueueTaskById(x, poptGetOptArg(poptCon));
             break;
 

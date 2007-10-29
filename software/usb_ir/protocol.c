@@ -106,6 +106,7 @@ static versionedType types[] =
     {2, 2, {IG_DEV_BULKPINS,    CTL_TODEV,   64,          true,  NO_PAYLOAD}},
     {3, 0, {IG_DEV_BULKPINS,    CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_GETID,       CTL_TODEV,   NO_PAYLOAD,  true,  12}},
+    {0, 0, {IG_DEV_SETID,       CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
@@ -325,24 +326,28 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                                               CTL_TODEV};
         uint64_t then, now;
         int length = MIN_CODE_LENGTH, result, sent = 0;
-        uint8_t oldCode;
 
 #ifdef LIBUSB_NO_THREADS
         bool unlocked = false;
 #endif
 
-        oldCode = request->code;
-        if (! translateDevice(request, idev->version, false))
-            message(LOG_ERROR, "Failed to translate code for device.\n");
-
-        /* finish creating the packet */
-        if (request->code == IG_DEV_GETID)
+        /* possibly change the code, then translate for the device */
+        switch(request->code)
+        {
+        case IG_DEV_GETID:
             msg[CODE_OFFSET] = IG_DEV_EXECUTE;
-        else
+            break;
+            
+        case IG_DEV_SETID:
+            msg[CODE_OFFSET] = IG_DEV_WRITEBLOCK;
+            break;
+
+        default:
             msg[CODE_OFFSET] = request->code;
-
-        request->code = oldCode;
-
+            break;
+        }
+        if (! translateDevice(msg + CODE_OFFSET, idev->version, false))
+            message(LOG_ERROR, "Failed to retranslate code for device.\n");
 
         /* SEND and BULKPINS do not get their data packed into the
            request packet, unlike everything else. */
@@ -424,10 +429,14 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 EnterCriticalSection(&idev->listLock);
                 pos = idev->response;
 
+                if (request->code == IG_DEV_SETID &&
+                    pos->code == IG_DEV_WRITEBLOCK)
+                    pos->code = IG_DEV_SETID;
+
                 errno = EINVAL;
                 if (pos->code != request->code)
                     message(LOG_ERROR,
-                            "Bad ack for send: %d != %d\n",
+                            "Bad ack for send: 0x%x != 0x%x\n",
                             pos->code, request->code);
                 else if (! payloadMatch(type->inData, pos->dataLen))
                     message(LOG_ERROR, "Response size does not match specification (%d != %d)\n", pos->dataLen, type->inData);
@@ -570,7 +579,8 @@ void handleIncomingPackets(iguanaDev *idev)
 
 
                         /* translate the incoming packet code */
-                        if (! translateDevice(current, idev->version, true))
+                        if (! translateDevice(&current->code,
+                                              idev->version, true))
                             message(LOG_ERROR,
                                     "Failed to translate code for device.\n");
                     }

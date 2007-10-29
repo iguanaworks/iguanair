@@ -29,13 +29,72 @@
 
 bool readLabels = true;
 
+
+#define PACKET_BUFFER_BASE 0xF8
+
+/* total of 12 bytes will be read from the device when the constructed
+ * code is called. */
+static void* generateIDBlock(const char *label)
+{
+    unsigned int len, x, y;
+    unsigned char *data;
+
+    /* must allocate the data since we free it later */
+    data = malloc(68);
+    /* fill the page with halt commands */
+    memset(data, 0x30, 68);
+    /* which page get's written? and clear the first packet */
+    data[0] = 0x7F;
+    data[1] = data[2] = data[3] = 0;
+    len = 4;
+
+    if (label != NULL && strlen(label))
+    {
+        unsigned char buf[16] = { IG_CTL_START, IG_CTL_START, IG_CTL_FROMDEV, IG_DEV_GETID };
+
+        /* can only generate 12 bytes worth of transmission data */
+        if (strlen(label) > 12)
+            message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
+
+        /* construct the bytes that will travel over the wire */
+        strncpy((char*)buf + 4, label, 12);
+
+        /* assemble the code to transmit the bytes in 2 packets */
+        for(x = 0; x < 2; x++)
+        {
+            /* record 8 bytes of the label*/
+            for(y = 0; y < 8; y++)
+            {
+                data[len++] = 0x55;
+                data[len++] = PACKET_BUFFER_BASE + y;
+                data[len++] = buf[x * 8 + y];
+            }
+            /* load the packet size into A */
+            data[len++] = 0x50;
+            data[len++] = 0x08;
+            /* load packet location into X */
+            data[len++] = 0x57;
+            data[len++] = PACKET_BUFFER_BASE;
+            /* lcall write_data */
+            data[len++] = 0x7C;
+            data[len++] = 0x00;
+            data[len++] = 0x94;
+        }
+    }
+    /* put in a trailing ret */
+    data[len++] = 0x7F;
+
+    return data;
+}
+
+/* TODO:  timeouts (like getid w/ no id set) should report as timeouts, not temp unavailable */
 static bool handleClientRequest(dataPacket *request, client *target)
 {
     bool retval = false;
     dataPacket *response = NULL;
 
     /* translate the newly read data packet code */
-    if (! translateClient(request, target->version, true))
+    if (! translateClient(&request->code, target->version, true))
         return false;
 
     /* return false if the incoming packet does not match the protocol */
@@ -108,6 +167,16 @@ static bool handleClientRequest(dataPacket *request, client *target)
         request->data = codes;
         break;
     }
+
+    case IG_DEV_SETID:
+    {
+        unsigned char *block;
+        block = generateIDBlock((char*)request->data);
+        free(request->data);
+        request->data = block;
+        request->dataLen = 68;
+        break;
+    }
     }
 
     if (retval)
@@ -147,7 +216,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
     }
 
     /* translate the newly read data packet code before returning */
-    if (! translateClient(request, target->version, false))
+    if (! translateClient(&request->code, target->version, false))
         return false;
 
     return retval;
@@ -317,7 +386,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
         (me->receiving != IG_DEV_RAWRECVON && me->receiving != IG_DEV_RECVON))
     {
         /* translate the packet code before returning it */
-        if (! translateClient(info->packet, me->version, false))
+        if (! translateClient(&info->packet->code, me->version, false))
             return false;
 
         if (! writeDataPacket(info->packet, me->fd))
@@ -334,7 +403,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
         }
 
         /* translate the packet code BACK before continuing */
-        if (! translateClient(info->packet, me->version, true))
+        if (! translateClient(&info->packet->code, me->version, true))
             return false;
     }
 

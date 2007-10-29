@@ -82,7 +82,8 @@ enum
     IG_DEV_SETPINS      = 0x1D,
     IG_DEV_BULKPINS     = 0x1E,
     IG_DEV_EXECUTE      = 0x1F,
-    IG_DEV_GETID        = 0x20,
+    IG_DEV_GETID        = 0x20, /* internal to client/daemon */
+    IG_DEV_SETID        = 0x21, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,

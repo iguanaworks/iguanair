@@ -13,7 +13,7 @@
 #ifndef _COMPATIBILITY_
 #define _COMPATIBILITY_
 
-bool translateClient(dataPacket *packet, uint16_t version, bool copyTo);
-bool translateDevice(dataPacket *packet, uint16_t version, bool copyTo);
+bool translateClient(uint8_t *code, uint16_t version, bool fromClient);
+bool translateDevice(uint8_t *code, uint16_t version, bool fromDevice);
 
 #endif

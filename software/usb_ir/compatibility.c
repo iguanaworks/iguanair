@@ -2,8 +2,9 @@
  ** compatibility.c *********************************************************
  ****************************************************************************
  *
- * This file provides functions to allow the driver to support older 
- * versions of the protocol. 
+ * This file provides functions to allow the driver to support older
+ * versions of the protocol.  Currently this means supporting the
+ * current and original versions although more could be added.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -15,43 +16,39 @@
 #include <stdint.h>
 #include "iguanaIR.h"
 #include "support.h"
-#include "dataPackets.h"
 #include "compatibility.h"
 
+/* mapping from old values to new ones */
 uint8_t equivalence[][2] = {
-    /* used in response packets */
-    { IG_DEV_ERROR     , IG_DEV_ERROR },
-
     /* "to device" codes */
-    { IG_DEV_GETVERSION , IG_DEV_GETVERSION },
+    { IG_DEV_GETVERSION , IG_DEV_GETVERSION }, /* no change */
     { IG_DEV_SEND       , 0x02 },
     { IG_DEV_RECVON     , 0x03 },
     { IG_DEV_RECVOFF    , 0x04 },
-    { IG_DEV_GETPINS    , IG_DEV_GETPINS },
-    { IG_DEV_SETPINS    , IG_DEV_SETPINS },
-    { IG_DEV_GETCONFIG0 , IG_DEV_GETCONFIG0 },
-    { IG_DEV_SETCONFIG0 , IG_DEV_SETCONFIG0 },
-    { IG_DEV_GETCONFIG1 , IG_DEV_GETCONFIG1 },
-    { IG_DEV_SETCONFIG1 , IG_DEV_SETCONFIG1 },
+    { IG_DEV_GETPINS    , 0x05 },
+    { IG_DEV_SETPINS    , 0x06 },
+    { IG_DEV_GETCONFIG0 , IG_DEV_GETCONFIG0 }, /* replaced */
+    { IG_DEV_SETCONFIG0 , IG_DEV_SETCONFIG0 }, /* replaced */
+    { IG_DEV_GETCONFIG1 , IG_DEV_GETCONFIG1 }, /* replaced */
+    { IG_DEV_SETCONFIG1 , IG_DEV_SETCONFIG1 }, /* replaced */
     { IG_DEV_GETBUFSIZE , 0x0B },
     { IG_DEV_WRITEBLOCK , 0x0C },
-    { IG_DEV_EXECUTE    , IG_DEV_EXECUTE },
-    { IG_DEV_BULKPINS   , IG_DEV_BULKPINS },
-    { IG_DEV_GETID      , IG_DEV_GETID },
-    { IG_DEV_RESET      , IG_DEV_RESET },
+    { IG_DEV_EXECUTE    , 0x0D },
+    { IG_DEV_BULKPINS   , 0x0E },
+    { IG_DEV_GETID      , 0x0F },
+    { IG_DEV_RESET      , IG_DEV_RESET },      /* no change */
     { IG_DEV_SETCHANNELS, 0x11 },
-    { IG_DEV_RAWRECVON  , IG_DEV_RAWRECVON },
 
     /* "from device" codes */
     { IG_DEV_RECV       , 0x10 },
-    { IG_DEV_OVERRECV   , IG_DEV_OVERRECV },
-    { IG_DEV_OVERSEND   , IG_DEV_OVERSEND },
+    { IG_DEV_OVERRECV   , 0x20 },
+    { IG_DEV_OVERSEND   , 0x30 },
 
-    /* used as the terminator too */
-    { IG_EXCH_VERSIONS , IG_EXCH_VERSIONS },
+    /* used in response packets and as the terminator */
+    { IG_DEV_ERROR     , IG_DEV_ERROR },       /* no change */
 };
 
-bool translateClient(dataPacket *packet, uint16_t version, bool fromClient)
+bool translateClient(uint8_t *code, uint16_t version, bool fromClient)
 {
     bool retval = false;
     int x, dir = 0;
@@ -62,13 +59,14 @@ bool translateClient(dataPacket *packet, uint16_t version, bool fromClient)
     switch(version)
     {
     case 0:
-        if (packet->code == IG_EXCH_VERSIONS)
+        /* special case the one we use prior to knowing the versions */
+        if (*code == IG_EXCH_VERSIONS)
             retval = true;
         else
-            for(x = 0; equivalence[x][0] != IG_EXCH_VERSIONS; x++)
-                if (packet->code == equivalence[x][dir])
+            for(x = 0; equivalence[x][0] != IG_DEV_ERROR; x++)
+                if (*code == equivalence[x][dir])
                 {
-                    packet->code = equivalence[x][dir ^ 1];
+                    *code = equivalence[x][dir ^ 1];
                     retval = true;
                     break;
                 }
@@ -87,12 +85,12 @@ bool translateClient(dataPacket *packet, uint16_t version, bool fromClient)
     return retval;
 }
 
-bool translateDevice(dataPacket *packet, uint16_t version, bool fromDevice)
+bool translateDevice(uint8_t *code, uint16_t version, bool fromDevice)
 {
     if (version <= 4)
         version = 0;
     else
         version = 1;
 
-    return translateClient(packet, version, fromDevice);
+    return translateClient(code, version, fromDevice);
 }
