@@ -353,8 +353,13 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     break;
 
                 case IG_DEV_GETID:
-                    message(LOG_NORMAL, ": id=%s", (char*)data);
+                {
+                    char buf[13];
+                    strncpy(buf, data, 12);
+                    buf[12] = '\0';
+                    message(LOG_NORMAL, ": id=%s", buf);
                     break;
+                }
                 }
                 /* success means stop */
                 timeout = -1;

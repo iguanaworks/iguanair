@@ -347,7 +347,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             break;
         }
         if (! translateDevice(msg + CODE_OFFSET, idev->version, false))
-            message(LOG_ERROR, "Failed to retranslate code for device.\n");
+            message(LOG_ERROR, "Failed to translate code for device.\n");
 
         /* SEND and BULKPINS do not get their data packed into the
            request packet, unlike everything else. */
@@ -631,18 +631,6 @@ void handleIncomingPackets(iguanaDev *idev)
                         /* store the data from the packet */
                         current->data = (unsigned char*)malloc(current->dataLen);
                         memcpy(current->data, dataStart, current->dataLen);
-                    }
-
-                    /* hate to special case it, but must \0 terminate it */
-                    if (current->code == IG_DEV_GETID &&
-                        current->data[current->dataLen - 1] != '\0')
-                    {
-                        char *temp;
-                        temp = (char*)malloc(current->dataLen + 1);
-                        strncpy(temp, (char*)current->data, current->dataLen);
-                        temp[current->dataLen] = '\0';
-                        free(current->data);
-                        current->data = (unsigned char*)temp;
                     }
 
                     queueDataPacket(idev, current,

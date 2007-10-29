@@ -29,12 +29,9 @@
 
 bool readLabels = true;
 
-
-#define PACKET_BUFFER_BASE 0xF8
-
 /* total of 12 bytes will be read from the device when the constructed
  * code is called. */
-static void* generateIDBlock(const char *label)
+static void* generateIDBlock(const char *label, uint16_t version)
 {
     unsigned int len, x, y;
     unsigned char *data;
@@ -50,7 +47,23 @@ static void* generateIDBlock(const char *label)
 
     if (label != NULL && strlen(label))
     {
-        unsigned char buf[16] = { IG_CTL_START, IG_CTL_START, IG_CTL_FROMDEV, IG_DEV_GETID };
+        unsigned char buf[16] = { IG_CTL_START, IG_CTL_START, IG_CTL_FROMDEV, IG_DEV_GETID }, packet_start, send_address;
+
+        /* translate the code for the device */
+        if (! translateDevice(buf + 3 /*CODE_OFFSET*/, version, false))
+            message(LOG_ERROR, "Failed to translate GETID code for device.\n");
+        if (version >= 0x101)
+        {
+            /* use the same buffer we use for all control packets */
+            packet_start = 0xF8;
+            send_address = 0x94;
+        }
+        else
+        {
+            /* due to size of buffer these 8 bytes are always in it */
+            packet_start = 0x7C;
+            send_address = 0x68;
+        }
 
         /* can only generate 12 bytes worth of transmission data */
         if (strlen(label) > 12)
@@ -66,7 +79,7 @@ static void* generateIDBlock(const char *label)
             for(y = 0; y < 8; y++)
             {
                 data[len++] = 0x55;
-                data[len++] = PACKET_BUFFER_BASE + y;
+                data[len++] = packet_start + y;
                 data[len++] = buf[x * 8 + y];
             }
             /* load the packet size into A */
@@ -74,11 +87,11 @@ static void* generateIDBlock(const char *label)
             data[len++] = 0x08;
             /* load packet location into X */
             data[len++] = 0x57;
-            data[len++] = PACKET_BUFFER_BASE;
+            data[len++] = packet_start;
             /* lcall write_data */
             data[len++] = 0x7C;
             data[len++] = 0x00;
-            data[len++] = 0x94;
+            data[len++] = send_address;
         }
     }
     /* put in a trailing ret */
@@ -171,7 +184,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
     case IG_DEV_SETID:
     {
         unsigned char *block;
-        block = generateIDBlock((char*)request->data);
+        block = generateIDBlock((char*)request->data, target->idev->version);
         free(request->data);
         request->data = block;
         request->dataLen = 68;
