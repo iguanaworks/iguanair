@@ -351,9 +351,10 @@ transmit_code:
     ; load the bytes to skip for 4 delays
     mov A, [control_pkt + CDATA + 2] ; load the 7s delay             [5 cycles]
     ; A + argument + (PC + 1) = A + 1 + PC + 1 = A + PC + 2 = cmp
-    jacc 1                           ; jump to the precise offset    [7 cycles]
+    jacc delay_7s                    ; jump to the precise offset    [7 cycles]
 
     ; 7 cmps for a possible delay of 7 * 7 = 49 cycles
+  delay_7s:
     cmp A, [0]
     cmp A, [0]
     cmp A, [0]
@@ -367,9 +368,10 @@ transmit_code:
     ; load the bytes to skip for 4 delays
     mov A, [control_pkt + CDATA + 3] ; load the 4s delay             [5 cycles]
     ; A + argument + (PC + 1) = A + 1 + PC + 1 = A + PC + 2 = nop
-    jacc 1                           ; jump to the precise offset    [7 cycles]
+    jacc delay_4s                    ; jump to the precise offset    [7 cycles]
 
     ; 100 nops for a possible delay of 4 * 100 = 400 cycles
+  delay_4s:
     nop
     nop
     nop
