@@ -61,55 +61,55 @@ typedef struct commandSpec
     bool internal;
     unsigned short code;
     unsigned char bit;
-    bool needsArg, parsePins;  /* TODO: needsArg may be junk now */
+    bool parsePins;
 } commandSpec;
 
 static commandSpec supportedCommands[] =
 {
-    {"final check", false, FINAL_CHECK, 0, false, false},
+    {"final check", false, FINAL_CHECK, 0, false},
 
-    {"get version",     false, IG_DEV_GETVERSION,      0,      false, false},
-    {"write block",     false, IG_DEV_WRITEBLOCK,      0,      true,  false},
-    {"checksum block",  false, IG_DEV_WRITEBLOCK,      0,      true,  false},
-    {"reset",           false, IG_DEV_RESET,           0,      false, false},
+    {"get version",     false, IG_DEV_GETVERSION,      0,      false},
+    {"write block",     false, IG_DEV_WRITEBLOCK,      0,      false},
+    {"checksum block",  false, IG_DEV_WRITEBLOCK,      0,      false},
+    {"reset",           false, IG_DEV_RESET,           0,      false},
 
-    {"get features",    false, IG_DEV_GETFEATURES,     0,      false, false},
-    {"get buffer size", false, IG_DEV_GETBUFSIZE,      0,      false, false},
-    {"receiver on",     false, IG_DEV_RECVON,          0,      false, false},
-    {"raw receiver on", false, IG_DEV_RAWRECVON,       0,      false, false},
-    {"receiver off",    false, IG_DEV_RECVOFF,         0,      false, false},
-    {"send",            false, IG_DEV_SEND,            0,      true,  false},
-    {"get channels",    false, IG_DEV_GETCHANNELS,     0,      false, false},
-    {"set channels",    false, IG_DEV_SETCHANNELS,     0,      true,  true},
-    {"get carrier",     false, IG_DEV_GETCARRIER,      0,      false, false},
-    {"set carrier",     false, IG_DEV_SETCARRIER,      0,      true,  false},
+    {"get features",    false, IG_DEV_GETFEATURES,     0,      false},
+    {"get buffer size", false, IG_DEV_GETBUFSIZE,      0,      false},
+    {"receiver on",     false, IG_DEV_RECVON,          0,      false},
+    {"raw receiver on", false, IG_DEV_RAWRECVON,       0,      false},
+    {"receiver off",    false, IG_DEV_RECVOFF,         0,      false},
+    {"send",            false, IG_DEV_SEND,            0,      false},
+    {"get channels",    false, IG_DEV_GETCHANNELS,     0,      false},
+    {"set channels",    false, IG_DEV_SETCHANNELS,     0,      true},
+    {"get carrier",     false, IG_DEV_GETCARRIER,      0,      false},
+    {"set carrier",     false, IG_DEV_SETCARRIER,      0,      false},
 
-    {"get config 0",    false, IG_DEV_GETCONFIG0,      0,      false, false},
-    {"get config 1",    false, IG_DEV_GETCONFIG1,      0,      false, false},
-    {"set config 0",    false, IG_DEV_SETCONFIG0,      0,      false, false},
-    {"set config 1",    false, IG_DEV_SETCONFIG1,      0,      false, false},
+    {"get config 0",    false, IG_DEV_GETCONFIG0,      0,      false},
+    {"get config 1",    false, IG_DEV_GETCONFIG1,      0,      false},
+    {"set config 0",    false, IG_DEV_SETCONFIG0,      0,      false},
+    {"set config 1",    false, IG_DEV_SETCONFIG1,      0,      false},
 
-    {"get pins",        false, IG_DEV_GETPINS,         0,      false, false},
-    {"set pins",        false, IG_DEV_SETPINS,         0,      true,  true},
-    {"bulk pins",       false, IG_DEV_BULKPINS,        0,      true,  false},
-    {"execute code",    false, IG_DEV_EXECUTE,         0,      false, false},
-    {"get id",          false, IG_DEV_GETID,           0,      false, false},
-    {"set id",          false, IG_DEV_SETID,           0,      true,  false},
+    {"get pins",        false, IG_DEV_GETPINS,         0,      false},
+    {"set pins",        false, IG_DEV_SETPINS,         0,      true},
+    {"bulk pins",       false, IG_DEV_BULKPINS,        0,      false},
+    {"execute code",    false, IG_DEV_EXECUTE,         0,      false},
+    {"get id",          false, IG_DEV_GETID,           0,      false},
+    {"set id",          false, IG_DEV_SETID,           0,      false},
 
-    {"get output pins", true,  INTERNAL_GETOUTPINS, IG_OUTPUT, false, false},
-    {"set output pins", true,  INTERNAL_SETOUTPINS, IG_OUTPUT, true,  true},
-    {"get pullup pins", true,  INTERNAL_GETPULLPINS, IG_PULLUP, false, false},
-    {"set pullup pins", true,  INTERNAL_SETPULLPINS, IG_PULLUP, true,  true},
-    {"get open drain pins", true,  INTERNAL_GETOPENPINS, IG_OPEN_DRAIN, false, false},
-    {"set open drain pins", true,  INTERNAL_SETOPENPINS, IG_OPEN_DRAIN, true,  true},
-    {"get high sink pins", true,INTERNAL_GETSINKPINS, IG_HIGH_SINK, false, false},
-    {"set high sink pins", true,INTERNAL_SETSINKPINS, IG_HIGH_SINK, true,  true},
-    {"get threshold pins", true,INTERNAL_GETHOLDPINS, IG_THRESHOLD, false, false},
-    {"set threshold pins", true,INTERNAL_SETHOLDPINS, IG_THRESHOLD, true,  true},
+    {"get output pins",     true, INTERNAL_GETOUTPINS,  IG_OUTPUT,     false},
+    {"set output pins",     true, INTERNAL_SETOUTPINS,  IG_OUTPUT,     true},
+    {"get pullup pins",     true, INTERNAL_GETPULLPINS, IG_PULLUP,     false},
+    {"set pullup pins",     true, INTERNAL_SETPULLPINS, IG_PULLUP,     true},
+    {"get open drain pins", true, INTERNAL_GETOPENPINS, IG_OPEN_DRAIN, false},
+    {"set open drain pins", true, INTERNAL_SETOPENPINS, IG_OPEN_DRAIN, true},
+    {"get high sink pins",  true, INTERNAL_GETSINKPINS, IG_HIGH_SINK,  false},
+    {"set high sink pins",  true, INTERNAL_SETSINKPINS, IG_HIGH_SINK,  true},
+    {"get threshold pins",  true, INTERNAL_GETHOLDPINS, IG_THRESHOLD,  false},
+    {"set threshold pins",  true, INTERNAL_SETHOLDPINS, IG_THRESHOLD,  true},
 
-    {"sleep",           true,  INTERNAL_SLEEP,   0,         true,  false},
+    {"sleep",           true,  INTERNAL_SLEEP,   0,         false},
 
-    {NULL,false,0,0,false,false}
+    {NULL,false,0,0,false}
 };
 
 typedef struct igtask
@@ -210,18 +210,10 @@ static bool checkTask(igtask *task)
 
     if (findTaskSpec(task))
     {
+        unsigned int value;
         task->command = task->spec->text;
-        if (task->spec->needsArg)
-        {
-            unsigned int value;
-            if (task->arg == NULL)
-                msg = "Missing argument";
-            else if (task->spec->parsePins &&
-                     ! parseNumber(task->arg, &value))
-                msg = "Could no parse argument";
-        }
-        else if (! task->spec->needsArg && task->arg != NULL)
-            msg = "Unnecessary argument";
+        if (task->spec->parsePins && ! parseNumber(task->arg, &value))
+            msg = "Could not parse argument";
     }
 
     if (msg != NULL)
