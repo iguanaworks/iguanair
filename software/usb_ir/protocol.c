@@ -244,8 +244,6 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
     unsigned char sevens, fours;
     unsigned int cycles;
 
-    /* TODO: sanity checks on the translation to ensure we don't overflow */
-
     /* Compute the cycles for any specified frequency.  This requires
        dividing the length of time of a pulse in the requested
        frequency by the length of time in a cycle at the current clock
@@ -269,6 +267,8 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
         fours -= 1;
         sevens = (cycles - fours * 4) / 7;
     }
+    /* NOTE: We will never need more than 7 7s due to the properties
+       of mathmatical groups. */
 
     /* store byte offsets for transmission */
     delays[0] = (7 - sevens) * 2;
@@ -461,8 +461,11 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 LeaveCriticalSection(&idev->listLock);
             }
             else
+            {
                 message(LOG_INFO,
                         "Timeout while waiting for response from device.\n");
+                errno = ETIMEDOUT;
+            }
         }
 
 #ifdef LIBUSB_NO_THREADS

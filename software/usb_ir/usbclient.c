@@ -261,10 +261,6 @@ bool updateDeviceList(usbDeviceList *list)
                     }
                 }
 
-    /* if none were found remove the rest TODO: necessary?*/
-    if (count == 0)
-        releaseDevices(list);
-
     if (wouldOutput(LOG_DEBUG))
     {
         message(LOG_DEBUG, "Device list %p:\n", (void*)list);

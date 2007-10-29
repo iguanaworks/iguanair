@@ -100,7 +100,6 @@ static void* generateIDBlock(const char *label, uint16_t version)
     return data;
 }
 
-/* TODO:  timeouts (like getid w/ no id set) should report as timeouts, not temp unavailable */
 static bool handleClientRequest(dataPacket *request, client *target)
 {
     bool retval = false;
@@ -275,8 +274,8 @@ static bool handleClient(client *me)
             request.code = IG_DEV_ERROR;
             request.dataLen = -errno;
             message(LOG_ERROR,
-                    "handleClientRequest(0x%2.2x) failed with: %s\n",
-                    request.code, strerror(errno));
+                    "handleClientRequest(0x%2.2x) failed with: %d (%s)\n",
+                    request.code, errno, strerror(errno));
         }
 
         if (! writeDataPacket(&request, me->fd))
@@ -528,7 +527,8 @@ static void* workLoop(void *instance)
     /* now actually free the malloc'd data */
     free(idev->usbDev);
 
-    /* TODO: illegal to free this here since it holds the worker pointer, can't release because it would deadlock.  arg */
+    /* go ahead and free the idev since the thread id has been written
+       to the main application thread for reaping. */
     free(idev);
     makeParentJoin();
 
