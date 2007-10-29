@@ -230,14 +230,18 @@ def deviceTransaction(type, data = ''):
     return retval
 
 def deviceVersion(target = None):
+    count = 0
     version = None
     while not version:
         version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
         if not version:
-            message(LOG_WARN,
-                    "Please unplug and replug the device before continuing.\n")
-            message(LOG_WARN, "  Press any key to continue.\n")
-            sys.stdin.readline()
+            count += 1
+            if count == 5:
+                message(LOG_WARN, "Please unplug and replug the device before continuing.\n")
+                message(LOG_WARN, "  Press any key to continue.\n")
+                sys.stdin.readline()
+            else:
+                time.sleep(0.20)
             connect()
 
     # just print the version of the target device
@@ -352,14 +356,13 @@ def writePagesToDevice(pages):
         sys.stdout.write("\r  Writing page %d (%d/%d)  " % (page['start'] / 64,
                                                             count, len(pages)))
         sys.stdout.flush()
-        if deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']):
-            message(LOG_DEBUG, "Success.\n")
-        else:
+        if not deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']):
             message(LOG_FATAL, "FAILED!!\n")
 
         # if we're in an older device delay and reconnect
         if version <= 4:
             connect(5)
+    sys.stdout.write('\n')
 
     # reset the device (it may have already)
     if version > 4:

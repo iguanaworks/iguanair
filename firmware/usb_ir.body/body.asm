@@ -106,8 +106,6 @@ body_main:
     jz bulk_pins_body
 
     ; misc functions
-    cmp A, CTL_GETID
-    jz getid_body
     cmp A, CTL_EXECUTE
     jz execute_body
 
@@ -170,12 +168,6 @@ send_body:
     lcall write_control
     jmp bm_ret
 
-set_channels_body:
-    jmp bm_ret
-
-get_channels_body:
-    jmp bm_ret
-
 get_pin_config_body:
     jmp bm_ret
 
@@ -212,11 +204,11 @@ set_pins_body:
 bulk_pins_body:
     jmp bm_ret
 
-getid_body:
+; default to executing the final page
+execute_body:
+    lcall 0x1FC0
     jmp bm_ret
 
-execute_body:
-    jmp bm_ret
 
 
 
