@@ -13,12 +13,6 @@
 #ifndef _IGDAEMON_
 #define _IGDAEMON_
 
-typedef struct receiveInfo
-{
-    struct dataPacket *packet;
-    bool translated;
-} receiveInfo;
-
 typedef struct client
 {
     itemHeader header;
@@ -29,8 +23,7 @@ typedef struct client
     /* for communication with the client */
     PIPE_PTR fd;
 
-    /* whether recv-related messages should be returned to this
-     * client */
+    /* whether recv messages should be returned to this client */
     int receiving;
 
     /* protocol version that should be used with this client */

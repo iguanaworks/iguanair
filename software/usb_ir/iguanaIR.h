@@ -98,10 +98,6 @@ enum
     IG_RAWSPACE_BIT  = 0x80,
     IG_RAWSPACE_MASK = 0x7F,
 
-    /* a couple protocol enums are needed by client.c */
-    IG_CTL_START      = 0x0000,
-    IG_CTL_FROMDEV    = 0xDC,
-
     /* FILE:body.inc device feature flags, 0 means old style device */
     IG_HAS_LEDS    = 0x01,
     IG_HAS_BOTH    = 0x02,

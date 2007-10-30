@@ -2,7 +2,8 @@
  ** base.h ******************************************************************
  ****************************************************************************
  *
- * TODO: DESCRIBE AND DOCUMENT THIS FILE
+ * Basic includes and definitions to make this code work across
+ * various platforms.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>

@@ -15,6 +15,13 @@
 
 #include "list.h"
 
+enum
+{
+    /* masks for encoding and decoding the usb data */
+    STATE_MASK  = 0x80,
+    LENGTH_MASK = 0x7F
+};
+
 /* forward declaration */
 struct dataPacket;
 
@@ -65,7 +72,7 @@ typedef struct iguanaDev
 } iguanaDev;
 
 /* use the protocol table to see if the version is supported */
-bool supportedVersion(int version);
+bool checkVersion(iguanaDev *idev);
 
 /* check that the client is using the proper protocol */
 struct packetType* checkIncomingProtocol(iguanaDev *idev,
@@ -88,7 +95,5 @@ bool findDeviceEndpoints(iguanaDev *idev);
 
 /* translation of data for transmission */
 uint32_t* iguanaDevToPulses(unsigned char *code, int *length);
-unsigned char* pulsesToIguanaSend(int carrier,
-                                  uint32_t *sendCode, int *length);
 
 #endif

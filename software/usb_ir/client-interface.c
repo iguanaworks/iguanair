@@ -1,8 +1,9 @@
 /****************************************************************************
- ** igdaemon.c *************************************************************
+ ** client-interface.c ******************************************************
  ****************************************************************************
  *
- * Functions to interface with an Iguanaworks USB device.
+ * Implements a translation and checking layer for data coming from
+ * client applications to the igdaemon driver.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -10,6 +11,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
+#include "base.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -17,87 +19,64 @@
 #include <errno.h>
 #include <signal.h>
 
-#include "base.h"
 #include "iguanaIR.h"
-#include "dataPackets.h"
-#include "protocol.h"
-#include "usbclient.h"
-#include "igdaemon.h"
 #include "support.h"
 #include "pipes.h"
+#include "dataPackets.h"
+#include "device-interface.h"
+#include "usbclient.h"
+#include "client-interface.h"
 #include "compatibility.h"
+
+enum
+{
+    /* highest value of a data byte in the IR code protocol */
+    MAX_DATA_BYTE = 127
+};
+
+/* small structure passed through a void* for tellReceivers. */
+typedef struct receiveInfo
+{
+    struct dataPacket *packet;
+    bool translated;
+} receiveInfo;
 
 bool readLabels = true;
 
-/* total of 12 bytes will be read from the device when the constructed
- * code is called. */
-static void* generateIDBlock(const char *label, uint16_t version)
+static unsigned char* pulsesToIguanaSend(int carrier,
+                                         uint32_t *sendCode, int *length)
 {
-    unsigned int len, x, y;
-    unsigned char *data;
+    int x, codeLength = 0, inSpace = 0;
+    unsigned char *codes = NULL;
 
-    /* must allocate the data since we free it later */
-    data = malloc(68);
-    /* fill the page with halt commands */
-    memset(data, 0x30, 68);
-    /* which page get's written? and clear the first packet */
-    data[0] = 0x7F;
-    data[1] = data[2] = data[3] = 0;
-    len = 4;
-
-    if (label != NULL && strlen(label))
+    /* convert each pulse */
+    for(x = 0; x < *length; x++)
     {
-        unsigned char buf[16] = { IG_CTL_START, IG_CTL_START, IG_CTL_FROMDEV, IG_DEV_GETID }, packet_start, send_address;
+        uint32_t cycles, numBytes;
+        cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
+                            1000000.0 * carrier * 1000 + 0.5);
+        numBytes = (cycles / MAX_DATA_BYTE) + 1;
+        cycles %= MAX_DATA_BYTE;
 
-        /* translate the code for the device */
-        if (! translateDevice(buf + 3 /*CODE_OFFSET*/, version, false))
-            message(LOG_ERROR, "Failed to translate GETID code for device.\n");
-        if (version >= 0x101)
-        {
-            /* use the same buffer we use for all control packets */
-            packet_start = 0xF8;
-            send_address = 0x94;
-        }
-        else
-        {
-            /* due to size of buffer these 8 bytes are always in it */
-            packet_start = 0x7C;
-            send_address = 0x68;
-        }
+        /* allocate space as we go */
+        codes = realloc(codes, sizeof(char) * (codeLength + numBytes));
 
-        /* can only generate 12 bytes worth of transmission data */
-        if (strlen(label) > 12)
-            message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
+        /* populate the buffer with max bytes */
+        memset(codes + codeLength,
+               LENGTH_MASK | (inSpace * STATE_MASK),
+               numBytes - 1);
+        if (inSpace)
+            cycles |= STATE_MASK;
 
-        /* construct the bytes that will travel over the wire */
-        strncpy((char*)buf + 4, label, 12);
+        /* store the last byte */
+        codes[codeLength + numBytes - 1] = cycles;
+        codeLength += numBytes;
 
-        /* assemble the code to transmit the bytes in 2 packets */
-        for(x = 0; x < 2; x++)
-        {
-            /* record 8 bytes of the label*/
-            for(y = 0; y < 8; y++)
-            {
-                data[len++] = 0x55;
-                data[len++] = packet_start + y;
-                data[len++] = buf[x * 8 + y];
-            }
-            /* load the packet size into A */
-            data[len++] = 0x50;
-            data[len++] = 0x08;
-            /* load packet location into X */
-            data[len++] = 0x57;
-            data[len++] = packet_start;
-            /* lcall write_data */
-            data[len++] = 0x7C;
-            data[len++] = 0x00;
-            data[len++] = send_address;
-        }
+        inSpace ^= 1;
     }
-    /* put in a trailing ret */
-    data[len++] = 0x7F;
 
-    return data;
+    *length = codeLength;
+    return codes;
 }
 
 static bool handleClientRequest(dataPacket *request, client *target)
@@ -177,16 +156,6 @@ static bool handleClientRequest(dataPacket *request, client *target)
                                    &request->dataLen);
         free(request->data);
         request->data = codes;
-        break;
-    }
-
-    case IG_DEV_SETID:
-    {
-        unsigned char *block;
-        block = generateIDBlock((char*)request->data, target->idev->version);
-        free(request->data);
-        request->data = block;
-        request->dataLen = 68;
         break;
     }
     }
@@ -296,45 +265,6 @@ static bool handleClient(client *me)
         }
 
         free(request.data);
-    }
-
-    return retval;
-}
-
-static bool checkVersion(iguanaDev *idev)
-{
-    dataPacket request = DATA_PACKET_INIT, *response = NULL;
-    bool retval = false;
-
-    /* Seems necessary, but means that we lose the interface.....
-#ifdef WIN32
-    request.code = IG_DEV_RESET;
-    if (! deviceTransaction(idev, &request, &response))
-        message(LOG_ERROR, "Failed to to do a soft reset.\n");
-#endif
-        */
-
-    request.code = IG_DEV_GETVERSION;
-    if (! deviceTransaction(idev, &request, &response))
-        message(LOG_ERROR, "Failed to get version.\n");
-    else
-    {
-        if (response->dataLen != 2)
-            message(LOG_ERROR, "Incorrectly sized version response.\n");
-        else
-        {
-            idev->version = (response->data[1] << 8) + response->data[0];
-
-            message(LOG_INFO, "Found device version 0x%x\n", idev->version);
-            /* ensure we have an acceptable version */
-            if (! supportedVersion(idev->version))
-                message(LOG_ERROR,
-                        "Unsupported hardware version %d\n", idev->version);
-            else
-                retval = true;
-        }
-
-        freeDataPacket(response);
     }
 
     return retval;

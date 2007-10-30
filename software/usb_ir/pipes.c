@@ -1,8 +1,9 @@
 /****************************************************************************
- ** pipes.c ****************************************************************
+ ** pipes.c *****************************************************************
  ****************************************************************************
  *
- * TODO: DESCRIBE AND DOCUMENT THIS FILE
+ * Provides an implementation of low level communication over Unix
+ * sockets.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>

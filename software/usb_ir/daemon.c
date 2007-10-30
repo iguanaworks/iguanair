@@ -12,23 +12,18 @@
  * See LICENSE for license details.
  */
 
-#include <stdlib.h>
+#include "base.h"
 #include <popt.h>
 #include <signal.h>
-#include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/param.h>
 
 #include "iguanaIR.h"
-#include "base.h"
 #include "usbclient.h"
 #include "pipes.h"
 #include "support.h"
-#include "protocol.h"
-#include "igdaemon.h"
+#include "device-interface.h"
+#include "client-interface.h"
 
 /* local variables */
 static usbId ids[] = {
@@ -49,7 +44,7 @@ static void quitHandler(int UNUSED(sig))
     closePipe(commPipe[WRITE]);
 }
 
-static void scanHandler(int sig)
+static void scanHandler(int UNUSED(sig))
 {
     int x = INVALID_THREAD_PTR;
     writePipe(commPipe[WRITE], &x, sizeof(THREAD_PTR));

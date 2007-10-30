@@ -2,7 +2,7 @@
  ** pipes.h ****************************************************************
  ****************************************************************************
  *
- * TODO: DESCRIBE AND DOCUMENT THIS FILE
+ * Header for the Unix/Named pipe interfaces.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>

@@ -2,7 +2,7 @@
  ** iguanaIR.c **************************************************************
  ****************************************************************************
  *
- * Client interface to the igdaemon for controlling USB devices.
+ * Client API to the igdaemon for controlling USB devices.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -14,12 +14,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-#include <string.h>
 
 #include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
-#include "protocol.h"
 #include "dataPackets.h"
 
 PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)

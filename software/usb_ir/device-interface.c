@@ -11,9 +11,6 @@
  * See LICENSE for license details.
  */
 #include "base.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 
 #include "iguanaIR.h"
@@ -21,37 +18,26 @@
 #include "support.h"
 #include "usbclient.h"
 #include "dataPackets.h"
-#include "protocol.h"
+#include "device-interface.h"
 #include "compatibility.h"
 
 /* internal protocol constants */
 enum
 {
-    /* used in calls to check message */
+    /* used in calls to check message parameters */
     MAX_PACKET_SIZE = 8,
-    MIN_CODE_LENGTH = 4,
+    MIN_CTL_LENGTH  = 4,
     CODE_OFFSET     = 3,
 
-    /* protocol control codes */
-    /*IG_CTL_START      = 0x0000,*/
+    /* control packet constants */
+    CTL_START      = 0x0000,
     CTL_TODEV      = 0xCD,
-    /*CTL_FROMDEV    = 0xDC,*/
-    IG_DEV_ANY_CODE   = 0x00,
+    CTL_FROMDEV    = 0xDC,
 
     /* constants for packetType table */
-    NO_PAYLOAD  = 0xFF,
-    ANY_PAYLOAD = 0x00,
-
-    /* terminate the payload with this */
-    CTL_ENDDATA    = 0x00,
-
-    /* masks for encoding and decoding the usb data */
-    STATE_MASK  = 0x80,
-    LENGTH_MASK = 0x7F,
-    MAX_PULSE_LENGTH = 1023, /* before translation */
-
-    /* highest value of a data byte in the IR code protocol */
-    MAX_DATA_BYTE = 127
+    NO_PAYLOAD     = 0xFF,
+    ANY_PAYLOAD    = 0x00,
+    IG_DEV_ANYCODE = 0x00
 };
 
 typedef struct packetType
@@ -114,12 +100,12 @@ static versionedType types[] =
     {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 1,           true,  NO_PAYLOAD}},
 
     /* "from device" codes */
-    {0, 0, {IG_DEV_RECV,     IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
-    {0, 0, {IG_DEV_OVERSEND, IG_CTL_FROMDEV, NO_PAYLOAD,  false, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_OVERRECV, IG_CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
+    {0, 0, {IG_DEV_RECV,     CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
+    {0, 0, {IG_DEV_OVERSEND, CTL_FROMDEV, NO_PAYLOAD,  false, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_OVERRECV, CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
 
     /* terminate the list */
-    {0, 0, {0, 0, 0, false, 0}}
+    {0, 0, {IG_DEV_ANYCODE, 0, 0, false, 0}}
 };
 
 static void queueDataPacket(iguanaDev *idev, dataPacket *current, bool fromDev)
@@ -159,7 +145,7 @@ static bool sendData(iguanaDev *idev,
         lastPacket = (char*)malloc(lastSize + 1);
         memcpy(lastPacket,
                (char*)buffer + count * idev->maxPacketSize, lastSize);
-        lastPacket[lastSize++] = CTL_ENDDATA;
+        lastPacket[lastSize++] = 0x00;
     }
     else if (lastSize > 0)
         lastPacket = (char*)buffer + count * idev->maxPacketSize;
@@ -195,7 +181,7 @@ static packetType* findTypeEntry(unsigned char code, uint16_t version)
 {
     unsigned int x;
 
-    for(x = 0; types[x].type.code != IG_DEV_ANY_CODE; x++)
+    for(x = 0; types[x].type.code != IG_DEV_ANYCODE; x++)
         if (types[x].type.code == code &&
             types[x].start <= version &&
             (types[x].end >= version || types[x].end == 0))
@@ -241,7 +227,7 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
 */
 static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
 {
-    unsigned char sevens, fours;
+    unsigned char sevens = 0, fours;
     unsigned int cycles;
 
     /* Compute the cycles for any specified frequency.  This requires
@@ -275,15 +261,126 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
     delays[1] = (100 - fours) * 1;
 }
 
-bool supportedVersion(int version)
+/* total of 12 bytes will be read from the device when the constructed
+   code is called. */
+static void* generateIDBlock(const char *label, uint16_t version)
 {
-    /* simply check a hard coded mechanism to see if the version is
-     * supported. */
-    if ((version >= 1 && version <= 4) ||
-        version == 0xFF00 ||
-        (version >= 0x0100 && version < 0x0200))
-        return true;
-    return false;
+    unsigned int len, x, y;
+    unsigned char *data;
+
+    /* must allocate the data since we free it later */
+    data = malloc(68);
+    /* fill the page with halt commands */
+    memset(data, 0x30, 68);
+    /* which page get's written? and clear the first packet */
+    data[0] = 0x7F;
+    data[1] = data[2] = data[3] = 0;
+    len = 4;
+
+    if (label != NULL && strlen(label))
+    {
+        unsigned char buf[MAX_PACKET_SIZE * 2] = { CTL_START,   CTL_START,
+                                                   CTL_FROMDEV, IG_DEV_GETID },
+            packet_start, send_address;
+
+        /* translate the code for the device */
+        if (! translateDevice(buf + CODE_OFFSET, version, false))
+            message(LOG_ERROR, "Failed to translate GETID code for device.\n");
+        if (version >= 0x101)
+        {
+            /* use the same buffer we use for all control packets */
+            packet_start = 0xF8;
+            send_address = 0x94;
+        }
+        else
+        {
+            /* due to size of buffer these 8 bytes are always in it */
+            packet_start = 0x7C;
+            send_address = 0x68;
+        }
+
+        /* can only generate 12 bytes worth of transmission data */
+        if (strlen(label) > 12)
+            message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
+
+        /* construct the bytes that will travel over the wire */
+        strncpy((char*)buf + 4, label, 12);
+
+        /* assemble the code to transmit the bytes in 2 packets */
+        for(x = 0; x < 2; x++)
+        {
+            /* record 8 bytes of the label*/
+            for(y = 0; y < 8; y++)
+            {
+                data[len++] = 0x55;
+                data[len++] = packet_start + y;
+                data[len++] = buf[x * 8 + y];
+            }
+            /* load the packet size into A */
+            data[len++] = 0x50;
+            data[len++] = 0x08;
+            /* load packet location into X */
+            data[len++] = 0x57;
+            data[len++] = packet_start;
+            /* lcall write_data */
+            data[len++] = 0x7C;
+            data[len++] = 0x00;
+            data[len++] = send_address;
+        }
+    }
+    /* put in a trailing ret */
+    data[len++] = 0x7F;
+
+    return data;
+}
+
+bool checkVersion(iguanaDev *idev)
+{
+    dataPacket request = DATA_PACKET_INIT, *response = NULL;
+    bool retval = false;
+
+    /* Seems necessary, but means that we lose the interface.....
+#ifdef WIN32
+    request.code = IG_DEV_RESET;
+    if (! deviceTransaction(idev, &request, &response))
+        message(LOG_ERROR, "Failed to to do a soft reset.\n");
+#endif
+        */
+
+    request.code = IG_DEV_GETVERSION;
+    if (! deviceTransaction(idev, &request, &response))
+        message(LOG_ERROR, "Failed to get version.\n");
+    else
+    {
+        if (response->dataLen != 2)
+            message(LOG_ERROR, "Incorrectly sized version response.\n");
+        else
+        {
+            idev->version = (response->data[1] << 8) + response->data[0];
+
+            message(LOG_INFO, "Found device version 0x%x\n", idev->version);
+ 
+
+
+            /* ensure we have an acceptable version by checking a hard
+               coded mechanism to see if the version is supported.
+
+               check for old firmware first, then the reflasher, then
+               the initial bootloader.
+            */
+            if ((idev->version >= 1 && idev->version <= 4) ||
+                idev->version == 0xFF00 ||
+                (idev->version >= 0x0100 && idev->version < 0x0200))
+                retval = true;
+            else
+                message(LOG_ERROR,
+                        "Unsupported hardware version %d\n", idev->version);
+        }
+
+        freeDataPacket(response);
+    }
+
+    return retval;
 }
 
 packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
@@ -322,10 +419,9 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
     type = checkIncomingProtocol(idev, request, response == NULL);
     if (type)
     {
-        unsigned char msg[MAX_PACKET_SIZE] = {IG_CTL_START, IG_CTL_START,
-                                              CTL_TODEV};
+        unsigned char msg[MAX_PACKET_SIZE] = {CTL_START, CTL_START, CTL_TODEV};
         uint64_t then, now;
-        int length = MIN_CODE_LENGTH, result, sent = 0;
+        int length = MIN_CTL_LENGTH, result, sent = 0;
 
 #ifdef LIBUSB_NO_THREADS
         bool unlocked = false;
@@ -339,8 +435,16 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             break;
             
         case IG_DEV_SETID:
+        {
+            unsigned char *block;
+            block = generateIDBlock((char*)request->data, idev->version);
+            free(request->data);
+            request->data = block;
+            request->dataLen = 68;
+
             msg[CODE_OFFSET] = IG_DEV_WRITEBLOCK;
             break;
+        }
 
         default:
             msg[CODE_OFFSET] = request->code;
@@ -358,7 +462,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             /* this is only used to get addresses in WRITEBLOCK */
             if (sent > 4)
                 sent = 4;
-            memcpy(msg + MIN_CODE_LENGTH, request->data, sent);
+            memcpy(msg + MIN_CTL_LENGTH, request->data, sent);
             length += sent;
         }
         /* as of version 3 SEND and BULKPINS require a length argument */
@@ -567,15 +671,15 @@ void handleIncomingPackets(iguanaDev *idev)
                     memset(current, 0, sizeof(dataPacket));
 
                     /* see if we got a control packet */
-                    if (length >= MIN_CODE_LENGTH &&
-                        buffer[0] == IG_CTL_START &&
-                        buffer[1] == IG_CTL_START &&
-                        buffer[2] == IG_CTL_FROMDEV)
+                    if (length >= MIN_CTL_LENGTH &&
+                        buffer[0] == CTL_START &&
+                        buffer[1] == CTL_START &&
+                        buffer[2] == CTL_FROMDEV)
                     {
                         /* any remaining part of the packet is data */
                         current->code = buffer[CODE_OFFSET];
-                        current->dataLen = length - MIN_CODE_LENGTH;
-                        dataStart = buffer + MIN_CODE_LENGTH;
+                        current->dataLen = length - MIN_CTL_LENGTH;
+                        dataStart = buffer + MIN_CTL_LENGTH;
 
                         message(LOG_DEBUG,
                                 "Received ctl header: 0x%x\n", current->code);
@@ -661,6 +765,7 @@ bool findDeviceEndpoints(iguanaDev *idev)
 
     dev = usb_device(getDevHandle(idev->usbDev));
 
+    /* sanity checks that we're looking at an acceptable device */
     if (dev->descriptor.bNumConfigurations != 1 ||
         dev->config[0].bNumInterfaces != 1 ||
         dev->config[0].interface[0].num_altsetting != 1)
@@ -720,8 +825,9 @@ uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
             retval[codeLength] = 0;
         }
 
+        /* increase by the maximum pulse length + 1 */
         if ((code[x] & LENGTH_MASK) == 0)
-            retval[codeLength] += MAX_PULSE_LENGTH + 1;
+            retval[codeLength] += 1023 + 1;
         else
             retval[codeLength] += (code[x] & LENGTH_MASK) + 1;
         inSpace = code[x] & STATE_MASK;
@@ -734,39 +840,4 @@ uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
 
     *length = codeLength * sizeof(uint32_t);
     return retval;
-}
-
-unsigned char* pulsesToIguanaSend(int carrier, uint32_t *sendCode, int *length)
-{
-    int x, codeLength = 0, inSpace = 0;
-    unsigned char *codes = NULL;
-
-    /* convert each pulse */
-    for(x = 0; x < *length; x++)
-    {
-        uint32_t cycles, numBytes;
-        cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
-                            1000000.0 * carrier * 1000 + 0.5);
-        numBytes = (cycles / MAX_DATA_BYTE) + 1;
-        cycles %= MAX_DATA_BYTE;
-
-        /* allocate space as we go */
-        codes = realloc(codes, sizeof(char) * (codeLength + numBytes));
-
-        /* populate the buffer with max bytes */
-        memset(codes + codeLength,
-               LENGTH_MASK | (inSpace * STATE_MASK),
-               numBytes - 1);
-        if (inSpace)
-            cycles |= STATE_MASK;
-
-        /* store the last byte */
-        codes[codeLength + numBytes - 1] = cycles;
-        codeLength += numBytes;
-
-        inSpace ^= 1;
-    }
-
-    *length = codeLength;
-    return codes;
 }
