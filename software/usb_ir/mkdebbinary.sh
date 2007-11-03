@@ -63,7 +63,7 @@ echo "Section: utils
 Priority: optional
 Architecture: $ARCH
 Essential: no
-Depends: iguanaIR (>= $version), iguanaIR (<= $version-9999999), python (>= 2.4), python (<< 2.5)
+Depends: iguanaIR (>= $version), iguanaIR (<= $version-9999999), python (>= 2.4), python (<= 2.5)
 Pre-Depends: 
 Recommends: 
 Suggests:
