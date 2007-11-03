@@ -5,7 +5,7 @@ AC_PREREQ(2.61)
 AC_INIT(iguanaIR,
   esyscmd(grep Version: ../iguanaIR.spec | sed 's/Version: *//' | tr -d '\n'),
   support@iguanaworks.net)
-AC_CONFIG_SRCDIR([igdaemon.c])
+AC_CONFIG_SRCDIR([daemon.c])
 AC_CONFIG_HEADER([config.h])
 
 # Checks for programs.
