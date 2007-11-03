@@ -57,12 +57,11 @@ igclient: client.o list.o
 # need a special dependency for config.h
 base.o: base.c config.h
 
-iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h
+iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) -python $<
 
 _iguanaIR.so: iguanaIR_wrap.c
-	$(CC) $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long -I/usr/include/python2.5 $^ -L. -liguanaIR -o $@
-
+	$(CC) $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long @PYTHON_CPPFLAGS@ $^ -L. -liguanaIR -o $@
 
 .PHONY: install
 install: all
@@ -116,6 +115,9 @@ autoconf/aclocal.m4: $(M4S)
 
 configure: autoconf/configure.ac autoconf/aclocal.m4
 	cd autoconf; $(AUTOCONF) -o ../configure configure.ac
+
+config.h.in: autoconf/configure.ac
+	cd autoconf; autoheader configure.ac; mv config.h.in ..
 
 config.status: configure
 	./config.status --recheck
