@@ -90,9 +90,7 @@ AC_CHECK_LIB([usb], [usb_get_busses],
 )
 
 # fetch the python version
-AC_DEFINE_UNQUOTED(PYTHON_VERSION,
-  `python --version 2>&1 | sed 's/Python //'`, [version of python]
-)
+AC_PYTHON_DEVEL()
 
 # Output some files
 AC_CONFIG_FILES([Makefile])
