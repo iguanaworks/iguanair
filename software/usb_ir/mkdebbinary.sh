@@ -4,6 +4,7 @@ rm -r debinary64
 rm -r pdebinary
 rm -r pdebinary64
 
+#./configure
 make clean
 make
 ##Set Revision Number, default is 0
@@ -125,7 +126,7 @@ mkdir $BASE/etc/init.d
 cp iguanaIR.init $BASE/etc/init.d/iguanaIR
 mkdir $BASE/etc/udev
 mkdir $BASE/etc/udev/rules.d
-cp iguanaIR.rules $BASE/etc/udev/rules.d/
+cp plug-trigger/udev/iguanaIR.rules $BASE/etc/udev/rules.d/
 
 mkdir $BASE/lib
 mkdir $BASE/lib/udev
