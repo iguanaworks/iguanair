@@ -261,7 +261,6 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
             fours = 110;
         }
     }
-
     /* NOTE: We will never need more than 4 7s due to the properties
        of mathmatical groups. */
 
