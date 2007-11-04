@@ -312,11 +312,12 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                 switch(code)
                 {
                 case IG_DEV_GETVERSION:
-                    message(LOG_NORMAL, ": version=%d", ((char*)data)[1] * 256 + ((char*)data)[0]);
+                    message(LOG_NORMAL, ": version=0x%x",
+                            ((char*)data)[1] * 256 + ((char*)data)[0]);
                     break;
 
                 case IG_DEV_GETFEATURES:
-                    message(LOG_NORMAL, ": features=%d", ((char*)data)[0]);
+                    message(LOG_NORMAL, ": features=0x%x", ((char*)data)[0]);
                     break;
 
                 case IG_DEV_GETBUFSIZE:
