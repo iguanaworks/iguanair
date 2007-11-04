@@ -425,7 +425,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
                     message(LOG_ERROR, "Too many channels specified.\n");
                 else if (cmd->spec->code == IG_DEV_SETCARRIER &&
                          (value < 25 && value > 100))
-                    message(LOG_ERROR, "Carrier frequency must be between 25 and 100 kHz.\n");
+                    message(LOG_ERROR, "Carrier frequency must be between 25 and 150 kHz.\n");
                 else
                 {
                     data = malloc(1);

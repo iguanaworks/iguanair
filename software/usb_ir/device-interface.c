@@ -244,21 +244,30 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
        space on the flash for a given delay.
     */
     cycles -= 4 + 5 + 6 + 6 + 5 + 4 + (5 + 7) + (5 + 7) + 5;
-    if (cycles > 400)
-        fours = 100;
-    else
-        fours = cycles / 4;
-    while ((cycles - fours * 4) % 7 != 0)
+    sevens = (4 - (cycles % 4)) % 4;
+    if (sevens * 7 > cycles)
     {
-        fours -= 1;
-        sevens = (cycles - fours * 4) / 7;
+        message(LOG_WARN,
+                "Frequency outside of range (25-150Khz), rounding down.\n");
+        fours = 0;
     }
-    /* NOTE: We will never need more than 7 7s due to the properties
+    else
+    {
+        fours = (cycles - sevens * 7) / 4;
+        if (fours > 110)
+        {
+            message(LOG_WARN,
+                    "Frequency outside of range (25-150Khz), rounding up.\n");
+            fours = 110;
+        }
+    }
+
+    /* NOTE: We will never need more than 4 7s due to the properties
        of mathmatical groups. */
 
     /* store byte offsets for transmission */
-    delays[0] = (7 - sevens) * 2;
-    delays[1] = (100 - fours) * 1;
+    delays[0] = (4 - sevens) * 2;
+    delays[1] = (110 - fours) * 1;
 }
 
 /* total of 12 bytes will be read from the device when the constructed
