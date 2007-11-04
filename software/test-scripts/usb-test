@@ -169,7 +169,7 @@ def checkReceiver():
 
 def sendPanasonicPower():
     # send a signal on all active channels
-    vcrPower = """pulse 1040
+    panasonicPower = """pulse 1040
 space 12544
 pulse 3498
 space 1685
@@ -273,28 +273,32 @@ pulse 448
 """
 
     output = tempfile.NamedTemporaryFile()
-    output.write(vcrPower)
+    output.write(panasonicPower)
     output.flush()
     (count, data) = iguanaIR.readPulseFile(output.name)
     output.close()
 
     deviceTransaction(iguanaIR.IG_DEV_SEND, data)
 
-default = 'S'
+default = None
 while True:
     try:
         type = None
         while type is None:
-            message(LOG_NORMAL, "Old, sockets, hybrid, or LEDs? %s\n" % '[o/s/h/l]'.replace(default.lower(), default))
+            selection = '[u/s/h/l]'
+            if default is not None:
+                selection.replace(default.lower(), default)
+            message(LOG_NORMAL,
+                    "Unenclosed, sockets, hybrid, or LEDs? %s\n" % selection)
             line = sys.stdin.readline()
             if not line[:-1]:
                 line = default
 
-            if line[0].lower() in 'oshl':
+            if line[0].lower() in 'ushl':
                 default = line[0].upper()
 
-            if line[0].lower() == 'o':
-                type = 'old'
+            if line[0].lower() == 'u':
+                type = 'unenclosed'
                 plugs = ()
                 leds = (0x0,)
             elif line[0].lower() == 's':
