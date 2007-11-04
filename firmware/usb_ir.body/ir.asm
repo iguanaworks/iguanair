@@ -359,9 +359,6 @@ transmit_code:
     cmp A, [0]
     cmp A, [0]
     cmp A, [0]
-    cmp A, [0]
-    cmp A, [0]
-    cmp A, [0]
 
 ;this is a set of 4-clock delays.  You jump into it at different points in
 ;order to get different length delays.
@@ -372,6 +369,17 @@ transmit_code:
 
     ; 100 nops for a possible delay of 4 * 100 = 400 cycles
   delay_4s:
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
     nop
     nop
     nop
