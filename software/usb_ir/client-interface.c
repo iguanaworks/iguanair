@@ -161,7 +161,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
     }
 
     if (retval)
-        message(LOG_INFO, "Device transaction skipped: 0x%x\n", request->code);
+        message(LOG_INFO,
+                "Request handled within daemon: 0x%x\n", request->code);
     else if (! deviceTransaction(target->idev, request, &response))
     {
         if (request->code == IG_DEV_RESET)

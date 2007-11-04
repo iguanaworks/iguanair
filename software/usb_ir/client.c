@@ -313,7 +313,8 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                 {
                 case IG_DEV_GETVERSION:
                     message(LOG_NORMAL, ": version=0x%4.4x",
-                            ((char*)data)[1] * 256 + ((char*)data)[0]);
+                            (((unsigned char*)data)[1] << 8 | \
+                             ((unsigned char*)data)[0]));
                     break;
 
                 case IG_DEV_GETFEATURES:
