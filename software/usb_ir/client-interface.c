@@ -325,8 +325,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
     receiveInfo *info = (receiveInfo*)userData;
 
     if ((me->receiving == IG_DEV_RECVON    &&   info->translated) ||
-        (me->receiving == IG_DEV_RAWRECVON && ! info->translated) ||
-        (me->receiving != IG_DEV_RAWRECVON && me->receiving != IG_DEV_RECVON))
+        (me->receiving == IG_DEV_RAWRECVON && ! info->translated))
     {
         /* translate the packet code before returning it */
         if (! translateClient(&info->packet->code, me->version, false))
