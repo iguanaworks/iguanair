@@ -65,10 +65,10 @@ static versionedType types[] =
     {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
 
     /* device functionality */
-    {0, 0, {IG_DEV_GETFEATURES, CTL_TODEV,   NO_PAYLOAD,  true, 1}},
+    {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV, NO_PAYLOAD, true, 1}},
     {0, 0, {IG_DEV_SEND,        CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RECVON,      CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RAWRECVON,   CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
+    {0x0101, 0, {IG_DEV_RAWRECVON,   CTL_TODEV, NO_PAYLOAD, true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RECVOFF,     CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
 
     /* 1 bit per pin of state */
