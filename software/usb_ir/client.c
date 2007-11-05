@@ -281,11 +281,10 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
             unsigned int length, x;
             unsigned char code;
 
-            /* need to translate the data, and can then
-             * toss the response */
+            /* need to translate the data, and can then toss the
+             * response */
             data = iguanaRemoveData(response, &length);
             code = iguanaCode(response);
-            iguanaFreePacket(response);
 
             if (code == IG_DEV_RECV)
             {
@@ -362,6 +361,9 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 
             free(data);
         }
+
+        /* free successes or errors */
+        iguanaFreePacket(response);
     }
 }
 
