@@ -15,6 +15,9 @@
 
 import warnings
 import traceback
+import tempfile
+import struct
+import stat
 import time
 import glob
 import sys
@@ -48,13 +51,14 @@ null = open('/dev/null', 'r+')
 #local variables
 currentLevel = LOG_NORMAL
 logFile = None
-printVersion = False
 UNSAFE = True
 usb_ir = None
 loader = None
 body = None
 fullFlash = False
 features = 0
+targetVersion = None
+test = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -122,8 +126,6 @@ while index < len(sys.argv):
     arg = sys.argv[index]
     if arg == "--blank-pages":
         fullFlash = True
-    elif arg == "--device-version":
-        printVersion = True
     elif arg == "--feature":
         index += 1
         feature = sys.argv[index]
@@ -155,8 +157,13 @@ while index < len(sys.argv):
             currentLevel -= 1
     elif arg == "-v" or arg == "--verbose":
         currentLevel += 1
+    elif arg == "--version":
+        index += 1
+        targetVersion = sys.argv[index]
     elif arg == "--dry-run":
         UNSAFE = False
+    elif arg == "--test":
+        test = True
     else:
         printUsage("Unknown argument: " + arg + "\n")
     index += 1
@@ -166,8 +173,15 @@ if logFile != None:
     sys.log = open(logFile, "a", 1)
     logFile = "-"
 
+def listDevices(path = '/dev/iguanaIR'):
+    devices = []
+    for device in os.listdir(path):
+        if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
+            devices.append(device)
+    return devices
+
 _conn = None
-def connect(timeout = 0):
+def connect(timeout = 3, willChange = False, quiet = False):
     global _conn
 
     # check every quarter second
@@ -177,7 +191,7 @@ def connect(timeout = 0):
     start = None
     while timeout > 0:
         # list the possible devices
-        devices = os.listdir('/dev/iguanaIR')
+        devices = listDevices()
         devices.sort()
 
         # no change, so lets just run on
@@ -185,6 +199,8 @@ def connect(timeout = 0):
             pass
         elif start is None:
             start = devices[0]
+            if not willChange:
+                break
         elif len(devices) == 1 and \
              start and start != devices[0]:
             break
@@ -193,17 +209,20 @@ def connect(timeout = 0):
         time.sleep(sleepTime)
         timeout -= sleepTime
 
-    devices = os.listdir('/dev/iguanaIR')
+    # make sure there is a device detected
+    devices = listDevices()
     if len(devices) == 0:
-        message(LOG_FATAL, "Device not found.  Please plug the device in and try again.\n")
-    elif len(devices) != 1:
-        message(LOG_ERROR, "This script should only be used with a single device installed.\n")
-    message(LOG_DEBUG,
-            'Device list after %s seconds: %s\n' % (timeoutStart - timeout,
-                                                    devices))
+        message(LOG_ERROR,
+                "Device not found.  Plug the device in and try again.\n")
+        raise KeyboardInterrupt()
+
+    # connect to the device
+    if len(devices) > 1 and not quiet:
+        message(LOG_WARN, "Multiple devices found, using '%s'\n" % devices[0])
     _conn = iguanaIR.connect(devices[0])
 
-def deviceTransaction(type, data = ''):
+# used detect the version before we try to write it
+def deviceTransaction(type, data = '', quiet = False):
     global _conn
 
     # connect on demand
@@ -213,18 +232,21 @@ def deviceTransaction(type, data = ''):
     retval = False
     req = iguanaIR.createRequest(type, data)
     if not iguanaIR.writeRequest(req, _conn):
-        print 'Failed to write packet.'
+        if not quiet:
+            message(LOG_ERROR, 'Failed to write packet. %s\n' % _conn)
     else:
         resp = iguanaIR.readResponse(_conn, 10000)
         if resp is None:
-            message(LOG_ERROR, "No response received.\n")
+            if not quiet:
+                message(LOG_ERROR, "No response received.\n")
         elif type == iguanaIR.IG_DEV_GETVERSION:
             if not iguanaIR.responseIsError(resp):
                 data = iguanaIR.removeData(resp)
                 retval = ord(data[0]) + (ord(data[1]) << 8)
         elif iguanaIR.responseIsError(resp):
-            message(LOG_ERROR,
-                    'Error response code: 0x%s\n' % iguanaIR.code(resp))
+            if not quiet:
+                message(LOG_ERROR,
+                        'Error response code: 0x%s\n' % iguanaIR.code(resp))
         else:
             retval = iguanaIR.removeData(resp)
     return retval
@@ -238,22 +260,18 @@ def deviceVersion(target = None):
             count += 1
             if count == 5:
                 message(LOG_WARN, "Please unplug and replug the device before continuing.\n")
-                message(LOG_WARN, "  Press any key to continue.\n")
+                message(LOG_WARN, "  Press enter to continue.\n")
                 sys.stdin.readline()
             else:
                 time.sleep(0.20)
-            connect()
+            connect(quiet = True)
 
     # just print the version of the target device
-    if printVersion:
-        message(LOG_NORMAL, "Found device version 0x%x\n" % version)
-        sys.exit(0)
-    else:
-        message(LOG_INFO, "Found device version 0x%x\n" % version)
+    message(LOG_INFO, "Found device version 0x%x\n" % version)
 
     if target is not None and \
        target != version:
-        message(LOG_FATAL, "Incorrect version (%s != %s) found.  Reflashing has failed.\n" % (version, target))
+        message(LOG_FATAL, "Incorrect version (0x%4.4x != 0x%4.4x) found.  Reflashing has failed.\n" % (version, target))
 
     return version
 
@@ -361,7 +379,7 @@ def writePagesToDevice(pages):
 
         # if we're in an older device delay and reconnect
         if version <= 4:
-            connect(5)
+            connect(5, True)
     sys.stdout.write('\n')
 
     # reset the device (it may have already)
@@ -409,53 +427,324 @@ def writeReflasher():
         writeHexFile(os.path.join(sys.path[0], 'hex', 'reflasher.hex'))
         deviceVersion(FlasherVersion)
 
-def findLatest(type):
+def findHexFile(type, target = None, mustMatch = True):
     latest = None
     latestVersion = None
     for hex in glob.glob(os.path.join(sys.path[0], 'hex', '%s-*.hex' % type)):
         version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
-        if latestVersion is None:
-            latestVersion = version
+        if target is None:
+            if latestVersion is None:
+                latestVersion = version
 
-        if latest is None or \
-           version > latestVersion:
+            if latest is None or \
+               version > latestVersion:
+                latest = hex
+        elif version == target:
             latest = hex
+            break
+
+    if latest is None and target is not None and mustMatch:
+        message(LOG_FATAL, "Failed to find %s version %d\n" % (type, target))
 
     return latest
 
-if usb_ir is None:
-    if loader is None:
-        # find the most recent loader
-        loader = findLatest('loader')
+def hexVersion(filename):
+    return int(re.search('.*?(\d+)\.hex$', filename).group(1))
 
-    if loader is None:
-        usb_ir = findLatest('usb_ir_enclosed')
+def reflashDevice():
+    # get the id first so we can reset it at the end
+    id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
+    if id:
+        message(LOG_NORMAL,
+                "Clearing device id (%s) during reflashing.\n" % id)
+        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
+
+    # not necessary when only writing the body
+    version = deviceVersion()
+    keepLoader = False
+    if (not usb_ir and (version >> 8) == hexVersion(loader)) or \
+       (usb_ir and version == hexVersion(usb_ir)):
+        keepLoader = True
+    else:
+        writeReflasher()
+
+    # put on the usb_ir if that's the final target version
+    if usb_ir is not None:
+        if keepLoader:
+            message(LOG_NORMAL, "Keeping the previously installed firmware.\n")
+        else:
+            sys.stdout.write('Writing usb_ir to the device:\n')
+            writeHexFile(usb_ir, fullFlash)
+            deviceVersion(hexVersion(usb_ir))
+    # put on the boot loader and the correct body
+    else:
+        version = deviceVersion()
+        if keepLoader and body is not None:
+            message(LOG_NORMAL, "Keeping the previously installed loader.\n")
+        else:
+            sys.stdout.write('Writing loader to the device:\n')
+            blank = fullFlash
+            if body is None:
+                blank = True
+            writeHexFile(loader, blank)
+            version = deviceVersion(hexVersion(loader) << 8)
+
+        if body is not None:
+            sys.stdout.write('Writing body to the device:\n')
+            writeHexFile(body, setFeatures = (features != 0))
+            deviceVersion((version & 0xFF00) | hexVersion(body))
+
+    if id:
+        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
+        deviceTransaction(iguanaIR.IG_DEV_SETID, id)
+
+def checkReceiver():
+    # read 40 signals to test the receiver
+    deviceTransaction(iguanaIR.IG_DEV_RECVON)
+    count = 0
+    while count < 40:
+        packet = iguanaIR.readResponse(_conn, 1000)
+        data = iguanaIR.removeData(packet)
+        format = 'I' * (len(data) / 4)
+
+        for signal in struct.unpack(format, data):
+            if signal != 0x25555:
+                count += 1
+
+            type = 'space: '
+            if signal & iguanaIR.IG_PULSE_BIT:
+                type = 'pulse: '
+            message(LOG_INFO,
+                    type + "%d\n" % (signal & iguanaIR.IG_PULSE_MASK))
+    deviceTransaction(iguanaIR.IG_DEV_RECVOFF)
+
+def sendPanasonicPower():
+    # send a signal on all active channels
+    panasonicPower = """pulse 1040
+space 12544
+pulse 3498
+space 1685
+pulse 448
+space 362
+pulse 448
+space 1237
+pulse 448
+space 384
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 362
+pulse 448
+space 1237
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 1237
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 362
+pulse 448
+space 362
+pulse 448
+space 1237
+pulse 448
+space 362
+pulse 448
+space 1237
+pulse 448
+space 1237
+pulse 448
+space 1237
+pulse 448
+space 1237
+pulse 448
+space 362
+pulse 448
+space 384
+pulse 448
+space 1237
+pulse 448
+space 362
+pulse 448
+space 1237
+pulse 448
+space 1237
+pulse 448
+space 1237
+pulse 448
+space 1237
+pulse 448
+space 362
+pulse 448
+space 1237
+pulse 448
+"""
+
+    output = tempfile.NamedTemporaryFile()
+    output.write(panasonicPower)
+    output.flush()
+    (count, data) = iguanaIR.readPulseFile(output.name)
+    output.close()
+
+    deviceTransaction(iguanaIR.IG_DEV_SEND, data)
+
+
+
+# find the file names to fufill the version requirements
+if targetVersion is not None:
+    targetVersion = int(targetVersion, 0)
+    if targetVersion < 0x0100:
         if usb_ir is None:
-            usb_ir = findLatest('usb_ir')
-    elif body is None:
-        body = findLatest('body')
+            usb_ir = targetVersion
+    else:
+        if loader is None:
+            loader = targetVersion >> 8
+        if body is None:
+            body = targetVersion & 0xFF
 
-# not necessary when only writing the body
-keepLoader = False
-if not usb_ir and \
-   (deviceVersion() >> 8) == int(re.split('(\d+)', loader)[-2]):
-    keepLoader = True
+# find the files that will be loaded onto the device
+if usb_ir is None:
+    if loader is None or isinstance(loader, int):
+        # find the most recent loader
+        loader = findHexFile('loader', loader)
+
+    if loader is None:
+        usb_ir = findHexFile('usb_ir')
+    elif body is None or isinstance(body, int):
+        body = findHexFile('body', body, mustMatch = (body != 0))
+elif isinstance(usb_ir, int):
+    usb_ir = findHexFile('usb_ir', usb_ir)    
+
+# compute the target version from the files to report to the user
+if usb_ir:
+    targetVersion = hexVersion(usb_ir)
 else:
-    writeReflasher()
+    targetVersion = hexVersion(loader) << 8
+    if body:
+        targetVersion |= hexVersion(body)
+message(LOG_NORMAL,
+        "Reflashing devices to firmware version 0x%4.4x\n\n" % targetVersion)
 
-# put on the usb_ir if that's the final target version
-if usb_ir is not None:
-    sys.stdout.write('Writing usb_ir to the device:\n')
-    writeHexFile(usb_ir, fullFlash)
-    deviceVersion(0x0004)
+default = ' '
+while True:
+    try:
+        type = None
+        while type is None:
+            selection = '[u/s/h/l]'
+            if default is not None:
+                selection = selection.replace(default.lower(), default)
+            message(LOG_NORMAL,
+                    "Unenclosed, sockets, hybrid, or LEDs? %s\n" % selection)
+            line = sys.stdin.readline()
+            if not line[:-1]:
+                line = default
 
-# put on the boot loader and the correct body
-else:
-    if not keepLoader:
-        sys.stdout.write('Writing loader to the device:\n')
-        writeHexFile(loader, fullFlash)
-        version = deviceVersion(0x0100)
+            if line[0].lower() in 'ushl':
+                default = line[0].upper()
 
-    sys.stdout.write('Writing body to the device:\n')
-    writeHexFile(body, setFeatures = (features != 0))
-    version = deviceVersion(0x0101)
+            if line[0].lower() == 'u':
+                type = 'unenclosed'
+                plugs = ()
+                leds = (0x0,)
+            elif line[0].lower() == 's':
+                type = 'sockets'
+                plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
+                leds = ()
+            elif line[0].lower() == 'h':
+                type = 'hybrid'
+                plugs = (0xC, 0x4, 0x8, 0x4, 0xC)
+                leds = (0x1,)
+            elif line[0].lower() == 'l':
+                type = 'leds'
+                plugs = ()
+                leds = (0x1, 0x4)
+
+        # reflash the device with information about what kind it is
+        reflashDevice()
+        if not test:
+            continue
+
+        # connect to the device and check the version
+        message(LOG_NORMAL, "Checking device version to test.\n")
+        version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
+        if ((version >> 8) == 0 or (version & 0xFF) == 0) and \
+           version != 3 and \
+           version != 4:
+            message(LOG_ERROR, "This script cannot test a version %s device.\n" % version)
+            continue
+
+        message(LOG_NORMAL, "Checking receiver.\n")
+        checkReceiver()
+
+        if plugs:
+            message(LOG_NORMAL, "Doing sockets tests.\n")
+            for channels in plugs:
+                deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
+                                  chr(channels << 4))
+                sendPanasonicPower()
+                time.sleep(0.1)
+
+        if leds:
+            message(LOG_NORMAL, "Doing led tests.\n")
+            for channels in leds:
+                message(LOG_NORMAL, "Press enter to send panasonic power on channel %s.\n" % channels)
+                line = sys.stdin.readline()
+                deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
+                                  chr(channels << 4))
+                sendPanasonicPower()
+                if len(leds) == 1:
+                    message(LOG_NORMAL, "Press enter to send again.\n")
+                else:
+                    message(LOG_NORMAL,
+                            "Flip, then press enter to send again.\n")
+                line = sys.stdin.readline()
+                deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
+                                  chr(channels << 4))
+                sendPanasonicPower()
+
+    except KeyboardInterrupt:
+        if type is None:
+            break
