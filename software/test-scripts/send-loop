@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import subprocess
+
+count = 0
+while True:
+    irsend = subprocess.Popen(('irsend', 'send_once', 'panasonic', 'power'))
+    irsend.wait()
+    if irsend.returncode:
+        break
+    count += 1
+
+    if count % 500 == 0:
+        print 'Success after %d sends' % count
+
+print "Failure after %d sends" % count
