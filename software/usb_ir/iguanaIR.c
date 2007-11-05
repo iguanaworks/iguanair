@@ -147,6 +147,7 @@ bool iguanaResponseIsError(const iguanaPacket response)
     int retval = 1;
     dataPacket *packet = (dataPacket*)response;
 
+    errno = EIO;
     if (packet != NULL)
     {
         if (packet->code != IG_DEV_ERROR)
