@@ -17,6 +17,7 @@ include "body.inc"
 
 VERSION_ID_LOW:  equ 0x01 ; firmware version ID low byte (code body)
 
+export get_feature_list
 
 ; FUNCTION: body_main
 ;  API used by the loader to call into the body.
@@ -32,13 +33,19 @@ body_main:
     jz bm_was_initialized
 
     ;  INITIALIZE
-    ; enable output for tx on all four channels
+    ; enable output for tx on all channels
+    call get_feature_list
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    jnz bm_output_channels
+    mov REG[P06CR], 0x01 ; only had 1 channel back then
+    jmp bm_output_enabled
+  bm_output_channels:
     mov REG[P14CR], 0x01 ; channel 0
     mov REG[P15CR], 0x01 ; channel 1
     mov REG[P16CR], 0x01 ; channel 2
     mov REG[P17CR], 0x01 ; channel 3
-    ; but make sure the pins are set high because the LEDs are active LOW
-    mov REG[TX_BANK], TX_MASK
+  bm_output_enabled:
+    ; pins will be set correctly by the rx_reset below
 
     ; configure capture
     mov REG[RX_PIN_CR], 0b00000010 ; configure port pin: pullup enabled
@@ -67,8 +74,6 @@ body_main:
     and A, ~FLAG_BODY_RESET
     mov [loader_flags], A
 
-
-
   bm_was_reset:
     ; reload the control code
     mov A, [tmp1]
@@ -88,10 +93,6 @@ body_main:
     ; send functions
     cmp A, CTL_SEND
     jz send_body
-    cmp A, CTL_SETCHANNELS
-    jz set_channels_body
-    cmp A, CTL_GETCHANNELS
-    jz get_channels_body
 
     ; pin functions
     cmp A, CTL_GETPINCONFIG

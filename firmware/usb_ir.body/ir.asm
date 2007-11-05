@@ -165,6 +165,18 @@ rx_reset:
   rx_reset_done:
     ret
 
+rx_pins_off:
+    jnz rx_disable_tx
+    ; old --> active high --> and ~
+    and REG[OLD_TX_BANK], ~OLD_TX_MASK
+    jmp rx_disable_done
+  rx_disable_tx:
+    ; new --> active low --> or
+    or REG[TX_BANK], TX_MASK
+    jmp rx_disable_done
+  rx_disable_done:
+    ret
+        
 ; FUNCTION rx_disable disables the IR receiver
 rx_disable:
     ; disable the timer interrupt
@@ -178,10 +190,10 @@ rx_disable:
     mov REG[INT_MSK2], A
 
     ; make sure the active LOW transmit LEDs are OFF
-    mov A, REG[TX_BANK]
-    or  A, TX_MASK
-    mov REG[TX_BANK], A
-
+    ; does this device support channels?
+    call get_feature_list
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    call rx_pins_off
     ret
 
 ;FUNCTION load_value
@@ -306,8 +318,17 @@ twrap_int:
 ; code format: first bit is 1 for on, 0 for off
 ; next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
 transmit_code:
+    ; does this device support channels?
+    mov X, OLD_TX_BANK
+    mov [tx_pins], OLD_TX_MASK
+    call get_feature_list
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    mov [tmp3], A
+    jz tx_start
+
     ; read a byte describing channel selection, and make sure it only
     ; specifies valid channels
+    mov X, TX_BANK
     and [control_pkt + CDATA + 1], TX_MASK
     mov [tx_pins], [control_pkt + CDATA + 1]
     ; if the byte was 0 then transmit on all channels
@@ -317,15 +338,16 @@ transmit_code:
   tx_start:
     mov [buffer_ptr], buffer          ; reset to start of buffer
     mov [tx_state], 0                 ; clear tx state
-    mov [tmp2], [control_pkt + CDATA] ; get number of bytes to transmit
-    mov A, [tmp2]                     ; set zero flag if tmp2 is zero
+    mov [tmp1], [control_pkt + CDATA] ; get number of bytes to transmit
+    mov A, [tmp1]                     ; set zero flag if tmp1 is zero
+    jz tx_end_pulse                   ; if zero byte, we're done
+
   tx_loop:
-    jz tx_done          ; if zero byte, we're done
     mvi A, [buffer_ptr] ; move buffer data into A, increment pointer
     mov [tx_temp], A    ; store byte
     and A, 0x7F         ; mask off the pulse length bits
     asl A               ; shift left to multiply by two due to carrier division
-    mov X, A            ; store pulse length in X
+    mov [tmp2], A       ; store pulse length in tmp2
 
     mov A, [tx_temp]  ; get original byte back
     and A, 0x80       ; mask off pulse on/off bit
@@ -334,17 +356,17 @@ transmit_code:
     jmp tx_pulse      ; start sending pulse
 
   tx_on:
-    mov [tx_state], [tx_pins] ; mask on tx bits; TODO: changed timing!!!
+    mov [tx_state], [tx_pins] ; mask on tx bits
     jmp tx_pulse              ; start sending pulse--this jump seems redundant,
                         ; but is there to make timing the same on both branches
 
   tx_pulse: ; ready to send a pulse.  Need to AND in a XX kHz carrier
-    mov A, X            ; put pulse length into A. zero flag valid   [4 cycles]
+    mov A, [tmp2]       ; put pulse length into A. zero flag valid   [5 cycles]
     jz tx_end_pulse     ; this pulse is done                         [5 cycles]
-    mov A, REG[TX_BANK] ; get current register state                 [6 cycles]
+    mov A, REG[X]       ; get current register state                 [7 cycles]
     xor A, [tx_state]   ; if on, toggle, else doing nothing          [6 cycles]
-    mov REG[TX_BANK], A ; write change to register                   [5 cycles]
-    dec X               ; decrement remaining pulse length           [4 cycles]
+    mov REG[X], A       ; write change to register                   [6 cycles]
+    dec [tmp2]          ; decrement remaining pulse length           [7 cycles]
 
 ;this is a set of 7-clock delays.  You jump into it at different points in
 ;order to get different length delays.
@@ -494,11 +516,8 @@ transmit_code:
 
   ; end of the transmit function
   tx_end_pulse:
-    and REG[TX_BANK], TX_MASK ; make sure tx pins are off
-    dec [tmp2]                ; decrement remaining byte count
-    jmp tx_loop               ; go to the next pulse
-
-  tx_done:
-    and REG[TX_BANK], TX_MASK ;make sure tx pins are off
-    ret ;done
-
+    mov A, [tmp3] ; make sure tx pins are off
+    call rx_pins_off
+    dec [tmp1]    ; decrement remaining byte count
+    jnz tx_loop   ; if more, go to next pulse
+    ret           ; done

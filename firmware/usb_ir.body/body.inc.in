@@ -16,5 +16,7 @@
 ; other constants
 RX_PIN_CR:   EQU P05CR  ; control reg for rx pin
 TX_BANK:     EQU P1DATA ; which set are the transmit pins in?
+OLD_TX_BANK: EQU P0DATA ; pins used to be in this set
 TX_MASK:     EQU 0xF0   ; all pins that can tx
+OLD_TX_MASK: EQU 0x40   ; mask for unenclosed devices
 BURST_DELAY: EQU 30     ; delay loops between GPIO transfers in burst mode

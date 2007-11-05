@@ -56,9 +56,9 @@ usb_ir = None
 loader = None
 body = None
 fullFlash = False
-features = 0
 targetVersion = None
 test = False
+forceFlash = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -126,21 +126,13 @@ while index < len(sys.argv):
     arg = sys.argv[index]
     if arg == "--blank-pages":
         fullFlash = True
-    elif arg == "--feature":
-        index += 1
-        feature = sys.argv[index]
-        for name in dir(iguanaIR):
-            if name.startswith('IG_HAS_') and \
-               name[7:] == feature.upper():
-                features |= eval('iguanaIR.IG_HAS_%s' % feature.upper())
-                break
-        else:
-            message(LOG_FATAL, "Unknown feature: %s\n" % feature)
     elif arg == "-h" or arg == "--help":
         printUsage()
     elif arg == "--loader":
         index += 1
         loader = sys.argv[index]
+    elif arg == "--force":
+        forceFlash = True
     elif arg == "--body":
         index += 1
         body = sys.argv[index]
@@ -251,6 +243,12 @@ def deviceTransaction(type, data = '', quiet = False):
             retval = iguanaIR.removeData(resp)
     return retval
 
+def replugWarning():
+    message(LOG_WARN,
+            "Please unplug and replug the device before continuing.\n")
+    message(LOG_WARN, "  Press enter to continue.\n")
+    sys.stdin.readline()
+
 def deviceVersion(target = None):
     count = 0
     version = None
@@ -259,9 +257,7 @@ def deviceVersion(target = None):
         if not version:
             count += 1
             if count == 5:
-                message(LOG_WARN, "Please unplug and replug the device before continuing.\n")
-                message(LOG_WARN, "  Press enter to continue.\n")
-                sys.stdin.readline()
+                replugWarning()
             else:
                 time.sleep(0.20)
             connect(quiet = True)
@@ -398,8 +394,8 @@ def writeHexFile(filename, fullFlash = False, setFeatures = False):
         for page in pages:
             blanks.remove(page['start'] / 64)
 
-    # place the features if necessary
-    if setFeatures:
+    # place the features if necessary (and possible)
+    if setFeatures and targetVersion == 0x0101:
         message(LOG_INFO, "Setting features to 0x%x\n" % features)
         for page in pages:
             if page['start'] == 0xC00:
@@ -451,22 +447,26 @@ def findHexFile(type, target = None, mustMatch = True):
 def hexVersion(filename):
     return int(re.search('.*?(\d+)\.hex$', filename).group(1))
 
-def reflashDevice():
-    # get the id first so we can reset it at the end
-    id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
-    if id:
-        message(LOG_NORMAL,
-                "Clearing device id (%s) during reflashing.\n" % id)
-        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
+def reflashDevice(features):
+    wrote = False
+    id = None
 
     # not necessary when only writing the body
     version = deviceVersion()
     keepLoader = False
     if (not usb_ir and (version >> 8) == hexVersion(loader)) or \
        (usb_ir and version == hexVersion(usb_ir)):
-        keepLoader = True
-    else:
+        keepLoader = not forceFlash
+
+    if not keepLoader:
+        # get the id so we can reset it at the end
+        id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
+        if id:
+            message(LOG_NORMAL,
+                    "Clearing device id (%s) during reflashing.\n" % id)
+            deviceTransaction(iguanaIR.IG_DEV_SETID, '')
         writeReflasher()
+        wrote = True
 
     # put on the usb_ir if that's the final target version
     if usb_ir is not None:
@@ -476,6 +476,7 @@ def reflashDevice():
             sys.stdout.write('Writing usb_ir to the device:\n')
             writeHexFile(usb_ir, fullFlash)
             deviceVersion(hexVersion(usb_ir))
+            wrote = True
     # put on the boot loader and the correct body
     else:
         version = deviceVersion()
@@ -488,15 +489,20 @@ def reflashDevice():
                 blank = True
             writeHexFile(loader, blank)
             version = deviceVersion(hexVersion(loader) << 8)
+            wrote = True
 
         if body is not None:
             sys.stdout.write('Writing body to the device:\n')
-            writeHexFile(body, setFeatures = (features != 0))
+            writeHexFile(body, setFeatures = features)
             deviceVersion((version & 0xFF00) | hexVersion(body))
+            wrote = True
 
     if id:
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
         deviceTransaction(iguanaIR.IG_DEV_SETID, id)
+
+    if wrote and deviceVersion() < 0x0100:
+        replugWarning()
 
 def checkReceiver():
     # read 40 signals to test the receiver
@@ -665,8 +671,18 @@ else:
     targetVersion = hexVersion(loader) << 8
     if body:
         targetVersion |= hexVersion(body)
-message(LOG_NORMAL,
-        "Reflashing devices to firmware version 0x%4.4x\n\n" % targetVersion)
+message(LOG_NORMAL, """WARNING! WARNING! WARNING!
+
+This application is used to reflash Iguanawork USB IR transceivers.
+This means rewriting the code stored within the chip on the device.
+If something goes wrong the device could be rendered unusable!  Use at
+your own risk.  Non-working devices can be reflashed by Iguanaworks
+for a nominal fee.  You may press ctrl-c to break out of this
+application, but if it is actively writing the flash, please wait
+until it finishes or risk breaking your device.
+
+Reflashing devices to firmware version 0x%4.4x
+""" % targetVersion)
 
 default = ' '
 while True:
@@ -676,8 +692,10 @@ while True:
             selection = '[u/s/h/l]'
             if default is not None:
                 selection = selection.replace(default.lower(), default)
-            message(LOG_NORMAL,
-                    "Unenclosed, sockets, hybrid, or LEDs? %s\n" % selection)
+            message(LOG_NORMAL, """
+What kind of device is plugged in?
+  unenclosed, sockets, hybrid, or LEDs? %s
+""" % selection)
             line = sys.stdin.readline()
             if not line[:-1]:
                 line = default
@@ -689,27 +707,31 @@ while True:
                 type = 'unenclosed'
                 plugs = ()
                 leds = (0x0,)
+                features = 0
             elif line[0].lower() == 's':
                 type = 'sockets'
                 plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
                 leds = ()
+                features = iguanaIR.IG_HAS_SOCKETS
             elif line[0].lower() == 'h':
                 type = 'hybrid'
                 plugs = (0xC, 0x4, 0x8, 0x4, 0xC)
                 leds = (0x1,)
+                features = iguanaIR.IG_HAS_BOTH
             elif line[0].lower() == 'l':
                 type = 'leds'
                 plugs = ()
                 leds = (0x1, 0x4)
+                features = iguanaIR.IG_HAS_LEDS
 
         # reflash the device with information about what kind it is
-        reflashDevice()
+        reflashDevice(features)
         if not test:
             continue
 
         # connect to the device and check the version
         message(LOG_NORMAL, "Checking device version to test.\n")
-        version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
+        version = deviceVersion()
         if ((version >> 8) == 0 or (version & 0xFF) == 0) and \
            version != 3 and \
            version != 4:
@@ -723,7 +745,7 @@ while True:
             message(LOG_NORMAL, "Doing sockets tests.\n")
             for channels in plugs:
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
-                                  chr(channels << 4))
+                                  chr(channels))
                 sendPanasonicPower()
                 time.sleep(0.1)
 
@@ -733,7 +755,7 @@ while True:
                 message(LOG_NORMAL, "Press enter to send panasonic power on channel %s.\n" % channels)
                 line = sys.stdin.readline()
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
-                                  chr(channels << 4))
+                                  chr(channels))
                 sendPanasonicPower()
                 if len(leds) == 1:
                     message(LOG_NORMAL, "Press enter to send again.\n")
@@ -742,7 +764,7 @@ while True:
                             "Flip, then press enter to send again.\n")
                 line = sys.stdin.readline()
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
-                                  chr(channels << 4))
+                                  chr(channels))
                 sendPanasonicPower()
 
     except KeyboardInterrupt:
