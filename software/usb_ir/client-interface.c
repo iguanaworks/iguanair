@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "iguanaIR.h"
 #include "support.h"
@@ -310,11 +311,23 @@ static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
             message(LOG_ERROR, "Out of memory allocating client struct.");
         else
         {
-            memset(newClient, 0, sizeof(client));
-            newClient->idev = idev;
-            newClient->receiving = 0;
-            newClient->fd = clientFd;
-            insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
+            int flags;
+
+            flags = fcntl(clientFd, F_GETFL);
+            if (flags == -1)
+                message(LOG_ERROR,
+                        "Failed read status flags for client socket.\n");
+            else if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+                message(LOG_ERROR,
+                        "Failed to set client socket to non-blocking mode.\n");
+            else
+            {
+                memset(newClient, 0, sizeof(client));
+                newClient->idev = idev;
+                newClient->receiving = 0;
+                newClient->fd = clientFd;
+                insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
+            }
         }
     }
 }
@@ -332,7 +345,8 @@ static bool tellReceivers(itemHeader *item, void *userData)
             return false;
 
         if (! writeDataPacket(info->packet, me->fd))
-            message(LOG_ERROR, "Failed to send packet to receiver.\n");
+            message(LOG_ERROR, "Failed to send packet to receiver: %d: %s\n",
+                    errno, strerror(errno));
         else
         {
             message(LOG_DEBUG3, "Sent receivers: ");
