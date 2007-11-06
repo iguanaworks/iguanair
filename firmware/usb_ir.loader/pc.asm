@@ -98,6 +98,7 @@ read_packet_body:
     cmp A, [tmp1]
     jz read_packet_overflow ; more data, but buffer full (tx overflow)
     mov A, REG[X]           ; move data into A
+    inc X                   ; increment to the next byte
     mvi [tmp2], A           ; move data into buffer
     dec [tmp3]              ; one less byte total
     jz read_packet_done     ; done with receive
@@ -180,62 +181,32 @@ read_control_body:
     cmp A, PACKET_SIZE
     jnz rc_loop
 
-    ; we already know the packet is pending (from check_recv), so just read it
-    mov [tmp1], control_pkt + CCODE ; set pointer to code offset in packet
-    mov A, OUT                      ; check OUT endpoint
-    lcall USB_bGetEPCount           ; packet length now in A
-    mov [tmp2], A                   ; put length in tmp
-    mov X, EP2DATA                  ; set start of data fifo
-    inc [tmp2]                      ; because we decrement immediately
-    dec X                           ; because we increment before byte reads
+    mov X, PACKET_SIZE    ; store buffer size
+    mov A, control_pkt    ; store data pointer
+    call read_packet_body ; read the data
+    jz rc_read_bad        ; overflow how?
 
+    ; read through the packet checking the format
+    mov X, control_pkt - 1
+    ; first skip the 0s
   rc_read_zero:
-    dec [tmp2]
-    jz rc_read_bad  ; invalid packet
     inc X
-    mov A, REG[X]   ; read byte from fifo
-    jz rc_read_zero ; if zero, throw away and keep reading
-
-    dec [tmp2] ; we're off by one
+    mov A, [X]
+    jz rc_read_zero
 
     ; at this point, the next byte should be 0xCD
-    cmp A, FROM_PC
-    jnz rc_read_bad
-
-    ; next byte is control code
-    inc X
-    mov A, REG[X]
-    mvi [tmp1], A ; store in first byte of packet
-    dec [tmp2]    ; we read a byte
+    cmp [X], FROM_PC
     jz rc_read_done
-
-    ; read rest of data into control_pkt
-  rc_read_data:
-    inc X
-    mov A, REG[X] ; read from packet
-    mvi [tmp1], A ; store
-    dec [tmp2]
-    jnz rc_read_data
-
-  rc_read_done:
-    ; put control code in A
-    mov A, [control_pkt + CCODE]
-    jmp rc_read_ret
 
   rc_read_bad:
     mov A, 0
     jmp rc_read_ret
 
+  rc_read_done:
+    ; store control code in tmp1
+    mov A, [X + 1]
+
   rc_read_ret:
-    ; store return val
-    mov [tmp1], A
-
-    ; re-enable endpoint
-    MOV A, OUT
-    lcall USB_EnableEP
-
-    ; get return val back
-    mov A, [tmp1]
     ret
 
 ; FUNCTION: 

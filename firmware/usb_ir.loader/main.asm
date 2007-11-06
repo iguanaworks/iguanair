@@ -65,7 +65,7 @@ main_loop:
 
 	; check for data from host
 	lcall check_read ; see if there is a transmission from the host
-	jnz main_recv    
+	jnz main_recv
 
 	; only call the body loop if the body has successfully initialized
 	mov A, [loader_flags] ; check for halt condition
