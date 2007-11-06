@@ -107,7 +107,7 @@ main_getversion:
 	mov [control_pkt + CDATA], [buffer + 1]
 	; high byte is defined in here
 	mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
-	mov A, CTL_BASE_SIZE + 2
+	mov X, CTL_BASE_SIZE + 2
 	lcall write_control
 	jmp main_loop
 
@@ -123,14 +123,14 @@ main_prog:
     jnc ack_then_write
     ; throw an error
 	mov [control_pkt + CCODE], CTL_INVALID_ARG
-	mov A, CTL_BASE_SIZE
+	mov X, CTL_BASE_SIZE
 	lcall write_control
 	jmp main_prog_done
 
 	; ack the receive
   ack_then_write:
 	mov [control_pkt + CCODE], CTL_WRITEBLOCK
-	mov A, CTL_BASE_SIZE
+	mov X, CTL_BASE_SIZE
 	lcall write_control
 
 	; wait for ack to go through so that the control_pkt buffer is unused
@@ -178,7 +178,7 @@ main_chksum:
 	mov [control_pkt + CDATA + 1], [tmp2]
 	mov [control_pkt + CDATA + 2], [KEY2]
 	mov [control_pkt + CDATA + 3], [KEY1]
-	mov A, CTL_BASE_SIZE + 4
+	mov X, CTL_BASE_SIZE + 4
 	lcall write_control
  
 	; read the next packet

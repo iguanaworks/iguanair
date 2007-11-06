@@ -254,8 +254,8 @@ wait_for_IN_ready_body:
 ;   pre: X contains pointer to data
 ;        A contains the packet size
 write_packet_body:
-    mov [tmp1], A ; store packet size
-    mov [tmp2], X ; store data pointer
+    mov [tmp1], X ; store packet size
+    mov [tmp2], A ; store data pointer
 
     call wait_for_IN_ready_body
 
@@ -276,5 +276,5 @@ write_control_body:
     mov [control_pkt + 1], 0
     mov [control_pkt + 2], TO_PC
 
-    mov X, control_pkt    ; store a pointer to the data
+    mov A, control_pkt    ; store a pointer to the data
     jmp write_packet_body ; jmp to the actual worker
