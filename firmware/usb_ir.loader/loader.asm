@@ -11,7 +11,6 @@
 ; * See LICENSE for license details.
 ; */
 
-
 include "loader.inc"
 
 ; exported variables
@@ -49,4 +48,4 @@ tmp3:
 AREA pkt_bss               (RAM, ABS, CON)
   org FIRST_FLASH_VAR
 control_pkt:
-    BLK PACKET_SIZE ; control packet buffer
+    BLK PACKET_SIZE ; 8 byte buffer overlapping w/ ssc vars

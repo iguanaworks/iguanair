@@ -22,6 +22,7 @@ include "m8c.inc"         ; part specific constants and macros
 include "memory.inc"      ; Constants & macros for SMM/LMM and Compiler
 include "PSoCAPI.inc"     ; PSoC API definitions for all User Modules
 include "loader.inc"
+
 VERSION_ID_HIGH:  EQU 0x01 ; firmware version ID high byte (bootloader version)
 MAGIC_WRITE_BYTE: EQU 0x42 ; random magic value (meaning of life, but hex)
 
@@ -33,9 +34,9 @@ AREA text
 _main:
     or [loader_flags], FLAG_BODY_INIT ; set the body init flag
 
-	mov A, 0        ; put arg 0 for USB_start
-	lcall USB_Start ; enable USB device
-	or  F, 0x1      ; enable global interrupts
+    mov A, 0        ; put arg 0 for USB_start
+    lcall USB_Start ; enable USB device
+    or  F, 0x1      ; enable global interrupts
 
 ; wait for usb enumeration
 config_loop:

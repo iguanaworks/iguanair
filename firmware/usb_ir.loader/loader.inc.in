@@ -39,9 +39,8 @@ FIRST_FLASH_VAR:  EQU KEY1
 ; CRAPPY:
 ;   FIRST_FLASH_VAR to not overlap with control_pkt and SROM stuff
 ;   BUFFER_SIZE for the buffer itself
-;   -3 for 3 1 byte variables in loader.asm
-;   -2 for 2 1 byte variables in main.asm
-PINNED_VAR_START: EQU FIRST_FLASH_VAR - BUFFER_SIZE - 3 - 2
+;   -5 for 5 1 byte variables in loader.asm
+PINNED_VAR_START: EQU FIRST_FLASH_VAR - BUFFER_SIZE - 5
 
 ; start the bss for the body code after the bytes used by the usb
 ;  library + space for the stack.  The stack size is based on what
@@ -49,7 +48,7 @@ PINNED_VAR_START: EQU FIRST_FLASH_VAR - BUFFER_SIZE - 3 - 2
 BODY_SKIP_BYTES:  EQU 67 + 18
 
 ; over all the previous 2 numbers define the space allowed for "body"
-;  variables: 0xF8 - 150 - 3 - 2 - 67 - 18 == 8 ew, TINY!
+;  variables: 0xF8 - 150 - 5 - 67 - 18 == 8 ew, TINY!
 ;  NOTE: body code compilation cannot exceed 93 bytes used!
 
 ; constants to remove some "magic" numbers
