@@ -81,14 +81,14 @@ main_recv:
 	lcall read_control
 
 	;at this point, A contains control code
-	jz main_loop       ; null control code, just ignore
-	cmp A, CTL_VERSION ; get version
+	jz main_loop          ; null control code, just ignore
+	cmp A, CTL_GETVERSION ; get version
 	jz main_getversion
-	cmp A, CTL_PROG    ; program a block of flash
+	cmp A, CTL_WRITEBLOCK ; program a block of flash
 	jz main_prog
-	cmp A, CTL_CHKSUM  ; checksum block of flash
+	cmp A, CTL_CHECKSUM   ; checksum block of flash
 	jz main_chksum
-	cmp A, CTL_RST     ; reset command
+	cmp A, CTL_RESET      ; reset command
 	jz main_reset
 
 	lcall body_handler ; default behavior--unknown code
@@ -102,7 +102,7 @@ main_getversion:
 	call exec_ssc
 
 	; send control packet with version id
-	mov [control_pkt + CCODE], CTL_VERSION
+	mov [control_pkt + CCODE], CTL_GETVERSION
 	; store the correct byte from the previously read page
 	mov [control_pkt + CDATA], [buffer + 1]
 	; high byte is defined in here
@@ -129,7 +129,7 @@ main_prog:
 
 	; ack the receive
   ack_then_write:
-	mov [control_pkt + CCODE], CTL_PROG
+	mov [control_pkt + CCODE], CTL_WRITEBLOCK
 	mov A, CTL_BASE_SIZE
 	lcall write_control
 
@@ -173,7 +173,7 @@ main_chksum:
 	jnz mcsum_loop
 
 	; return the checksum to the PC with the KEY1/KEY2 values
-	mov [control_pkt + CCODE], CTL_CHKSUM
+	mov [control_pkt + CCODE], CTL_CHECKSUM
 	mov [control_pkt + CDATA + 0], [tmp1]
 	mov [control_pkt + CDATA + 1], [tmp2]
 	mov [control_pkt + CDATA + 2], [KEY2]
