@@ -134,9 +134,9 @@ write_signal:
     mvi [tmp1], A
 
     ; send the data packet
-    mov X, control_pkt ; packet pointer
-    mov A, PACKET_SIZE ; packet size
-    lcall write_data   ; send the data
+    mov X, PACKET_SIZE ; packet size
+    mov A, control_pkt ; packet pointer
+    lcall write_packet ; send the data
   ws_done:
     ret
 

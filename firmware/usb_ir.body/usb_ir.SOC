@@ -17,6 +17,7 @@
 				<SOURCE_FILE NAME="loader.asm" TYPE="UserSourceModule" LANGUAGE="ASM" OVERLAY_NAME=""/>
 				<SOURCE_FILE NAME="loader.inc" TYPE="UserIncludeFile" LANGUAGE="ASM" OVERLAY_NAME=""/>
 				<SOURCE_FILE NAME="ir.asm" TYPE="UserSourceModule" LANGUAGE="ASM" OVERLAY_NAME=""/>
+				<SOURCE_FILE NAME="pins.asm" TYPE="UserSourceModule" LANGUAGE="ASM" OVERLAY_NAME=""/>
 			</SOURCE_FILE_LIST>
 			<LIB_FILE_LIST>
 				<LIB_FILE NAME="libPSoC.a" TYPE="UserLibrary">

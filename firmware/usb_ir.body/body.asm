@@ -67,7 +67,7 @@ body_main:
     ; SOFT RESET
     mov [rx_on], 0   ; rx starts in the off state
     lcall rx_reset   ; make sure receiver state matches
-;    lcall pins_reset     ; clear GPIO pin state
+    lcall pins_reset ; clear GPIO pin state
 
     ; clear the soft reset flag
     mov A, [loader_flags]
@@ -103,8 +103,8 @@ body_main:
     jz get_pins_body
     cmp A, CTL_SETPINS
     jz set_pins_body
-    cmp A, CTL_BULKPINS
-    jz bulk_pins_body
+    cmp A, CTL_PINBURST
+    jz pin_burst_body
 
     ; misc functions
     cmp A, CTL_EXECUTE
@@ -115,7 +115,7 @@ body_main:
 
   bm_ack_then_ret:
     ; send ack
-    mov A, CTL_BASE_SIZE
+    mov X, CTL_BASE_SIZE
     lcall write_control
   bm_ret:
     ret                ; return to main recv
@@ -128,14 +128,14 @@ get_features_body:
     mov [control_pkt + CCODE], CTL_GETFEATURES
     call get_feature_list
     mov [control_pkt + CDATA], A
-    mov A, CTL_BASE_SIZE + 1
+    mov X, CTL_BASE_SIZE + 1
     lcall write_control
     jmp bm_ret
 
 get_buf_size_body:
     mov [control_pkt + CCODE], CTL_GETBUFSIZE
     mov [control_pkt + CDATA], BUFFER_SIZE
-    mov A, CTL_BASE_SIZE + 1
+    mov X, CTL_BASE_SIZE + 1
     lcall write_control
     jmp bm_ret
 
@@ -165,47 +165,41 @@ send_body:
     mov [control_pkt + CCODE], CTL_OVERSEND
 
     ; send ack
-    mov A, CTL_BASE_SIZE + 1
+    mov X, CTL_BASE_SIZE + 1
     lcall write_control
     jmp bm_ret
 
 get_pin_config_body:
+    lcall get_pin_config
     jmp bm_ret
 
 set_pin_config_body:
+    lcall set_pin_config
     jmp bm_ret
 
+; put the pins in the control packet and send it back
 get_pins_body:
-    mov [control_pkt + CCODE], CTL_GETPINS
-    mov A, CTL_BASE_SIZE + 2
+    lcall get_pins
+    mov X, CTL_BASE_SIZE + 2
     lcall write_control
     jmp bm_ret
 
+; use control packet pin settings then ack
 set_pins_body:
-    ; disable ints to avoid race conditions on the port
-    and F, 0xFE ; clear global interrupt bit
+    lcall set_pins
+    jmp bm_ack_then_ret
 
-    ; load the P0 value into A
-    mov A, [control_pkt + CDATA + 0]
-    ; write out value
-    mov REG[P0DATA], A
+; send a burst of activity to the GPIO pins
+pin_burst_body:
+    ; disable rx since the burst timing would interfer
+    lcall rx_disable
 
-    ; load the P1 value into A
-    mov A, [control_pkt + CDATA + 1]
-    ; mask off the USB lines so the user cannot break that
-    and A, 0xFC
-    ; write out value
-    mov REG[P1DATA], A
+    lcall read_buffer ; get the block to read
+    lcall pin_burst   ; set pins in a burst
 
-    ; re-enable global interrupts
-    or  F, 0x1
+    jmp bm_ack_then_ret
 
-    jmp bm_ret
-
-bulk_pins_body:
-    jmp bm_ret
-
-; default to executing the final page
+; default to executing the final page since nothing else is easy
 execute_body:
     lcall 0x1FC0
     jmp bm_ret

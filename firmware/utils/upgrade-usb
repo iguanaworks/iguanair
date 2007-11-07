@@ -258,6 +258,7 @@ def deviceVersion(target = None):
             count += 1
             if count == 5:
                 replugWarning()
+                count = 0
             else:
                 time.sleep(0.20)
             connect(quiet = True)
