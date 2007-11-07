@@ -34,7 +34,7 @@ uint8_t equivalence[][2] = {
     { IG_DEV_GETBUFSIZE , 0x0B },
     { IG_DEV_WRITEBLOCK , 0x0C },
     { IG_DEV_EXECUTE    , 0x0D },
-    { IG_DEV_BULKPINS   , 0x0E },
+    { IG_DEV_PINBURST   , 0x0E },
     { IG_DEV_GETID      , 0x0F },
     { IG_DEV_RESET      , IG_DEV_RESET },      /* no change */
     { IG_DEV_SETCHANNELS, 0x11 },

@@ -78,8 +78,8 @@ static versionedType types[] =
     {0x101, 0, {IG_DEV_SETPINS,    CTL_TODEV,   2,          true, NO_PAYLOAD}},
 
     /* 1 byte per pin, in the register format */
-    {0x101, 0, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 16}},
-    {0x101, 0, {IG_DEV_SETPINCONFIG, CTL_TODEV, 16,         true, NO_PAYLOAD}},
+    {0x101, 0, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 8}},
+    {0x101, 0, {IG_DEV_SETPINCONFIG, CTL_TODEV, 8,          true, NO_PAYLOAD}},
     {0, 0x003, {IG_DEV_GETCONFIG0,   CTL_TODEV, NO_PAYLOAD, true, 4}},
     {0, 0x003, {IG_DEV_SETCONFIG0,   CTL_TODEV, 4,          true, NO_PAYLOAD}},
     {0, 0x003, {IG_DEV_GETCONFIG1,   CTL_TODEV, NO_PAYLOAD, true, 4}},
@@ -89,8 +89,8 @@ static versionedType types[] =
     {0, 0, {IG_DEV_GETBUFSIZE,  CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {0, 0, {IG_DEV_WRITEBLOCK,  CTL_TODEV,   68,          true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_EXECUTE,     CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
-    {2, 2, {IG_DEV_BULKPINS,    CTL_TODEV,   64,          true,  NO_PAYLOAD}},
-    {3, 0, {IG_DEV_BULKPINS,    CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
+    {2, 2, {IG_DEV_PINBURST,    CTL_TODEV,   64,          true,  NO_PAYLOAD}},
+    {3, 0, {IG_DEV_PINBURST,    CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_GETID,       CTL_TODEV,   NO_PAYLOAD,  true,  12}},
     {0, 0, {IG_DEV_SETID,       CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
@@ -461,19 +461,22 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         if (! translateDevice(msg + CODE_OFFSET, idev->version, false))
             message(LOG_ERROR, "Failed to translate code for device.\n");
 
-        /* SEND and BULKPINS do not get their data packed into the
+        /* SEND and PINBURST do not get their data packed into the
            request packet, unlike everything else. */
         if (request->code != IG_DEV_SEND &&
-            request->code != IG_DEV_BULKPINS)
+            request->code != IG_DEV_PINBURST)
         {
-            sent = request->dataLen;
-            /* this is only used to get addresses in WRITEBLOCK */
-            if (sent > 4)
-                sent = 4;
-            memcpy(msg + MIN_CTL_LENGTH, request->data, sent);
-            length += sent;
+            if (request->code != IG_DEV_SETPINCONFIG)
+            {
+                sent = request->dataLen;
+                /* this is only used to get addresses in WRITEBLOCK */
+                if (sent > 4)
+                    sent = 4;
+                memcpy(msg + MIN_CTL_LENGTH, request->data, sent);
+                length += sent;
+            }
         }
-        /* as of version 3 SEND and BULKPINS require a length argument */
+        /* as of version 3 SEND and PINBURST require a length argument */
         else if (idev->version >= 3)
         {
             msg[length++] = request->dataLen;

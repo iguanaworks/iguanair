@@ -33,14 +33,14 @@ enum
     /* use the upper buye of the short to not overlap with DEV_ commands */
     INTERNAL_SLEEP = 0x100,
 
-    INTERNAL_GETPINS = 0x110,
+    INTERNAL_GETCONFIG = 0x110,
     INTERNAL_GETOUTPINS,
     INTERNAL_GETPULLPINS,
     INTERNAL_GETOPENPINS,
     INTERNAL_GETSINKPINS,
     INTERNAL_GETHOLDPINS,
 
-    INTERNAL_SETPINS = 0x120,
+    INTERNAL_SETCONFIG = 0x120,
     INTERNAL_SETOUTPINS,
     INTERNAL_SETPULLPINS,
     INTERNAL_SETOPENPINS,
@@ -84,14 +84,16 @@ static commandSpec supportedCommands[] =
     {"get carrier",     false, IG_DEV_GETCARRIER,      0,      false},
     {"set carrier",     false, IG_DEV_SETCARRIER,      0,      false},
 
+    {"get pin config",  false, IG_DEV_GETPINCONFIG,    0,      false},
     {"get config 0",    false, IG_DEV_GETCONFIG0,      0,      false},
     {"get config 1",    false, IG_DEV_GETCONFIG1,      0,      false},
+    {"set pin config",  false, IG_DEV_SETPINCONFIG,    0,      false},
     {"set config 0",    false, IG_DEV_SETCONFIG0,      0,      false},
     {"set config 1",    false, IG_DEV_SETCONFIG1,      0,      false},
 
     {"get pins",        false, IG_DEV_GETPINS,         0,      false},
     {"set pins",        false, IG_DEV_SETPINS,         0,      true},
-    {"bulk pins",       false, IG_DEV_BULKPINS,        0,      false},
+    {"pin burst",       false, IG_DEV_PINBURST,        0,      false},
     {"execute code",    false, IG_DEV_EXECUTE,         0,      false},
     {"get id",          false, IG_DEV_GETID,           0,      false},
     {"set id",          false, IG_DEV_SETID,           0,      false},
@@ -337,6 +339,10 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                             ": 0x%2.2x", iguanaDataToPinSpec(data));
                     break;
 
+                case IG_DEV_GETPINCONFIG:
+                    memcpy(pinState, data, IG_PIN_COUNT);
+                    break;
+
                 case IG_DEV_GETCONFIG0:
                     memcpy(pinState, data, IG_PIN_COUNT / 2);
                     break;
@@ -382,12 +388,12 @@ static void handleInternalTask(igtask *cmd, PIPE_PTR conn)
         else
             message(LOG_ERROR, "failed to parse sleep time.\n");
     }
-    else if ((cmd->spec->code & INTERNAL_GETPINS) == INTERNAL_GETPINS)
+    else if ((cmd->spec->code & INTERNAL_GETCONFIG) == INTERNAL_GETCONFIG)
     {
         message(LOG_NORMAL, "%s: success: 0x%2.2x\n",
                 cmd->command, getSetting(cmd->spec->bit, pinState));
     }
-    else if ((cmd->spec->code & INTERNAL_SETPINS) == INTERNAL_SETPINS)
+    else if ((cmd->spec->code & INTERNAL_SETCONFIG) == INTERNAL_SETCONFIG)
     {
         setSetting(cmd->spec->bit, cmd->arg, pinState);
         message(LOG_NORMAL, "%s: success\n", cmd->command);        
@@ -438,6 +444,12 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             }
             break;
         }
+
+        case IG_DEV_SETPINCONFIG:
+            result = IG_PIN_COUNT;
+            data = malloc(sizeof(pinState));
+            memcpy(data, pinState, sizeof(pinState));
+            break;
 
         case IG_DEV_SETCONFIG0:
             result = IG_PIN_COUNT / 2;
@@ -491,7 +503,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
                 result = 68;
             break;
 
-        case IG_DEV_BULKPINS:
+        case IG_DEV_PINBURST:
         {
             unsigned int x;
             data = (void*)malloc(64);
@@ -599,7 +611,7 @@ static struct poptOption options[] =
     { "get-buffer-size", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETBUFSIZE, "Find out the size of the RAM buffer used for sends and receives.", NULL },
     { "write-block", '\0', POPT_ARG_STRING, NULL, IG_DEV_WRITEBLOCK, "Write the block specified in the file.", "filename" },
     { "execute", '\0', POPT_ARG_NONE, NULL, IG_DEV_EXECUTE, "Execute code starting at address 0x1fc0 on the device.", "address" },
-    { "lcd-text", '\0', POPT_ARG_STRING, NULL, IG_DEV_BULKPINS, "Send a bulk transfer of pin settings to write the argument to an LCD.", "string" },
+    { "lcd-text", '\0', POPT_ARG_STRING, NULL, IG_DEV_PINBURST, "Send a bulk transfer of pin settings to write the argument to an LCD.", "string" },
     { "reset", '\0', POPT_ARG_NONE, NULL, IG_DEV_RESET, "Reset the USB device.", NULL },
     { "get-channels", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCHANNELS, "Check which channels are used during transmits.", NULL },
     { "set-channels", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCHANNELS, "Set which channels are used during transmits.", "channels" },
@@ -607,8 +619,8 @@ static struct poptOption options[] =
     { "set-carrier", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCARRIER, "Set the carrier frequency for transmits.", "carrier (kHz)" },
 
     /* commands that actually store and load the pin configuration */
-    { "get-pin-config", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETPINS, "Retrieve the internal pin state.", NULL },
-    { "set-pin-config", '\0', POPT_ARG_NONE, NULL, INTERNAL_SETPINS, "Store the internal pin state.", NULL },
+    { "get-pin-config", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETPINCONFIG, "Retrieve the internal pin state.", NULL },
+    { "set-pin-config", '\0', POPT_ARG_NONE, NULL, IG_DEV_SETPINCONFIG, "Store the internal pin state.", NULL },
 
     /* internal commands */
     { "get-output-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETOUTPINS, "Check which pins are set to be outputs.", NULL },
@@ -680,7 +692,7 @@ int main(int argc, const char **argv)
         case IG_DEV_SETCHANNELS:
         case IG_DEV_GETCARRIER:
         case IG_DEV_SETCARRIER:
-        case IG_DEV_BULKPINS:
+        case IG_DEV_PINBURST:
         case IG_DEV_EXECUTE:
         case IG_DEV_GETID:
         case IG_DEV_SETID:
@@ -700,14 +712,22 @@ int main(int argc, const char **argv)
             enqueueTaskById(x, poptGetOptArg(poptCon));
             break;
 
-        case INTERNAL_GETPINS:
+        case IG_DEV_GETPINCONFIG:
+#if 0
             enqueueTask("get config 0", NULL);
             enqueueTask("get config 1", NULL);
+#else
+            enqueueTaskById(x, poptGetOptArg(poptCon));
+#endif
             break;
 
-        case INTERNAL_SETPINS:
+        case IG_DEV_SETPINCONFIG:
+#if 0
             enqueueTask("set config 0", NULL);
             enqueueTask("set config 1", NULL);
+#else
+            enqueueTaskById(x, poptGetOptArg(poptCon));
+#endif
             break;
 
         /* handling of the normal command arguments */

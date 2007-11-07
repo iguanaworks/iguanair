@@ -80,7 +80,7 @@ enum
     IG_DEV_SETPINCONFIG = 0x1B,
     IG_DEV_GETPINS      = 0x1C,
     IG_DEV_SETPINS      = 0x1D,
-    IG_DEV_BULKPINS     = 0x1E,
+    IG_DEV_PINBURST     = 0x1E,
     IG_DEV_EXECUTE      = 0x1F,
     IG_DEV_GETID        = 0x20, /* internal to client/daemon */
     IG_DEV_SETID        = 0x21, /* internal to client/daemon */
