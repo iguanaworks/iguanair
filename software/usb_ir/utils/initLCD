@@ -44,7 +44,7 @@ def writeString(text):
 def writeBulkPinData(data):
     if version < 2:
         raise Exception('First bulkpin support was in version 2.')
-    deviceTransaction(iguanaIR.IG_DEV_BULKPINS, data)
+    deviceTransaction(iguanaIR.IG_DEV_PINBURST, data)
 
 def generateBulkPinData(text, isCommand = True):
     if (version == 2 and len(text) > 15) or \
