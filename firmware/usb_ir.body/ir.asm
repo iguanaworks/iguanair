@@ -140,6 +140,25 @@ write_signal:
   ws_done:
     ret
 
+; FUNCTION rx_disable disables the IR receiver
+rx_disable:
+    ; disable the timer interrupt
+    mov A, REG[INT_MSK1]
+    and A, ~0b10000000   ; tcap interrupt enable
+    mov REG[INT_MSK1], A
+
+    ; disable the timer wrap interrupt
+    mov A, REG[INT_MSK2]
+    and A, ~0b00000010   ; twrap interrupt enable
+    mov REG[INT_MSK2], A
+
+    ; make sure the active LOW transmit LEDs are OFF
+    ; does this device support channels?
+    call get_feature_list
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    call rx_pins_off
+    ret
+
 ; FUNCTION: rx_reset enables the IR receiver
 rx_reset:
     ; reset a pile of variables related to reception
@@ -175,25 +194,6 @@ rx_pins_off:
     or REG[TX_BANK], TX_MASK
     jmp rx_disable_done
   rx_disable_done:
-    ret
-        
-; FUNCTION rx_disable disables the IR receiver
-rx_disable:
-    ; disable the timer interrupt
-    mov A, REG[INT_MSK1]
-    and A, ~0b10000000   ; tcap interrupt enable
-    mov REG[INT_MSK1], A
-
-    ; disable the timer wrap interrupt
-    mov A, REG[INT_MSK2]
-    and A, ~0b00000010   ; twrap interrupt enable
-    mov REG[INT_MSK2], A
-
-    ; make sure the active LOW transmit LEDs are OFF
-    ; does this device support channels?
-    call get_feature_list
-    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
-    call rx_pins_off
     ret
 
 ;FUNCTION load_value

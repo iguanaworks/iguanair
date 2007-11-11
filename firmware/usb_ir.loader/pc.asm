@@ -73,43 +73,28 @@ check_read_body:
 
 ; FUNCTION read_packet
 read_packet_body:
-    mov [tmp1], X         ; store buffer size
-    mov [tmp2], A         ; store data pointer
-
     ; get packet length
     mov A, OUT            ; check OUT endpoint
     lcall USB_bGetEPCount ; packet length now in A
-    mov [tmp3], A         ; store packet length
+    mov [tmp1], A         ; store packet length
 
+    ; set start of data fifo
+    mov X, 0
+    mov [tmp2], control_pkt
+
+    ; cannot overflow since we have an 8 byte packet buffer
+  read_packet_loop:
+    mov A, REG[X + EP2DATA]  ; move data into A
+    mov [X + control_pkt], A ; move data into buffer
+    inc X                    ; move forward a byte
+    dec [tmp1]               ; one less byte left
+    jz read_packet_done      ; done with receive
+    jmp read_packet_loop     ; keep copying from this packet
+
+  read_packet_done:
     ; re-enable OUT endpoint
     mov A, OUT
     lcall USB_EnableEP
-
-    ; set start of data fifo
-    mov X, EP2DATA
-
-    ; adjust tmp1 to point to the end of the buffer
-    mov A, [tmp1]
-    add A, [tmp2]
-    mov [tmp1], A
-
-  read_packet_loop:
-    mov A, [tmp2]           ; check for overflow
-    cmp A, [tmp1]
-    jz read_packet_overflow ; more data, but buffer full (tx overflow)
-    mov A, REG[X]           ; move data into A
-    inc X                   ; increment to the next byte
-    mvi [tmp2], A           ; move data into buffer
-    dec [tmp3]              ; one less byte total
-    jz read_packet_done     ; done with receive
-    jmp read_packet_loop    ; keep copying from this packet
-
-  read_packet_overflow:
-    mov A, 0
-    ret
-
-  read_packet_done:
-    mov A, 1
     ret
 
 ; FUNCTION read_buffer

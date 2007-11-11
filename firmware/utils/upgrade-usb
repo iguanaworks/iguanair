@@ -227,7 +227,7 @@ def deviceTransaction(type, data = '', quiet = False):
         if not quiet:
             message(LOG_ERROR, 'Failed to write packet. %s\n' % _conn)
     else:
-        resp = iguanaIR.readResponse(_conn, 10000)
+        resp = iguanaIR.readResponse(_conn, 3000)
         if resp is None:
             if not quiet:
                 message(LOG_ERROR, "No response received.\n")
@@ -241,6 +241,7 @@ def deviceTransaction(type, data = '', quiet = False):
                         'Error response code: 0x%s\n' % iguanaIR.code(resp))
         else:
             retval = iguanaIR.removeData(resp)
+
     return retval
 
 def replugWarning():
@@ -726,6 +727,8 @@ What kind of device is plugged in?
                 features = iguanaIR.IG_HAS_LEDS
 
         # reflash the device with information about what kind it is
+        if _conn is not None:
+            iguanaIR.iguanaClose(_conn)
         reflashDevice(features)
         if not test:
             continue

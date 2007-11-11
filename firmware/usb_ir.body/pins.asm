@@ -101,7 +101,7 @@ get_pin_config:
 
     ; return the config data in a second packet
     mov X, PACKET_SIZE
-    mov A, [control_pkt]
+    mov A, control_pkt
     lcall write_packet
 
   get_pin_config_done:
@@ -111,10 +111,18 @@ set_pin_config:
     call has_gpios
     jz set_pin_config_done
 
+  wait_data_ready:
+    lcall check_read ; see if there is a transmission from the host
+    jz wait_data_ready
+
     ; read the new configuration
-    mov X, 8
+    mov X, PACKET_SIZE
     mov A, control_pkt
     lcall read_packet
+
+    mov X, PACKET_SIZE
+    mov A, control_pkt
+    lcall write_packet
 
     mov A, [control_pkt + 0] ; get pin config byte
     and A, PIN_CFG_MASK ; mask off the bits we will accept
@@ -199,10 +207,12 @@ set_pins:
     ; disable ints to avoid race conditions on the ports
     and F, 0xFE
     mov A, REG[P0DATA]              ; get the current pin state
-    or A, [control_pkt + CDATA + 0] ; set the appropriate lower bits
+    and A, 0xF0                     ; mask off the ones we're setting
+    or A, [control_pkt + CDATA + 0] ; set the appropriate bits
     mov REG[P0DATA], A              ; write out the new value
 
     mov A, REG[P1DATA]              ; get the current pin state
+    and A, 0x87                     ; mask off the ones we're setting
     or A, [control_pkt + CDATA + 1] ; set the appropriate bits
     mov REG[P1DATA], A              ; write out the new value
 
