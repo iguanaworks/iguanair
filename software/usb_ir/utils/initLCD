@@ -8,22 +8,29 @@ RW_PIN     = 0x02
 ENABLE_PIN = 0x01
 
 import iguanaIR
-conn = iguanaIR.connect('0')
+_conn = iguanaIR.connect('0')
 
-def deviceTransaction(type, data = ''):
+def deviceTransaction(type, data = '', quiet = False):
     retval = False
     req = iguanaIR.createRequest(type, data)
-    if not iguanaIR.writeRequest(req, conn):
-        print 'Failed to write packet.'
+    if not iguanaIR.writeRequest(req, _conn):
+        if not quiet:
+            print 'Failed to write packet. %s\n' % _conn
     else:
-        resp = iguanaIR.readResponse(conn, 10000)
-        if iguanaIR.responseIsError(resp):
-            print 'Error response.'
+        resp = iguanaIR.readResponse(_conn, 3000)
+        if resp is None:
+            if not quiet:
+                print "No response received.\n"
         elif type == iguanaIR.IG_DEV_GETVERSION:
-            data = iguanaIR.removeData(resp)
-            retval = ord(data[0]) + (ord(data[1]) << 8)
+            if not iguanaIR.responseIsError(resp):
+                data = iguanaIR.removeData(resp)
+                retval = ord(data[0]) + (ord(data[1]) << 8)
+        elif iguanaIR.responseIsError(resp):
+            if not quiet:
+                print 'Error response code: 0x%s\n' % iguanaIR.code(resp)
         else:
-            retval = True
+            retval = iguanaIR.removeData(resp)
+
     return retval
 
 def strobeEnable(pins):
@@ -81,8 +88,10 @@ def initLCD():
     version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
 
     # set all the pins to outputs
-    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG0, chr(iguanaIR.IG_OUTPUT) * 4)
-    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG1, chr(iguanaIR.IG_OUTPUT) * 4)
+#    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG0, chr(iguanaIR.IG_OUTPUT) * 4)
+#    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG1, chr(iguanaIR.IG_OUTPUT) * 4)
+    deviceTransaction(iguanaIR.IG_DEV_SETPINCONFIG,
+                      chr(iguanaIR.IG_OUTPUT) * 8)
 
     # send the Function Set command 3 times
     strobeEnable(0x30)
