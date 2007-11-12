@@ -78,6 +78,8 @@ static versionedType types[] =
     {0x101, 0, {IG_DEV_SETPINS,    CTL_TODEV,   2,          true, NO_PAYLOAD}},
 
     /* 1 byte per pin, in the register format */
+    {0, 3, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 8}},
+    {0, 3, {IG_DEV_SETPINCONFIG, CTL_TODEV, 8,          true, NO_PAYLOAD}},
     {0x101, 0, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 8}},
     {0x101, 0, {IG_DEV_SETPINCONFIG, CTL_TODEV, 8,          true, NO_PAYLOAD}},
     {0, 0x003, {IG_DEV_GETCONFIG0,   CTL_TODEV, NO_PAYLOAD, true, 4}},
@@ -417,12 +419,68 @@ packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
     return NULL;
 }
 
+bool oldPinConfig(iguanaDev *idev,       /* required */
+                  dataPacket *request,   /* required */
+                  dataPacket **response) /* optional */
+{
+    unsigned char *data, x, code;
+
+    code = request->code;
+    if (code == IG_DEV_SETPINCONFIG)
+        data = request->data;
+    else
+        data = (unsigned char*)malloc(8);
+    for(x = 0; x < 2; x++)
+    {
+        if (code == IG_DEV_SETPINCONFIG)
+        {
+            request->code = IG_DEV_SETCONFIG0 + x * 2;
+            request->dataLen = 4;
+            request->data = data + x * 4;
+        }
+        else
+            request->code = IG_DEV_GETCONFIG0 + x * 2;
+
+        if (! deviceTransaction(idev, request, response) ||
+            iguanaResponseIsError(*response))
+            break;
+
+        if (code == IG_DEV_GETPINCONFIG)
+        {
+            memcpy(data + x * 4, (*response)->data, 4);
+            if (x == 0)
+                iguanaFreePacket(*response);
+            else
+            {
+                free((*response)->data);
+                (*response)->code = code;
+                (*response)->dataLen = 8;
+                (*response)->data = data;
+            }
+        }
+    }
+    
+    if (code == IG_DEV_SETPINCONFIG)
+        request->data = data;
+    if (x == 2)
+        return true;
+    return false;
+}
+
 bool deviceTransaction(iguanaDev *idev,       /* required */
                        dataPacket *request,   /* required */
                        dataPacket **response) /* optional */
 {
     bool retval = false;
     packetType *type;
+
+    /* For old devices setting pin configs actually becomes 2
+       requests, awkward, but the way it has to be to support old
+       firmware. */
+    if (idev->version <= 3 && 
+        (request->code == IG_DEV_SETPINCONFIG ||
+         request->code == IG_DEV_GETPINCONFIG))
+        return oldPinConfig(idev, request, response);
 
     type = checkIncomingProtocol(idev, request, response == NULL);
     if (type)
@@ -557,11 +615,9 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                     message(LOG_ERROR, "Response size does not match specification (%d != %d)\n", pos->dataLen, type->inData);
                 else
                 {
-                    if (pos->dataLen > 0)
-                    {
-                        *response = pos;
-                        pos = NULL;
-                    }
+                    /* store the retrieved response */
+                    *response = pos;
+                    pos = NULL;
 
                     /* how long did this all take? */
                     now = microsSinceX();
