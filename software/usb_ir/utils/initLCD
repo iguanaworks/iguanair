@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
 import subprocess
+import iguanaIR
+import sys
 
 POWER_PIN  = 0x08
 REGSEL_PIN = 0x04
 RW_PIN     = 0x02
 ENABLE_PIN = 0x01
 
-import iguanaIR
 _conn = iguanaIR.connect('0')
 
 def deviceTransaction(type, data = '', quiet = False):
@@ -108,12 +109,9 @@ def initLCD():
     bulkWriteCommands('\x0F')
 
 initLCD()
-writeString('H')
-bulkWriteString('ello world')
 
-#bulkWriteCommands('\x01')
-#bulkWriteString('aaaaaaaa')
-#bulkWriteCommands('\x01')
-#bulkWriteString('bbbbbbbb')
-#bulkWriteCommands('\x01')
-#bulkWriteString('ccccccccaaaabbb')
+if text is None:
+    writeString('H')
+    bulkWriteString('ello world')\
+else:
+    bulkWriteString(text)
