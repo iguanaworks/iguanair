@@ -26,6 +26,31 @@ include "loader.inc"
 VERSION_ID_HIGH:  EQU 0x01 ; firmware version ID high byte (bootloader version)
 MAGIC_WRITE_BYTE: EQU 0x42 ; random magic value (meaning of life, but hex)
 
+;; These functions are actually defined in pc.asm, but the page is
+;;  defined here to consolidate the differences between the loader
+;;  and reflasher code bases
+AREA BOTTOM(ROM,ABS,CON)
+    org check_read
+    ljmp check_read_body
+
+    org read_packet
+    ljmp read_packet_body
+
+    org read_buffer
+    ljmp read_buffer_body
+
+    org read_control
+    ljmp read_control_body
+
+    org wait_for_IN_ready
+    ljmp wait_for_IN_ready_body
+
+    org write_packet
+    ljmp write_packet_body
+
+    org write_control
+    ljmp write_control_body
+
 ; exported functions
 export _main
 export soft_reset
@@ -65,7 +90,7 @@ main_loop:
 	jnz soft_reset        ; go to known state after halt
 
 	; check for data from host
-	lcall check_read ; see if there is a transmission from the host
+	lcall check_read_body ; see if there is a transmission from the host
 	jnz main_recv
 
 	; only call the body loop if the body has successfully initialized
@@ -79,7 +104,7 @@ main_loop:
 ; there is a transmission, so receive and handle it
 main_recv:
 	; get control packet
-	lcall read_control
+	lcall read_control_body
 
 	;at this point, A contains control code
 	jz main_loop          ; null control code, just ignore
@@ -109,13 +134,13 @@ main_getversion:
 	; high byte is defined in here
 	mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
 	mov X, CTL_BASE_SIZE + 2
-	lcall write_control
+	lcall write_control_body
 	jmp main_loop
 
 main_prog:
 	mov [tmp3], [control_pkt + CDATA]           ; save the flash block address
 	mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; set up to read right number of bytes
-	lcall read_buffer                           ; read the block
+	lcall read_buffer_body                      ; read the block
 
 	; protect the first 48 pages with a special code
 	cmp [control_pkt + CDATA + 1], MAGIC_WRITE_BYTE
@@ -125,17 +150,17 @@ main_prog:
     ; throw an error
 	mov [control_pkt + CCODE], CTL_INVALID_ARG
 	mov X, CTL_BASE_SIZE
-	lcall write_control
+	lcall write_control_body
 	jmp main_prog_done
 
 	; ack the receive
   ack_then_write:
 	mov [control_pkt + CCODE], CTL_WRITEBLOCK
 	mov X, CTL_BASE_SIZE
-	lcall write_control
+	lcall write_control_body
 
 	; wait for ack to go through so that the control_pkt buffer is unused
-	lcall wait_for_IN_ready
+	lcall wait_for_IN_ready_body
 
     ; disable ints to avoid race condition on page 0
     and F, 0xFE
@@ -180,8 +205,8 @@ main_chksum:
 	mov [control_pkt + CDATA + 2], [KEY2]
 	mov [control_pkt + CDATA + 3], [KEY1]
 	mov X, CTL_BASE_SIZE + 4
-	lcall write_control
- 
+	lcall write_control_body
+
 	; read the next packet
 	jmp main_loop
 

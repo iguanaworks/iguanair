@@ -23,28 +23,12 @@ include "loader.inc"
 ; read = an OUT transfer from the PC to this device
 ; write = an IN transfer from this device to the PC
 
-AREA BOTTOM(ROM,ABS,CON)
-    org check_read
-    ljmp check_read_body
-
-    org read_packet
-    ljmp read_packet_body
-
-    org read_buffer
-    ljmp read_buffer_body
-
-    org read_control
-    ljmp read_control_body
-
-    org wait_for_IN_ready
-    ljmp wait_for_IN_ready_body
-
-    org write_packet
-    ljmp write_packet_body
-
-    org write_control
-    ljmp write_control_body
-
+export read_buffer_body
+export wait_for_IN_ready_body
+export read_control_body
+export write_control_body
+export check_read_body
+        
 AREA text
 ; FUNCTION check_read
 ; returns 1 if there is data to receive, 0 otherwise

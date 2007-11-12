@@ -372,8 +372,8 @@ def writePagesToDevice(pages):
         sys.stdout.write("\r  Writing page %d (%d/%d)  " % (page['start'] / 64,
                                                             count, len(pages)))
         sys.stdout.flush()
-        if not deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']):
-            message(LOG_FATAL, "FAILED!!\n")
+        if deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']) is None:
+            message(LOG_FATAL, "deviceTransaction failed.\n")
 
         # if we're in an older device delay and reconnect
         if version <= 4:
