@@ -1,8 +1,10 @@
-;**************************************************************************
-; * loader.asm ***************************************************************
+; **************************************************************************
+; * loader.asm *************************************************************
 ; **************************************************************************
 ; *
-; * TODO: DESCRIBE AND DOCUMENT THIS FILE
+; * Provides definitions of the locations loader variables in RAM.  These
+; * variables must be accessible to body code and so must be stored at known
+; * locations.  This file must be included in ANY firmware project.
 ; *
 ; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 ; * Author: Joseph Dunn <jdunn@iguanaworks.net>

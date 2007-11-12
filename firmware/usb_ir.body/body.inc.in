@@ -1,8 +1,9 @@
-;**************************************************************************
+; **************************************************************************
 ; * body.inc ***************************************************************
 ; **************************************************************************
 ; *
-; * TODO: DESCRIBE AND DOCUMENT THIS FILE
+; * Template for the body.inc header file that defines the functions
+; * supported by the firmware body code.
 ; *
 ; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 ; * Author: Joseph Dunn <jdunn@iguanaworks.net>

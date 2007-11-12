@@ -196,14 +196,14 @@ rx_pins_off:
   rx_disable_done:
     ret
 
-;FUNCTION load_value
-;loads a received value into the data buffer
-; pre: rx_high and rx_low have the raw timer data
-;      rx_pulse has the pulse bit set correctly
-;returns: 1 if ok, 0 if overflow
+; FUNCTION load_value
+; loads a received value into the data buffer
+;  pre: rx_high and rx_low have the raw timer data
+;       rx_pulse has the pulse bit set correctly
+; returns: 1 if ok, 0 if overflow
 load_value:
     push X
-    ;shift right 6 bits
+    ; shift right 6 bits
     mov A, [rx_low]
     asr A
     asr A
@@ -211,17 +211,17 @@ load_value:
     asr A
     asr A
     asr A
-    ;clear the upper 6 bits (because of sign extend, have to be sure they're 0)
+    ; clear the upper 6 bits (because of sign extension mask off upper bits)
     and A, 0x03
-    mov [rx_low], A ;stores bits 0-1 of final result
+    mov [rx_low], A ; stores bits 0-1 of final result
 
-    ;for bits 2-6, we want to use bits 0-4 of the upper byte, so shift left 2
+    ; for bits 2-6, we want to use bits 0-4 of the upper byte, so shift left 2
     mov A, [rx_high]
     asl A
     asl A
-    or [rx_low], A ;stores bits 2-6 of final result
-    jz ld_skip_dec ;if zero, don't decrement
-    ;TODO: this gives us some minor inaccuracy
+    or [rx_low], A ; stores bits 2-6 of final result
+    jz ld_skip_dec ; if zero, don't decrement
+    ;NOTE: this gives us some minor inaccuracy
     ;decrement raw value by one, so our range is 1-128 instead of 0-127
     dec [rx_low]
   ld_skip_dec:

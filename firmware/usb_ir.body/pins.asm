@@ -2,7 +2,7 @@
 ; * pins.asm ***************************************************************
 ; **************************************************************************
 ; *
-; * TODO: DESCRIBE AND DOCUMENT THIS FILE
+; * All the functions for controlling GPIO pins on unenclosed devices.
 ; *
 ; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 ; * Author: Joseph Dunn <jdunn@iguanaworks.net>

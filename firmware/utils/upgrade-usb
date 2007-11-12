@@ -4,7 +4,9 @@
 # ** upgrade-usb ***********************************************************
 # **************************************************************************
 # *
-# * TODO: DESCRIBE AND DOCUMENT THIS FILE
+# * This script is used to flash the body code on to each USB device
+# * and can also be used for testing.  Additionally it may be replace
+# * the existing firmware on a device with any other version.
 # *
 # * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 # * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -62,8 +64,6 @@ forceFlash = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
-
-    #TODO: perform application cleanup
 
     if level == None:
         level = LOG_ERROR
@@ -347,14 +347,6 @@ def preparePages(pages):
             page['data'] += chr(0) * 3
         for byte in page['bytes']:
             page['data'] += chr(int(byte, 16))
-
-    #############################################################
-    # TODO: version 4 and earlier cannot alter page 0 due to a race....???
-    #if version <= 4 and pages[0]['start'] == 0:
-    #    if inputFile.endswith('reflasher.hex'):
-    #        message(LOG_INFO, "Moving page 0 to 0xF80.\n")
-    #        pages[0]['start'] = 0xF80
-    #############################################################
 
     # we have to write the pages in reverse to avoid messing up the jump
     # table before we're ready, so reverse the page order.

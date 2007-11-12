@@ -2,7 +2,7 @@
 ; * body.asm ***************************************************************
 ; **************************************************************************
 ; *
-; * TODO: DESCRIBE AND DOCUMENT THIS FILE
+; * This implements the basic firmware body code.
 ; *
 ; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 ; * Author: Joseph Dunn <jdunn@iguanaworks.net>

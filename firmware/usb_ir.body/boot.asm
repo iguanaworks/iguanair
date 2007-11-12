@@ -1,8 +1,9 @@
-;**************************************************************************
+; **************************************************************************
 ; * boot.asm ***************************************************************
 ; **************************************************************************
 ; *
-; * TODO: DESCRIBE AND DOCUMENT THIS FILE
+; * Based on a generated file, this contains only the parts necessary
+; * to define the basic areas.
 ; *
 ; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 ; * Author: Joseph Dunn <jdunn@iguanaworks.net>
