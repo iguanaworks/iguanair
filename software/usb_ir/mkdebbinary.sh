@@ -192,7 +192,6 @@ cp usr/bin/igdaemon ../$BASE64/usr/bin/
 cp usr/lib64/libiguanaIR.so ../$BASE64/usr/lib/
 cd ..
 rm -r temp64
-
 dpkg -b $BASE64 $NAME64
 
 fi
@@ -219,9 +218,9 @@ mkdir ptemp64
 cp $3 ptemp64
 cd ptemp64
 rpm2cpio $3 |cpio -idv
-cp usr/lib/python2.4/site-packages/_iguanaIR.so ../$PBASE64/usr/lib/python2.4/site-packages/
-cp usr/lib/python2.4/site-packages/iguanaIR.py ../$PBASE64/usr/lib/python2.4/site-packages/
-cp usr/lib/python2.4/site-packages/iguanaIR.pyc ../$PBASE64/usr/lib/python2.4/site-packages/
+cp usr/lib/python2.5/site-packages/_iguanaIR.so ../$PBASE64/usr/lib/python2.4/site-packages/
+cp usr/lib/python2.5/site-packages/iguanaIR.py ../$PBASE64/usr/lib/python2.4/site-packages/
+#cp usr/lib/python2.5/site-packages/iguanaIR.pyc ../$PBASE64/usr/lib/python2.4/site-packages/
 cd ..
 rm -r ptemp64
 
