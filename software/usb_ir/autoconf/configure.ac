@@ -53,7 +53,7 @@ CFLAGS="-Wall -pedantic"
 
 # AX_CFLAGS_GCC_OPTION(-Wextra)
 # TODO: really just want this when we NEED -fpic
-AX_CFLAGS_GCC_OPTION(-fpic)
+# AX_CFLAGS_GCC_OPTION(-fpic)
 
 # enable and disable debugging
 AC_ARG_ENABLE(debug,
