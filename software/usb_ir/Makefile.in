@@ -38,8 +38,7 @@ INSTALL = @INSTALL@
 
 .PHONY: all
 all: igclient igdaemon _iguanaIR.so
-
-igclient: libiguanaIR.so
+igclient igdaemon: libiguanaIR.so
 
 libiguanaIR.so: iguanaIR.o support.o dataPackets.o pipes.o base.o
 	$(CC) -shared $(CPPFLAGS) $^ -lpopt -lrt -o $@

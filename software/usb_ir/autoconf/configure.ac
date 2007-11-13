@@ -94,4 +94,4 @@ AC_PYTHON_DEVEL()
 
 # Output some files
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT(stamp-h)
+AC_OUTPUT(autoconf/stamp-h)
