@@ -23,11 +23,13 @@ include "loader.inc"
 ; read = an OUT transfer from the PC to this device
 ; write = an IN transfer from this device to the PC
 
+export check_read_body
+export read_packet_body
 export read_buffer_body
 export wait_for_IN_ready_body
+export write_packet_body
 export read_control_body
 export write_control_body
-export check_read_body
         
 AREA text
 ; FUNCTION check_read
