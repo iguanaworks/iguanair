@@ -5,7 +5,7 @@ JUNK=project.* memory.inc mkdep linkfile opts.txt output obj backup lib/obj
 all: $(INCLUDES)
 
 %.inc: $(HEADER) Makefile
-	./utils/generate_incs --header $(HEADER) $@
+	./generate_incs --header $(HEADER) $@
 
 clean:
 	rm -rf $(INCLUDES) $(addprefix usb_ir.*/, $(JUNK))
