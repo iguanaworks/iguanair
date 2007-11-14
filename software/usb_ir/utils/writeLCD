@@ -2,9 +2,30 @@
 import warnings
 import traceback
 import subprocess
+import time
 import sys
+import re
 
 import iguanaIR
+
+
+CMD_CLEAR  = '\x01'
+CMD_HOME   = '\x02'
+CMD_SCROLL = '\x07'
+CMD_DISPLAY_OFF = '\x08'
+CMD_CURSOR_OFF = '\x0C'
+CMD_DISPLAY_OFF = '\x08'
+
+
+
+
+POWER_PIN  = 0x08
+REGSEL_PIN = 0x04
+RW_PIN     = 0x02
+ENABLE_PIN = 0x01
+
+
+
 
 #output "constants"
 LOG_FATAL  = 0
@@ -30,6 +51,9 @@ null = open('/dev/null', 'r+')
 currentLevel = LOG_NORMAL
 logFile = None
 text = None
+width = 16
+gap = 2
+shouldScroll = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -103,6 +127,8 @@ while index < len(sys.argv):
     elif arg == "-q" or arg == "--quiet":
         if currentLevel > LOG_FATAL:
             currentLevel -= 1
+    elif arg == "--scroll":
+        shouldScroll = True
     elif arg == "-v" or arg == "--verbose":
         currentLevel += 1
     elif text is None:
@@ -115,12 +141,6 @@ while index < len(sys.argv):
 if logFile != None:
     sys.log = open(logFile, "a", 1)
     logFile = "-"
-
-
-POWER_PIN  = 0x08
-REGSEL_PIN = 0x04
-RW_PIN     = 0x02
-ENABLE_PIN = 0x01
 
 _conn = iguanaIR.connect('0')
 
@@ -190,11 +210,66 @@ def generateBulkPinData(text, isCommand = True):
         output += chr(0) * (64 - len(output))
     return output
 
-def bulkWriteCommands(text, isCommand = True):
+def bulkWriteCommands(text, isCommand = True, postDelay = 0):
     writeBulkPinData(generateBulkPinData(text, isCommand))
+    if postDelay:
+        time.sleep(postDelay)
+
+def prepareLine(line):
+    # figure out how much to scroll
+    length = len(line)
+    if length < width:
+        length = width
+    length += gap
+    if length > 40:
+        length = 40
+
+    return line + (length - len(line)) * ' '
+
+def writeLoop(lines, x, pos, cursor, delay):
+    if cursor[x] >= len(lines[x]):
+        # move to the position right after the text (off screen)
+        bulkWriteCommands(chr(0x80 + 0x40 * x + cursor[x] % 40))
+        bulkWriteCommands(lines[x][pos[x]], False)
+        pos[x] = (pos[x] + 1) % len(lines[x])
+    cursor[x] += 1
+
+    return (pos, cursor)
+
+def scroll(lines, delay = 0.25):
+    cursor = []
+    pos = []
+    for x in range(len(lines)):
+        lines[x] = prepareLine(lines[x])
+        cursor.append(len(lines[x]))
+        pos.append(0)
+
+    while True:
+        for x in range(len(lines)):
+            (pos, cursor) = writeLoop(lines, x, pos, cursor, delay)
+        bulkWriteCommands('\x18', postDelay = delay)
 
 def bulkWriteString(text):
-    bulkWriteCommands(text, False)
+    lines = text.split('\\n')
+    if len(lines) > 2:
+        message(LOG_ERROR, "Too many lines passed for current display.\n")
+    else:
+        for x in range(len(lines)):
+            if len(lines[x]) > 35:
+                message(LOG_ERROR,
+                        "Line is longer than 35 characters.  Truncating.\n")
+                lines[x] = lines[x][:35]
+
+        bulkWriteCommands(CMD_CLEAR)
+        bulkWriteCommands(CMD_CURSOR_OFF)
+
+        bulkWriteCommands(lines[0], isCommand = False, postDelay = 0.25)
+        if len(lines) > 1:
+            bulkWriteCommands('\xC0')
+            bulkWriteCommands(lines[1], isCommand = False, postDelay = 0.25)
+
+        if shouldScroll:
+            scroll(lines)
 
 def initLCD():
     global version
@@ -202,8 +277,6 @@ def initLCD():
     version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
 
     # set all the pins to outputs
-#    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG0, chr(iguanaIR.IG_OUTPUT) * 4)
-#    deviceTransaction(iguanaIR.IG_DEV_SETCONFIG1, chr(iguanaIR.IG_OUTPUT) * 4)
     deviceTransaction(iguanaIR.IG_DEV_SETPINCONFIG,
                       chr(iguanaIR.IG_OUTPUT) * 8)
 
@@ -212,13 +285,12 @@ def initLCD():
     strobeEnable(0x30)
     strobeEnable(0x30)
 
-    # send the home command
+    # set the data length (width) to 4 instead of 8
     strobeEnable(0x20)
 
     # Function Set, display off, display clear, mode set
     bulkWriteCommands('\x28\x08\x01\x08')
-    # appear to need a delay between clear and on
-    # display on
+    # sometimes need a slight delay before the first display on
     bulkWriteCommands('\x0F')
 
 initLCD()
