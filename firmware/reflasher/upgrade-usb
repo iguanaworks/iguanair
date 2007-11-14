@@ -267,8 +267,7 @@ def deviceVersion(target = None):
     # just print the version of the target device
     message(LOG_INFO, "Found device version 0x%x\n" % version)
 
-    if target is not None and \
-       target != version:
+    if target and target != version:
         message(LOG_FATAL, "Incorrect version (0x%4.4x != 0x%4.4x) found.  Reflashing has failed.\n" % (version, target))
 
     return version
@@ -432,6 +431,10 @@ def findHexFile(type, target = None, mustMatch = True):
         elif version == target:
             latest = hex
             break
+    else:
+        best = glob.glob(os.path.join(sys.path[0], 'hex', '%s-0.hex' % type))
+        if len(best) == 1:
+            latest = best[0]
 
     if latest is None and target is not None and mustMatch:
         message(LOG_FATAL, "Failed to find %s version %d\n" % (type, target))
@@ -448,7 +451,8 @@ def reflashDevice(features):
     # not necessary when only writing the body
     version = deviceVersion()
     keepLoader = False
-    if (not usb_ir and (version >> 8) == hexVersion(loader)) or \
+    if (not usb_ir and \
+        (version >> 8) == hexVersion(loader) and hexVersion(loader) != 0) or \
        (usb_ir and version == hexVersion(usb_ir)):
         keepLoader = not forceFlash
 
@@ -488,7 +492,7 @@ def reflashDevice(features):
         if body is not None:
             sys.stdout.write('Writing body to the device:\n')
             writeHexFile(body, setFeatures = features)
-            deviceVersion((version & 0xFF00) | hexVersion(body))
+            deviceVersion((targetVersion & 0xFF00) | hexVersion(body))
             wrote = True
 
     if id:

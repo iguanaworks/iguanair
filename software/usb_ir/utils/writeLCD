@@ -1,8 +1,121 @@
-#!/usr/bin/python
-
+#!/usr/bin/python -tt
+import warnings
+import traceback
 import subprocess
-import iguanaIR
 import sys
+
+import iguanaIR
+
+#output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+null = open('/dev/null', 'r+')
+
+#local variables
+currentLevel = LOG_NORMAL
+logFile = None
+text = None
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
+
+-h
+--help : Print this usage message.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-q
+--quiet : Decrease verbosity.
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(LOG_FATAL, msg + usage)
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > LOG_FATAL:
+            currentLevel -= 1
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    elif text is None:
+        text = arg
+    else:
+        text += ' ' + arg
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
 
 POWER_PIN  = 0x08
 REGSEL_PIN = 0x04
@@ -109,9 +222,8 @@ def initLCD():
     bulkWriteCommands('\x0F')
 
 initLCD()
-
 if text is None:
     writeString('H')
-    bulkWriteString('ello world')\
+    bulkWriteString('ello world')
 else:
     bulkWriteString(text)
