@@ -1,0 +1,175 @@
+#!/usr/bin/python -tt
+import warnings
+import traceback
+import sys
+import os
+import re
+
+# output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+null = open('/dev/null', 'r+')
+
+#local variables
+currentLevel = LOG_NORMAL
+logFile = None
+targets = []
+headerFile = '/usr/include/iguanaIR.h'
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
+
+-h
+--help : Print this usage message.
+
+--header : Where to get the header to parse apart.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-q
+--quiet : Decrease verbosity.
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(LOG_FATAL, msg + usage)
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "--header":
+        index += 1
+        headerFile = sys.argv[index]
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > LOG_FATAL:
+            currentLevel -= 1
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    else:
+        targets.append(arg)
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
+input = open(headerFile, 'r')
+bodies = {}
+filename = None
+for line in input:
+    # reformat the max after a blank line
+    if filename and not line.strip():
+        while True:
+            match = re.search('([^\s:]*:)EQU', bodies[filename]['body'])
+            if match:
+                bodies[filename]['body'] = bodies[filename]['body'].replace(match.group(1), match.group(1) + (' ' * (bodies[filename]['max'] - len(match.group(1)) + 2)))
+            else:
+                break
+
+    match = re.match('\s*(IG_.*?)\s*=\s*(.*),', line)
+    if match:
+        if filename is not None:
+            (name, value) = match.groups()
+            name = name.replace('IG_DEV', 'CTL')
+            name = name.replace('IG_', '')
+            bodies[filename]['body'] += '%s:EQU %s\n' % (name, value)
+            if len(name) > bodies[filename]['max']:
+                bodies[filename]['max'] = len(name)
+    else:
+        match = re.match('\s*/\*\s*([^\s:]+):([^\s]+)\s*(.*?)\s*\*/', line)
+        if match:
+            filename = None
+            if match.group(1) == 'FILE':
+                filename = match.group(2)
+                if filename not in bodies:
+                    bodies[filename] = { 'body' : '',
+                                         'max'  : 0 }
+                else:
+                    bodies[filename]['body'] += '\n'
+                bodies[filename]['body'] += '; %s\n' % match.group(3)
+        else:
+            match = re.match('\s*/\*(.*?)\s*\*/', line)
+            if match:
+                filename = None
+input.close()
+
+for path in targets:
+    filename = os.path.split(path)[1]
+    try:
+        input = open('%s.in' % path, 'r')
+    except IOError:
+        message(LOG_WARN, "Failed to find %s.in\n" % filename)
+    else:
+        message(LOG_INFO, "Inserting text into %s.in\n" % filename)
+        output = open(path, 'w')
+        for line in input:
+            if line == ';INSERT_CODES_HERE\n':
+                output.write(bodies[filename]['body'])
+            else:
+                output.write(line)
+        output.close()
+        input.close()
