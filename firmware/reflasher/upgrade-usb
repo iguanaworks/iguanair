@@ -102,11 +102,21 @@ def printUsage(msg = None):
 
 --blank-pages : Write out blank pages in addition to code pages.
 
+--body : Specify the file to read the body from.
+
+--dry-run : Do not write any "dangerous" pages.
+
+--force : Write the firmware regardless of the device version.
+
 -h
 --help : Print this usage message.
 
+--loader : Specify the file to read the loader from.
+
 -l
 --log-file : Specify a log to receive all messages.
+
+--old-firmware : Specify the file to read old (monolithic) firmware from.
 
 -q
 --quiet : Decrease verbosity.
@@ -458,11 +468,12 @@ def reflashDevice(features):
 
     if not keepLoader:
         # get the id so we can reset it at the end
-        id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
-        if id:
-            message(LOG_NORMAL,
-                    "Clearing device id (%s) during reflashing.\n" % id)
-            deviceTransaction(iguanaIR.IG_DEV_SETID, '')
+        if not forceFlash:
+            id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
+            if id:
+                message(LOG_NORMAL,
+                        "Clearing device id (%s) during reflashing.\n" % id)
+                deviceTransaction(iguanaIR.IG_DEV_SETID, '')
         writeReflasher()
         wrote = True
 
