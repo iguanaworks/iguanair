@@ -6,7 +6,7 @@
 %{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
 Name:           iguanaIR
-Version:        0.91
+Version:        0.92
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
