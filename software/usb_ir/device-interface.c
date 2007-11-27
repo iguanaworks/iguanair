@@ -211,20 +211,20 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
    24000000 / 76000 = 315.8 cycles / transition
 
    Each loop has overhead (counted from code lines):
-   4 + 5 + 6 + 6 + 5 + 4 + (5 + 7) + (5 + 7) + 5 = 59
+   5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5 = 65
 
    Break down the remaining delay into components or 7 and 4:
-   316 - 59 = 257 = 7 * 3 + 4 * 59
+   316 - 65 = 251 = 7 * 1 + 4 * 61
 
    Compute the number of bytes to jump for each delay:
    delay 7 ==> 2 bytes
    delay 4 ==> 1 byte
-   total of 7 delays of 7 in code
-   total of 100 delays of 4 in code
+   total of 4 delays of 7 in code
+   total of 120 delays of 4 in code
 
    Final values needed for the transmission:
-   delay 7 * 3 = 6 bytes
-   delay 4 * 59 = 59 bytes
+   delay 7 * (4 - 1) = 6 bytes
+   delay 4 * (120 - 61) = 59 bytes
    FINAL: delay (6, 59)
 */
 static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
@@ -245,7 +245,7 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
        counter specifically because the delay 4 actually requires less
        space on the flash for a given delay.
     */
-    cycles -= 4 + 5 + 6 + 6 + 5 + 4 + (5 + 7) + (5 + 7) + 5;
+    cycles -= 5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5;
     sevens = (4 - (cycles % 4)) % 4;
     if (sevens * 7 > cycles)
     {

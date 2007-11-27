@@ -46,7 +46,7 @@ static void quitHandler(int UNUSED(sig))
 
 static void scanHandler(int UNUSED(sig))
 {
-    int x = INVALID_THREAD_PTR;
+    THREAD_PTR x = INVALID_THREAD_PTR;
     writePipe(commPipe[WRITE], &x, sizeof(THREAD_PTR));
 }
 
@@ -79,7 +79,7 @@ static void workLoop()
         /* now wait for commands */
         while(! quit)
         {
-            THREAD_PTR thread;
+            THREAD_PTR thread = INVALID_THREAD_PTR;
             void *exitVal;
 
             switch(readPipe(commPipe[READ], &thread, sizeof(THREAD_PTR)))

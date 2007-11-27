@@ -54,6 +54,17 @@ static unsigned char* pulsesToIguanaSend(int carrier,
     for(x = 0; x < *length; x++)
     {
         uint32_t cycles, numBytes;
+
+/* occasionally useful for debugging transmission issues */
+#if 0
+        fprintf(stderr, "%3d ", x);
+        if (x % 2)
+            fprintf(stderr, "space ");
+        else
+            fprintf(stderr, "pulse ");
+        fprintf(stderr, "%d\n", sendCode[x] & LENGTH_MASK);
+#endif
+
         cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
                             1000000.0 * carrier * 1000 + 0.5);
         numBytes = (cycles / MAX_DATA_BYTE) + 1;
