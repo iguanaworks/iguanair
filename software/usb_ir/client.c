@@ -336,6 +336,11 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                             ": carrier=%dkHz", ntohl(*(uint32_t*)data));
                     break;
 
+                case IG_DEV_SETCARRIER:
+                    message(LOG_NORMAL,
+                            ": carrier=%dkHz", ntohl(*(uint32_t*)data));
+                    break;
+
                 case IG_DEV_GETPINS:
                     message(LOG_NORMAL,
                             ": 0x%2.2x", iguanaDataToPinSpec(data));
@@ -427,6 +432,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         {
             unsigned int value;
 
+            errno = EINVAL;
             result = -1;
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
@@ -448,6 +454,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         {
             uint32_t value;
 
+            errno = EINVAL;
             result = -1;
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
@@ -455,7 +462,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
                 if (cmd->spec->code == IG_DEV_SETCARRIER &&
                          (value < 25000 || value > 150000))
                     message(LOG_ERROR, "Carrier frequency must be between 25 and 150 kHz.\n");
-                else
+                    else
                 {
                     data = malloc(4);
                     *(uint32_t *)data = htonl(value);
@@ -486,8 +493,9 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         case IG_DEV_SETPINS:
         {
             unsigned int value;
-            result = -1;
 
+            errno = EINVAL;
+            result = -1;
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
             {

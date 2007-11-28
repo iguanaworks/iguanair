@@ -1,0 +1,47 @@
+= Why the @$#!& did you guys... =
+
+* [wiki:whatTheHeck#writethefirmwareinassemblylanguage write the firmware in assembly language?]
+
+* [wiki:whatTheHeck#startcontrolpacketswith2nulls  start control packets with 2 nulls?]
+
+* [wiki:whatTheHeck#use26.3uSincrementsfortransmitand21.33uSincrementsforreceive use 26.3uS increments for transmit and 21.33uS increments for receive?]
+
+* [wiki:whatTheHeck#subtract1incrementfromreceivedvalues  subtract 1 increment from received values?]
+
+* [wiki:whatTheHeck#turnoffthereceiverbydefault  turn off the receiver by default?]
+
+* [wiki:whatTheHeck#streamthereceiveddatabutsendtransmitdataallatonce  stream the received data but send transmit data all at once?]
+
+* [wiki:whatTheHeck#reseteverytimeafteraPROGcommand  reset every time after a PROG command?]
+----
+
+=== write the firmware in assembly language? ===
+
+Three reasons.  First, the C compiler for PSOC Designer costs money, which means that people who download the code in C couldn't really use it without paying for the compiler.  Second, some parts of the code have to be in assembly because of the precise timing involved.  Third, we are extremely memory-limited, and we can be more efficient with assembly code.
+----
+=== start control packets with 2 nulls? ===
+
+Since data transfers are null terminated, the 2 nulls ensure that the packet is recognized as a control packet.  If the control packet somehow showed up in the middle of a data transfer (because of a reset or something), the first null would terminate the data transfer and the second null would tell the firmware that a control packet is coming in.  The firmware will actually accept as a control packet any number of nulls followed by a correctly formatted packet.
+----
+=== use 26.3uS increments for transmit and 21.33uS increments for receive? ===
+
+26.3uS is 1 / 38KHz, so it's the carrier period.  By computing the transmit time in units of the carrier period, we don't have to do any math on the transceiver; we just loop the right number of times.  Doing multiplies or divides on the transceiver would be really slow, since it's an 8-bit CPU without a multiply operation.
+
+On the receive side, what we get on the transceiver is the number of timer counts.  The timer is running at 3MHz.  21.33uS is 64 / 3MHz, so it's the timer count shifted over by 6.  This is the closest value we can get to 26.3uS without doing any math on the transceiver--bit shifts are fast, but divides are way to slow to do inside an interrupt handler.  There's no benefit to being more accurate than the carrier period, and using less precision makes the received data take less memory, which is very important since RAM is so limited.  Thus 21.33uS.
+
+----
+=== subtract 1 increment from received values? ===
+
+Again, we're trying to avoid doing math on the transceiver.  When a long time is recorded (too big to fit in one byte), we have to split it into multiple bytes.  It ends up taking the form of one or more max-value bytes (0xFF or 0x7F, depending on whether it's space or pulse), followed by a byte for the remainder.  If the max value is 128, then we can compute the number of max-value bytes using bit shift operations.  If it were 127, we would have to do more math inside an interrupt handler.  Since we're never going to see a 21.3uS transition, it's ok to shift everything by one to make the math easier.
+----
+=== turn off the receiver by default? ===
+
+It's important that the transceiver doesn't start sending data before the driver has had a chance to load, get the firmware version, configure the port pins, and so on.
+----
+=== stream the received data but send transmit data all at once? ===
+
+On transmit, the carrier is generated in software, so we need precise timing.  Thus, we can't run the USB interface at the same time.  On the receive side, the carrier is removed in hardware and the signal timing is captured by the hardware timer on the transceiver's CPU.  That gives us enough slack to run the USB interface simultaneously.  It's also important to keep the receiver running continuously to avoid missing data, but it's ok to run the transmitter in bursts.
+----
+=== reset every time after a PROG command? ===
+
+The flash programming routine on this chip uses a bunch of specific of locations in RAM that we normally use for other things.  Thus, programming the flash corrupts our memory.  We could dedicate those memory locations only to flash programming, but since memory is scarce, we just reset after a program operation.  That restores the memory to a known state.

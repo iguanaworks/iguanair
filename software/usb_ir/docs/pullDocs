@@ -1,0 +1,170 @@
+#!/usr/bin/python -tt
+import warnings
+import traceback
+import os
+import sys
+import subprocess
+
+#output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+null = open('/dev/null', 'r+')
+
+#local variables
+currentLevel = LOG_NORMAL
+logFile = None
+targetDir = None
+useSSH = False
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
+
+-h
+--help : Print this usage message.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-q
+--quiet : Decrease verbosity.
+
+--ssh : Use ssh to connect to iguanaworks and execute the commands.
+
+--target : Target directory for the documentation contents
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(LOG_FATAL, msg + usage)
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > LOG_FATAL:
+            currentLevel -= 1
+    elif arg == '--ssh':
+        useSSH = True
+    elif arg == '--target':
+        index += 1
+        targetDir = sys.argv[index]
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    else:
+        printUsage("Unknown argument: " + arg + "\n")
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
+excludes = [
+    'Title',
+    'CamelCase',
+    'GettingStarted',
+    'InterMapTxt',
+    'InterTrac',
+    'InterWiki',
+    'RecentChanges',
+    'SandBox',
+    'TitleIndex'
+]
+
+if targetDir is None:
+    message(LOG_FATAL, "Target directory must be specified.\n")
+
+
+def runIt(args):
+    command = []
+    if useSSH:
+        command.extend(['ssh', 'iguanaworks.net'])
+    command.extend(['trac-admin', '/home/iguana/trac'])
+    command.extend(args)
+
+    run = subprocess.Popen(command,
+                           stdin = null,
+                           stdout = subprocess.PIPE,
+                           stderr = subprocess.STDOUT)
+    run.wait()
+    return run
+
+
+admin = runIt(('wiki', 'list'))
+pages = {}
+for line in admin.stdout:
+    line = line.strip()
+    if line and line != '-' * 54:
+        (name, edits, when) = line.split(None, 2)
+        if not name.startswith('Trac') and \
+           (not name.startswith('Wiki') or name == 'WikiStart') and \
+           name not in excludes:
+
+            export = runIt(('wiki', 'export', name))
+            output = open(os.path.join(targetDir, name.replace('/', '_')), 'w')
+            output.write(export.stdout.read())
+            output.close()

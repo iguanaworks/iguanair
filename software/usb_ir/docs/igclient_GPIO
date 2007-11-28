@@ -1,0 +1,47 @@
+= igclient GPIO Functionality =
+Older devices, i.e. those that are built using through-hole soldering on a 1.25" square board provided access to 8 unused GPIO pins.  This pins are manipulated using the commands described on this page.  This functionality is provided for advanced users, and we at IguanaWorks ask that if you come up with an interesting application of these GPIO pins please let us know so that we can share that functionality (and possibly sell a pre-built hardware platform to support that use).  The details of what the GPIO pins can handle can be found in the data sheet for the Cypress CY7C63813 chip.
+
+Note that pins are specified as an 8 bit value in decimal (23), hexadecimal (0x17), or binary (b10111).
+
+== --get-pin-config ==
+Each GPIO pin has a few bits defining its configuration.  This configuration is stored within the igclient application and synced with the device through the get and set pin configuration functions.  The --get-pin-config function retrieves the current configuration from the device, stores it in the local buffer, and displays it as hexadecimal.  The explanation of the bits can be found in an enum in the iguanaIR.h file.
+
+== --set-pin-config ==
+This function takes the current internal pin configuration state and replaces the one on the device with it.  The following 10 functions are used to get and set the individual parameters of the internal pin configuration prior to flushing those changes to the device.
+
+=== --get-output-pins ===
+Check which pins are set to be outputs.
+
+=== --set-output-pins=pins ===
+Set which pins should be outputs.
+
+=== --get-pullup-pins ===
+Check which pins are set to be pullups.
+
+=== --set-pullup-pins=pins ===
+Set which pins should be pullups.
+
+=== --get-open-drain-pins ===
+Check which pins are set to be open drains.
+
+=== --set-open-drain-pins=pins ===
+Set which pins should be open drains.
+
+=== --get-high-sink-pins ===
+Check which pins are set to be high sinks.
+
+=== --set-high-sink-pins=pins ===
+Set which pins should be high sinks.
+
+=== --get-threshold-pins ===
+Check which pins are set to be thresholds.
+
+=== --set-threshold-pins=pins ===
+Set which pins should be thresholds.
+
+== --get-pins ==
+In addition to their configuration, each pin has a binary value associated with whether it is physically "on" or "off".  For input pins "on" means that some device external to the USB chip is driving the pin high.  For output pins "on" means that the USB chip is driving the pin high.  In either case high is 5V and "off" is 0V.  The --get-pins command retrieves the value of the pins.
+
+== --set-pins=values ==
+This command sets the value of any output pins, allowing users to drive LEDs, switches, or even a character LCD panel.
+

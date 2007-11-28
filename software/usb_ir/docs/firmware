@@ -1,0 +1,51 @@
+= Firmware Overview =
+
+The firmware for the !IguanaWorks USB IR transceiver is built with PSOC Designer from Cypress.  PSOC Designer is free to download, but the free version only compiles assembly code (not C code).  For this and other reasons, the firmware is entirely in assembly language.
+
+== Firmware Files ==
+
+The firmware source files are located in the source repository under usb/trunk/usb-device/usb_ir.  The low-level USB functions are generated automatically by PSOC designer; open the project file (usb_ir.soc), select Device Editor, and use the USB HW Wizard to see the relevant settings.
+
+The human-edited files include the following:
+
+ * main.asm -- main program control
+ * boot.asm -- interrupt vectors and some initialization
+ * ir.asm -- functions for sending and receiving IR transmissions
+ * pc.asm -- functions implementing the hardware-to-driver protocol
+ * util.asm -- functions implementing the port pin features
+
+== Data ==
+
+The firmware uses one data buffer, one control buffer, a number of flag values, and stack space.  There is also some data space consumed by the USB library code.
+
+The data buffer occupies the majority of the transceiver's RAM.  During transmission, the data buffer stores the entire code sequence to be transmitted.  This allows us to disable interrupts and generate a precise carrier frequency in software.  When the receiver is enabled, the data buffer is used as a circular queue.  Received signal data is placed onto the queue by the timer interrupt handlers (see below), and pulled off the queue and sent to the host in the main program loop.
+
+The control buffer is large enough for one control packet, and is used to buffer control packets for transfers in both directions.
+
+== Control Flow ==
+
+On startup, the firmware initializes some hardware devices (port pins, clocks, etc.), waits for USB enumeration, and then enters its main loop.
+
+The firmware's main loop performs the following functions:
+ * check for a halt condition, and reset if present
+ * check for USB traffic from the host, and handle it if present
+ * check the IR receive buffer, and send data to host if present
+
+Whenever the receiver is enabled, timer0 is running in 16-bit mode.  When an edge is detected on the timer/capture interrupt (indicating a transition in the received IR signal), the timer interrupt fires.  The interrupt handler reads the timer count, converts it into the appropriate format, and loads the data into the data buffer.  When enough data accumulates, it is sent to the host during the regular main loop processing.
+
+The timer wrap interrupt is also used with timer0.  When the timer wraps, that indicates a space in the IR signal that is longer than the maximum timer value.  The timer wrap interrupt loads the appropriate value into the data buffer.
+
+== Reprogramming ==
+
+To allow some ability to reprogram the device without a separate programmer, we added a program command and an exec command.  The program command allows the user to download arbitrary code and write it into an arbitrary flash block.  For obvious reasons, this function should not be used by anyone who is not entirely clue-full.  Writing the flash incorrectly could destory the program, requiring the device to be reprogrammed via a separate programmer.
+
+The exec command causes the program to perform a call to the start of the last flash block (0x1FC0).  User-programmed code should start there.
+
+The current driver only uses the program/exec functionality to allow the user to program a unique ID into each device.  However, these commands make it possible to install a boot loader and update the firmware of devices in the field.  We have not implemented that option yet.
+
+== Weirdness ==
+
+We had to edit the auto-generated usb_desc.asm file, because PSOC Designer failed to generate the Interface Lookup Table.  Search for "TODO" in the file to see where we made the change.
+
+The firmware needs to know when the USB device has been halted, which isn't easy to find out through library calls.  To work around that, we edited the library file usb_std.asm to set a flag when it receives an EP_HALT clear.  Search for "MODIFIED" in the code to see the change.
+

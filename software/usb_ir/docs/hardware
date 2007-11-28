@@ -1,0 +1,39 @@
+= License =
+
+Hardware information is provided for personal use only.  !IguanaWorks Incorporated retains the copyright on all information presented here.
+
+= USB Compliance =
+
+The !IguanaWorks USB IR transceiver is a low-speed, low-power USB peripheral device.  It meets all the electrical and mechanical specifications for such a device, although it is too tall when connected directly to the PC (it blocks the USB port above the one it's connected to).  If that bothers you, connect it via a USB extension cable.
+
+The device is not certified USB compliant, because that costs money and is basically impossible to do for an open-source device, since it evolves too quickly.  However, we have tested it carefully for compliance with the specification.
+
+= Hardware Description =
+
+The transceiver is based on the Cypress CY7C63813-PXC USB microcontroller, a member of the enCoRe-II family of chips.  The CY7C63813 includes an M8C microcontroller, 8KB of flash memory, 256 bytes of RAM, a 16-bit timer, and a USB device controller, among other features.  The chip also contains an internal voltage regulator and oscillator, so it doesn't require any external components.  The clock runs at 24MHz, and is synchronized by hardware to the host machine's USB clock.
+
+The timer/capture input is connected to the output of a TSOP32238 IR receiver module.  The receiver removes the 38KHz carrier, leaving only the data signal.  We use the capture hardware in the CY7C63813 to read the timing of the IR signal.
+
+The transmitter circuit consists of a TSAL6400 IRED, which is matched well to most home electronics.  We use a simple amplifier circuit to boost the transmit power up to the limit for a low-power USB device (100mA).  That's plenty of power; our tests were successful out to almost 20 meters.  You could get more range by substituting a TSAL6100, which produces a tighter beam.  On the transmit side, the carrier is generated in software.
+
+There are three external ports on the transceiver.  PUSB exposes the USB lines, so you can connect directly to a motherboard's USB header.  ''Do not connect anything to PUSB if you are also using the regular USB connector.''  The two connectors are wired together.  PUSB is also useful for reprogramming the transceiver firmware.
+
+P0 is a general-purpose I/O port.  There are four port pins, plus a ground pin.  The P0 port pins can be used as inputs or outputs, and can be configured with or without an internal pullup resistor.  The port pins are controlled through the USB interface (see the [wiki:hwProtocol protocol documentation]).
+
+P1 is another general-purpose I/0 port, with the same features as P0.  However, P1 may also be used as an SPI interface, as the P1 pins connect to the SPI pins on the CY7C63813.  Currently, there is no firmware support for SPI.
+
+It is possible to damage the transceiver by misusing the port pins.  For example, it would be bad to put high voltage on those pins, or to short them directly to ground.
+
+== Differences in the stick version ==
+
+Note that the "stick" version of the IR SMT (1.1) is different from the "Lego" version.
+
+ * Microprocessor is the CY7C63813-SXC (surface mount SOIC) version of the microcontroller, which has a different pin-out.
+ * "Up" LED is on P1.4 (active low)
+ * "Down" LED is on P1.6 (active low)
+
+Looking at the stick with a cheap video camera reveals that lighting both LEDs at once significantly reduces their individual brightnesses.
+
+= Enclosures =
+We don't produce any enclosures, but there are mounting holes on the transceiver that can be used to mount it inside an enclosure.  A fascinating property of the mounting holes is that they happen to be sized and spaced so as to be compatible with LEGO parts.
+

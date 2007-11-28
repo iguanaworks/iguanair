@@ -1,0 +1,240 @@
+= Hardware-to-Driver Protocol =
+
+This document describes the protocol for USB communication between firmware loaded on the !IguanaWorks USB IR transceiver and the associated device driver on the PC.  Here we are only describing the "what" of the protocol; for the "why" behind these protocol decisions, please see the [wiki:whatTheHeck What the @$#!& Page].
+
+== USB configuration ==
+
+The !IguanaWorks USB IR tranceiver uses vendor ID 1781 (hex) and device ID 0938 (hex).
+
+There are three endpoints configured.  Endpoint 0 is a control endpoint, and is handled entirely by library code.  Endpoint 1 is an IN endpoint, so it carries data from the transceiver in to the host (PC).  Endpoint 2 is an OUT endpoint, so it carries data from the host out to the transceiver.  Endpoints 1 and 2 are both interrupt endpoints with a max packet size of 8 bytes.
+
+----
+
+== Transfer Types ==
+
+There are three basic types of transfers: control packets (including replies), outgoing data transfers, and the incoming data stream.
+
+=== Control packets ===
+
+Control packets must be contained in a single USB packet.  The format is as follows:
+
+||byte0||byte1||byte2||byte3||byte4||byte5||byte6||byte7||
+||0||0||dir||code||data0||data1||data2||data3||
+
+The leading 0's are there to ensure that any data transfer in progress is terminated before the control packet is processed (data transfers are null-terminated).  It is permissable to have additional leading 0's, but the entire control packet must fit into a single 8-byte USB packet.
+
+The dir byte must be 0xDC for IN transfers (from the transceiver to the host).  It must be 0xCD for OUT transfers (from the host to the transceiver).  Any other value will cause the control packet to be discarded.
+
+The code byte indicates the operation that is requested (see below).
+
+The data bytes are optional.  They are used to carry additional information to and from the transceiver.
+
+----
+
+=== Replies ===
+
+Whenever the host sends a control packet to the transceiver, the transceiver replies by sending a control packet back to the host.  The reply packet is a regular control packet and contains the same control code as the original command, so the host can confirm the control code was received.  Reply packets may also contain additional data.
+
+----
+
+=== Outgoing Data Transfers ===
+
+When the host is sending signal data to the transceiver to be transmitted via IR, it uses an outgoing data transfer.  The data transfer is a null-terminated sequence of bytes, possibly occupying many packets.  There is no header information associated with a data transfer, although one is always preceded by a control packet indicating that the data is coming.
+
+The most significant bit of each byte is 0 for pulse, or 1 for space.  The remaining 7 bits indicate the pulse or space length, in increments of 26.3uS (26.3uS is 1/38KHz).  So for example, the code 0x09 indicates a pulse of 236.7uS.  The code 0x89 indicates a space of 236.7uS.
+
+With this encoding scheme, the maximum length represented by a single byte is 3340uS.  Longer pulses or spaces can be represented with several consecutive bytes.  For example, a 5000uS space would be 0xFFBF.  Notice that the pulse/space bit is 1 in both bytes, indicating that they are both space.  A 5000uS pulse would be 0x7F3F.
+
+Data is read until a null byte is reached.  Once the data transfer is complete, the signal described will be ANDed with a 38KHz square wave and transmitted via the IRED.  Because the entire signal is buffered in memory on the transceiver, there is a limit to the signal length.  If too much data is sent, a [wiki:hwProtocol#TX_OVERFLOW transmit overflow] will occur.  You can get the buffer size with the [wiki:hwProtocol#GET_BUFSIZE GET_BUFSIZE]|| command.
+
+----
+
+=== Incoming Data Stream ===
+
+When the receiver is enabled, the transceiver will send a stream of received signal data to the host.  The transceiver sends to the host whenever it has more than 8 bytes (1 full packet) of received data in its buffer.  The first 7 bytes in each packet are from the received data stream, and the last byte is the buffer fill level.
+
+The received signal data format is a little weird, so read carefully.  The most significant bit of each byte is 0 for pulse, or 1 for space.  The remaining 7 bits indicate the pulse or space length minus 1, in increments of 21.33uS.  So 0x01 indicates a pulse of 42.66uS, 0x02 indicates a pulse of 64uS, etc.
+
+Notice that the time increment here is not the same as the time increment for the transmit signal data.  The increment here is (1/3MHz) >> 6, because we use the 3MHz timer to capture the data.
+
+The longest time represented by a single byte is 2730uS.  As with the transmit signal format, over-length pulses or spaces may be represented by multiple bytes.
+
+There are two special cases.  The code 0x00 does not represent signal data; it indicates that a control packet is incoming (generally this is a reply to a control packet sent by the host).  Control packets will never be interleaved with signal data; if a 0x00 byte is seen, it is followed by the entire control packet.  Signal data will resume after the complete control packet is sent.
+
+The other special case is the byte 0x80, which indicates a space of 21,845uS.  This is done to improve efficiency when there is no activity on the IR receiver.  The value is the maximum value for the transceiver's timer (2^16^ / 3MHz).
+
+The buffer fill level (the 8th byte in each packet) is the current number of bytes received by the transceiver that have not yet been transferred to the host.  If the fill level exceeds the buffer size, then an [wiki:hwProtocol#RX_OVERFLOW RX_OVERFLOW] will occur.  You can get the buffer size with the [wiki:hwProtocol#GET_BUFSIZE GET_BUFSIZE]|| command.
+----
+
+== Initialization ==
+
+At startup, the IR receiver is disabled.  All the port pins are configured as inputs with the pullup resistor disabled.  In order to receive IR signals, the receiver must be explicitly enabled.  The transmitter does not require an explicit enable.
+
+It is strongly recommended that the driver software check the firmware version number before attempting any other communication with the transceiver.
+
+----
+
+== Control Codes ==
+
+The valid control codes are summarized in the table below.  The source column indicates whether this code is generated by the transceiver or the host.  The data out column indicates the number of data bytes included in the control packet from the host to the transceiver.  The data in column indicates the number of data bytes included in the reply control packet from the transceiver to the host.  Recall that all control packets (except reset) are replied to.
+
+||Name||Value (hex)||Source||Data Out||Data In||Command||
+||[wiki:hwProtocol#VERSION VERSION]||0x01||Host||0||2||Get firmware version||
+||[wiki:hwProtocol#TRANSMIT TRANSMIT]||0x02||Host||0||0||Begin transmitting IR signal|| 
+||[wiki:hwProtocol#RX_ENABLE RX_ENABLE]||0x03||Host||0||0||Enable the IR receiver|| 
+||[wiki:hwProtocol#RX_DISABLE RX_DISABLE]||0x04||Host||0||0||Disable the IR receiver|| 
+||[wiki:hwProtocol#GET_PINS GET_PINS]||0x05||Host||0||2||Read the current state of port pins|| 
+||[wiki:hwProtocol#SET_PINS SET_PINS]||0x06||Host||2||0||Set the state of port pins||
+||[wiki:hwProtocol#GET_PIN_CFG GET_PIN_CFG0]||0x07||Host||0||4||Read the current port0 pin configuration||
+||[wiki:hwProtocol#SET_PIN_CFG SET_PIN_CFG0]||0x08||Host||4||0||Set the port0 pin configuration||
+||[wiki:hwProtocol#GET_PIN_CFG GET_PIN_CFG1]||0x09||Host||0||4||Read the current port1 pin configuration||
+||[wiki:hwProtocol#SET_PIN_CFG SET_PIN_CFG1]||0x0A||Host||4||0||Set the port1 pin configuration||
+||[wiki:hwProtocol#GET_BUFSIZE GET_BUFSIZE]||0x0B||Host||0||1||Read the signal buffer size||
+||[wiki:hwProtocol#PROG PROG]||0x0C||Host||0||1||Program a flash page||
+||[wiki:hwProtocol#EXEC EXEC]||0x0D||Host||0||0||Execute user-programmed code||
+||[wiki:hwProtocol#RX_OVERFLOW RX_OVERFLOW]||0x20||Xcvr||X||0||Some IR signal data lost to buffer overflow|| 
+||[wiki:hwProtocol#TX_OVERFLOW TX_OVERFLOW]||0x30||Xcvr||X||0||Host sent too much data to transmit (buffer overflow)|| 
+||[wiki:hwProtocol#RESET RESET]||0xFF||Host||0||X||Reset transceiver and return to default configuration||
+
+----
+
+=== VERSION ===
+
+On a version command, the transceiver sends a reply containing the firmware version number to the host.  The version number is two bytes.  The low byte is sent first.
+
+Drivers should always check the firmware version before attempting any other operations.
+
+
+----
+
+=== TRANSMIT ===
+
+After a transmit command, the host sends IR signal data to the transceiver using an outgoing data transfer.  The entire signal is buffered in memory on the transceiver; transmission via the IRED begins immediately after the data transfer is complete.
+
+After transmission is complete, the transceiver will send a reply.  If the transmission completed successfully, the reply will have the transmit control code.  If the transmit buffer overflowed, the code will be replaced with TX_OVERFLOW.
+
+If the receiver is enabled, it will be disabled during transmission and re-enabled when transmission is complete.
+
+
+----
+
+=== RX_ENABLE ===
+
+This command enables the IR receiver.  When the receiver is enabled, the transceiver will start streaming received signal information to the host.
+
+If the receiver is already enabled, the RX_ENABLE command will clear the received signal buffer.
+
+
+----
+
+=== RX_DISABLE ===
+
+This command disables the IR receiver and clears the received signal buffer.  When the receiver is disabled, the transceiver will never initiate communication with the host.
+
+
+----
+
+=== GET_PINS ===
+
+Upon a GET_PINS command, the transceiver sends a reply containing the current state of the two GPIO ports.  Data byte 0 contains the state of port0, and data byte 1 contains the state of port1.
+
+Within each byte, each of the four least significant bits corresponds to one pin (in order; lower pin number = less significant bit).  The bit is 1 if the pin is high, or 0 if the pin is low.
+
+
+----
+
+=== SET_PINS ===
+
+The SET_PINS command includes two data bytes with the values to assign to each port pin.  Data byte 0 contains the instructions for port0, and data byte 1 contains the instructions for port1.
+
+Within each byte, each of the four least significant bits corresponds to one pin (in order; lower pin number = less significant bit).  The bit is 1 to drive the pin high, or 0 to drive the pin low.
+
+Instructions for a pin that is configured as an input are ignored.  Since all pins are configured as inputs by default, it is necessary to configure them as outputs before SET_PINS has any effect.
+
+It is important to pay attention to the external circuit when driving pins high or low.  Some circuits could cause damage to the transceiver if it attempts to drive pins high or low.
+
+
+----
+
+=== GET_PIN_CFG ===
+
+Upon a GET_PIN_CFG0 or GET_PIN_CFG1 command, the transceiver sends a reply containing the current configuration of the pins in port0 or port1, respectively.  Each port contains 4 pins, and each pin configuration is represented by one byte.  Data byte 0 corresponds to the lowest-numbered pin.
+
+The format for each configuration byte is as follows:
+
+||bit7||bit6||bit5||bit4||bit3||bit2||bit1||bit0||
+||X||X||X||X||X||open drain||pullup||output||
+
+The X bits are ignored.  The open drain bit is 1 if this pin is in open-drain mode, or 0 otherwise.  The pullup bit is 1 if this pin has its pullup resistor enabled, or 0 otherwise.  The output bit is 1 if the pin is configured as an output, or 0 if it is an input.
+
+
+----
+
+=== SET_PIN_CFG ===
+
+The SET_PIN_CFG0 and SET_PIN_CFG1 commands include 4 data bytes with the desired configuration for port0 or port1, respectively.  Each port contains 4 pins, and each pin configuration is represented by one byte.  Data byte 0 corresponds to the lowest-numbered pin.
+
+The format for each configuration byte is as follows:
+
+||bit7||bit6||bit5||bit4||bit3||bit2||bit1||bit0||
+||X||X||X||X||X||open drain||pullup||output||
+
+The X bits are ignored.  The open drain bit is 1 to put this pin is in open-drain mode, or 0 otherwise.  The pullup bit is 1 to enable the pullup resistor for this pin, or 0 to disable it.  The output bit is 1 to configure the port as an output, or 0 to make it an input.
+
+Use caution when configuring port pins.  Connecting an external circuit to a port pin in certain configurations could damage the transceiver.
+
+
+----
+
+=== GET_BUFSIZE ===
+
+On a GET_BUFSIZE command, the transceiver sends a reply containing the maximum number of bytes that the signal buffer can hold.  That's the total size of the buffer, including the space that is filled and the space that is still available.  The same signal buffer is used for transmit and receive.  Thus, this command can be used do determine the maximum code length that can be transmitted.  It can also be used conjunction with the buffer fill byte in the data stream to determine how much space is left for received data.
+
+----
+
+=== PROG ===
+
+On a PROG command, the transceiver programs a 64-byte block of its flash memory.  Data byte 0 is the number of the flash block to program (the block number is equal to its starting address divided by 64).  The remaining data bytes are ignored.  After the PROG command, the host must send the 64 bytes of data to program into flash.  Once 64 bytes are received, an ack is sent and the page is programmed.  The transceiver then performs a reset operation.
+
+User-programmed code should be located in the high addresses of flash.  The entry point should be the start of the last flash page (0x1FC0).
+
+The PROG command is used internally by the driver to program a unique ID into the device.  Other uses are at your own risk.  '''Using PROG improperly can damage your transceiver'''.  Don't use it unless you know what you're doing!
+
+----
+
+=== EXEC ===
+
+On an EXEC command, the transceiver performs a call (lcall instruction) to address 0x1FC0.  If the user has programmed code  at that location (via the PROG command), then it will be executed.
+
+The EXEC command is used internally by the driver to retrieve the device ID.  Other uses are at your own risk.  '''Using EXEC improperly can damage your transceiver'''.  Don't use it unless you know what you're doing!
+
+----
+
+=== RX_OVERFLOW ===
+
+RX_OVERFLOW indicates that the signal buffer on the transceiver has overflowed.  This will occur if the incoming signal is arriving faster than the driver is reading it out of the transceiver via USB.  When an overflow occurs, the signal buffer is cleared and reception continues normally, although data in the buffer at the time of the overflow is lost.
+
+
+----
+
+=== TX_OVERFLOW ===
+
+The transceiver will send a TX_OVERFLOW packet when host sends too much data to transmit.  If the host is transferring transmit signal data and the signal buffer fills before the data transfer is finished, then the transceiver will send a TX_OVERFLOW packet  instead of its usual reply, after transmitting as much of the signal as it can via the IRED.  The rest of the signal is lost.
+
+If you get this packet, somebody has made a mistake.
+
+
+----
+
+=== RESET ===
+
+The RESET command clears all pending operations and resets the transceiver to its initial state.  The transceiver does not send a reply to a RESET command.
+
+
+----
+
+== Programming ==
+
+At this time, the only straightforward method for reprogramming the transceiver is via the Cypress Miniprog, which costs about $35.
+
+It is also possible to reprogram via the PROG command, although we are not supporting that approach at this time.  Attempt it at your own risk.

@@ -1,0 +1,118 @@
+= Trouble Shooting =
+
+There are a number of things that can go wrong when trying to get iguanaIR and LIRC going.  Well, this page will hopefully explain what you can do about most of them.  It's been suggested that I make a flow chart out of this, but for the moment I'll stick to an ugly listing.
+
+== igdaemon Errors ==
+
+=== Problem 1 ===
+Output from igdaemon contains:
+{{{
+ERROR: No response from device.
+ERROR: Failed to get id.
+}}}
+'''Explanation:''' This isn't actually a problem.  When the daemon starts communicating with a device it attempts to read the id so that it can set up a symlink and allow communication under a user-defined name.  When we ship our devices they do not have ids and so will only come up as numbered.  If you have more than one you might find it useful to set ids for each device.
+
+'''Solution:''' igclient --set-id hello
+
+=== Problem 2 ===
+Output from igdaemon contains:
+{{{
+ERROR: failed to bind server socket: No such file or directory
+INFO: Worker 0 exiting
+}}}
+'''Explanation:''' Most likely the directory /dev/iguanaIR does not exist.  It should be create by udev at start time by copying /etc/udev/devices/iguanaIR, however, I've seen problems for people using udev 071 and earlier.  If anyone can tell me when and what changed to make it work for later versions of udev, but not for earlier, let me know.  Depending on your log level (number of -v's passed to igdaemon) you may not see the INFO line.
+
+'''Solution:''' For now you can add a line to the init script (usually located at /etc/init.d/iguanaIR) to create the directory and set its permissions (rw for user and group, owned by iguanair).
+
+=== Problem 3 ===
+Output from igdaemon contains:
+{{{
+ERROR: failed to bind server socket: Permission denied
+INFO: Worker 0 exiting
+}}}
+
+'''Explanation:''' The daemon is correctly running as iguanair, or at least a non-privileged user, and does not have permission to create sockets in /dev/iguanaIR.
+
+'''Solution:''' Check the permissions on the /dev/iguanaIR directory, and see the previous solution.
+
+=== Problem 4 ===
+Output from igdaemon contains:
+{{{
+ERROR: updateDeviceList failed: usb_claim_interface failed 0: could not claim interface 0: Operation not permitted
+ERROR: scan failed.
+}}}
+
+'''Explanation:''' The daemon is correctly running as iguanair, or at least a non-privileged user, and does not have permission to claim the USB device interface.  Currently this appears for people using udev 071 or older, and the cause appears to be that the provided iguanaIR.rules file does not properly set the device ownership.
+
+'''Solution:''' Until someone afflicted with this problem comes up with a solution my suggestion is to run the igdaemon as root to avoid this permission problem.  To do this you'll need to modify the init script.  For example, change:
+{{{
+            START="daemon --user=iguanair $IGPATH $IGUANAIR_OPTIONS -l $LOGFILE"
+}}}
+to
+{{{
+            START="daemon --user=root $IGPATH $IGUANAIR_OPTIONS -l $LOGFILE"
+}}}
+No this is not a good solution, however, without an afflicted machine I can't debug it, and so far other people have just switched to running the daemon as root.
+
+== irsend Errors ==
+For the discussion of these errors I'll refer to the name of the remote as panasonic and the button as power.  These are my values, however, you should use values specific to your lircd.conf.
+
+=== Problem 1 ===
+Running irsend twice fails on the second one:
+{{{
+[jdunn@porkrind ~]$ irsend send_once panasonic power
+[jdunn@porkrind ~]$ irsend send_once panasonic power
+irsend: could not connect to socket
+irsend: Connection refused
+}}}
+
+'''Explanation:''' Most likely the lircd daemon died for some reason.
+
+'''Solution:''' Run the lircd on a console (lircd -n) and see what's happening.
+
+=== Problem 2 ===
+Running irsend fails with:
+{{{
+[jdunn@porkrind ~]$ irsend send_once panasonic power
+irsend: timeout
+}}}
+
+'''Explanation:''' lircd most likely failed to send the command.
+
+'''Solution:''' Run the lircd on a console (lircd -n) and see what's happening.
+
+== lircd Errors ==
+
+== Problem 1 ==
+lircd output contains:
+{{{
+lircd: error processing command: send_once apple.conf menu
+lircd: transmission failed
+}}}
+
+'''Explanation:''' My fault, but I'm not sure why yet.  It appears to be a bug in the igdaemon, i.e. this is why it's called beta.
+
+'''Solution:''' Restart the igdaemon and try again.  If you can reproduce this problem on demand '''please contact me''' (tickets or emails welcome).
+
+== Problem 2 ==
+lircd output contains:
+{{{
+lircd-0.8.1-CVS[24495]: couldn't open connection to iguanaIR daemon: No such file or directory
+lircd-0.8.1-CVS[24495]: caught signal
+}}}
+
+'''Explanation:''' The lircd daemon is failing to connect to the igdaemon through a client socket.  These sockets should be located in /dev/iguanaIR.
+
+'''Solution:''' Make sure the igdaemon is running.  If it's failing to start, run it on a terminal with -n -v -v -v and see what the output looks like.  This same error occurs when the iguanaIR device is '''not plugged in'''.
+
+== Miscellaneous ==
+
+=== Why does irw show multiple lines when I only press the button once? ===
+
+This is actually correct behavior.  Most ir devices send many copies of the same signal and the receiving device must decide how many actions to actually execute.  See the [wiki:lirc] page for a short discussion, under irw.
+
+=== Why doesn't "/etc/rc.d/init.d/iguanaIR start" do anything? ===
+
+Most likely because either you have an old iguanair daemon running, or at least the init script thinks you do.  Try a restart instead of a start.
+
+

@@ -157,6 +157,21 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     case IG_DEV_SETCARRIER:
         target->idev->carrier = ntohl(*(uint32_t*)request->data);
+
+        if (target->idev->carrier > 150000)
+        {
+            message(LOG_WARN,
+                    "Frequency higher than 150Khz.  Using 150kHz.\n");
+            target->idev->carrier = 150000;
+        }
+        else if (target->idev->carrier < 25000)
+        {
+            message(LOG_WARN,
+                    "Frequency lower than 25Khz.  Using 25kHz.\n");
+            target->idev->carrier = 25000;
+        }
+        *(uint32_t*)request->data = htonl(target->idev->carrier);
+
         retval = true;
         break;
 

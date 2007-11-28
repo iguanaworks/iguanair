@@ -1,0 +1,29 @@
+= Welcome to the !IguanaWorks USB IR Transceiver Project =
+
+Here you will find technical information regarding the !IguanaWorks USB IR transceiver.  The transceiver is capable of sending and receiving 38KHz infrared codes, which is the standard for most home electronics.  As with all !IguanaWorks software, the software and firmware are open, according to our [wiki:license license terms].
+
+== Features ==
+
+The !IguanaWorks USB IR Transceiver is a simple USB device that can communicate with most home electronics and remote controls via infrared (IR).  The transceiver can both send and receive IR codes, and is fully compatible with LIRC under Linux.  Unlike serial devices, the USB transceiver does not require a kernel module, and multiple transceivers can be in use at the same time.  Each transceiver can transmit on up to 4 independent channels. The transmitter is very high-power compared to most serial devices, with a range of 10 ft.  We support LIRC.
+
+== Links & Documentation ==
+
+The following information is available:
+ * GettingStarted -- Start here if you own the device and want to get it working (with Lirc).
+ * [wiki:faq FAQ] -- Frequently Asked Questions
+ * [http://iguanaworks.net/downloads.php Download Drivers] -- On this page you'll find the drivers for our usb devices in source form and packaged binaries (rpm and deb).
+ * [http://iguanaworks.net/repos/iguanair/public/trunk/ Subversion Repository] -- Users are welcome to check our out SVN repository 
+ * [./report Tickets] -- Our ticket system for tracking the status of bugs, feature requests, etc. You must [./register register]  before you can create your own tickets.
+ * [wiki:hardware Hardware] -- Hardware description, Schematics and Layout
+ * [wiki:firmware Firmware] -- Firmware Overview
+ * [wiki:driver Driver] -- Device Driver Overview 
+ * [wiki:igclient Sample Client] -- Overview of the Sample Client, igclient
+ * [wiki:hwProtocol HW Protocol] -- Hardware-to-Driver Protocol Specification
+ * [wiki:driverProtocol Driver Protocol] -- Driver-to-Application Protocol Specification
+ * [wiki:license License] -- License Terms
+
+Enjoy!
+
+Joe and Ben
+
+

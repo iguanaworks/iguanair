@@ -1,0 +1,16 @@
+= Known Good Devices =
+
+These devices are known to be compatible with the !IguanaWorks USB transceiver.  This list is not exhaustive; it just contains examples that have been tested by us or people we know.  Any device that works with LIRC should be ok, but we'll keep adding devices to this list until we're certain that we support any device LIRC supports.  Let us know what works for you and we'll add it to the list.
+
+||'''Manufacturer'''||'''Device Type'''||'''Model Number'''||'''Notes'''||
+||  DirectTV        || DirectTV  || D10-200    || Had to download the config file instead of learning (for both USB and serial devices). ||
+||  Kenwood         || Tuner/AMP || KR-V6030   || ||
+||  Magnavox        ||    VCR    || VR601BMG21 || Short, simple codes.  One of our primary test devices. ||
+||  Panasonic       ||     TV    || PT-50LC14  || Long codes.  One of our primary test devices.          ||
+||  Phillips        ||    DVD    || DVP642/37  || ||
+||  Sanyo           ||     TV    || DS25390    || ||
+||  Sony            ||     TV    || KDF5WE655  || ||
+||  Technics        ||  Receiver || SA-EX510   || Sensitive to angle of signal, but same with actual remote. ||
+||  Axion           ||    DVD    || AXN-6075   || 40kHz carrier preferred (others intermittent) ||
+||  RCA             || HDTV-Rec. || DTC-100    || 56kHz carrier only ||
+

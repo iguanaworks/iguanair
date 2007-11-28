@@ -1,0 +1,12 @@
+= igclient Receiving =
+
+The igclient command provides a little functionality for receiving signals.  In addition to the listed commands the daemon also supports the IG_DEV_RAWRECVON that is not currently supported by the igclient executable.
+
+== --receiver-on ==
+
+Enable the receiver on the USB device.  If necessary, this sends a IG_DEV_RECVON message to the device causing the firmware to begin recording and streaming signals back to the PC.
+
+== --receiver-off ==
+
+The user may also explicitly disable the receiver using this argument that '''may''' send a IG_DEV_RECVOFF to the device.  If other clients are currently receiving signals from the device it will be left in the receiving state, although this client instance will no longer receive incoming signals.
+

@@ -1,0 +1,15 @@
+= Driver Design =
+
+This document gives a fairly high-level overview of the driver for the !IguanaWorks USB IR transceiver.  The goal is to give someone an idea what they are getting into to dig in the USB driver, without putting in too many details that may change in the near future.
+
+The driver is designed as a stand-alone daemon process that keeps track of the currently connected devices and provides an interface to interact with those devices.  Additionally, a LIRC driver is provided that can communicate with the daemon process.  We chose to implement our own daemon process, independent of LIRC, for several reasons.  
+Primarily we did this because our device provides functionality beyond what LIRC is designed to handle.  Specifically, the extra GPIO pins that can be arbitrarily controlled seemed to be beyond the design of LIRC.  Second, because of the need to interact with our device via libusb while also performing other tasks we would need at least a second thread to read from the device.  A process could also work, but a thread made more sense, and LIRC is not currently a multi-threaded application.  Lastly, we realized that in cases where the user only wants to transmit known codes, or control the GPIO pins our more minimal daemon could handle the task itself.  We could also have made an in-kernel driver, but decided against this due to the difficulty inherent in kernel drivers and because libusb already provided the functionality we needed to interact with the device.  A pleasant side effect of using libusb is that porting our daemon to Windows, though non-trivial, should not require an entire rewrite.
+There is a Mac OS X native application (in beta) written by a user, not derived from the iguanaIR sources, available at http://www.staarcom.com/software/IRControl/
+It includes a preference pane, and is accessible with Applescript.  It does not use libusb.
+
+== The Daemon ==
+Born of fire and brimstone, the daemon is the most critical part of the driver.  At startup, or upon receiving SIGHUP, the daemon will search the USB bus for supported devices.  Rules for udev are provided to allow hotplugging of devices to trigger these SIGHUP signals.  Older hotplug scripts were never completed, however, if you need them contact us.  When a !IguanaWorks USB IR transceiver is detected, threads are created to handle traffic to and from the device.  One of these threads will also create a Unix socket (usually in /dev/iguanaIR).  Both SIGINT and SIGTERM should cause a graceful shutdown of the daemon.
+
+=== Per-Device Threads ===
+The per-device threads interact with the hardware itself through the libusb library.  The protocol used by these threads is defined in the [browser:usb/trunk/usb-driver/protocol.h protocol.h] and [browser:usb/trunk/usb-driver/protocol.c protocol.c] files.  Two threads are used because of limitations in the libusb API, and the fact that the daemon must be able to handle both incoming and outgoing data at all times.  As of version 0.1.11 of libusb the library is fixed to properly handle threads reading and writing to the same device simultaneously.
+

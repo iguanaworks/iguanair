@@ -99,7 +99,7 @@ static versionedType types[] =
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
     {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD,  true,  4}},
-    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,           true,  NO_PAYLOAD}},
+    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,           true,  4}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,     CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -246,23 +246,11 @@ static void computeCarrierDelays(uint32_t carrier, unsigned char *delays)
        space on the flash for a given delay.
     */
     cycles -= 5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5;
+
+    /* TODO: this next line is too magical */
     sevens = (4 - (cycles % 4)) % 4;
-    if (sevens * 7 > cycles)
-    {
-        message(LOG_WARN,
-                "Frequency outside of range (25-150Khz), rounding down.\n");
-        fours = 0;
-    }
-    else
-    {
-        fours = (cycles - sevens * 7) / 4;
-        if (fours > 110)
-        {
-            message(LOG_WARN,
-                    "Frequency outside of range (25-150Khz), rounding up.\n");
-            fours = 110;
-        }
-    }
+    fours = (cycles - sevens * 7) / 4;
+
     /* NOTE: We will never need more than 4 7s due to the properties
        of mathmatical groups. */
 

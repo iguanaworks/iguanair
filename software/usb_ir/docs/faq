@@ -1,0 +1,58 @@
+= Frequently Asked Questions =
+
+If you don't find an answer to your question here, please email [mailto:support@iguanaworks.net support].
+
+ * [wiki:faq#General General]
+   * [wiki:faq#WillitworkwithmyTV/VCR/DirectTV/cable/DVDplayer/alienmothership Will it work with my TV/VCR/DirectTV/cable/DVD player/alien mothership?]
+   * [wiki:faq#DoesitworkunderWindows Does it work under Windows?]
+   * [wiki:faq#CanIchangethefirmware Can I change the firmware?]
+   * [wiki:faq#CanIusemultipletransceiversatthesametime Can I use multiple transceivers at the same time?]
+
+ * [wiki:faq#SoftwareSetup Software Setup]
+
+ * [wiki:faq#HardwareVariations Hardware Variations]
+   * [wiki:faq#CanIchangeR1toincreasethetransmitrange Can I change R1 to increase the transmit range?]
+   * [wiki:faq#CanIchangeR1todecreasethetransmitrange Can I change R1 to decrease the transmit range?]
+
+----
+== General ==
+
+=== Will it work with my TV/VCR/DirectTV/cable/DVD player/alien mothership? ===
+
+Probably.  If it uses 38KHz (which is the standard, but not universal) and it works with LIRC, it should work with our transceiver.  A list of known good devices is located [wiki:devices here].  If you have a working device that isn't on the list, please email [mailto:support@iguanaworks.net support] and let us know, especially if it's an alien mothership.  If our transceiver doesn't work with your device and you think it should, please email [mailto:support@iguanaworks.net support] as well.
+----
+
+=== Does it work under Windows? ===
+
+Not yet.  Stay tuned for Windows support.
+----
+
+=== Can I change the firmware? ===
+
+Yes, but to do it safely you need a programmer.  The easiest/cheapest solution that we know of is the Cypress Miniprog, which you can get for about $35.  You can then download PSOC Designer and PSOC programmer (free) from [http://psocdeveloper.com psocdeveloper.com] and use them to compile and download the firmware.
+
+You will need to make a cable to connect the Miniprog's SDATA to USB.D- and SCLK to USB.D+ (and Vcc and Vss).
+[[Image(CIMG1942-1.jpg)]]
+
+If you are a skilled embedded programmer and you like to live dangerously, you can use the program and exec commands to change the firmware.  However, if you do it wrong, you'll need a programmer to recover.  In the future, we may release a boot loader that can be installed via the program/exec commands and used to safely update the firmware.  Until then, reprogram at your own risk.
+----
+=== Can I use multiple transceivers at the same time? ===
+
+Yes.
+----
+
+== Software Setup ==
+----
+
+== Hardware Variations ==
+
+=== Can I change R1 to increase the transmit range? ===
+
+Not trivially.  The value we use for R1 keeps the transceiver's maximum current draw just below the limit for a low-power USB device.  The limit is 100mA.  Decreasing R1 (and thus increasing range and power usage) would violate the USB specification.
+
+High-power USB devices may draw up to 500mA, but only after getting permission from the host.  It would be possible to change the firmware to declare the transceiver a high-power device and only transmit if the host can supply the power.  However, since the current transmit range is good enough for almost any application, we decided to stick with the universally compatible low-power status.
+----
+=== Can I change R1 to decrease the transmit range? ===
+
+Sure, but why?  Increase the value of R1 as much as you want.  Higher values will reduce the transmit range.
+----

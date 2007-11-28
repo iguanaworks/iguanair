@@ -1,0 +1,56 @@
+Below is the igclient usage statement.  To make the documentation more manageable, the argument documentation is broken into several categories:
+ * [wiki:igclient/Receiving]
+ * [wiki:igclient/Sending]
+ * [wiki:igclient/GPIO igclient/GPIO Functionality]
+ * [wiki:igclient/Miscellaneous]
+
+{{{
+Usage: igclient [OPTION...]
+  -d, --device=number             Specify the device to connect with (by index
+                                  or id).
+  --interactive                   Use the client interactively.
+  -l, --log-file=filename         Specify a log file (defaults to "-").
+  -q, --quiet                     Reduce the verbosity.
+  -v, --verbose                   Increase the verbosity.
+  --get-version                   Return the version of the device firmware.
+  --get-features                  Return the features associated w/ this
+                                  device.
+  --send=filename                 Send the pulses and spaces from a file.
+  --receiver-on                   Enable the receiver on the usb device.
+  --receiver-off                  Disable the receiver on the usb device.
+  --get-pins                      Get the pin values.
+  --set-pins=values               Set the pin values.
+  --get-buffer-size               Find out the size of the RAM buffer used for
+                                  sends and receives.
+  --write-block=filename          Write the block specified in the file.
+  --execute                       Execute code starting at address 0x1fc0 on
+                                  the device.
+  --lcd-text=string               Send a bulk transfer of pin settings to
+                                  write the argument to an LCD.
+  --reset                         Reset the USB device.
+  --get-channels                  Check which channels are used during
+                                  transmits.
+  --set-channels=channels         Set which channels are used during transmits.
+  --get-carrier                   Check the carrier frequency for transmits.
+  --set-carrier=carrier (kHz)     Set the carrier frequency for transmits.
+  --get-pin-config                Retrieve the internal pin state.
+  --set-pin-config                Store the internal pin state.
+  --get-output-pins               Check which pins are set to be outputs.
+  --set-output-pins=pins          Set which pins should be outputs.
+  --get-pullup-pins               Check which pins are set to be pullups.
+  --set-pullup-pins=pins          Set which pins should be pullups.
+  --get-open-drain-pins           Check which pins are set to be open drains.
+  --set-open-drain-pins=pins      Set which pins should be open drains.
+  --get-high-sink-pins            Check which pins are set to be high sinks.
+  --set-high-sink-pins=pins       Set which pins should be high sinks.
+  --get-threshold-pins            Check which pins are set to be thresholds.
+  --set-threshold-pins=pins       Set which pins should be thresholds.
+  --sleep=seconds                 Sleep for X seconds.
+  --get-id                        Fetch the unique id from the USB device.
+  --set-id=STRING                 Set the unique id from the USB device.
+
+Help options:
+  -?, --help                      Show this help message
+  --usage                         Display brief usage message
+}}}
+

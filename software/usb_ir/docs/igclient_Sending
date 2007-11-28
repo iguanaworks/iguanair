@@ -1,0 +1,40 @@
+= igclient Sending =
+
+The igclient provides a number of arguments to control signal transmission.
+
+== --send=filename ==
+Send the pulses and spaces from a file.  Files that are accepted by the send function must contain only lines specifying the lengths of alternating pulses and spaces in microseconds as shown below.  These pulses and spaces are sent to the daemon as an array of uint32_t values.  These are then translated inside the daemon into counts of a delay loop.  This translation is done on the PC to keep the firmware as simple as possible.
+{{{
+pulse 1040
+space 759
+pulse 981
+space 764
+pulse 1931
+space 755
+pulse 977
+space 1573
+pulse 1931
+space 1561
+pulse 1931
+space 755
+pulse 982
+space 1569
+pulse 982
+space 764
+pulse 1931
+space 754
+pulse 982
+}}}
+
+== --get-channels ==
+Check which channels are used during transmits.  Our current products have either 1 or 4 channels.  All devices with an enclosure (those looking like USB thumb drives) contain 4 channels, regardless of the version.  If the device has 2 plugs all four channels are usable.  In hybrid versions channels 1, 3, and 4 are accessible.  Versions with 2 LEDs have an LED connected to channels 1 and 3.  For this command the channels are specified in hexadecimal format meaning that if channels 1 and 3 are in use the returned value will be 0x5.
+
+== --set-channels=channels ==
+Set which channels are used during transmits.  Look at the documentation of --get-channels for an explanation of the channels.  Note that specifying a channel list that does not overlap with the accessible channels is possible and results in the firmware going through the motions of transmitting without emitting any light.
+
+== --get-carrier ==
+Check the carrier frequency for transmits.  The carrier frequency is adjustable given supported versions of the firmware (verison 0x0101 or higher) and driver (0.91 or higher).  This is the frequency at which the LEDs are flashed.  For example an IR pulse of 1000us actually consists of the LED flashing on and off at 38kHz for 1000us.  The default is 38kHz, and is compatible with most devices, however, frequencies from 25kHz to 100kHz are supported.
+
+== --set-carrier=carrier (kHz) ==
+Users can set the frequency used for transmission.  Please read the documentation for --get-carrier for details.
+

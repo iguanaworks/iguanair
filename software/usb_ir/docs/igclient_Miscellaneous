@@ -1,0 +1,54 @@
+= Miscellaneous =
+A number of functions don't fit into simple categories and are described here.
+
+== -d, --device=number ==
+Specify the device to connect with (by index or id).
+
+== --interactive ==
+Use the client interactively.  NOTE: this function has not been used in quite a while, so it may require some debugging or re-documentation.
+
+== -l, --log-file=filename ==
+Specify a log file (defaults to "-").
+
+== -q, --quiet ==
+Reduce the verbosity.
+
+== -v, --verbose ==
+Increase the verbosity.
+
+== --get-version ==
+Return the version of the device firmware.
+
+== --get-features ==
+Return the features associated w/ this device.
+
+== --get-buffer-size ==
+Find out the size of the RAM buffer used for sends and receives.
+
+== --write-block=filename ==
+Write the block specified in the file.  The file specified in the argument should contain an page number (from 0 to 127) and 64 bytes of data to write into that page.  NOTE: this function has not been used in quite a while, so it may require some debugging or re-documentation.
+
+== --execute ==
+Execute code starting at address 0x1fc0 on the device.  This executes only a specific location in memory because jumping to arbitrary locations in ROM based on an argument is limited to 256 possible locations by the JACC instruction.  This functionality is intended for debugging and experimental work on new firmware.
+
+== --lcd-text=string ==
+Send a bulk transfer of pin settings to write the argument to an LCD.  NOTE: this function has not been used in quite a while, so it may require some debugging or re-documentation.
+
+== --reset ==
+Reset the USB device.
+
+== --sleep=seconds ==
+Sleep for X seconds, and wait for packets from the device while sleeping.
+
+== --get-id ==
+Fetch the unique id from the USB device.  These unique identifiers are actually implemented by placing 64 bytes of code in the last page of memory.  This means that calling the --execute command on a device with an id set will cause the device to reply with a packet containing the id, and is, in fact, how the id is retrieved by the --get-id command.
+
+== --set-id=STRING ==
+Set the unique id from the USB device.  Read the documentation for the --get-id function for more details.
+
+== -?, --help ==
+Show a somewhat detailed help message.
+
+== --usage ==
+Display brief usage message.
+

@@ -1,0 +1,87 @@
+= LIRC commands =
+
+This not the place for LIRC documentation, but since I end up answering a few questions about LIRC in the process of tech support I figured posting the answers here would be appreciated.  First of all, the general questions:
+
+'''How do I the remote execute commands?'''
+
+Well, if you mean actually execute commands, then you need to use irexec, which I have no experience with.  However, if you mean control a application like mplayer or mythtv, then you need a lircrc file.  For mplayer this file should be called .lircrc and located in your home directory.  For mythtv the file is just called lircrc and is located in the .mythtv directory in your home directory.  A small sample of this file is shown below.
+
+== lircd ==
+Generally, once lircd is compiled with support for our driver you only need to pass it a -H iguanaIR argument.  However, if you have multiple devices you can also pass a -d argument to specify which device it should connect to.  As of driver version 0.25 the following three lircd calls are equivalent:
+{{{
+lircd -H iguanaIR
+lircd -H iguanaIR -d 0
+lircd -H iguanaIR -d /dev/iguanaIR/0
+}}}
+Before version 0.25 the third version was not valid.  All of these calls will invoke lircd to communicate with the first iguanaIR device.  However, while developing this product I found that I often unplugged and replugged multiple iguanaIR devices, and sometimes plugged them into different USB ports on my desktop machine.  Since the indices listed in /dev/iguanaIR are based on the USB hierarchy this meant that the order of device indices would sometimes be differnt.  To fix this we added device labels, or ids.  The label can be set as follows:
+{{{
+igclient -d 0 --set-id downstairs
+}}}
+After an id is set a listing of /dev/iguanaIR shows a new symlink:
+{{{
+[jdunn@porkrind ~]$ ls -l /dev/iguanaIR/
+total 0
+srwxrwxrwx 1 iguanair iguanair 0 Dec 10 11:57 0
+lrwxrwxrwx 1 iguanair iguanair 1 Dec 10 11:57 downstairs -> 0
+}}}
+Now the device can be refered to by its id as well as its index.  For example, once the id is set to "fred" the following invocations of lircd are equivalent:
+{{{
+lircd -H iguanaIR
+lircd -H iguanaIR -d 0
+lircd -H iguanaIR -d /dev/iguanaIR/0
+lircd -H iguanaIR -d downstairs
+lircd -H iguanaIR -d /dev/iguanaIR/downstairs
+}}}
+
+== irrecord ==
+
+If you're reading this we'll assume that you've already tried to find a LIRC configuration file for your device on http://lirc.sourceforge.net/remotes/ and either had no luck, or found one that supported only ''some'' of the buttons on your remote.  Well, at this point you have to run irrecord (from the LIRC project).  I'm also assuming you're using the Iguanaworks USB device, but that's not critical to this discussion.  With the igdaemon running, but no lircd running, try:
+{{{
+[jdunn@porkrind ~]$ irrecord remote.conf -H iguanaIR
+
+irrecord -  application for recording IR-codes for usage with lirc
+
+Copyright (C) 1998,1999 Christoph Bartelmus(lirc@bartelmus.de)
+
+This program will record the signals from your remote control
+and create a config file for lircd.
+}}}
+
+Follow the on screen directions and it ''should'' create a valid configuration for your device.  Once you have a configuration that works for a few buttons you can run the same command again and "add" more buttons to the configuration.  I say add i quotes because due to the way irrecord works, it doesn't actually modify the configuration file if one already exists.  Instead it creates a new file, like remote.conf.conf and rights the '''new''' button codes to there.  Just open up the remote.conf and remote.conf.conf and move the button lines from the .conf.conf to the .conf.  They should look like:
+{{{
+          power                    0xBCBD
+          1                        0x0809
+          2                        0x8889
+          3                        0x4849
+}}}
+If you get a configuration file that has raw codes in it, well, the odds of that working even intermittently are fairly slim.  Sometimes I've had to run irrecord 3 or 4 times before getting a configuration file I was happy with.  Luckily, you can just record a couple buttons, see that everything works, then go back and add more as decribed above.
+Also note that whatever name you gave the configuration file, that's the name recorded for the remote, but feel free to change it in the file.  There a number of other "quirks" about using irrecord.  I would complain more, but then I would feel obligated to go fix it.
+
+== irw ==
+
+One small note about irw.  When it is working correctly you will likely see multiple lines printed out for each button you press.  This is the way most remote controls work, and is a good thing.  Specifically, consider this fragment of my .lircrc file:
+{{{
+begin
+  prog = mplayer
+  button = VOL-
+  repeat = 2
+  config = vol -1
+end
+
+begin
+  prog = mplayer
+  button = PAUSE
+  repeat = 4
+  config = pause
+end
+}}}
+
+The repeat line in each of those entries tells mplayer (well, the lirc client library) how many repeats should be combined into 1 action.  This means that when I press pause and it sends between 1 and 4 pause signals the action will only happen once.  However, if the repeat value of 4 was used in the volume section then the volume would not change fast enough for my tastes.
+
+== mode2 ==
+
+I'm not going to discuss mode2, because you cannot use it with our device.  mode2 requires a lirc character device, usually named /dev/lirc or /dev/lirc0, but our driver does not provide such and interface.  For similar functionality, i.e. to see if the receiver works, run:
+{{{
+igclient --receiver-on --sleep 100
+}}}
+This command will wait for 100 seconds before exiting, during which time all received signals will be printed to the terminal.
