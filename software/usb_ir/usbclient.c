@@ -263,12 +263,16 @@ bool updateDeviceList(usbDeviceList *list)
 
     if (wouldOutput(LOG_DEBUG))
     {
-        message(LOG_DEBUG, "Device list %p:\n", (void*)list);
+        unsigned int index = 0;
+
+        message(LOG_DEBUG, "Handling %d device(s):\n", count);
         devPos = (usbDevice*)list->deviceList.head;
+
         for(; devPos; devPos = (usbDevice*)devPos->header.next)
             message(LOG_DEBUG,
-                    "  %p: usb:%d.%d id=%d\n", (void*)devPos,
-                    devPos->busIndex, devPos->devIndex, devPos->id);
+                    "  %d) usb:%d.%d id=%d addr=%p\n", index++,
+                    devPos->busIndex, devPos->devIndex,
+                    devPos->id, (void*)devPos);
     }
 
     return true;

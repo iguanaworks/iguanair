@@ -427,6 +427,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         {
             unsigned int value;
 
+            result = -1;
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
             {
@@ -447,6 +448,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         {
             uint32_t value;
 
+            result = -1;
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
             {
@@ -484,6 +486,7 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
         case IG_DEV_SETPINS:
         {
             unsigned int value;
+            result = -1;
 
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
