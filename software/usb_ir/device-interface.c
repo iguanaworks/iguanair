@@ -98,8 +98,8 @@ static versionedType types[] =
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
-    {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD,  true,  1}},
-    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 1,           true,  NO_PAYLOAD}},
+    {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD,  true,  4}},
+    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,           true,  NO_PAYLOAD}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,     CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -227,7 +227,7 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
    delay 4 * (120 - 61) = 59 bytes
    FINAL: delay (6, 59)
 */
-static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
+static void computeCarrierDelays(uint32_t carrier, unsigned char *delays)
 {
     unsigned char sevens = 0, fours;
     unsigned int cycles;
@@ -237,7 +237,7 @@ static void computeCarrierDelays(unsigned char carrier, unsigned char *delays)
        frequency by the length of time in a cycle at the current clock
        speed.
     */
-    cycles = (int)(((1.0 / (carrier * 1000)) / (1.0 / 24000000) / 2) + 0.5);
+    cycles = (int)(((1.0 / carrier) / (1.0 / 24000000) / 2) + 0.5);
 
     /* Divide the computed values into 4 and 7 clock components.  Try
        the highest number of 4s, and then count down until we hit

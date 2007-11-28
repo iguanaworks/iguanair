@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 
 #include "iguanaIR.h"
 #include "support.h"
@@ -66,7 +67,7 @@ static unsigned char* pulsesToIguanaSend(int carrier,
 #endif
 
         cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
-                            1000000.0 * carrier * 1000 + 0.5);
+                            1000000.0 * carrier + 0.5);
         numBytes = (cycles / MAX_DATA_BYTE) + 1;
         cycles %= MAX_DATA_BYTE;
 
@@ -148,14 +149,14 @@ static bool handleClientRequest(dataPacket *request, client *target)
         break;
 
     case IG_DEV_GETCARRIER:
-        request->data = (unsigned char*)malloc(1);
-        request->data[0] = target->idev->carrier;
-        request->dataLen = 1;
+        request->data = (unsigned char*)malloc(4);
+        *(uint32_t*)request->data = htonl(target->idev->carrier);
+        request->dataLen = 4;
         retval = true;
         break;
 
     case IG_DEV_SETCARRIER:
-        target->idev->carrier = request->data[0];
+        target->idev->carrier = ntohl(*(uint32_t*)request->data);
         retval = true;
         break;
 
@@ -501,7 +502,7 @@ void startWorker(usbDevice *dev)
     else
     {
         memset(idev, 0, sizeof(iguanaDev));
-        idev->carrier = 38;
+        idev->carrier = 38000;
         InitializeCriticalSection(&idev->listLock);
 #ifdef LIBUSB_NO_THREADS
         InitializeCriticalSection(&idev->devLock);

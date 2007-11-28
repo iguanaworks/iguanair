@@ -17,6 +17,7 @@
 #include <time.h>
 #include <errno.h>
 #include <popt.h>
+#include <arpa/inet.h>
 #ifdef WIN32
     #include "popt-fix.h"
 #endif
@@ -331,7 +332,8 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     break;
 
                 case IG_DEV_GETCARRIER:
-                    message(LOG_NORMAL, ": carrier=%dkHz", *(char*)data);
+                    message(LOG_NORMAL,
+                            ": carrier=%dkHz", ntohl(*(uint32_t*)data));
                     break;
 
                 case IG_DEV_GETPINS:
@@ -422,7 +424,6 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             break;
 
         case IG_DEV_SETCHANNELS:
-        case IG_DEV_SETCARRIER:
         {
             unsigned int value;
 
@@ -432,14 +433,31 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
                 if (cmd->spec->code == IG_DEV_SETCHANNELS &&
                     value != (CHANNEL_MASK & value))
                     message(LOG_ERROR, "Too many channels specified.\n");
-                else if (cmd->spec->code == IG_DEV_SETCARRIER &&
-                         (value < 25 && value > 100))
-                    message(LOG_ERROR, "Carrier frequency must be between 25 and 150 kHz.\n");
                 else
                 {
                     data = malloc(1);
                     ((char*)data)[0] = value;
                     result = 1;
+                }
+            }
+            break;
+        }
+
+        case IG_DEV_SETCARRIER:
+        {
+            uint32_t value;
+
+            /* translate cmd->pins */
+            if (parseNumber(cmd->arg, &value))
+            {
+                if (cmd->spec->code == IG_DEV_SETCARRIER &&
+                         (value < 25000 || value > 150000))
+                    message(LOG_ERROR, "Carrier frequency must be between 25 and 150 kHz.\n");
+                else
+                {
+                    data = malloc(4);
+                    *(uint32_t *)data = htonl(value);
+                    result = 4;
                 }
             }
             break;

@@ -59,7 +59,7 @@ typedef struct iguanaDev
     unsigned char channels;
 
     /* what carrier frequency should we transmit at?  default 38k */
-    unsigned char carrier;
+    unsigned int carrier;
 
     /* might as well keep the list of clients here */
     listHeader clientList;
