@@ -808,6 +808,9 @@ void handleIncomingPackets(iguanaDev *idev)
 #endif
         }
 
+    /* release the buffer */
+    free(buffer);
+
     /* signal worker thread that the reader is exiting */
     closePipe(idev->readerPipe[WRITE]);
 }

@@ -207,6 +207,7 @@ int main(int argc, const char **argv)
         poptPrintHelp(poptCon, stderr, 0);
         exit(1);
     }
+    poptFreeContext(poptCon);
 
     /* run as a daemon if requested and possible */
     if (runAsDaemon)

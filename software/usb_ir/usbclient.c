@@ -254,6 +254,10 @@ bool updateDeviceList(usbDeviceList *list)
                                         "Is igdaemon already running?\n");
                             printError(LOG_ERROR,
                                        "updateDeviceList failed", newDev);
+
+                            if (newDev->device != NULL)
+                                usb_close(newDev->device);
+                            free(newDev);
                             return false;
                         }
                         else if (list->newDev != NULL)

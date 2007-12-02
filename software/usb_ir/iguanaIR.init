@@ -67,7 +67,7 @@ start()
         log_end_msg $RETVAL
 
         # touch the PIDFILE
-        if [ "$PIDFILE" != "" -a $RETVAL == 0 ]; then
+        if [ "$PIDFILE" != "" -a $RETVAL = 0 ]; then
             echo $(pidofproc $IGPATH) > $PIDFILE
             touch $LOCKFILE
         fi

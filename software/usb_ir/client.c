@@ -580,6 +580,13 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
     }
 }
 
+static void freeTask(igtask *cmd)
+{
+    /* explicitly cast off the const qualifier */
+    free((char*)cmd->arg);
+    free(cmd);
+}
+
 static void performQueuedTasks(PIPE_PTR conn)
 {
     igtask *cmd;
@@ -589,7 +596,7 @@ static void performQueuedTasks(PIPE_PTR conn)
     {
         if (checkTask(cmd))
             performTask(conn, cmd);
-        free(cmd);
+        freeTask(cmd);
     }
 }
 
@@ -685,6 +692,7 @@ int main(int argc, const char **argv)
     int x = 0, retval = 1;
     PIPE_PTR conn = INVALID_PIPE;
     poptContext poptCon;
+    igtask *junk;
 
 #ifdef WIN32
     const char *temp;
@@ -816,6 +824,7 @@ int main(int argc, const char **argv)
         poptPrintHelp(poptCon, stderr, 0);
         exit(1);
     }
+    poptFreeContext(poptCon);
 
     /* line buffer the output */
     setlinebuf(stdout);
@@ -875,6 +884,10 @@ int main(int argc, const char **argv)
 
     if (conn >= 0)
         iguanaClose(conn);
+
+    /* delete any left over tasks on error */
+    while((junk = (igtask*)removeFirstItem(&tasks)) != NULL)
+        freeTask(junk);
 
     return retval;
 }

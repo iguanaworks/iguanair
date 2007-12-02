@@ -172,6 +172,7 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
     errno = EINVAL;
     input = fopen(filename, "r");
     if (input != NULL)
+    {
         while(fgets(line, MAX_LINE, input))
         {
             int value;
@@ -227,6 +228,9 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
             inSpace ^= 1;
             success = true;
         }
+
+        fclose(input);
+    }
 
     if (! success)
     {
