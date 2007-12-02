@@ -61,6 +61,7 @@ fullFlash = False
 targetVersion = None
 test = False
 forceFlash = False
+userSaysKeep = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -111,6 +112,8 @@ def printUsage(msg = None):
 -h
 --help : Print this usage message.
 
+--keep-loader : Keep the loader regardless of version detection.
+
 --loader : Specify the file to read the loader from.
 
 -l
@@ -149,6 +152,8 @@ while index < len(sys.argv):
     elif arg == "--old-firmware":
         index += 1
         usb_ir = sys.argv[index]
+    elif arg == '--keep-loader':
+        userSaysKeep = True
     elif arg == "-l" or arg == "--log-file":
         index += 1
         logFile = sys.argv[index]
@@ -460,7 +465,7 @@ def reflashDevice(features):
 
     # not necessary when only writing the body
     version = deviceVersion()
-    keepLoader = False
+    keepLoader = userSaysKeep
     if (not usb_ir and \
         (version >> 8) == hexVersion(loader) and hexVersion(loader) != 0) or \
        (usb_ir and version == hexVersion(usb_ir)):
@@ -509,6 +514,8 @@ def reflashDevice(features):
     if id:
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
         deviceTransaction(iguanaIR.IG_DEV_SETID, id)
+    else:
+        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
     if wrote and deviceVersion() < 0x0100:
         replugWarning()
