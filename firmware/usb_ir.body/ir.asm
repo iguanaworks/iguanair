@@ -180,7 +180,6 @@ rx_pins_off:
 ;       rx_pulse has the pulse bit set correctly
 ; returns: 1 if ok, 0 if overflow
 load_value:
-    push X
     ; shift right 6 bits
     mov A, [rx_low]
     asr A
@@ -214,7 +213,7 @@ load_value:
 
     ;we need to loop for the value of bits 5-7 of the high byte
     mov A, [rx_high]
-    ; shift 5 bits over TODO: can probably avoid using X by changing [rx_high]
+    ; shift 5 bits over
     asr A
     asr A
     asr A
@@ -224,7 +223,7 @@ load_value:
     and A, 0x07
 
     ; set up the loop
-    mov X, A          ; loop counter in X
+    mov [rx_high], A  ; loop counter in rx_high
     jz ld_big_done    ; if zero, we don't need to do any big loads
 
     ; put the value to load in A
@@ -234,14 +233,13 @@ load_value:
     ; loop and load the right number of max value packets
   ld_big_loop:
     call put_byte
-    dec X
+    dec [rx_high]
     jnz ld_big_loop
 
   ld_big_done:
     ; send the remainder
     mov A, [rx_low] ; get the remainder byte
     call put_byte   ; load A into buffer
-    pop X
     jmp tcapi_load_done
 
 

@@ -542,9 +542,7 @@ def checkReceiver():
 
 def sendPanasonicPower():
     # send a signal on all active channels
-    panasonicPower = """pulse 1040
-space 12544
-pulse 3498
+    panasonicPower = """pulse 3498
 space 1685
 pulse 448
 space 362
