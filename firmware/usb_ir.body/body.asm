@@ -121,7 +121,7 @@ body_main:
     ret                ; return to main recv
 
 body_loop_body:
-    ;  check for receive overflow
+    ; check for receive overflow
     mov A, [rx_overflow]
     jz no_overflow
     ; send back an overflow packet

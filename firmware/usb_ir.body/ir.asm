@@ -87,8 +87,7 @@ put_byte:
     jmp pb_done
 
   pb_oflow:
-    ; set the rx overflow flag, clear buffers
-    mov [rx_overflow], 1     ; set the overflow flag
+    mov [rx_overflow], 1        ; set the overflow flag
 
   pb_done:
     ret
@@ -96,7 +95,7 @@ put_byte:
 ; FUNCTION: write_signal
 ;   writes one packet's worth of signal data from the rx buffer to host
 write_signal:
-    ; see if there is data ready
+    ; see if there is enough data ready
     cmp [buf_size], PACKET_SIZE - 1
     jc ws_done
 
@@ -215,7 +214,7 @@ load_value:
 
     ;we need to loop for the value of bits 5-7 of the high byte
     mov A, [rx_high]
-    ; shift 5 bits over
+    ; shift 5 bits over TODO: can probably avoid using X by changing [rx_high]
     asr A
     asr A
     asr A
@@ -225,23 +224,23 @@ load_value:
     and A, 0x07
 
     ; set up the loop
-    mov X, A       ; loop counter in X
-    jz ld_big_done ; if zero, we don't need to do any big loads
+    mov X, A          ; loop counter in X
+    jz ld_big_done    ; if zero, we don't need to do any big loads
 
     ; put the value to load in A
-    mov A,[rx_pulse] ; set pulse bit correctly
-    or A, 0x7F       ; load max value
+    mov A, [rx_pulse] ; set pulse bit correctly
+    or A, 0x7F        ; load max value
 
     ; loop and load the right number of max value packets
   ld_big_loop:
-    call put_byte ;load A into buffer
+    call put_byte
     dec X
     jnz ld_big_loop
 
   ld_big_done:
-    ;send the remainder
-    mov A, [rx_low] ;get the remainder byte
-    call put_byte ;load A into buffer
+    ; send the remainder
+    mov A, [rx_low] ; get the remainder byte
+    call put_byte   ; load A into buffer
     pop X
     jmp tcapi_load_done
 
