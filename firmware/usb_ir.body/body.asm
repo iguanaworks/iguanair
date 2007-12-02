@@ -121,6 +121,16 @@ body_main:
     ret                ; return to main recv
 
 body_loop_body:
+    ;  check for receive overflow
+    mov A, [rx_overflow]
+    jz no_overflow
+    ; send back an overflow packet
+    mov [control_pkt + CCODE], CTL_OVERRECV
+    mov X, CTL_BASE_SIZE
+    lcall write_control
+    lcall rx_reset
+
+  no_overflow:
     lcall write_signal ; write back received data
     ret                ; return to main loop
 
@@ -146,7 +156,7 @@ recv_on_body:
 
 recv_off_body:
     mov [rx_on], 0x0 ; note that rx should be off
-    lcall rx_disable ; make rx state actually match rx_on
+    lcall rx_reset   ; make rx state actually match rx_on
     jmp bm_ack_then_ret
 
 send_body:

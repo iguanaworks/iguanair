@@ -30,10 +30,9 @@ AREA pinned_bss (RAM, ABS, CON)
 buffer:
     BLK BUFFER_SIZE ; the main data buffer
 buffer_ptr:
-    BLK 1 ; current index into buffer
-; used for internal booleans
+    BLK 1           ; current index into buffer
 loader_flags:
-    BLK 1
+    BLK 1           ; used for internal booleans
 
 ; temporary variables might as well be shared to save space
 tmp1:
