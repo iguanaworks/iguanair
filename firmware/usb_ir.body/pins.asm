@@ -251,7 +251,7 @@ pin_burst:
     mov [control_pkt + CDATA + 1], A
 
     ; ok, set pins
-    lcall set_pins
+    call set_pins
 
     ; delay a bit
     mov A, BURST_DELAY

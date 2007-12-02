@@ -124,7 +124,7 @@ write_signal:
     mov X, PACKET_SIZE - 1  ; bytes to copy (last is fill)
     mov [tmp1], control_pkt ; packet pointer
   ws_ld_loop:
-    lcall get_byte          ; get next byte
+    call get_byte          ; get next byte
     mvi [tmp1], A
     dec X
     jnz ws_ld_loop
@@ -196,7 +196,7 @@ rx_pins_off:
   rx_disable_done:
     ret
 
-; FUNCTION load_value
+; used-to-be FUNCTION load_value (now it's a jump in - jump out)
 ; loads a received value into the data buffer
 ;  pre: rx_high and rx_low have the raw timer data
 ;       rx_pulse has the pulse bit set correctly
@@ -255,16 +255,16 @@ load_value:
 
     ;loop and load the right number of max value packets
   ld_big_loop:
-    lcall put_byte ;load A into buffer
+    call put_byte ;load A into buffer
     dec X
     jnz ld_big_loop
 
   ld_big_done:
     ;send the remainder
     mov A, [rx_low] ;get the remainder byte
-    lcall put_byte ;load A into buffer
+    call put_byte ;load A into buffer
     pop X
-    ret
+    jmp tcapi_load_done
 
 
 
@@ -294,7 +294,8 @@ tcap_int:
     jmp tcapi_done
 
   tcapi_done:
-    lcall load_value        ; store into data buffer
+    jmp load_value          ; store into data buffer
+  tcapi_load_done:
     mov REG[FRTMRL], 0      ; reset timer low byte
     mov REG[FRTMRH], 0      ; reset timer high byte
     mov REG[TCAPINTS], 0x0F ; clear int status
@@ -308,7 +309,7 @@ twrap_int:
 
     ; load an 0x80 to indicate full-length space
     mov A, 0x80
-    lcall put_byte
+    call put_byte
 
     pop A
     reti ; done
