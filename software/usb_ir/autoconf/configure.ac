@@ -89,8 +89,17 @@ AC_CHECK_LIB([usb], [usb_get_busses],
   ]
 )
 
-# fetch the python version
-AC_PYTHON_DEVEL()
+# Allow the user to override clock_gettime detection
+AC_ARG_ENABLE(python,
+  [  --disable-python do build the Python interface.],
+  [ if test x$enableval == xno; then
+        USE_PYTHON=no
+    fi ],
+)
+if test x$USE_PYTHON != xno; then
+    # fetch the python version
+    AC_PYTHON_DEVEL()
+fi
 
 # Output some files
 AC_CONFIG_FILES([Makefile])

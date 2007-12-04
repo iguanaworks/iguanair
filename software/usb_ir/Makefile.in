@@ -44,7 +44,7 @@ endif
 # should use autoconf
 
 .PHONY: all
-all: igclient igdaemon _iguanaIR.so
+all: igclient igdaemon
 igclient igdaemon: libiguanaIR.so
 
 libiguanaIR.so: iguanaIR.o support.o dataPackets.o pipes.o base.o
@@ -63,11 +63,16 @@ igclient: client.o list.o
 # need a special dependency for config.h
 base.o: base.c config.h
 
+# NOTE: I would rather use PYTHON_VERSION, but it doesn't work
+ifneq (@PYTHON_CPPFLAGS@,)
+all: _iguanaIR.so
+
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) -python $<
 
 _iguanaIR.so: iguanaIR_wrap.c
 	$(CC) $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long @PYTHON_CPPFLAGS@ $^ -L. -liguanaIR -o $@
+endif
 
 .PHONY: install
 install: all
