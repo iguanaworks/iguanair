@@ -8,6 +8,7 @@ License:        GPL2
 URL:            http://iguanaworks.net
 Source0:        %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch:      noarch
 
 Requires:       iguanaIR-python >= 0.91
 
