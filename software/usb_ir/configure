@@ -6408,11 +6408,11 @@ fi
 # Check whether --enable-clock_gettime was given.
 if test "${enable_clock_gettime+set}" = set; then
   enableval=$enable_clock_gettime;  if test x$enableval = xno; then
-        DISABLE_CLOCK_GETTIME=no
+        DISABLE_CLOCK_GETTIME=1
     fi
 fi
 
-if ! test x$DISABLE_CLOCK_GETTIME = xno; then
+if ! test x$DISABLE_CLOCK_GETTIME = x1; then
     { echo "$as_me:$LINENO: checking for clock_gettime" >&5
 echo $ECHO_N "checking for clock_gettime... $ECHO_C" >&6; }
 if test "${ac_cv_func_clock_gettime+set}" = set; then

@@ -63,7 +63,7 @@ static unsigned char* pulsesToIguanaSend(int carrier,
             fprintf(stderr, "space ");
         else
             fprintf(stderr, "pulse ");
-        fprintf(stderr, "%d\n", sendCode[x] & LENGTH_MASK);
+        fprintf(stderr, "%d\n", sendCode[x] & IG_PULSE_MASK);
 #endif
 
         cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
