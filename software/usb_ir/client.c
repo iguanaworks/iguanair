@@ -333,12 +333,12 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 
                 case IG_DEV_GETCARRIER:
                     message(LOG_NORMAL,
-                            ": carrier=%dkHz", ntohl(*(uint32_t*)data));
+                            ": carrier=%dHz", ntohl(*(uint32_t*)data));
                     break;
 
                 case IG_DEV_SETCARRIER:
                     message(LOG_NORMAL,
-                            ": carrier=%dkHz", ntohl(*(uint32_t*)data));
+                            ": carrier=%dHz", ntohl(*(uint32_t*)data));
                     break;
 
                 case IG_DEV_GETPINS:
@@ -652,7 +652,7 @@ static struct poptOption options[] =
     { "get-channels", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCHANNELS, "Check which channels are used during transmits.", NULL },
     { "set-channels", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCHANNELS, "Set which channels are used during transmits.", "channels" },
     { "get-carrier", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCARRIER, "Check the carrier frequency for transmits.", NULL },
-    { "set-carrier", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCARRIER, "Set the carrier frequency for transmits.", "carrier (kHz)" },
+    { "set-carrier", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCARRIER, "Set the carrier frequency for transmits.", "carrier (Hz)" },
 
     /* commands that actually store and load the pin configuration */
     { "get-pin-config", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETPINCONFIG, "Retrieve the internal pin state.", NULL },
