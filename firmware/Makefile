@@ -4,7 +4,7 @@ JUNK=project.* memory.inc mkdep linkfile opts.txt output obj backup lib/obj
 
 all: $(INCLUDES)
 
-%.inc: $(HEADER) Makefile
+%.inc: %.inc.in $(HEADER) Makefile
 	./generate_incs --header $(HEADER) $@
 
 clean:
