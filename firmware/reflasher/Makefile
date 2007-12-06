@@ -4,6 +4,7 @@ VERSION=$(shell grep Version: $(NAME).spec | sed 's/[^ ]*[ ]*//')
 all:
 
 rpm: tarball
+	rpmbuild -ts $(NAME)-$(VERSION).tar.bz2
 	rpmbuild -tb $(NAME)-$(VERSION).tar.bz2
 
 tarball:
