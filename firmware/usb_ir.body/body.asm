@@ -15,7 +15,7 @@ include "m8c.inc"    ; part specific constants and macros
 include "loader.inc"
 include "body.inc"
 
-VERSION_ID_LOW:  equ 0x01 ; firmware version ID low byte (code body)
+VERSION_ID_LOW:  equ 0x02 ; firmware version ID low byte (code body)
 
 export get_feature_list
 
