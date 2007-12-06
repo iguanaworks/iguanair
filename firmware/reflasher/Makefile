@@ -1,17 +1,20 @@
+NAME=$(shell grep Name: *.spec | head -1 | sed 's/[^ ]*[ ]*//')
+VERSION=$(shell grep Version: $(NAME).spec | sed 's/[^ ]*[ ]*//')
+
 all:
 
+rpm: tarball
+	rpmbuild -tb $(NAME)-$(VERSION).tar.bz2
+
 tarball:
-	NAME=`pwd | xargs basename`; \
-	VERSION=`grep Version: reflasher.spec | sed 's/[^ ]*[ ]*//'`; \
-	cd ..; \
-	tar --dereference -cjf $${NAME}-$${VERSION}.tar.bz2 $${NAME}; \
-	mv $${NAME}-$${VERSION}.tar.bz2 $${NAME};
+	ln -s . $(NAME)-$(VERSION); \
+	tar --dereference -cjf $(NAME)-$(VERSION).tar.bz2 --exclude .svn `ls | grep -v '^$(NAME)-$(VERSION)\(.tar.bz2\)\?$$' | grep -v '^usb_ir.reflasher$$' | sed 's/^/$(NAME)-$(VERSION)\//'`; \
+	rm $(NAME)-$(VERSION);
 
 install:
-	install -d $(DESTDIR)/usr/lib/iguanaIR-reflasher/hex
-	install upgrade-usb $(DESTDIR)/usr/lib/iguanaIR-reflasher
-	install hex/*.hex $(DESTDIR)/usr/lib/iguanaIR-reflasher/hex
-	rm $(DESTDIR)/usr/lib/iguanaIR-reflasher/hex/*-0.hex
+	install -d $(DESTDIR)/usr/lib/$(NAME)/hex
+	install upgrade-usb $(DESTDIR)/usr/lib/$(NAME)
+	install hex/*.hex $(DESTDIR)/usr/lib/$(NAME)/hex
+	rm $(DESTDIR)/usr/lib/$(NAME)/hex/*-0.hex
 	install -d $(DESTDIR)/usr/bin
-	ln -s ../lib/iguanaIR-reflasher/upgrade-usb \
-              $(DESTDIR)/usr/bin/iguanaIR-reflasher
+	ln -s ../lib/$(NAME)/upgrade-usb $(DESTDIR)/usr/bin/$(NAME)
