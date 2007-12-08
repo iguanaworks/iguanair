@@ -41,13 +41,9 @@ Priority: optional
 Architecture: $ARCH
 Essential: no
 Depends: udev (>= 0.99), libusb-0.1-4 (>= 0.1.11)
-Pre-Depends: 
 Recommends: lirc
-Suggests:
 Installed-Size: 500
 Maintainer: IguanaWorks [support@iguanaworks.net]
-Conflicts:
-Replaces:
 Provides: iguanaIR
 Description: This is the IguanaWorks IR USB client. Software allows you
              to control your IguanaWorks IR USB device. Includes software for use
@@ -65,13 +61,8 @@ Priority: optional
 Architecture: $ARCH
 Essential: no
 Depends: iguanaIR (>= $version), iguanaIR (<= $version-9999999), python (>= 2.4), python (<= 2.5)
-Pre-Depends: 
-Recommends: 
-Suggests:
 Installed-Size: 100
 Maintainer: IguanaWorks [support@iguanaworks.net]
-Conflicts:
-Replaces:
 Provides: iguanaIR-python
 Description: This package provides the swig-generated Python module for interfacing
 	with the Iguanaworks USB IR transceiver.
