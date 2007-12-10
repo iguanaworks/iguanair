@@ -288,7 +288,11 @@ def deviceVersion(target = None):
     message(LOG_INFO, "Found device version 0x%x\n" % version)
 
     if target and target != version:
-        message(LOG_FATAL, "Incorrect version (0x%4.4x != 0x%4.4x) found.  Reflashing has failed.\n" % (version, target))
+        if not UNSAFE:
+            message(LOG_NORMAL, "Dry run completed.\n")
+            raise KeyboardInterrupt
+        else:
+            message(LOG_FATAL, "Incorrect version (0x%4.4x != 0x%4.4x) found.  Reflashing has failed.\n" % (version, target))
 
     return version
 
@@ -379,6 +383,11 @@ def writePagesToDevice(pages):
     count = 0
     for page in pages:
         count += 1
+
+        if page['start'] == 0 and not UNSAFE:
+            message(LOG_WARN, "Not writing page 0 during dry run.\n")
+            continue
+
         # write a page
         sys.stdout.write("\r  Writing page %d (%d/%d)  " % (page['start'] / 64,
                                                             count, len(pages)))
