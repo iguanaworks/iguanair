@@ -55,6 +55,9 @@ PIPE_PTR connectToPipe(const char *name)
                     (struct sockaddr *)&server,
                     sizeof(struct sockaddr_un)) == -1)
         {
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", retval, __FILE__, __LINE__);
+#endif
             closePipe(retval);
             retval = INVALID_PIPE;
         }

@@ -41,6 +41,9 @@ static unsigned int sendTimeout = 1000;
 
 static void quitHandler(int UNUSED(sig))
 {
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", commPipe[WRITE], __FILE__, __LINE__);
+#endif
     closePipe(commPipe[WRITE]);
 }
 
@@ -70,6 +73,11 @@ static void workLoop()
     else
     {
         bool quit = false;
+
+#if DEBUG
+printf("OPEN %d %s(%d)\n", commPipe[0], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
+#endif
 
         setParentPipe(commPipe[WRITE]);
 
@@ -113,7 +121,7 @@ static struct poptOption options[] =
 {
     /* general daemon options */
     { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
-    { "no-daemon", 'n', POPT_ARG_NONE, NULL, 'n', "Do not fork into teh background.", NULL },
+    { "no-daemon", 'n', POPT_ARG_NONE, NULL, 'n', "Do not fork into the background.", NULL },
     { "pid-file", 'p', POPT_ARG_STRING, NULL, 'p', "Specify where to write the pid of the daemon process.", "filename" },
     { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
@@ -359,6 +367,9 @@ static int startListening(const char *name, const char *alias)
 
             return sockfd;
         }
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
+#endif
         close(sockfd);
     }
 
@@ -375,6 +386,9 @@ static void stopListening(int fd, const char *name, const char *alias)
 
     /* and nuke it */
     unlink(path);
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
+#endif
     close(fd);
 
     /* find the alias and nuke it if it is a link to the name */

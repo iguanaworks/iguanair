@@ -235,6 +235,9 @@ static bool handleClientRequest(dataPacket *request, client *target)
 static void releaseClient(client *target)
 {
     closePipe(target->fd);
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", target->fd, __FILE__, __LINE__);
+#endif
 
     if (target->receiving)
     {
@@ -328,11 +331,16 @@ static void joinWithReader(iguanaDev *idev)
 
 static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
 {
+#if DEBUG
+printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
+#endif
+
     if (clientFd == INVALID_PIPE)
         message(LOG_ERROR, "Error accepting client: %s\n", strerror(errno));
     else
     {
         client *newClient;
+
         newClient = (client*)malloc(sizeof(client));
         if (newClient == NULL)
             message(LOG_ERROR, "Out of memory allocating client struct.");
@@ -484,6 +492,17 @@ static void* workLoop(void *instance)
 
         listenToClients(name, alias, idev,
                         handleReader, clientConnected, handleClient);
+
+        /* Close some of the pipes.  Leave one to note when the device
+           reader exits. */
+        closePipe(idev->readerPipe[READ]);
+        closePipe(idev->responsePipe[READ]);
+        closePipe(idev->responsePipe[WRITE]);
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", idev->readerPipe[READ], __FILE__, __LINE__);
+printf("CLOSE %d %s(%d)\n", idev->responsePipe[READ], __FILE__, __LINE__);
+printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
+#endif
     }
 
     /* release resources for reader and usb device */
@@ -523,12 +542,22 @@ void startWorker(usbDevice *dev)
         InitializeCriticalSection(&idev->devLock);
 #endif
         if (! createPipePair(idev->readerPipe))
-            message(LOG_ERROR, "Failed to create readPipe for %d\n", dev->id);
+            message(LOG_ERROR,
+                    "Failed to create readPipe for %d: %s\n",
+                    dev->id, strerror(errno));
         else if (! createPipePair(idev->responsePipe))
             message(LOG_ERROR,
-                    "Failed to create responsePipe for %d\n", dev->id);
+                    "Failed to create responsePipe for %d: %s\n",
+                    dev->id, strerror(errno));
         else
         {
+#if DEBUG
+printf("OPEN %d %s(%d)\n", idev->readerPipe[0], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", idev->readerPipe[1], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", idev->responsePipe[0], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
+#endif
+
             /* this must be set before the call to findDeviceEndpoints */
             idev->usbDev = dev;
 

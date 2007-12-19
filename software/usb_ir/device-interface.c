@@ -12,6 +12,7 @@
  */
 #include "base.h"
 #include <errno.h>
+#include <stdio.h>
 
 #include "iguanaIR.h"
 #include "pipes.h"
@@ -812,6 +813,9 @@ void handleIncomingPackets(iguanaDev *idev)
     free(buffer);
 
     /* signal worker thread that the reader is exiting */
+#if DEBUG
+printf("CLOSE %d %s(%d)\n", idev->readerPipe[WRITE], __FILE__, __LINE__);
+#endif
     closePipe(idev->readerPipe[WRITE]);
 }
 

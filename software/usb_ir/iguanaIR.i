@@ -26,6 +26,7 @@
 %rename(removeData) iguanaRemoveData;
 %rename(readPulseFile) iguanaReadPulseFile;
 %rename(code) iguanaCode;
+%rename(close) iguanaClose;
 
 %typemap(default) (unsigned int dataLength, void *data)
 {

@@ -137,6 +137,11 @@ bool initDeviceList(usbDeviceList *list, usbId *ids,
     memset(list, 0, sizeof(usbDeviceList));
     if (createPipePair(list->childPipe))
     {
+#if DEBUG
+printf("OPEN %d %s(%d)\n", list->childPipe[0], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", list->childPipe[1], __FILE__, __LINE__);
+#endif
+
         list->ids = ids;
         list->recvTimeout = recvTimeout;
         list->sendTimeout = sendTimeout;
