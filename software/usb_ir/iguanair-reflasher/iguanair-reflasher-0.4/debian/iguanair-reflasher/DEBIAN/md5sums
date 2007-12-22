@@ -1,0 +1,11 @@
+5e37ad889ed172713171821054b1b93e  usr/share/doc/iguanair-reflasher/copyright
+27ebb40bca3eef391410725612eb37cc  usr/share/doc/iguanair-reflasher/changelog.Debian.gz
+e9e17e21b4790122b257edb006f486f9  usr/lib/iguanair-reflasher/hex/body-2.hex
+94f57c48ff7d4598a9e2af928938eeed  usr/lib/iguanair-reflasher/hex/usb_ir-1.hex
+a467e27fe4e255f8d08630464bfcda93  usr/lib/iguanair-reflasher/hex/loader-1.hex
+fe5c781dde3e1c787ce6df52590f5795  usr/lib/iguanair-reflasher/hex/usb_ir-2.hex
+b4c2c9b9043f8435d2e75924ca3d5ce2  usr/lib/iguanair-reflasher/hex/usb_ir-4.hex
+5790b7f4c995e7021f83b4dca747de50  usr/lib/iguanair-reflasher/hex/usb_ir-3.hex
+d72b3aa18fd79c3361551b79e71553f9  usr/lib/iguanair-reflasher/hex/reflasher.hex
+43b342fe280e7ed2120b07e7744d050d  usr/lib/iguanair-reflasher/hex/body-1.hex
+b5e001a60f760c39efbbf3e2d98ab8b1  usr/lib/iguanair-reflasher/upgrade-usb

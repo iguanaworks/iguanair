@@ -1,0 +1,11 @@
+Package: iguanair-reflasher
+Version: 0.3-1
+Architecture: i386
+Maintainer: IguanaWorks Incorporated <debsupport@iguanaworks.net>
+Installed-Size: 236
+Depends: iguanair-python (>= 0.91)
+Section: unknown
+Priority: extra
+Description: This program will reflash the IguanaWorks USB Transceiver
+	with the lated version of teh firmware
+ .
