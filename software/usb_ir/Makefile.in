@@ -22,7 +22,12 @@ ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
 else
-  LIBDIR  = lib
+  ifeq ($(shell uname -m),ppc)
+    LIBDIR  = lib
+    CFLAGS += -fpic
+  else
+    LIBDIR  = lib
+  endif
 endif
 
 # Older versions of libusb do not play with threads at all nicely.
