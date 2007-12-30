@@ -19,6 +19,7 @@ import warnings
 import traceback
 import tempfile
 import struct
+import errno
 import stat
 import time
 import glob
@@ -445,24 +446,35 @@ def writeReflasher():
         writeHexFile(os.path.join(sys.path[0], 'hex', 'reflasher.hex'))
         deviceVersion(FlasherVersion)
 
+def checkFileExists(path):
+    try:
+        os.stat(path)
+    except OSError, inst:
+        if inst[0] != errno.ENOENT:
+            raise
+        return False
+    return True
+
 def findHexFile(type, target = None, mustMatch = True):
     latest = None
     latestVersion = None
     for hex in glob.glob(os.path.join(sys.path[0], 'hex', '%s-*.hex' % type)):
-        version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
-        if target is None:
-            if latestVersion is None:
-                latestVersion = version
+        # ensure the file really exists
+        if checkFileExists(hex):
+            version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
+            if target is None:
+                if latestVersion is None:
+                    latestVersion = version
 
-            if latest is None or \
-               version > latestVersion:
+                if latest is None or \
+                   version > latestVersion:
+                    latest = hex
+            elif version == target:
                 latest = hex
-        elif version == target:
-            latest = hex
-            break
+                break
     else:
         best = glob.glob(os.path.join(sys.path[0], 'hex', '%s-0.hex' % type))
-        if len(best) == 1:
+        if len(best) == 1 and checkFileExists(best[0]):
             latest = best[0]
 
     if latest is None and target is not None and mustMatch:
