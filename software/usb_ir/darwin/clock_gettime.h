@@ -5,8 +5,11 @@
  */
 #ifndef _IGUANAWORKS_EMUL_CLOCK_GETTIME
 #define _IGUANAWORKS_EMUL_CLOCK_GETTIME
+
 #include <mach/mach_time.h>
+
 #define CLOCK_MONOTONIC 1
+
 static inline int clock_gettime(int UNUSED(clock), struct timespec *tp) {
 	static mach_timebase_info_data_t mtid;
 	static struct timeval tv;
@@ -29,11 +32,13 @@ static inline int clock_gettime(int UNUSED(clock), struct timespec *tp) {
 
 	return 0;
 }
+
 /*
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include "clock_gettime.h"
+
 int main(int a, char **b) {
         struct timespec t1, t2;
 
@@ -45,4 +50,5 @@ int main(int a, char **b) {
         return 0;
 }
 */
+
 #endif

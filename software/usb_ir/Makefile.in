@@ -18,15 +18,25 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
 
+SHAREARG = -shared
+SHAREEXT = dylib
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
 else
+  LIBDIR  = lib
+
   ifeq ($(shell uname -m),ppc)
-    LIBDIR  = lib
     CFLAGS += -fpic
   else
-    LIBDIR  = lib
+    ifeq ($(shell uname -m),Power Macintosh)
+      LIBDIR  = lib
+      CFLAGS += -fPIC
+      CPPFLAGS += -I/sw/include
+      LDFLAGS += -L/sw/lib
+      SHAREARG = -dynamiclib
+      SHAREEXT = dylib
+    endif
   endif
 endif
 
@@ -50,17 +60,17 @@ endif
 
 .PHONY: all
 all: igclient igdaemon
-igclient igdaemon: libiguanaIR.so
+igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
-libiguanaIR.so: iguanaIR.o support.o dataPackets.o pipes.o base.o
-	$(CC) -shared $(CPPFLAGS) $^ -lpopt -lrt -o $@
+libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o base.o
+	$(CC) $(SHAREARG) $(LDFLAGS) $^ -lpopt -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o compatibility.o
-	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LIBS) -lusb -L. -liguanaIR -o $@
+	$(CC) $(LDFLAGS) $^ -lpopt -lusb -L. -liguanaIR -o $@
 
 igclient: client.o list.o
-	$(CC) $(CPPFLAGS) $^ -lpopt -L. -liguanaIR -o $@
+	$(CC) $(LDFLAGS) $^ -lpopt -L. -liguanaIR -o $@
 
 %.o: %.c Makefile iguanaIR.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
@@ -70,20 +80,23 @@ base.o: base.c config.h
 
 # NOTE: I would rather use PYTHON_VERSION, but it doesn't work
 ifneq (@PYTHON_CPPFLAGS@,)
-all: _iguanaIR.so
+all: _iguanaIR.$(SHAREEXT)
 
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
-	swig $(CPPFLAGS) -python $<
+	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python $<
 
-_iguanaIR.so: iguanaIR_wrap.c
-	$(CC) $(CPPFLAGS) -shared $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long @PYTHON_CPPFLAGS@ $^ -L. -liguanaIR -o $@
+iguanaIR_wrap.o: iguanaIR_wrap.c Makefile
+	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@
+
+_iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
+	$(CC) $(LDFLAGS) @PYTHON_LDFLAGS@ $(SHAREARG) $^ -L. -liguanaIR -o $@
 endif
 
 .PHONY: install
 install: all
 	install -D igclient $(DESTDIR)/usr/bin/igclient
 	install -D igdaemon $(DESTDIR)/usr/bin/igdaemon
-	install -D libiguanaIR.so $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.so
+	install -D libiguanaIR.$(SHAREEXT) $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
 	install -D iguanaIR.init $(DESTDIR)/etc/rc.d/init.d/iguanaIR
 	install -D --mode=0644 iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
 	install -D iguanaIR.h $(DESTDIR)/usr/include/iguanaIR.h
@@ -98,7 +111,7 @@ install: all
 
 .PHONY: clean
 clean:
-	rm -f *~ *.o *iguanaIR.so *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
+	rm -f *~ *.o *iguanaIR.$(SHAREEXT) *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
 
 .PHONY: distclean
 distclean: clean

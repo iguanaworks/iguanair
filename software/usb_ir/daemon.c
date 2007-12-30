@@ -15,6 +15,7 @@
 #include "base.h"
 #include <popt.h>
 #include <signal.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
 

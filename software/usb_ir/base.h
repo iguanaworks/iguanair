@@ -63,7 +63,12 @@
     #define INVALID_THREAD_PTR 0
     #define startThread(a, b, c) (pthread_create((a), NULL, (b), (c)) == 0)
     #define joinThread(a,b) (void)pthread_join((a), (b))
-    #define SwitchToThread() pthread_yield()
+
+    #if __APPLE__
+        #define SwitchToThread() pthread_yield_np()
+    #else
+        #define SwitchToThread() pthread_yield()
+    #endif
 
     /* lock defines */
     #define LOCK_PTR pthread_mutex_t

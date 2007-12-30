@@ -13,6 +13,7 @@
 #include "base.h"
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "iguanaIR.h"
 #include "pipes.h"
