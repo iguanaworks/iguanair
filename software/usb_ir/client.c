@@ -135,7 +135,7 @@ static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
 
-static void performTask(PIPE_PTR conn, igtask *cmd);
+static bool performTask(PIPE_PTR conn, igtask *cmd);
 
 bool parseNumber(const char *text, unsigned int *value)
 {
@@ -253,8 +253,9 @@ static void setSetting(unsigned int setting, const char *pins,
         }
 }
 
-static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
+static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 {
+    bool retval = false;
     uint64_t end;
 
     /* read the start and add the timeout */
@@ -367,8 +368,10 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     break;
                 }
                 }
+
                 /* success means stop */
                 timeout = -1;
+                retval = true;
             }
             message(LOG_NORMAL, "\n");
 
@@ -378,41 +381,51 @@ static void receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
         /* free successes or errors */
         iguanaFreePacket(response);
     }
+
+    return retval;
 }
 
 /* some requests are handled without sending requests to the server */
-static void handleInternalTask(igtask *cmd, PIPE_PTR conn)
+static bool handleInternalTask(igtask *cmd, PIPE_PTR conn)
 {
+    bool retval = false;
+
     if (cmd->spec->code == INTERNAL_SLEEP)
     {
         float seconds;
         char dummy;
-        if (sscanf(cmd->arg, "%f%c", &seconds, &dummy) == 1)
-        {
-            receiveResponse(conn, cmd, (int)(seconds * 1000));
-            message(LOG_NORMAL, "%s (%.3f): success\n", cmd->command, seconds);
-        }
-        else
+        if (sscanf(cmd->arg, "%f%c", &seconds, &dummy) != 1)
             message(LOG_ERROR, "failed to parse sleep time.\n");
+        else if (receiveResponse(conn, cmd, (int)(seconds * 1000)))
+        {
+            message(LOG_NORMAL, "%s (%.3f): success\n", cmd->command, seconds);
+            retval = true;
+        }
     }
     else if ((cmd->spec->code & INTERNAL_GETCONFIG) == INTERNAL_GETCONFIG)
     {
         message(LOG_NORMAL, "%s: success: 0x%2.2x\n",
                 cmd->command, getSetting(cmd->spec->bit, pinState));
+        retval = true;
     }
     else if ((cmd->spec->code & INTERNAL_SETCONFIG) == INTERNAL_SETCONFIG)
     {
         setSetting(cmd->spec->bit, cmd->arg, pinState);
         message(LOG_NORMAL, "%s: success\n", cmd->command);        
+        retval = true;
     }
     else
         message(LOG_FATAL, "Unhandled internal task: %s\n", cmd->spec->text);
+
+    return retval;
 }
 
-static void performTask(PIPE_PTR conn, igtask *cmd)
+static bool performTask(PIPE_PTR conn, igtask *cmd)
 {
+    bool retval = false;
+
     if (cmd->spec->internal)
-        handleInternalTask(cmd, conn);
+        retval = handleInternalTask(cmd, conn);
     else
     {
         int result = 0;
@@ -570,14 +583,16 @@ static void performTask(PIPE_PTR conn, igtask *cmd)
             else if (! iguanaWriteRequest(request, conn))
                 message(LOG_ERROR,
                         "Failed to write request to server.\n");
-            else
-                receiveResponse(conn, cmd, 10000);
+            else if (receiveResponse(conn, cmd, 10000))
+                retval = true;
 
             /* release any allocated data buffers (including
              * data ptr) */
             iguanaFreePacket(request);
         }
     }
+
+    return retval;
 }
 
 static void freeTask(igtask *cmd)
@@ -587,17 +602,20 @@ static void freeTask(igtask *cmd)
     free(cmd);
 }
 
-static void performQueuedTasks(PIPE_PTR conn)
+static int performQueuedTasks(PIPE_PTR conn)
 {
     igtask *cmd;
+    int failed = 0;
 
     memset(pinState, 0, IG_PIN_COUNT);
     while((cmd = (igtask*)removeFirstItem(&tasks)) != NULL)
     {
-        if (checkTask(cmd))
-            performTask(conn, cmd);
+        if (checkTask(cmd) && ! performTask(conn, cmd))
+            failed++;
         freeTask(cmd);
     }
+
+    return failed;
 }
 
 static void enqueueTask(char *text, const char *arg)
@@ -845,11 +863,13 @@ int main(int argc, const char **argv)
         /* handle all requests */
         if (interactive)
         {
+            retval = 0;
+
             do
             {
                 char line[512], *argument;
 
-                performQueuedTasks(conn);
+                retval += performQueuedTasks(conn);
                 message(LOG_NORMAL, "igclient> ");
                 if (fgets(line, 512, stdin) == NULL)
                 {
@@ -866,19 +886,15 @@ int main(int argc, const char **argv)
                 }
                 enqueueTask(line, argument);
             } while(1);
-
-            retval = 0;
         }
         else if (firstItem(&tasks) == NULL)
             message(LOG_ERROR, "No tasks specified.\n");
         else
-        {
-            performQueuedTasks(conn);
-            retval = 0;
-        }
+            retval = performQueuedTasks(conn);
 
         cmd.command = "final check";
         findTaskSpec(&cmd);
+        /* cleanup, failure means nothing */
         receiveResponse(conn, &cmd, 0);
     }
 
