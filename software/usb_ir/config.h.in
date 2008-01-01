@@ -35,6 +35,9 @@
    zero-length file name argument. */
 #undef HAVE_LSTAT_EMPTY_STRING_BUG
 
+/* Define to 1 if you have the `mach_absolute_time' function. */
+#undef HAVE_MACH_ABSOLUTE_TIME
+
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
 #undef HAVE_MALLOC

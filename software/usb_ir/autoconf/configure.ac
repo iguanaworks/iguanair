@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 AC_INIT(iguanaIR,
   esyscmd(grep Version: ../iguanaIR.spec | sed 's/Version: *//' | tr -d '\n'),
   support@iguanaworks.net)
@@ -45,22 +45,23 @@ AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([floor gettimeofday memset mkdir select socket strchr strdup strerror strrchr strspn strstr])
+AC_CHECK_FUNCS([floor gettimeofday memset mkdir select socket strchr strdup strerror strrchr strspn strstr mach_absolute_time])
 
-# TODO: make this actually check that this is linux and not darwin
-CPPFLAGS=" -DLINUX"
+# Some default environment variable values
 CFLAGS="-Wall -pedantic"
 
-# AX_CFLAGS_GCC_OPTION(-Wextra)
-# TODO: really just want this when we NEED -fpic
-# AX_CFLAGS_GCC_OPTION(-fpic)
+# use -Wextra when possible
+AX_CFLAGS_GCC_OPTION(-Wextra)
+
+# TODO: really just want this when we NEED -fPIC
+# AX_CFLAGS_GCC_OPTION(-fPIC)
 
 # enable and disable debugging
 AC_ARG_ENABLE(debug,
   [  --enable-debug configure with debugging features enabled ],
-  [ CPPFLAGS+=" -D_DEBUG"
-    CFLAGS+=" -g" ],
-  [ CFLAGS+=" -O2" ]
+  [ CPPFLAGS="$CPPFLAGS -D_DEBUG"
+    CFLAGS="$CFLAGS -g" ],
+  [ CFLAGS="$CFLAGS -O2" ]
 )
 
 # Allow the user to override clock_gettime detection
@@ -89,7 +90,7 @@ AC_CHECK_LIB([usb], [usb_get_busses],
   ]
 )
 
-# Allow the user to override clock_gettime detection
+# Allow the user to override python detection
 AC_ARG_ENABLE(python,
   [  --disable-python do build the Python interface.],
   [ if test x$enableval == xno; then

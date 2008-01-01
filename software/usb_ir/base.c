@@ -31,7 +31,7 @@ uint64_t microsSinceX()
     return tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
 }
 
-#elif HAVE_MACH_MACH_TIME_H
+#elif HAVE_MACH_ABSOLUTE_TIME
 /*
   Only seen this on OS X, but I suppose other systems are possible.
  */
