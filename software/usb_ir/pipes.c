@@ -80,8 +80,10 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
     /* configure the timeout if there was one*/
     if (timeout >= 0)
     {
-        tv.tv_usec = timeout * 1000;
         tvp = &tv;
+	if (timeout > 1000)
+            tv.tv_sec = timeout / 1000;
+        tv.tv_usec = (timeout % 1000) * 1000;
     }
 
     switch(select(fd + 1, &fdsin, NULL, &fdserr, tvp))
