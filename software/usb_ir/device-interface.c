@@ -584,7 +584,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                               idev->usbDev->list->sendTimeout);
 
             if (amount < 0)
-                message(LOG_ERROR, "Failed to read control ack\n");
+                message(LOG_ERROR, "Failed to read control ack: %s\n",
+			strerror(errno));
             else if (amount > 0)
             {
                 dataPacket *pos;
@@ -605,6 +606,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                     message(LOG_ERROR, "Response size does not match specification (%d != %d)\n", pos->dataLen, type->inData);
                 else
                 {
+                    unsigned int difference;
+
                     /* store the retrieved response */
                     if (response != NULL)
                         *response = pos;
@@ -612,9 +615,10 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
 
                     /* how long did this all take? */
                     now = microsSinceX();
+                    difference = now - then;
                     message(LOG_INFO,
                             "Transaction: 0x%x (%d microseconds)\n",
-                            request->code, now - then);
+                            request->code, difference);
                     retval = true;
                 }
 
