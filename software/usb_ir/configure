@@ -7024,6 +7024,7 @@ done
 # Some default environment variable values
 CFLAGS="-Wall -pedantic"
 
+# use -Wextra when possible
 { echo "$as_me:$LINENO: checking CFLAGS for gcc -Wextra" >&5
 echo $ECHO_N "checking CFLAGS for gcc -Wextra... $ECHO_C" >&6; }
 if test "${ac_cv_cflags_gcc_option__Wextra+set}" = set; then
@@ -7130,8 +7131,9 @@ case ".$ac_cv_cflags_gcc_option__Wextra" in
  ;;
 esac
 
-# TODO: really just want this when we NEED -fpic
-# AX_CFLAGS_GCC_OPTION(-fpic)
+
+# TODO: really just want this when we NEED -fPIC
+# AX_CFLAGS_GCC_OPTION(-fPIC)
 
 # enable and disable debugging
 # Check whether --enable-debug was given.
