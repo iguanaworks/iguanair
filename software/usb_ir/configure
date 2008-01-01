@@ -648,6 +648,7 @@ INSTALL_PROGRAM
 INSTALL_SCRIPT
 INSTALL_DATA
 SET_MAKE
+RTLIB
 CPP
 GREP
 EGREP
@@ -3011,7 +3012,6 @@ _ACEOF
 
 fi
 
-
 { echo "$as_me:$LINENO: checking for clock_gettime in -lrt" >&5
 echo $ECHO_N "checking for clock_gettime in -lrt... $ECHO_C" >&6; }
 if test "${ac_cv_lib_rt_clock_gettime+set}" = set; then
@@ -3090,11 +3090,10 @@ fi
 { echo "$as_me:$LINENO: result: $ac_cv_lib_rt_clock_gettime" >&5
 echo "${ECHO_T}$ac_cv_lib_rt_clock_gettime" >&6; }
 if test $ac_cv_lib_rt_clock_gettime = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBRT 1
-_ACEOF
 
-  LIBS="-lrt $LIBS"
+    RTLIB=-lrt
+
+
 
 fi
 
@@ -7345,7 +7344,7 @@ if test $ac_cv_lib_usb_usb_get_busses = yes; then
 
     VERSION=0
     for num in `libusb-config --version | tr '.' ' '`
-    do
+     do
       VERSION=$(($VERSION * 100 + $num))
     done
 
@@ -7354,6 +7353,45 @@ cat >>confdefs.h <<_ACEOF
 #define LIBUSB_VERSION $VERSION
 _ACEOF
 
+    if test $VERSION -lt 111; then
+      # Older versions of libusb do not play with threads at all
+      # nicely.  This driver was actually developed on such a version
+      # of libusb.  However, in later versions threads seem to not eat
+      # the responses for URBs intended for other threads.  By
+      # defining LIBUSB_NO_THREADS you can request the slower (around
+      # 1/4 the speed for USB transaction heavy workloads), but safer,
+      # behavior where 2 threads never use the same libusb object at
+      # once.
+      #
+      # version 0.1.8 and earlier need more than this (i.e. NOT SUPPORTED)
+      # version 0.1.10a and earlier need this
+      # version 0.1.11 and later do not need this;
+      #                works with kernel-2.6.5 and later
+      # version 0.1.12 only works with kernel-2.6.10 and later
+      #
+
+cat >>confdefs.h <<\_ACEOF
+#define LIBUSB_NO_THREADS 1
+_ACEOF
+
+
+      # Want to use the constantly incrementing devnum if it exists.
+      # This functionality was introduced in version 0.1.9 of libusb.
+      #
+      if test $VERSION -lt 109; then
+
+cat >>confdefs.h <<\_ACEOF
+#define LIBUSB_DEVNUM(dev) (dev->bus->location)
+_ACEOF
+
+      else
+
+cat >>confdefs.h <<\_ACEOF
+#define LIBUSB_DEVNUM(dev) (dev->devnum)
+_ACEOF
+
+      fi
+    fi
 
 
 fi
@@ -8383,6 +8421,7 @@ INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 SET_MAKE!$SET_MAKE$ac_delim
+RTLIB!$RTLIB$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
@@ -8397,7 +8436,7 @@ PYTHON_EXTRA_LDFLAGS!$PYTHON_EXTRA_LDFLAGS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 60; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
