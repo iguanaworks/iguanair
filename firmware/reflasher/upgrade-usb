@@ -389,10 +389,18 @@ def writePagesToDevice(pages):
             message(LOG_WARN, "Not writing page 0 during dry run.\n")
             continue
 
-        # write a page
-        sys.stdout.write("\r  Writing page %d (%d/%d)  " % (page['start'] / 64,
-                                                            count, len(pages)))
+        # note that we're writing a page
+        if os.isatty(sys.stdout.fileno()):
+            sys.stdout.write('\r')
+        sys.stdout.write("  Writing page %d (%d/%d)" % (page['start'] / 64,
+                                                        count, len(pages)))
+        if os.isatty(sys.stdout.fileno()):
+            sys.stdout.write('  ')
+        else:
+            sys.stdout.write('\n')
         sys.stdout.flush()
+
+        # write the page to the device
         if deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']) is None:
             message(LOG_FATAL, "deviceTransaction failed.\n")
 
@@ -418,7 +426,7 @@ def writeHexFile(filename, fullFlash = False, setFeatures = False):
             blanks.remove(page['start'] / 64)
 
     # place the features if necessary (and possible)
-    if setFeatures and targetVersion == 0x0101:
+    if setFeatures and targetVersion >= 0x0101:
         message(LOG_INFO, "Setting features to 0x%x\n" % features)
         for page in pages:
             if page['start'] == 0xC00:
