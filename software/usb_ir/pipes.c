@@ -81,7 +81,7 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
     if (timeout >= 0)
     {
         tvp = &tv;
-	if (timeout > 1000)
+	if (timeout >= 1000)
             tv.tv_sec = timeout / 1000;
         tv.tv_usec = (timeout % 1000) * 1000;
     }
