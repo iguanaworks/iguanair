@@ -25,9 +25,6 @@
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 
-/* Define to 1 if you have the `rt' library (-lrt). */
-#undef HAVE_LIBRT
-
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -134,6 +131,12 @@
 
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
+
+/* what to use for the libusb devnum */
+#undef LIBUSB_DEVNUM
+
+/* whether to use threads with libusb */
+#undef LIBUSB_NO_THREADS
 
 /* version of libusb */
 #undef LIBUSB_VERSION

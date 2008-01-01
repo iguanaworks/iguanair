@@ -19,7 +19,7 @@ LIBS = @LIBS@
 INSTALL = @INSTALL@
 
 SHAREARG = -shared
-SHAREEXT = dylib
+SHAREEXT = so
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
@@ -40,34 +40,16 @@ else
   endif
 endif
 
-# Older versions of libusb do not play with threads at all nicely.
-# This driver was actually developed on such a version of libusb.
-# However, in later versions threads seem to not eat the responses for
-# URBs intended for other threads.  By defining LIBUSB_NO_THREADS you
-# can request the slower (around 1/4 the speed for USB transaction
-# heavy workloads), but safer, behavior where 2 threads never use the
-# same libusb object at once.
-#
-# version 0.1.8 and earlier need more than this (i.e. NOT SUPPORTED)
-# version 0.1.10a and earlier need this
-# version 0.1.11 and later do not need this; works with kernel-2.6.5 and later
-# version 0.1.12 only works with kernel-2.6.10 and later
-#
-#CPPFLAGS+=-DLIBUSB_NO_THREADS
-#
-# NOTE: I'd automate this if make had a conditional.... guess I
-# should use autoconf
-
 .PHONY: all
 all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
 libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o base.o
-	$(CC) $(SHAREARG) $(LDFLAGS) $^ -lpopt -o $@
+	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o compatibility.o
-	$(CC) $(LDFLAGS) $^ -lpopt -lusb -L. -liguanaIR -o $@
+	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread -L. -liguanaIR -o $@
 
 igclient: client.o list.o
 	$(CC) $(LDFLAGS) $^ -lpopt -L. -liguanaIR -o $@
