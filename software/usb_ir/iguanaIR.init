@@ -25,9 +25,21 @@ if [ -f /etc/init.d/functions ]; then
     {
         echo
     }
+else if [ -f /etc/init.d/functions.sh ]; then
+    # hello gentoo?
+    . /etc/init.d/functions.sh
+    log_begin_msg()
+    {
+        ebegin $*
+    }
+    log_end_msg()
+    {
+        eend $*
+    }
 else #if [ -f /lib/lsb/init-functions ]; then
     # ubuntu and others
     . /lib/lsb/init-functions
+fi
 fi
 
 # common defaults
@@ -43,6 +55,13 @@ fi
 
 # load the settings
 [ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
+
+# I like the way gentoo does startup scripts, but no dependencies for
+# me.
+depends()
+{
+    RETVAL=0
+}
 
 start()
 {
@@ -116,6 +135,16 @@ rescan()
     log_end_msg $RETVAL
 }
 
+usage()
+{
+    if [ "$LOCKFILE" != "" ]; then
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|rescan}"
+    else
+        echo $"Usage: $0 {start|stop|restart|rescan}"
+    fi
+    RETVAL=1
+}
+
 # See how we were called.
 case "$1" in
     start)
@@ -130,26 +159,26 @@ case "$1" in
     restart)
         restart
         ;;
+    rescan)
+        rescan
+        ;;
     status)
         if [ "$LOCKFILE" != "" ]; then
             status $IGPATH
+        else
+            usage
         fi
         ;;
     condrestart)
         if [ "$LOCKFILE" != "" ]; then
             [ -e $LOCKFILE ] && restart
+        else
+            usage
         fi
-        ;;
-    rescan)
-        rescan
         ;;
     *)
-        if [ "$LOCKFILE" != "" ]; then
-            echo $"Usage: $0 {start|stop|status|restart|condrestart|rescan}"
-        else
-            echo $"Usage: $0 {start|stop|restart|rescan}"
-        fi
-        RETVAL=1
+        usage
+        ;;
 esac
 
 exit $RETVAL
