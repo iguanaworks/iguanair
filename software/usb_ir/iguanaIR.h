@@ -16,7 +16,6 @@
 /* the protocol between the client and server must be versioned */
 #define IG_PROTOCOL_VERSION 1
 
-/* hate including headers from headers, but we need a bool */
 #ifdef WIN32
     typedef int bool;
     enum
@@ -25,22 +24,11 @@
         true
     };
 
-    #ifdef IGUANAIR_EXPORTS
-        #define IGUANAIR_API __declspec(dllexport)
-    #else
-        #define IGUANAIR_API __declspec(dllimport)
-    #endif
-
     #define PIPE_PTR HANDLE
     #define INVALID_PIPE NULL
 #else
+    /* hate including headers from headers, but we need a bool */
     #include "stdbool.h"
-
-    #ifdef IGUANAIR_EXPORTS
-        #define IGUANAIR_API __attribute__((visibility("default")))
-    #else
-        #define IGUANAIR_API
-    #endif
 
     #define PIPE_PTR int
     #define INVALID_PIPE -1

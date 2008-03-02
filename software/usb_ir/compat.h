@@ -1,5 +1,5 @@
 /****************************************************************************
- ** base.h ******************************************************************
+ ** compat.h ****************************************************************
  ****************************************************************************
  *
  * Basic includes and definitions to make this code work across
@@ -13,17 +13,21 @@
  */
 
 
-#ifndef _BASE_
-#define _BASE_
+#ifndef _COMPAT_
+#define _COMPAT_
 
 #include "config.h"
+#include "iguanaIR-export.h"
 
 #ifdef WIN32
+    /* The old functions CAN be used safely... stop the warnings. */
+    #pragma warning( disable : 4996 )
+
     typedef int bool;
     #define PIPE_PTR HANDLE
     #define INVALID_PIPE NULL
 
-    typedef unsigned char u_int8_t; 
+    typedef unsigned char uint8_t;
     typedef unsigned short uint16_t;
     typedef unsigned int uint32_t;
     typedef unsigned long long uint64_t;
@@ -31,7 +35,8 @@
     /* taken from libusb-win32/src/error.h */
     #define ETIMEDOUT 116
 
-    #define _WIN32_WINNT 0x0400
+    /* must be at least 0x0500 to get HDEVNOTIFY */
+    #define _WIN32_WINNT 0x0500
     #include <windows.h>
 
     #define getpid GetCurrentProcessId
@@ -41,8 +46,9 @@
     /* thread defines */
     #define THREAD_PTR HANDLE
     #define INVALID_THREAD_PTR NULL
-    bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
-    void joinThread(THREAD_PTR *handle, void **exitVal);
+    IGUANAIR_API bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
+    IGUANAIR_API void joinThread(THREAD_PTR *handle, void **exitVal);
+    #define CURRENT_THREAD_PTR OpenThread(THREAD_ALL_ACCESS, FALSE, GetCurrentThreadId())
 
     /* lock defines */
     #define LOCK_PTR CRITICAL_SECTION
@@ -63,6 +69,7 @@
     #define INVALID_THREAD_PTR 0
     #define startThread(a, b, c) (pthread_create((a), NULL, (b), (c)) == 0)
     #define joinThread(a,b) (void)pthread_join((a), (b))
+    #define CURRENT_THREAD_PTR pthread_self()
 
     #if __APPLE__
         #define SwitchToThread() pthread_yield_np()
@@ -85,6 +92,6 @@
 
 #endif
 
-uint64_t microsSinceX();
+IGUANAIR_API uint64_t microsSinceX();
 
 #endif

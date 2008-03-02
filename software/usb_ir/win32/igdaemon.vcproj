@@ -1,114 +1,177 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9.00"
 	Name="igdaemon"
 	ProjectGUID="{84C520CA-58A1-4E16-8141-91CFD166959D}"
-	Keyword="Win32Proj">
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
 			ConfigurationType="1"
-			CharacterSet="2">
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;libusb-win32"
+				AdditionalIncludeDirectories="..;libusb-win32;popt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;LIBUSB_NO_THREADS"
-				MinimalRebuild="TRUE"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				WarningLevel="4"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="3"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib"
+				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib Setupapi.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="libusb-win32"
-				GenerateDebugInformation="TRUE"
+				AdditionalLibraryDirectories="&quot;libusb-win32&quot;;popt"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/igdaemon.pdb"
 				SubSystem="1"
-				TargetMachine="1"/>
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="1"
-			CharacterSet="2">
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..;libusb-win32;popt"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;LIBUSB_NO_THREADS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				WarningLevel="4"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="3"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib setupapi.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="libusb-win32;popt"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				TargetMachine="1"/>
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -117,71 +180,81 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			>
 			<File
-				RelativePath=".\base.c">
+				RelativePath="..\client-interface.c"
+				>
 			</File>
 			<File
-				RelativePath="..\dataPackets.c">
+				RelativePath="..\device-interface.c"
+				>
 			</File>
 			<File
-				RelativePath="..\igdaemon.c">
+				RelativePath="..\list.c"
+				>
 			</File>
 			<File
-				RelativePath="..\list.c">
+				RelativePath=".\popt\popt-fix.c"
+				>
 			</File>
 			<File
-				RelativePath=".\pipes.c">
+				RelativePath="..\protocol-versions.c"
+				>
 			</File>
 			<File
-				RelativePath=".\popt\popt-fix.c">
+				RelativePath=".\service.c"
+				>
 			</File>
 			<File
-				RelativePath="..\protocol.c">
-			</File>
-			<File
-				RelativePath=".\service.c">
-			</File>
-			<File
-				RelativePath="..\support.c">
-			</File>
-			<File
-				RelativePath="..\usbclient.c">
+				RelativePath="..\usbclient.c"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			>
 			<File
-				RelativePath="..\base.h">
+				RelativePath="..\client-interface.h"
+				>
 			</File>
 			<File
-				RelativePath="..\dataPackets.h">
+				RelativePath="..\compat.h"
+				>
 			</File>
 			<File
-				RelativePath="..\igdaemon.h">
+				RelativePath="..\dataPackets.h"
+				>
 			</File>
 			<File
-				RelativePath="..\iguanadev.h">
+				RelativePath="..\device-interface.h"
+				>
 			</File>
 			<File
-				RelativePath="..\list.h">
+				RelativePath="..\list.h"
+				>
 			</File>
 			<File
-				RelativePath="..\pipes.h">
+				RelativePath="..\pipes.h"
+				>
 			</File>
 			<File
-				RelativePath=".\popt\popt-fix.h">
+				RelativePath=".\popt\popt-fix.h"
+				>
 			</File>
 			<File
-				RelativePath="..\protocol.h">
+				RelativePath="..\protocol-versions.h"
+				>
 			</File>
 			<File
-				RelativePath="..\support.h">
+				RelativePath="..\support.h"
+				>
 			</File>
 			<File
-				RelativePath="..\usbclient.h">
+				RelativePath="..\usbclient.h"
+				>
 			</File>
 		</Filter>
 	</Files>

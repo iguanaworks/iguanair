@@ -1,12 +1,11 @@
-Microsoft Visual Studio Solution File, Format Version 8.00
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igclient", "igclient.vcproj", "{35CB37C4-0658-4496-9BB8-95FD00DF6002}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B2CA1625-68B8-47B6-A3FA-71D0B635672E} = {B2CA1625-68B8-47B6-A3FA-71D0B635672E}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iguanaIR", "iguanaIR.vcproj", "{B2CA1625-68B8-47B6-A3FA-71D0B635672E}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igdaemon", "igdaemon.vcproj", "{84C520CA-58A1-4E16-8141-91CFD166959D}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -15,33 +14,34 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igdaemon", "igdaemon.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IguanaIR Package", "IguanaIR Package.vcproj", "{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}"
 	ProjectSection(ProjectDependencies) = postProject
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002} = {35CB37C4-0658-4496-9BB8-95FD00DF6002}
+		{84C520CA-58A1-4E16-8141-91CFD166959D} = {84C520CA-58A1-4E16-8141-91CFD166959D}
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Release = Release
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ProjectConfiguration) = postSolution
-		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Debug.ActiveCfg = Debug|Win32
-		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Debug.Build.0 = Debug|Win32
-		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Release.ActiveCfg = Release|Win32
-		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Release.Build.0 = Release|Win32
-		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Debug.ActiveCfg = Debug|Win32
-		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Debug.Build.0 = Debug|Win32
-		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Release.ActiveCfg = Release|Win32
-		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Release.Build.0 = Release|Win32
-		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug.ActiveCfg = Debug|Win32
-		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug.Build.0 = Debug|Win32
-		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release.ActiveCfg = Release|Win32
-		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release.Build.0 = Release|Win32
-		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Debug.ActiveCfg = Debug|Win32
-		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Debug.Build.0 = Debug|Win32
-		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Release.ActiveCfg = Release|Win32
-		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Release.Build.0 = Release|Win32
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Debug|Win32.ActiveCfg = Debug|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Debug|Win32.Build.0 = Debug|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Release|Win32.ActiveCfg = Release|Win32
+		{35CB37C4-0658-4496-9BB8-95FD00DF6002}.Release|Win32.Build.0 = Release|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Debug|Win32.Build.0 = Debug|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Release|Win32.ActiveCfg = Release|Win32
+		{B2CA1625-68B8-47B6-A3FA-71D0B635672E}.Release|Win32.Build.0 = Release|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Debug|Win32.Build.0 = Debug|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release|Win32.ActiveCfg = Release|Win32
+		{84C520CA-58A1-4E16-8141-91CFD166959D}.Release|Win32.Build.0 = Release|Win32
+		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Debug|Win32.Build.0 = Debug|Win32
+		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Release|Win32.ActiveCfg = Release|Win32
+		{41A51F53-0F64-4A9E-BAE2-4F2199C6CED4}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

@@ -11,7 +11,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
 
 #include "iguanaIR.h"
 #include "support.h"
@@ -28,7 +28,7 @@
 #include "device-interface.h"
 #include "usbclient.h"
 #include "client-interface.h"
-#include "compatibility.h"
+#include "protocol-versions.h"
 
 enum
 {
@@ -346,6 +346,7 @@ printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
             message(LOG_ERROR, "Out of memory allocating client struct.");
         else
         {
+            /*
             int flags;
 
             flags = fcntl(clientFd, F_GETFL);
@@ -355,7 +356,7 @@ printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
             else if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
                 message(LOG_ERROR,
                         "Failed to set client socket to non-blocking mode.\n");
-            else
+            else*/
             {
                 memset(newClient, 0, sizeof(client));
                 newClient->idev = idev;

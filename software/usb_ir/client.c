@@ -11,13 +11,13 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
 #include <popt.h>
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
 #ifdef WIN32
     #include "popt-fix.h"
 #endif
@@ -724,7 +724,7 @@ int main(int argc, const char **argv)
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)
     {
-        poptPrintUsage(poptCon, stderr, 0);
+        poptPrintUsage(options, stderr, 0);
         exit(1);
     }
 

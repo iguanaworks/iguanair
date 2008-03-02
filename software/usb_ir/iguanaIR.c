@@ -10,7 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

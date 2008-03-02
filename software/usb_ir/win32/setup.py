@@ -2,7 +2,7 @@
 #** setup.py ***************************************************************
 # **************************************************************************
 # *
-# * TODO: DESCRIBE AND DOCUMENT THIS FILE
+# * Inno Setup configuration.
 # *
 # * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
 # * Author: Joseph Dunn <jdunn@iguanaworks.net>

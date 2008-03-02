@@ -11,7 +11,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -170,7 +170,6 @@ void setParentPipe(PIPE_PTR pp)
 void makeParentJoin()
 {
     THREAD_PTR thread;
-
-    thread = pthread_self();
+    thread = CURRENT_THREAD_PTR;
     writePipe(parentPipe, &thread, sizeof(THREAD_PTR));
 }

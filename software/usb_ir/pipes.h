@@ -15,9 +15,9 @@
 #define _PIPES_
 
 #ifdef WIN32
-  bool createPipePair(PIPE_PTR *pair);
-  int readPipe(PIPE_PTR fd, void *buf, int count);
-  int writePipe(PIPE_PTR fd, const void *buf, int count);
+  IGUANAIR_API bool createPipePair(PIPE_PTR *pair);
+  IGUANAIR_API int readPipe(PIPE_PTR fd, void *buf, int count);
+  IGUANAIR_API int writePipe(PIPE_PTR fd, const void *buf, int count);
   #define closePipe CloseHandle
   PIPE_PTR acceptClient(PIPE_PTR *server);
 
@@ -40,14 +40,14 @@
 #endif
 
 /* functions dealing with the server sockets */
-void socketName(const char *name, char *buffer, unsigned int length);
+IGUANAIR_API void socketName(const char *name, char *buffer, unsigned int length);
 PIPE_PTR connectToPipe(const char *name);
 
 /* reads with timeouts */
-int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
+IGUANAIR_API int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
 
 /* used for notification of packet arrival */
-int notified(PIPE_PTR fd, int timeout);
-bool notify(PIPE_PTR fd);
+IGUANAIR_API int notified(PIPE_PTR fd, int timeout);
+IGUANAIR_API bool notify(PIPE_PTR fd);
 
 #endif

@@ -13,10 +13,10 @@
  * See LICENSE for license details.
  */
 
-#include <stdint.h>
+#include "compat.h"
 #include "iguanaIR.h"
 #include "support.h"
-#include "compatibility.h"
+#include "protocol-versions.h"
 
 /* mapping from old values to new ones */
 uint8_t equivalence[][2] = {

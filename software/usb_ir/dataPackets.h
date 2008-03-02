@@ -27,9 +27,8 @@ typedef struct dataPacket
     unsigned char *data;
 } dataPacket;
 
-void freeDataPacket(dataPacket *packet);
-
-bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout);
-bool writeDataPacket(dataPacket *packet, PIPE_PTR fd);
+IGUANAIR_API bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout);
+IGUANAIR_API bool writeDataPacket(dataPacket *packet, PIPE_PTR fd);
+IGUANAIR_API void freeDataPacket(dataPacket *packet);
 
 #endif

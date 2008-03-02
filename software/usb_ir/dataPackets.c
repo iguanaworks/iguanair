@@ -10,7 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -20,15 +20,6 @@
 #include "pipes.h"
 #include "support.h"
 #include "dataPackets.h"
-
-void freeDataPacket(dataPacket *packet)
-{
-    if (packet != NULL)
-    {
-        free(packet->data);
-        free(packet);
-    }
-}
 
 bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
 {
@@ -106,4 +97,13 @@ bool writeDataPacket(dataPacket *packet, PIPE_PTR fd)
     }
 
     return retval;
+}
+
+void freeDataPacket(dataPacket *packet)
+{
+    if (packet != NULL)
+    {
+        free(packet->data);
+        free(packet);
+    }
 }

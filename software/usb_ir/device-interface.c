@@ -10,7 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +21,7 @@
 #include "usbclient.h"
 #include "dataPackets.h"
 #include "device-interface.h"
-#include "compatibility.h"
+#include "protocol-versions.h"
 
 /* internal protocol constants */
 enum

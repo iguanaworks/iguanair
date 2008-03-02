@@ -39,7 +39,7 @@ typedef struct usbDevice
     usbId type;
 
     /* identifiers from the USB bus */
-    u_int8_t busIndex, devIndex;
+    uint8_t busIndex, devIndex;
 
     /* handle(s) to the actual device */
     struct usb_dev_handle *device;

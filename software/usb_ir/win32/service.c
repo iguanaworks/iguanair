@@ -11,23 +11,22 @@
  * See LICENSE for license details.
  */
 
+#include "compat.h"
+
 #include <windows.h>
 #include <stdio.h>
-
 #include <setupapi.h>
-
 #include <dbt.h>
 #include <initguid.h>
 #include <popt.h>
 #include "popt-fix.h"
 
 #include "iguanaIR.h"
-#include "base.h"
+#include "usbclient.h"
 #include "pipes.h"
 #include "support.h"
-#include "protocol.h"
-#include "usbclient.h"
-#include "igdaemon.h"
+#include "device-interface.h"
+#include "client-interface.h"
 
 #define SERVICE_NAME "igdaemon"
 

@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "base.h"
+#include "compat.h"
 #include "iguanaIR.h"
 #include "list.h"
 
