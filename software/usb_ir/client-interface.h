@@ -29,8 +29,10 @@ typedef struct client
     /* protocol version that should be used with this client */
     uint16_t version;
 
-    /* used in the win32 driver */
+#ifdef WIN32
+    /* used in the win32 driver to keep track of overlapped actions */
     HANDLE listenData;
+#endif
 } client;
 
 typedef bool (*handleReaderFunc)(iguanaDev *idev);

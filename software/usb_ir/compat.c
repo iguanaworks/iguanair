@@ -10,7 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "base.h"
+#include "compat.h"
 
 #if USE_CLOCK_GETTIME
 #include <time.h>

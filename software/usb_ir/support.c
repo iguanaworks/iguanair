@@ -20,7 +20,6 @@
 #include <time.h>
 
 #include "iguanaIR.h"
-#include "pipes.h"
 #include "support.h"
 
 static char *msgPrefixes[] =
@@ -159,6 +158,9 @@ void appendHex(int level, void *location, unsigned int length)
         retval += fprintf(out, "\n");
     }
 }
+
+/* TODO: need to get this out of the library */
+#include "pipes.h"
 
 static PIPE_PTR parentPipe;
 

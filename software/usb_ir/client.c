@@ -17,9 +17,10 @@
 #include <time.h>
 #include <errno.h>
 #include <popt.h>
-//#include <arpa/inet.h>
 #ifdef WIN32
     #include "popt-fix.h"
+#else
+    #include <arpa/inet.h>
 #endif
 
 #include "iguanaIR.h"
@@ -724,7 +725,11 @@ int main(int argc, const char **argv)
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)
     {
+#ifdef WIN32
         poptPrintUsage(options, stderr, 0);
+#else
+        poptPrintUsage(poptCon, stderr, 0);
+#endif
         exit(1);
     }
 

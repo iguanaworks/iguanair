@@ -19,7 +19,10 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
-//#include <arpa/inet.h>
+
+#ifndef WIN32
+    #include <arpa/inet.h>
+#endif
 
 #include "iguanaIR.h"
 #include "support.h"

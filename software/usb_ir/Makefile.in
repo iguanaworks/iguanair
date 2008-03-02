@@ -44,11 +44,11 @@ endif
 all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
-libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o base.o
+libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o compat.o
 	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
-          list.o compatibility.o
+          list.o protocol-versions.o
 	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread -L. -liguanaIR -o $@
 
 igclient: client.o list.o
@@ -58,7 +58,7 @@ igclient: client.o list.o
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 # need a special dependency for config.h
-base.o: base.c config.h
+compat.o: compat.c config.h
 
 # NOTE: I would rather use PYTHON_VERSION, but it doesn't work
 ifneq (@PYTHON_CPPFLAGS@,)

@@ -12,7 +12,7 @@
  * See LICENSE for license details.
  */
 
-#include "base.h"
+#include "compat.h"
 #include <popt.h>
 #include <signal.h>
 #include <string.h>
