@@ -25,6 +25,9 @@ PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
 {
     PIPE_PTR conn = INVALID_PIPE;
 
+    openLog("blah.log");
+    fprintf(stderr, "Connecting to: %s\n", name);
+
     if (protocol != IG_PROTOCOL_VERSION)
         message(LOG_ERROR, "Client application was not built against a protocol-compatible library (%d != %d).  Aborting connect iguanaConnect.\n", protocol, IG_PROTOCOL_VERSION);
     else

@@ -36,6 +36,9 @@
     #define ETIMEDOUT 116
 
     /* must be at least 0x0500 to get HDEVNOTIFY */
+    #ifdef _WIN32_WINNT
+        #undef _WIN32_WINNT
+    #endif
     #define _WIN32_WINNT 0x0500
     #include <windows.h>
 

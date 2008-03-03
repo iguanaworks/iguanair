@@ -180,15 +180,14 @@ static struct poptOption options[] =
 static void exitOnOptError(poptContext poptCon, char *msg)
 {
     message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
-    poptPrintHelp(options, stderr);
+    poptPrintHelp(poptCon, stderr, 0);
     exit(1);
 }
 
 int main(int argc, char **argv)
 {
-    const char **leftOvers, *device = "0", *temp;
-    int x = 0, retval = 1;
-    PIPE_PTR conn = INVALID_PIPE;
+    const char **leftOvers, *temp;
+    int x = 0;
     poptContext poptCon;
 
     temp = strrchr(argv[0], '\\');
@@ -251,7 +250,7 @@ int main(int argc, char **argv)
         case POPT_ERROR_BADOPT:
             if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
             {
-                poptPrintHelp(options, stdout);
+                poptPrintHelp(poptCon, stdout, 0);
                 exit(0);
             }
             exitOnOptError(poptCon, "Unknown option '%s'\n");
@@ -272,7 +271,7 @@ int main(int argc, char **argv)
     if (leftOvers != NULL && leftOvers[0] != NULL)
     {
         message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
-        poptPrintHelp(options, stderr);
+        poptPrintHelp(poptCon, stderr, 0);
         exit(1);
     }
 
@@ -463,7 +462,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
     memset(&over, 0, sizeof(OVERLAPPED));
     while(true)
     {
-        int count = 1, numClients = 0;
+        int count = 1;
         client *john;
 
         /* allocate the handles and overlap objects that I need to populate */

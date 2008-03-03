@@ -705,7 +705,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     break;
                 }
                 /* (somewhat) quietly released during shutdown */
-                else if (idev->usbDev->removed != INVALID_THREAD_PTR)
+                else if (idev->usbDev->removed)
                 {
                     message(LOG_INFO,
                             "Device %d released\n", idev->usbDev->id);

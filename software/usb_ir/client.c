@@ -599,7 +599,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
 static void freeTask(igtask *cmd)
 {
     /* explicitly cast off the const qualifier */
-    free((char*)cmd->arg);
+//    free((char*)cmd->arg);
     free(cmd);
 }
 
@@ -725,11 +725,7 @@ int main(int argc, const char **argv)
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     if (argc < 2)
     {
-#ifdef WIN32
-        poptPrintUsage(options, stderr, 0);
-#else
         poptPrintUsage(poptCon, stderr, 0);
-#endif
         exit(1);
     }
 
@@ -890,7 +886,7 @@ int main(int argc, const char **argv)
                     argument += strspn(argument + 1, " \r\n\t") + 1;
                 }
                 enqueueTask(line, argument);
-            } while(1);
+            } while(true);
         }
         else if (firstItem(&tasks) == NULL)
             message(LOG_ERROR, "No tasks specified.\n");

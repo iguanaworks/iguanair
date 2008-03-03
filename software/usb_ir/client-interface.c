@@ -84,8 +84,8 @@ static unsigned char* pulsesToIguanaSend(int carrier,
         if (inSpace)
             cycles |= STATE_MASK;
 
-        /* store the last byte */
-        codes[codeLength + numBytes - 1] = cycles;
+        /* store the last byte (cast is alright due to %= MAX_DATA_BYTE) */
+        codes[codeLength + numBytes - 1] = (unsigned char)cycles;
         codeLength += numBytes;
 
         inSpace ^= 1;

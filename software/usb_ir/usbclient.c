@@ -106,8 +106,7 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize)
 
 void releaseDevice(usbDevice *handle)
 {
-    if (handle != NULL &&
-        handle->removed == INVALID_THREAD_PTR)
+    if (handle != NULL && ! handle->removed)
     {
         /* record the removal */
         handle->removed = true;
@@ -158,7 +157,7 @@ static bool findId(itemHeader *item, void *userData)
     unsigned int *id = (unsigned int*)userData;
     usbDevice *usbDev = (usbDevice*)item;
 
-    if (usbDev->removed == INVALID_THREAD_PTR && usbDev->id == *id)
+    if (! usbDev->removed && usbDev->id == *id)
         (*id)++;
     return true;
 }
