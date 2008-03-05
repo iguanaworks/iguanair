@@ -25,6 +25,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Using swig to generate wrappers..."
+				CommandLine="c:\cygwin\swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;libusb-win32"
+				AdditionalIncludeDirectories="..;libusb-win32;c:\Python25\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -65,7 +67,7 @@
 				AdditionalDependencies="libusb.lib Ws2_32.lib"
 				OutputFile="$(OutDir)/_iguanaIR.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;libusb-win32&quot;"
+				AdditionalLibraryDirectories="libusb-win32;c:\Python25\libs"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/iguanaIR.pdb"
 				SubSystem="2"
@@ -106,8 +108,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Using swig to generate wrappers"
-				CommandLine="swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
+				Description="Using swig to generate wrappers..."
+				CommandLine="c:\cygwin\bin\swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -123,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;libusb-win32;c:\Python24\include"
+				AdditionalIncludeDirectories="..;libusb-win32;c:\Python25\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -145,7 +147,7 @@
 				AdditionalDependencies="libusb.lib Ws2_32.lib"
 				OutputFile="$(OutDir)/_iguanaIR.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="libusb-win32;c:\Python24\libs"
+				AdditionalLibraryDirectories="libusb-win32;c:\Python25\libs"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
