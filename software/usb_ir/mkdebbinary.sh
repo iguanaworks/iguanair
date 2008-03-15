@@ -4,7 +4,7 @@ rm -r debinary64
 rm -r pdebinary
 rm -r pdebinary64
 
-#./configure
+./configure
 make clean
 make
 ##Set Revision Number, default is 0

@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+/usr/sbin/groupadd -f -K GID_MIN=100 -K GID_MAX=500 iguanair
+USERS=`getent passwd|grep iguanair|sed -e 's/\([a-zA-Z]*:\)\(.*\)//g'`
+update-rc.d iguanaIR defaults
+
+if [ "$USERS" != "iguanair:" ] ; then
+echo "Adding user iguananir"
+useradd -d /tmp -g iguanair -K UID_MIN=100 -K UID_MAX=500 -K PASS_MAX_DAYS=-1 -s /bin/false iguanair
+fi
+
+chown iguanair:iguanair /lib/udev/devices/iguanaIR
+mkdir /dev/iguanaIR||true
+touch /etc/udev/rules.d/iguanaIR.rules
+chown iguanair:iguanair /dev/iguanaIR
