@@ -14,7 +14,12 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
-AC_CHECK_LIB([popt], [poptGetContext])
+AC_CHECK_LIB([popt], [poptGetContext],,
+  [
+    echo "ERROR: Could not find popt."
+    echo "       You probably need to install the popt development package.  In Ubuntu the package is libpopt-dev, in Fedora install popt-devel."
+  ]
+)
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime],
   [
@@ -121,6 +126,10 @@ AC_CHECK_LIB([usb], [usb_get_busses],
                                       [what to use for the libusb devnum])
       fi
     fi
+  ],
+  [
+    echo "ERROR: Could not find libusb."
+    echo "       You probably need to install the libusb development package.  In Ubuntu the package is libusb-dev, in Fedora install libusb-devel."
   ]
 )
 
@@ -135,6 +144,9 @@ if test x$USE_PYTHON != xno; then
     # fetch the python version
     AC_PYTHON_DEVEL()
 fi
+
+# look for swig
+AC_PROG_SWIG(1.3.33)
 
 # Output some files
 AC_CONFIG_FILES([Makefile])
