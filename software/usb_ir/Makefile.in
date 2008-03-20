@@ -109,6 +109,10 @@ distclean: clean
 cleanest: distclean
 	rm -rf configure autom4te.cache
 
+.PHONY: package
+package:
+	make -C packaging
+
 
 
 
