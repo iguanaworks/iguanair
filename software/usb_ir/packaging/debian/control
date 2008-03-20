@@ -3,16 +3,23 @@ Section: utils
 Priority: optional
 Maintainer: IguanaWorks [support@iguanaworks.net]
 Build-Depends: debhelper (>=5)
-Standards-Version: 3.7.2
+Standards-Version: 3.7.2.2
 
 Package: iguanair
 Architecture: any
 Pre-Depends: ${shlibs:Depends}
-Depends: udev (>= 0.99), libusb-0.1-4 (>= 0.1.11)
+Depends: udev (>= 0.99), libusb-0.1-4 (>= 0.1.10)
 Essential: no
 Recommends: lirc
-Description: This is the IguanaWorks IR USB client. Software allows you
-             to control your IguanaWorks IR USB device. Includes software for use
-             with lirc.
- .
- More info.
+Description: This is the IguanaWorks USB IR daemon/driver and
+             client. Software allows you to control your IguanaWorks
+             USB IR device. Includes software for use with lirc.
+
+Package: iguanair-python
+Section: utildevel
+Architecture: any
+Pre-Depends: ${shlibs:Depends}
+Depends: iguanair, python (>= 2.4)
+Essential: no
+Description: This is the Python client bindings IguanaWorks USB IR
+	     driver.

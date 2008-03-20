@@ -2,7 +2,6 @@
 #	Rules file for iguanair, requires the debhelper package.
 #	Crafted by IguanaWorks Support support@iguanaworks.net, 14 March 2008 
 
-
 # Comment this to turn off debhelper verbose mode.
 export DH_VERBOSE=1
 
@@ -33,14 +32,23 @@ clean:
 	make distclean || exit 0
 	dh_clean
 
+	# remove the build directories
+	rm -rf $(CURDIR)/debian/tmp $(CURDIR)/debian/iguana-python
+
 install: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
 
-##gzip installed into gzip not tmp...
-	make install DESTDIR=debian/tmp 
+	# main install
+	make install DESTDIR=debian/tmp
+
+	# move the python stuff into it's sub package
+	mkdir -p $(CURDIR)/debian/iguanair-python/usr/lib
+	mv $(CURDIR)/debian/tmp/usr/lib/python* $(CURDIR)/debian/iguanair-python/usr/lib
+
+
 
 binary-indep:	build install
 

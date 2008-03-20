@@ -1,3 +1,5 @@
 #!/bin/sh
 set -e
-/etc/init.d/iguanaIR stop
+if [ -x /etc/init.d/iguanaIR ]; then
+    /etc/init.d/iguanaIR stop
+fi

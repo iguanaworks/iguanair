@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT(iguanaIR,
-  esyscmd(grep Version: ../iguanaIR.spec | sed 's/Version: *//' | tr -d '\n'),
+  esyscmd(grep Version: ../packaging/fedora/iguanaIR.spec | sed 's/Version: *//' | tr -d '\n'),
   support@iguanaworks.net)
 AC_CONFIG_SRCDIR([daemon.c])
 AC_CONFIG_HEADER([config.h])
@@ -146,7 +146,7 @@ if test x$USE_PYTHON != xno; then
 fi
 
 # look for swig
-AC_PROG_SWIG(1.3.33)
+AC_PROG_SWIG(1.3.31)
 
 # Output some files
 AC_CONFIG_FILES([Makefile])
