@@ -26,6 +26,8 @@ fedora-clean:
 
 ubuntu: ../debian
 	cd ..; dpkg-buildpackage -uc -us -rfakeroot
+	mv ../../iguanair_* .
+	mv ../../iguanair-python_* .
 ../debian:
 	ln -s packaging/debian ..
 ubuntu-clean:
