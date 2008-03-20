@@ -84,7 +84,7 @@ fi
 %doc AUTHORS LICENSE WHY protocols.txt README.txt notes.txt
 /usr/bin/*
 %{_libdir}/lib%{name}.so
-/etc/rc.d/init.d/%{name}
+/etc/init.d/%{name}
 %config /etc/default/%{name}
 # TODO: autoconf must decide!
 /etc/udev/rules.d/%{name}.rules

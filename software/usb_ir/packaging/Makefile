@@ -16,13 +16,17 @@ endif
 help:
 	@echo "Failed to detect the current OS."
 
-fedora: ../$(NAME).spec tarball
-#	rpmbuild -ts $(NAMEVER).tar.bz2
-#	rpmbuild -tb $(NAMEVER).tar.bz2
-../$(NAME).spec:
-	ln -s packaging/fedora/$(NAME).spec ..
+PWD = $(shell pwd)
+fedora: tarball
+	echo $(PWD)
+
+
+
+
+	rpmbuild -bs --define "_srcrpmdir $(PWD)" --define "_sourcedir $(PWD)" fedora/$(NAME).spec
+	rpmbuild -bb --define "_rpmdir $(PWD)" --define "_sourcedir $(PWD)" --define "_builddir $(PWD)/fedora" fedora/$(NAME).spec
+	rm -rf fedora/$(NAMEVER)
 fedora-clean:
-	rm -f ../$(NAME).spec
 
 ubuntu: ../debian
 	cd ..; dpkg-buildpackage -uc -us -rfakeroot
