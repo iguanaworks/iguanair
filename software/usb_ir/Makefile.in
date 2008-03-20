@@ -98,7 +98,7 @@ install: all
 #	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR
 
 .PHONY: clean
-clean: package-clean
+clean:
 	rm -f *~ *.o *iguanaIR.$(SHAREEXT) *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
 
 .PHONY: distclean
@@ -109,11 +109,10 @@ distclean: clean
 cleanest: distclean
 	rm -rf configure autom4te.cache
 
-.PHONY: package package-clean
+.PHONY: package
 package:
 	make -C packaging
-package-clean:
-	make -C packaging clean
+
 
 
 
