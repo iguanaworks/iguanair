@@ -1,4 +1,7 @@
+NAME    = $(shell grep Name: fedora/*.spec | head -1 | sed 's/[^ ]*[ ]*//')
+VERSION = $(shell grep Version: fedora/$(NAME).spec | sed 's/[^ ]*[ ]*//')
 CURRENT = $(shell head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z')
+NAMEVER = $(NAME)-$(VERSION)
 
 ifeq ($(CURRENT),fedora)
 all: fedora
@@ -13,12 +16,13 @@ endif
 help:
 	@echo "Failed to detect the current OS."
 
-fedora: ../iguanaIR.spec
- ../iguanaIR.spec:
-	ln -s packaging/fedora/iguanaIR.spec ..
-
+fedora: ../$(NAME).spec tarball
+#	rpmbuild -ts $(NAMEVER).tar.bz2
+#	rpmbuild -tb $(NAMEVER).tar.bz2
+../$(NAME).spec:
+	ln -s packaging/fedora/$(NAME).spec ..
 fedora-clean:
-	rm -f ../iguanaIR.spec
+	rm -f ../$(NAME).spec
 
 ubuntu: ../debian
 	cd ..; dpkg-buildpackage -uc -us -rfakeroot
@@ -27,4 +31,13 @@ ubuntu: ../debian
 ubuntu-clean:
 	rm ../debian
 
-.PHONY: help fedora ubuntu
+gentoo: tarball
+gentoo-clean: 
+
+# commands to create a tarball
+tarball:
+	ln -s .. $(NAMEVER); \
+	tar --dereference -cjf $(NAMEVER).tar.bz2 --exclude .svn --exclude packaging/$(NAMEVER)* --exclude win32 $(NAMEVER); \
+	rm $(NAMEVER);
+
+.PHONY: help fedora ubuntu tarball
