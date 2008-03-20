@@ -18,15 +18,12 @@ help:
 
 PWD = $(shell pwd)
 fedora: tarball
-	echo $(PWD)
-
-
-
-
 	rpmbuild -bs --define "_srcrpmdir $(PWD)" --define "_sourcedir $(PWD)" fedora/$(NAME).spec
 	rpmbuild -bb --define "_rpmdir $(PWD)" --define "_sourcedir $(PWD)" --define "_builddir $(PWD)/fedora" fedora/$(NAME).spec
 	rm -rf fedora/$(NAMEVER)
 fedora-clean:
+	rm $(NAME)-*.tar.bz2
+	rm $(NAME)-*.rpm
 
 ubuntu: ../debian
 	cd ..; dpkg-buildpackage -uc -us -rfakeroot
