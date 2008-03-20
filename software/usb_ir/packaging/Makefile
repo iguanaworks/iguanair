@@ -21,10 +21,9 @@ fedora-clean:
 	rm -f ../iguanaIR.spec
 
 ubuntu: ../debian
+	cd ..; dpkg-buildpackage -uc -us -rfakeroot
 ../debian:
 	ln -s packaging/debian ..
-	cd ..; dpkg-buildpackage -uc -us -rfakeroot
-
 ubuntu-clean:
 	rm ../debian
 
