@@ -114,14 +114,17 @@ install: all
 	                      $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/etc/udev/devices/iguanaIR
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
+#########################################################################
 # This is for fairly old versions of Fedora....
 #	install -D --mode 644 plug-trigger/hotplug/iguanaIR.usermap \
 #	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR.usermap
 #	install -D --mode 755 plug-trigger/hotplug/iguanaIR \
 #	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR
+#########################################################################
 
 .PHONY: uninstall
 uninstall:
+	/etc/init.d/iguanaIR stop || true
 	rm -f $(DESTDIR)/usr/bin/igclient
 	rm -f $(DESTDIR)/usr/bin/igdaemon
 	rm -f $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
