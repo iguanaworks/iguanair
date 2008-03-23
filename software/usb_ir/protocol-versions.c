@@ -13,8 +13,9 @@
  * See LICENSE for license details.
  */
 
-#include "compat.h"
 #include "iguanaIR.h"
+#include "compat.h"
+
 #include "support.h"
 #include "protocol-versions.h"
 

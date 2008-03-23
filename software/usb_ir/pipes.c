@@ -12,6 +12,7 @@
  * See LICENSE for license details.
  */
 
+#include "iguanaIR.h"
 #include "compat.h"
 
 #include <stdlib.h>
@@ -20,7 +21,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
 

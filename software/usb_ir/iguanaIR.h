@@ -13,6 +13,20 @@
 #ifndef _IGUANA_IR_
 #define _IGUANA_IR_
 
+#ifdef WIN32
+    #ifdef IGUANAIR_EXPORTS
+        #define IGUANAIR_API __declspec(dllexport)
+    #else
+        #define IGUANAIR_API __declspec(dllimport)
+    #endif
+#else
+    #ifdef IGUANAIR_EXPORTS
+        #define IGUANAIR_API __attribute__((visibility("default")))
+    #else
+        #define IGUANAIR_API
+    #endif
+#endif
+
 /* the protocol between the client and server must be versioned */
 #define IG_PROTOCOL_VERSION 1
 

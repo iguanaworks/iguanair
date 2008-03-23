@@ -17,7 +17,6 @@
 #ifdef WIN32
     #include <windows.h>
 #endif
-#include "iguanaIR-export.h"
 #include "iguanaIR.h"
 %}
 
@@ -106,5 +105,4 @@ PIPE_PTR iguanaConnect_python(const char *name)
 }
 %}
 
-%include iguanaIR-export.h
 %include iguanaIR.h

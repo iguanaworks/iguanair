@@ -10,6 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
+#include "iguanaIR.h"
 #include "compat.h"
 
 #if USE_CLOCK_GETTIME

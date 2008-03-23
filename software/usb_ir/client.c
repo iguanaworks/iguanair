@@ -11,6 +11,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
+#include "iguanaIR.h"
 #include "compat.h"
 #include <stdlib.h>
 #include <string.h>
@@ -22,8 +23,6 @@
 #else
     #include <arpa/inet.h>
 #endif
-
-#include "iguanaIR.h"
 
 /* not necessary for a client, just helpful for some supporting
  * functions. */

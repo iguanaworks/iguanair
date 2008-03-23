@@ -17,7 +17,6 @@
 #define _COMPAT_
 
 #include "config.h"
-#include "iguanaIR-export.h"
 
 #ifdef WIN32
     /* The old functions CAN be used safely... stop the warnings. */

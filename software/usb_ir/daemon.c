@@ -12,14 +12,15 @@
  * See LICENSE for license details.
  */
 
+#include "iguanaIR.h"
 #include "compat.h"
+
 #include <popt.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "iguanaIR.h"
 #include "usbclient.h"
 #include "pipes.h"
 #include "support.h"

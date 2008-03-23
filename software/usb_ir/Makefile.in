@@ -142,13 +142,14 @@ clean:
 .PHONY: distclean
 distclean: clean
 	rm -f Makefile config.h
+	make -C packaging clean
 
 .PHONY: cleanest
 cleanest: distclean
 	rm -rf configure autom4te.cache
 
 .PHONY: package
-package:
+package: distclean
 	make -C packaging
 
 

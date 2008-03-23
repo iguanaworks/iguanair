@@ -10,11 +10,12 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
+#include "iguanaIR.h"
+#include "compat.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "compat.h"
-#include "iguanaIR.h"
 #include "list.h"
 
 void initializeList(listHeader *list)

@@ -6,7 +6,7 @@
 %{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
 Name:           iguanaIR
-Version:        0.93
+Version:        0.94
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
@@ -81,7 +81,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS LICENSE WHY protocols.txt README.txt notes.txt
+%doc AUTHORS LICENSE WHY protocols.txt README.txt notes.txt ChangeLog
 /usr/bin/*
 %{_libdir}/lib%{name}.so
 /etc/init.d/%{name}
@@ -99,6 +99,11 @@ fi
 #%ghost %{pydir}/*.pyo
 
 %changelog
+* Sun Mar 23 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.94-1
+- Better windows support, a pile of bugs fixed.  Works with newer
+  firmwares (version 0x102) including frequency and channel support
+  with or without LIRC.
+
 * Sat Mar 10 2007 Joseph Dunn <jdunn@iguanaworks.net> 0.31-1
 - First release with tentative win32 and darwin support.  Darwin needs
   some work, and windows needs to interface with applications.
