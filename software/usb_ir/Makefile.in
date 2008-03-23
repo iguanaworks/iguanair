@@ -64,11 +64,16 @@ compat.o: compat.c config.h
 ifneq (@PYTHON_CPPFLAGS@,)
 all: _iguanaIR.$(SHAREEXT)
 install: install-python
-
 .PHONY: install-python
 install-python:
 	install -D _iguanaIR.so $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.so
 	install -D iguanaIR.py $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
+
+uninstall: uninstall-python
+.PHONY: uninstall-python
+uninstall-python:
+	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.so
+	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
 
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python $<
@@ -80,22 +85,52 @@ _iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
 	$(CC) $(LDFLAGS) @PYTHON_LDFLAGS@ $(SHAREARG) $^ -L. -liguanaIR -o $@
 endif
 
+# change ownership unless we're building an rpm
+ifeq ($(RPM_OS),)
+  SETOWNER=--owner iguanair --group iguanair
+install: adduser
+.PHONY: adduser
+adduser:
+	/usr/sbin/useradd -u 213 -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
+
+uninstall: deluser
+.PHONY: deluser
+deluser:
+	/usr/sbin/userdel iguanair || true
+else
+  SETOWNER=
+endif
+
 .PHONY: install
 install: all
 	install -D igclient $(DESTDIR)/usr/bin/igclient
 	install -D igdaemon $(DESTDIR)/usr/bin/igdaemon
-	install -D libiguanaIR.$(SHAREEXT) $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	install -D libiguanaIR.$(SHAREEXT) \
+	           $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
 	install -D iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
-	install -D --mode=0644 iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
+	install -D --mode 644 iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
 	install -D iguanaIR.h $(DESTDIR)/usr/include/iguanaIR.h
 	install -D --mode 644 plug-trigger/udev/iguanaIR.rules \
 	                      $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
-	install --mode 755 -d $(DESTDIR)/etc/udev/devices/iguanaIR
+	install --mode 755 $(SETOWNER) -d $(DESTDIR)/etc/udev/devices/iguanaIR
+	install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
 # This is for fairly old versions of Fedora....
 #	install -D --mode 644 plug-trigger/hotplug/iguanaIR.usermap \
 #	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR.usermap
 #	install -D --mode 755 plug-trigger/hotplug/iguanaIR \
 #	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(DESTDIR)/usr/bin/igclient
+	rm -f $(DESTDIR)/usr/bin/igdaemon
+	rm -f $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	rm -f $(DESTDIR)/etc/init.d/iguanaIR
+	rm -f $(DESTDIR)/etc/default/iguanaIR
+	rm -f $(DESTDIR)/usr/include/iguanaIR.h
+	rm -f $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
+	rmdir $(DESTDIR)/etc/udev/devices/iguanaIR 2>/dev/null || true
+	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
 
 .PHONY: clean
 clean:

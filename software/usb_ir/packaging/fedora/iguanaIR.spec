@@ -57,8 +57,8 @@ rm -rf $RPM_BUILD_ROOT
 # must create the user and group before files are put down
 %pre
 #TODO: stupid to not support the long versions
-/usr/sbin/useradd -M -u %{uid} -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
-#/usr/sbin/useradd -M --uid %{uid} --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
+/usr/sbin/useradd -u %{uid} -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
+#/usr/sbin/useradd --uid %{uid} --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
 
 # must add the service after the files are placed
 %post
