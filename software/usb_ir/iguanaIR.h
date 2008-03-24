@@ -38,6 +38,7 @@
         true
     };
 
+#include<windows.h>
     #define PIPE_PTR HANDLE
     #define INVALID_PIPE NULL
 #else

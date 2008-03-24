@@ -10,10 +10,10 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include <stdio.h>
-
-#include "compat.h"
 #include "iguanaIR.h"
+#include "compat.h"
+
+#include <stdio.h>
 
 bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg)
 {

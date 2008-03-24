@@ -10,11 +10,11 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
+#include "iguanaIR.h"
+#include "compat.h"
 
 #include <stdio.h>
 
-#include "compat.h"
-#include "iguanaIR.h"
 #include "pipes.h"
 #include "support.h"
 

@@ -24,7 +24,7 @@ else:
     }
     ISSPath = 'iguanaIR.iss'
 
-    input = open('../iguanaIR.spec', 'r')
+    input = open('../packaging/fedora/iguanaIR.spec', 'r')
     for line in input:
         if line.startswith('Version:'):
             vars['version'] = line.split()[1]

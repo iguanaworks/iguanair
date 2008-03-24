@@ -11,6 +11,7 @@
  * See LICENSE for license details.
  */
 
+#include "iguanaIR.h"
 #include "compat.h"
 
 #include <windows.h>
@@ -21,7 +22,6 @@
 #include <popt.h>
 #include "popt-fix.h"
 
-#include "iguanaIR.h"
 #include "usbclient.h"
 #include "pipes.h"
 #include "support.h"
