@@ -39,7 +39,7 @@ DefaultGroupName=IguanaIR
 ;#Compression=bzip"
 
 OutputDir=%(dir)s
-OutputBaseFilename=IguanaIR-%(version)s
+OutputBaseFilename=iguanaIR-%(version)s
 
 [Files]
 ; compiled from C sources
