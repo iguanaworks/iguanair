@@ -9,7 +9,7 @@ echo "Adding user iguananir"
 useradd -d / -g iguanair -K UID_MIN=100 -K UID_MAX=500 -K PASS_MAX_DAYS=-1 -s /bin/false iguanair
 fi
 
-chown iguanair:iguanair /etc/udev/devices/iguanaIR
+chown iguanair:iguanair /lib/udev/devices/iguanaIR
 mkdir /dev/iguanaIR 2>/dev/null || true
 touch /etc/udev/rules.d/iguanaIR.rules
 chown iguanair:iguanair /dev/iguanaIR

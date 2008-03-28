@@ -112,7 +112,7 @@ install: all
 	install -D iguanaIR.h $(DESTDIR)/usr/include/iguanaIR.h
 	install -D --mode 644 plug-trigger/udev/iguanaIR.rules \
 	                      $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
-	install --mode 755 $(SETOWNER) -d $(DESTDIR)/etc/udev/devices/iguanaIR
+	install --mode 755 $(SETOWNER) -d $(DESTDIR)/lib/udev/devices/iguanaIR
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
 #########################################################################
 # This is for fairly old versions of Fedora....
@@ -132,7 +132,7 @@ uninstall:
 	rm -f $(DESTDIR)/etc/default/iguanaIR
 	rm -f $(DESTDIR)/usr/include/iguanaIR.h
 	rm -f $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
-	rmdir $(DESTDIR)/etc/udev/devices/iguanaIR 2>/dev/null || true
+	rmdir $(DESTDIR)/lib/udev/devices/iguanaIR 2>/dev/null || true
 	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
 
 .PHONY: clean

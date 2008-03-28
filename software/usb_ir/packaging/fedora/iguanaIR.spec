@@ -88,7 +88,7 @@ fi
 %config /etc/default/%{name}
 # TODO: autoconf must decide!
 /etc/udev/rules.d/%{name}.rules
-%attr(755, iguanair, iguanair) /etc/udev/devices/%{name}
+%attr(755, iguanair, iguanair) /lib/udev/devices/%{name}
 # This is for fairly old versions of Fedora....
 #/etc/hotplug/usb/%{name}*
 /usr/include/%{name}.h
