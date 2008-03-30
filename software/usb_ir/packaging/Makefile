@@ -3,6 +3,9 @@ VERSION = $(shell grep Version: fedora/$(NAME).spec | sed 's/[^ ]*[ ]*//')
 CURRENT = $(shell head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z')
 NAMEVER = $(NAME)-$(VERSION)
 
+all:
+clean:
+
 ifeq ($(CURRENT),fedora)
 all: fedora
 clean: fedora-clean
@@ -10,6 +13,11 @@ else
 ifeq ($(CURRENT),ubuntu)
 all: ubuntu
 clean: ubuntu-clean
+else 
+ifeq ($(CURRENT),debian)
+all: debian
+clean: debian-clean
+endif
 endif
 endif
 
@@ -33,6 +41,9 @@ ubuntu: ../debian
 	ln -s packaging/debian ..
 ubuntu-clean:
 	rm ../debian
+
+debian: ubuntu
+debian-clean: ubuntu
 
 gentoo: tarball
 gentoo-clean: 
