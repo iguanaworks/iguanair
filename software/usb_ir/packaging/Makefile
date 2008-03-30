@@ -22,8 +22,8 @@ fedora: tarball
 	rpmbuild -bb --define "_rpmdir $(PWD)" --define "_sourcedir $(PWD)" --define "_builddir $(PWD)/fedora" fedora/$(NAME).spec
 	rm -rf fedora/$(NAMEVER)
 fedora-clean:
-	rm $(NAME)-*.tar.bz2
-	rm $(NAME)-*.rpm
+	rm -f $(NAME)-*.tar.bz2
+	rm -f $(NAME)-*.rpm
 
 ubuntu: ../debian
 	cd ..; dpkg-buildpackage -uc -us -rfakeroot
