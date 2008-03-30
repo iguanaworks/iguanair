@@ -34,13 +34,13 @@ fedora-clean:
 	rm -f $(NAME)-*.rpm
 
 ubuntu: ../debian
-	cd ..; dpkg-buildpackage -uc -us -rfakeroot -I.svn -Ipackaging/$(NAMEVER)* -Iwin32
+	cd ..; dpkg-buildpackage -uc -us -rfakeroot -I.svn -Ipackaging/$(NAMEVER)* -Iwin32 -I*.deb -I*.rpm
 	mv ../../iguanair_* .
 	mv ../../iguanair-python_* .
 ../debian:
 	ln -s packaging/debian ..
 ubuntu-clean:
-	rm -r ../debian
+	rm -f ../debian
 
 debian: ubuntu
 debian-clean: ubuntu-clean
