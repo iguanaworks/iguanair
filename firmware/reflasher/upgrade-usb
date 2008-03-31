@@ -64,6 +64,7 @@ test = False
 forceFlash = False
 userSaysKeep = False
 onlyOne = True
+defaultType = None
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -168,6 +169,9 @@ while index < len(sys.argv):
     elif arg == "-q" or arg == "--quiet":
         if currentLevel > LOG_FATAL:
             currentLevel -= 1
+    elif arg == "-t" or arg == "--type":
+        index += 1
+        defaultType = sys.argv[index]
     elif arg == "-v" or arg == "--verbose":
         currentLevel += 1
     elif arg == "--version":
@@ -392,8 +396,8 @@ def writePagesToDevice(pages):
         # note that we're writing a page
         if os.isatty(sys.stdout.fileno()):
             sys.stdout.write('\r')
-        sys.stdout.write("  Writing page %d (%d/%d)" % (page['start'] / 64,
-                                                        count, len(pages)))
+        sys.stdout.write("  Writing page %d/%d (offset %d)" % (count, len(pages), page['start'] / 64))
+
         if os.isatty(sys.stdout.fileno()):
             sys.stdout.write('  ')
         else:
@@ -548,8 +552,9 @@ def reflashDevice(features):
     if id:
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
         deviceTransaction(iguanaIR.IG_DEV_SETID, id)
-    else:
-        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
+# TODO: removed because it was causing testing problems....
+#    else:
+#        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
     if wrote and deviceVersion() < 0x0100:
         replugWarning()
@@ -739,10 +744,16 @@ Reflashing devices to firmware version 0x%4.4x
 
 # must default to at least a 1 character string
 default = ' '
+line = defaultType
 while True:
     try:
-        type = None
-        while type is None:
+        while True:
+            if line[0].lower() in 'ushl':
+                type = line[0].lower()
+                default = type.upper()
+                line = ' '
+                break
+
             selection = '[u/s/h/l]'.replace(default.lower(), default)
             if default.strip() and onlyOne:
                 raise KeyboardInterrupt()
@@ -755,33 +766,30 @@ What kind of device is plugged in?
             if not line:
                 line = default
 
-            if line[0].lower() in 'ushl':
-                default = line[0].upper()
-
-            if line[0].lower() == 'u':
-                type = 'unenclosed'
-                plugs = ()
-                leds = (0x0,)
-                features = 0
-            elif line[0].lower() == 's':
-                type = 'sockets'
-                plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
-                leds = ()
-                features = iguanaIR.IG_HAS_SOCKETS
-            elif line[0].lower() == 'h':
-                type = 'hybrid'
-                plugs = (0xC, 0x4, 0x8, 0x4, 0xC)
-                leds = (0x1,)
-                features = iguanaIR.IG_HAS_BOTH
-            elif line[0].lower() == 'l':
-                type = 'leds'
-                plugs = ()
-                leds = (0x1, 0x4)
-                features = iguanaIR.IG_HAS_LEDS
+        if type == 'u':
+            type = 'unenclosed'
+            plugs = ()
+            leds = (0x0,)
+            features = 0
+        elif type == 's':
+            type = 'sockets'
+            plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
+            leds = ()
+            features = iguanaIR.IG_HAS_SOCKETS
+        elif type == 'h':
+            type = 'hybrid'
+            plugs = (0xC, 0x4, 0x8, 0x4, 0xC)
+            leds = (0x1,)
+            features = iguanaIR.IG_HAS_BOTH
+        elif type == 'l':
+            type = 'leds'
+            plugs = ()
+            leds = (0x1, 0x4)
+            features = iguanaIR.IG_HAS_LEDS
 
         # reflash the device with information about what kind it is
         if _conn is not None:
-            iguanaIR.iguanaClose(_conn)
+            iguanaIR.close(_conn)
         reflashDevice(features)
         if not test:
             continue
@@ -825,5 +833,5 @@ What kind of device is plugged in?
                 sendPanasonicPower()
 
     except KeyboardInterrupt:
-        if type is None:
+        if type is None or onlyOne:
             break
