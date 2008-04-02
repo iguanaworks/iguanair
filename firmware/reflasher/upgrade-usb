@@ -431,10 +431,10 @@ def writeHexFile(filename, fullFlash = False, setFeatures = False):
 
     # place the features if necessary (and possible)
     if setFeatures and targetVersion >= 0x0101:
-        message(LOG_INFO, "Setting features to 0x%x\n" % features)
+        message(LOG_INFO, "Setting features to 0x%x\n" % setFeatures)
         for page in pages:
             if page['start'] == 0xC00:
-                page['bytes'][61] = '%2.2x' % features
+                page['bytes'][61] = '%2.2x' % setFeatures
 
     # write out the code pages
     preparePages(pages)
@@ -747,8 +747,9 @@ default = ' '
 line = defaultType
 while True:
     try:
+        type = None
         while True:
-            if line[0].lower() in 'ushl':
+            if line and line[0].lower() in 'ushl':
                 type = line[0].lower()
                 default = type.upper()
                 line = ' '
@@ -790,6 +791,7 @@ What kind of device is plugged in?
         # reflash the device with information about what kind it is
         if _conn is not None:
             iguanaIR.close(_conn)
+            _conn = None
         reflashDevice(features)
         if not test:
             continue
