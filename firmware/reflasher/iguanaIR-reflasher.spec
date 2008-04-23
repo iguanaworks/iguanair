@@ -1,5 +1,5 @@
 Name:           iguanaIR-reflasher
-Version:        0.3
+Version:        0.4
 Release:        1%{?dist}
 Summary:        Updates IguanaWorks USB IR devices
 

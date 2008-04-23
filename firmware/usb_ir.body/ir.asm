@@ -131,11 +131,8 @@ rx_disable:
     and A, ~0b00000010
     mov REG[INT_MSK2], A
 
-    ; make sure the active LOW transmit LEDs are OFF
-    ; does this device support channels?
-    call get_feature_list
-    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
-    call rx_pins_off
+    ; make sure the transmit LEDs are OFF
+    call tx_pins_off
     ret
 
 ; FUNCTION: rx_reset enables the IR receiver
@@ -162,16 +159,21 @@ rx_reset:
   rx_reset_done:
     ret
 
-rx_pins_off:
-    jnz rx_disable_tx
+tx_pins_off:
+    call get_feature_list
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    jnz tx_disable_new
+
+  tx_disable_old:
     ; old --> active high --> and ~
     and REG[OLD_TX_BANK], ~OLD_TX_MASK
-    jmp rx_disable_done
-  rx_disable_tx:
+    jmp tx_disable_done
+
+  tx_disable_new:
     ; new --> active low --> or
     or REG[TX_BANK], TX_MASK
-    jmp rx_disable_done
-  rx_disable_done:
+
+  tx_disable_done:
     ret
 
 ; used-to-be FUNCTION load_value (now it's a jump in - jump out)
@@ -300,7 +302,6 @@ transmit_code:
     mov [tx_pins], OLD_TX_MASK
     call get_feature_list
     and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
-    mov [tmp3], A
     jz tx_start
 
     ; read a byte describing channel selection, and make sure it only
@@ -321,12 +322,12 @@ transmit_code:
 
   tx_loop:
     mvi A, [buffer_ptr] ; move buffer data into A, increment pointer
-    mov [tmp1], A       ; store byte
+    mov [tmp3], A       ; store byte
     and A, 0x7F         ; mask off the pulse length bits
     asl A               ; shift left to multiply by two due to carrier division
     mov [tmp2], A       ; store pulse length in tmp2
 
-    mov A, [tmp1]     ; get original byte back
+    mov A, [tmp3]     ; get original byte back
     and A, 0x80       ; mask off pulse on/off bit
     jz tx_on          ; if on, jump to tx_on, else fall through
     mov [tx_state], 0 ; clear tx
@@ -493,8 +494,8 @@ transmit_code:
 
   ; end of the transmit function
   tx_end_pulse:
-    mov A, [tmp3] ; make sure tx pins are off
-    call rx_pins_off
+    ; make sure tx pins are off
+    call tx_pins_off
     dec [tmp1]    ; decrement remaining byte count
     jnz tx_loop   ; if more, go to next pulse
     ret           ; done

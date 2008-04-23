@@ -430,7 +430,8 @@ def writeHexFile(filename, fullFlash = False, setFeatures = False):
             blanks.remove(page['start'] / 64)
 
     # place the features if necessary (and possible)
-    if setFeatures and targetVersion >= 0x0101:
+    if setFeatures and \
+       (targetVersion >= 0x0101 or targetVersion == 0x0000):
         message(LOG_INFO, "Setting features to 0x%x\n" % setFeatures)
         for page in pages:
             if page['start'] == 0xC00:
