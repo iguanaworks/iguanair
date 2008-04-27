@@ -74,20 +74,28 @@ static unsigned char* pulsesToIguanaSend(int carrier,
                             1000000.0 * carrier + 0.5);
         numBytes = (cycles / MAX_DATA_BYTE) + 1;
         cycles %= MAX_DATA_BYTE;
+        if (cycles == 0)
+        {
+            cycles = MAX_DATA_BYTE;
+            numBytes -= 1;
+        }
 
-        /* allocate space as we go */
-        codes = realloc(codes, sizeof(char) * (codeLength + numBytes));
+        if (numBytes)
+        {
+            /* allocate space as we go */
+            codes = realloc(codes, sizeof(char) * (codeLength + numBytes));
 
-        /* populate the buffer with max bytes */
-        memset(codes + codeLength,
-               LENGTH_MASK | (inSpace * STATE_MASK),
-               numBytes - 1);
-        if (inSpace)
-            cycles |= STATE_MASK;
+            /* populate the buffer with max bytes */
+            memset(codes + codeLength,
+                   LENGTH_MASK | (inSpace * STATE_MASK),
+                   numBytes - 1);
+            if (inSpace)
+                cycles |= STATE_MASK;
 
-        /* store the last byte (cast is alright due to %= MAX_DATA_BYTE) */
-        codes[codeLength + numBytes - 1] = (unsigned char)cycles;
-        codeLength += numBytes;
+            /* store the last byte (cast is alright due to %= MAX_DATA_BYTE) */
+            codes[codeLength + numBytes - 1] = (unsigned char)cycles;
+            codeLength += numBytes;
+        }
 
         inSpace ^= 1;
     }
