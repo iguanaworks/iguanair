@@ -95,20 +95,23 @@ void* iguanaCreateRequest(unsigned char code,
 
 unsigned char* iguanaRemoveData(iguanaPacket pkt, unsigned int *dataLength)
 {
-    unsigned char *retval;
+    unsigned char *retval = NULL;
     dataPacket *packet = (dataPacket*)pkt;
 
-    /* store the values ... */
-    if (dataLength != NULL)
-        *dataLength = packet->dataLen;
-    if (packet->dataLen == 0)
-        retval = NULL;
-    else
-        retval = packet->data;
+    if (packet != NULL)
+    {
+        /* store the values ... */
+        if (dataLength != NULL)
+            *dataLength = packet->dataLen;
+        if (packet->dataLen == 0)
+            retval = NULL;
+        else
+            retval = packet->data;
 
-    /* ... and clear them from the packet */
-    packet->dataLen = 0;
-    packet->data = NULL;
+        /* ... and clear them from the packet */
+        packet->dataLen = 0;
+        packet->data = NULL;
+    }
 
     return retval;
 }

@@ -63,6 +63,7 @@ targetVersion = None
 test = False
 forceFlash = False
 userSaysKeep = False
+userSaysKeepAll = False
 onlyOne = True
 defaultType = None
 
@@ -161,6 +162,8 @@ while index < len(sys.argv):
         usb_ir = sys.argv[index]
     elif arg == '--keep-loader':
         userSaysKeep = True
+    elif arg == '--keep-all':
+        userSaysKeepAll = True
     elif arg == "-l" or arg == "--log-file":
         index += 1
         logFile = sys.argv[index]
@@ -264,6 +267,8 @@ def deviceTransaction(type, data = '', quiet = False):
             if not quiet:
                 message(LOG_ERROR,
                         'Error response code: 0x%s\n' % iguanaIR.code(resp))
+        elif type == iguanaIR.IG_DEV_GETFEATURES:
+            retval = ord(iguanaIR.removeData(resp)[0])
         else:
             retval = iguanaIR.removeData(resp)
 
@@ -566,9 +571,11 @@ def checkReceiver():
     count = 0
     while count < 40:
         packet = iguanaIR.readResponse(_conn, 1000)
+        if packet is None:
+            break
+
         data = iguanaIR.removeData(packet)
         format = 'I' * (len(data) / 4)
-
         for signal in struct.unpack(format, data):
             if signal != 0x25555:
                 count += 1
@@ -578,7 +585,11 @@ def checkReceiver():
                 type = 'pulse: '
             message(LOG_INFO,
                     type + "%d\n" % (signal & iguanaIR.IG_PULSE_MASK))
-    deviceTransaction(iguanaIR.IG_DEV_RECVOFF)
+    else:
+        deviceTransaction(iguanaIR.IG_DEV_RECVOFF)
+        return True
+
+    return False
 
 def sendPanasonicPower():
     # send a signal on all active channels
@@ -750,7 +761,7 @@ while True:
     try:
         type = None
         while True:
-            if line and line[0].lower() in 'ushl':
+            if line and line[0].lower() in 'ushlc':
                 type = line[0].lower()
                 default = type.upper()
                 line = ' '
@@ -767,6 +778,25 @@ What kind of device is plugged in?
             line = sys.stdin.readline().strip()
             if not line:
                 line = default
+
+        # reconnect as necessary
+        if _conn is not None:
+            iguanaIR.close(_conn)
+            _conn = None
+
+        # special option for testing
+        if type == 'c':
+            features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES)
+            if features == 0:
+                type = 'u'
+            elif features == iguanaIR.IG_HAS_SOCKETS:
+                type = 's'
+            elif features == iguanaIR.IG_HAS_BOTH:
+                type = 'h'
+            elif features == iguanaIR.IG_HAS_LEDS:
+                type = 'l'
+            else:
+                continue
 
         if type == 'u':
             type = 'unenclosed'
@@ -790,10 +820,8 @@ What kind of device is plugged in?
             features = iguanaIR.IG_HAS_LEDS
 
         # reflash the device with information about what kind it is
-        if _conn is not None:
-            iguanaIR.close(_conn)
-            _conn = None
-        reflashDevice(features)
+        if not userSaysKeepAll:
+            reflashDevice(features)
         if not test:
             continue
 
@@ -807,7 +835,9 @@ What kind of device is plugged in?
             continue
 
         message(LOG_NORMAL, "Checking receiver.\n")
-        checkReceiver()
+        if not checkReceiver():
+            message(LOG_ERROR, "Receiver FAILURE.\n")
+            continue
 
         if plugs:
             message(LOG_NORMAL, "Doing sockets tests.\n")
