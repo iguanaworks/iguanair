@@ -311,8 +311,18 @@ transmit_code:
     mov [tx_pins], [control_pkt + CDATA + 1]
     ; if the byte was 0 then transmit on all channels
     mov A, [tx_pins]
-    jnz tx_start
+    jnz tx_default_carrier
     mov [tx_pins], TX_MASK
+
+  tx_default_carrier:
+    ; set a default 38kHz frequency when sent 0,0
+    mov A, [control_pkt + CDATA + 2]
+    jnz tx_start
+    mov A, [control_pkt + CDATA + 3]
+    jnz tx_start
+    mov [control_pkt + CDATA + 2], 0x06
+    mov [control_pkt + CDATA + 3], 0x31
+
   tx_start:
     mov [buffer_ptr], buffer          ; reset to start of buffer
     mov [tx_state], 0                 ; clear tx state

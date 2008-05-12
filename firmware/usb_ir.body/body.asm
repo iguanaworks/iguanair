@@ -15,7 +15,7 @@ include "m8c.inc"    ; part specific constants and macros
 include "loader.inc"
 include "body.inc"
 
-VERSION_ID_LOW:  equ 0x03 ; firmware version ID low byte (code body)
+VERSION_ID_LOW:  equ 0x04 ; firmware version ID low byte (code body)
 
 export get_feature_list
 
@@ -137,8 +137,10 @@ body_loop_body:
 get_features_body:
     mov [control_pkt + CCODE], CTL_GETFEATURES
     call get_feature_list
-    mov [control_pkt + CDATA], A
-    mov X, CTL_BASE_SIZE + 1
+    mov [control_pkt + CDATA + 0], A
+    ; the numbers (cycle counts) are taken from the ir.asm code
+    mov [control_pkt + CDATA + 1],5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5
+    mov X, CTL_BASE_SIZE + 2
     lcall write_control
     jmp bm_ret
 
