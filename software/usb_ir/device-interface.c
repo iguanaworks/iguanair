@@ -283,6 +283,7 @@ static void* generateIDBlock(const char *label, uint16_t version)
         unsigned char buf[MAX_PACKET_SIZE * 2] = { CTL_START,   CTL_START,
                                                    CTL_FROMDEV, IG_DEV_GETID },
             packet_start, send_address;
+        bool size_in_A = false;
 
         /* translate the code for the device */
         if (! translateDevice(buf + CODE_OFFSET, version, false))
@@ -298,6 +299,7 @@ static void* generateIDBlock(const char *label, uint16_t version)
             /* due to size of buffer these 8 bytes are always in it */
             packet_start = 0x7C;
             send_address = 0x68;
+            size_in_A = true;
         }
 
         /* can only generate 12 bytes worth of transmission data */
@@ -317,11 +319,17 @@ static void* generateIDBlock(const char *label, uint16_t version)
                 data[len++] = packet_start + y;
                 data[len++] = buf[x * 8 + y];
             }
-            /* load the packet size into A */
-            data[len++] = 0x50;
+            /* load the packet size into A (or X) */
+            if (size_in_A)
+                data[len++] = 0x50;
+            else
+                data[len++] = 0x57;
             data[len++] = 0x08;
-            /* load packet location into X */
-            data[len++] = 0x57;
+            /* load packet location into X (or A) */
+            if (size_in_A)
+                data[len++] = 0x57;
+            else
+                data[len++] = 0x50;
             data[len++] = packet_start;
             /* lcall write_data */
             data[len++] = 0x7C;
