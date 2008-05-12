@@ -68,7 +68,7 @@ static versionedType types[] =
     {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
 
     /* device functionality */
-    {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV, NO_PAYLOAD, true, 1}},
+    {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV, NO_PAYLOAD, true,ANY_PAYLOAD}},
     {0, 0, {IG_DEV_SEND,        CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RECVON,      CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
     {0x0101, 0, {IG_DEV_RAWRECVON,   CTL_TODEV, NO_PAYLOAD, true, NO_PAYLOAD}},
@@ -248,6 +248,7 @@ static void computeCarrierDelays(uint32_t carrier, unsigned char *delays)
        counter specifically because the delay 4 actually requires less
        space on the flash for a given delay.
     */
+    /* TODO: get this data from get features instead of hard coding it */
     cycles -= 5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5;
 
     /* TODO: this next line is too magical */
@@ -544,7 +545,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 msg[length++] = idev->channels;
 
                 /* is the carrier frequency finally adjustable? */
-                if (idev->version > 4)
+                if (idev->version >= 0x0101)
                 {
                     /* compute the delay length off the carrier */
                     computeCarrierDelays(idev->carrier, msg + length);
