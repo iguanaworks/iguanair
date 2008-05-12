@@ -480,13 +480,13 @@ def findHexFile(type, target = None, mustMatch = True):
         # ensure the file really exists
         if checkFileExists(hex):
             version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
+            # see if we can take any version
             if target is None:
-                if latestVersion is None:
+                # see if we found a newer version
+                if latest is None or version > latestVersion:
                     latestVersion = version
-
-                if latest is None or \
-                   version > latestVersion:
                     latest = hex
+            # searching for a specific version
             elif version == target:
                 latest = hex
                 break
