@@ -109,13 +109,17 @@ static versionedType types[] =
     {0, 0, {IG_DEV_OVERSEND, CTL_FROMDEV, NO_PAYLOAD,  false, NO_PAYLOAD}},
     {0, 0, {IG_DEV_OVERRECV, CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
 
+    /* invalid argument reply */
+    {0x101, 0, {IG_DEV_INVALID_ARG, CTL_TODEV, NO_PAYLOAD, false, NO_PAYLOAD}},
+
     /* terminate the list */
     {0, 0, {IG_DEV_ANYCODE, 0, 0, false, 0}}
 };
 
 static void queueDataPacket(iguanaDev *idev, dataPacket *current, bool fromDev)
 {
-    message(LOG_DEBUG3, "Notifying of packet.\n");
+    message(LOG_DEBUG3,
+            "Notifying of packet: type = 0x%2.2x\n", current->code);
 
     EnterCriticalSection(&idev->listLock);
     if (fromDev)
@@ -608,28 +612,31 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                     pos->code = IG_DEV_SETID;
 
                 errno = EINVAL;
-                if (pos->code != request->code)
-                    message(LOG_ERROR,
-                            "Bad ack for send: 0x%x != 0x%x\n",
-                            pos->code, request->code);
-                else if (! payloadMatch(type->inData, pos->dataLen))
-                    message(LOG_ERROR, "Response size does not match specification (%d != %d)\n", pos->dataLen, type->inData);
-                else
+                if (pos->code != IG_DEV_INVALID_ARG)
                 {
-                    unsigned int difference;
+                    if (pos->code != request->code)
+                        message(LOG_ERROR,
+                                "Bad ack for send: 0x%x != 0x%x\n",
+                                pos->code, request->code);
+                    else if (! payloadMatch(type->inData, pos->dataLen))
+                        message(LOG_ERROR, "Response size does not match specification (%d != %d)\n", pos->dataLen, type->inData);
+                    else
+                    {
+                        unsigned int difference;
 
-                    /* store the retrieved response */
-                    if (response != NULL)
-                        *response = pos;
-                    pos = NULL;
+                        /* store the retrieved response */
+                        if (response != NULL)
+                            *response = pos;
+                        pos = NULL;
 
-                    /* how long did this all take? */
-                    now = microsSinceX();
-                    difference = now - then;
-                    message(LOG_INFO,
-                            "Transaction: 0x%x (%d microseconds)\n",
-                            request->code, difference);
-                    retval = true;
+                        /* how long did this all take? */
+                        now = microsSinceX();
+                        difference = now - then;
+                        message(LOG_INFO,
+                                "Transaction: 0x%x (%d microseconds)\n",
+                                request->code, difference);
+                        retval = true;
+                    }
                 }
 
                 freeDataPacket(pos);
@@ -780,7 +787,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     if (type == NULL)
                         message(LOG_ERROR, "Unknown packet type received from device: 0x%x\n", current->code);
                     else if (type->inData != NO_PAYLOAD &&
-                        type->inData > current->dataLen)
+                             type->inData > current->dataLen)
                     {
                         current->data = (unsigned char*)malloc(type->inData);
                         memcpy(current->data, dataStart, current->dataLen);

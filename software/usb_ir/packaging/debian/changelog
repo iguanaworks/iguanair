@@ -1,3 +1,9 @@
+iguanair (0.96.1-1) unstable; urgency=low
+
+  * Upgraded to the 0.96 source (bug fixes)
+
+ -- IguanaWorks Support <support@iguanaworks.net>  Fri, 27 Mar 2008 23:28:45 +1000
+
 iguanair (0.95.1-1) unstable; urgency=low
 
   * Upgraded to the 0.95 source (fixing udev)
