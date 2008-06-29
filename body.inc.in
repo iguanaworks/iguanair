@@ -1,0 +1,26 @@
+; **************************************************************************
+; * body.inc ***************************************************************
+; **************************************************************************
+; *
+; * Template for the body.inc header file that defines the functions
+; * supported by the firmware body code.
+; *
+; * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+; * Author: Joseph Dunn <jdunn@iguanaworks.net>
+; *
+; * Distributed under the GPL version 2.
+; * See LICENSE for license details.
+; */
+
+;INSERT_CODES_HERE
+
+; other constants
+RX_PIN_CR:    EQU P05CR  ; control reg for rx pin
+
+TX_BANK:      EQU P1DATA ; which set are the transmit pins in?
+OLD_TX_BANK:  EQU P0DATA ; pins used to be in this set
+TX_MASK:      EQU 0xF0   ; all pins that can tx
+OLD_TX_MASK:  EQU 0x40   ; mask for unenclosed devices
+
+PIN_CFG_MASK: EQU 0x07   ; we only configure these pin control bits
+BURST_DELAY:  EQU 30     ; delay loops between GPIO transfers in burst mode
