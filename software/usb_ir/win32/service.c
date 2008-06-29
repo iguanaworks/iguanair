@@ -168,6 +168,11 @@ static struct poptOption options[] =
     { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
     { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
+
+    /* iguanaworks specific stuff */
+    { "no-labels", 0, POPT_ARG_NONE, NULL, 'b', "Do not query the Iguanaworks device for its label.", NULL },
+
+    /* Windows specific stuff for controlling the service */
     { "regsvc", 0, POPT_ARG_NONE, NULL, 'r', "Register this executable as the system igdaemon service.", NULL },
     { "unregsvc", 0, POPT_ARG_NONE, NULL, 'u', "Remove the system igdaemon service.", NULL },
     { "startsvc", 0, POPT_ARG_NONE, NULL, 's', "Start the system igdaemon service.", NULL },
@@ -211,6 +216,10 @@ int main(int argc, char **argv)
 
         case 'v':
             changeLogLevel(+1);
+            break;
+
+        case 'b':
+            readLabels = false;
             break;
 
         case 'r':
