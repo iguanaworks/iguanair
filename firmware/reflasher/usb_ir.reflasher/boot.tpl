@@ -1,1 +1,1 @@
-../../usb_ir.loader/boot.tpl
+../../usb_ir.loader-1/boot.tpl
