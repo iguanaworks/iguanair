@@ -2,7 +2,11 @@
 ### BEGIN INIT INFO
 # Provides:	iguanair
 # Required-Start:	udev
+# Required-Stop:
 # Short-Description: IguanaWorks USB IR Device Daemon
+# Description: IguanaWorks USB IR Device Daemon
+# Should-Start:
+# Should-Stop:
 # Default-Start: 2 3 4 5 
 # Default-Stop: 0 1 2 6
 ### END INIT INFO
@@ -148,11 +152,17 @@ rescan()
 usage()
 {
     if [ "$LOCKFILE" != "" ]; then
-        echo $"Usage: $0 {start|stop|status|restart|condrestart|rescan}"
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|force-restart|rescan}"
     else
-        echo $"Usage: $0 {start|stop|restart|rescan}"
+        echo $"Usage: $0 {start|stop|status|restart|force-restart|rescan}"
     fi
     RETVAL=1
+}
+
+
+forcereload()
+{
+    restart
 }
 
 
@@ -174,11 +184,18 @@ case "$1" in
     rescan)
         rescan
         ;;
+    force-reload)
+        forcereload
+        ;;
     status)
         if [ "$LOCKFILE" != "" ]; then
             status $IGPATH
         else
-            usage
+		if [ -z $(pidofproc $IGPATH) ]; then
+		echo "IguanaIR Daemon is not running"
+		else
+		echo "IguanaIR Daemon is running (pid $(pidofproc $IGPATH) )"
+		fi            
         fi
         ;;
     condrestart)
