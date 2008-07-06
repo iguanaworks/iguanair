@@ -50,11 +50,9 @@ install: build
 
 	#move the reflasher stuff into it's sub systm
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/bin
-	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher
-	mv $(CURDIR)/debian/tmp/usr/lib/iguanaIR-reflasher/hex $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanaIR-reflasher/
-	mv $(CURDIR)/debian/tmp/usr/lib/iguanaIR-reflasher/upgrade-usb $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher/
-#	ln -s $(CURDIR)/debian/iguanair-reflasher/usr/lib/u123pdate-usb $(CURDIR)/debian/iguanair-reflasher/usr/bin/iguanair-reflasher
-
+	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/lib
+	mv $(CURDIR)/debian/tmp/usr/lib/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/lib/
+	mv $(CURDIR)/debian/tmp/usr/bin/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/bin/
 	
 
 

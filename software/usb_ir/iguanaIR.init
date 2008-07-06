@@ -1,3 +1,4 @@
+#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:	iguanair
 # Required-Start:	udev
@@ -8,8 +9,6 @@
 
 
 
-
-#!/bin/sh
 #
 # Startup script for the Iguanaworks USB IR daemon.
 #
@@ -154,11 +153,6 @@ usage()
         echo $"Usage: $0 {start|stop|restart|rescan}"
     fi
     RETVAL=1
-}
-
-force-reload()
-{
-	restart()
 }
 
 

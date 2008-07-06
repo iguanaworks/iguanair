@@ -43,6 +43,10 @@ ubuntu: ../debian
 	ln -s packaging/debian ..
 ubuntu-clean:
 	rm -f ../debian
+	rm -f iguanair*.deb
+	rm -f iguanair*.changes
+	rm -f iguanair*.tar.gz
+	rm -f iguanair*.dsc
 
 debian: ubuntu
 debian-clean: ubuntu-clean
