@@ -28,7 +28,7 @@ Description: This is the Python client bindings IguanaWorks USB IR
 
 Package: iguanair-reflasher
 Section: utils
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends},${misc:Depends}, iguanair-python (= ${binary:Version})
 Essential: no
 Description: The program will reflash the IguanaWorks USB IR Transceiver with the
