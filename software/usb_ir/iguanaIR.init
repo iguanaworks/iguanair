@@ -1,3 +1,14 @@
+### BEGIN INIT INFO
+# Provides:	iguanair
+# Required-Start:	udev
+# Short-Description: IguanaWorks USB IR Device Daemon
+# Default-Start: 2 3 4 5 
+# Default-Stop: 0 1 2 6
+### END INIT INFO
+
+
+
+
 #!/bin/sh
 #
 # Startup script for the Iguanaworks USB IR daemon.
@@ -144,6 +155,13 @@ usage()
     fi
     RETVAL=1
 }
+
+force-reload()
+{
+	restart()
+}
+
+
 
 # See how we were called.
 case "$1" in
