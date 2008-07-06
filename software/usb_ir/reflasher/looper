@@ -1,0 +1,174 @@
+#!/usr/bin/python
+
+import subprocess
+import random
+import time
+import stat
+import sys
+import os
+import errno
+
+#versions = [3, 4, 0x0101, 0x0102]
+versions = [4]
+#versions = [0x0101, 0x0102]
+
+import iguanaIR
+
+def listDevices(path = '/dev/iguanaIR'):
+    devices = []
+    for device in os.listdir(path):
+        try:
+            if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
+                devices.append(device)
+        except OSError, inst:
+            if inst[0] != errno.ENOENT:
+                raise
+    return devices
+
+_conn = None
+def connect(timeout = 3, willChange = False, quiet = False):
+    global _conn
+
+    # check every quarter second
+    sleepTime = 0.25
+    timeoutStart = timeout
+
+    start = None
+    while timeout > 0:
+        # list the possible devices
+        devices = listDevices()
+        devices.sort()
+
+        # no change, so lets just run on
+        if len(devices) == 0:
+            pass
+        elif start is None:
+            start = devices[0]
+            if not willChange:
+                break
+        elif len(devices) == 1 and \
+             start and start != devices[0]:
+            break
+
+        # delay and count down the timeout
+        time.sleep(sleepTime)
+        timeout -= sleepTime
+
+    # make sure there is a device detected
+    devices = listDevices()
+    if len(devices) == 0:
+        print "Device not found.  Plug the device in and try again.\n"
+        raise KeyboardInterrupt()
+
+    # connect to the device
+    if len(devices) > 1 and not quiet:
+        print "Multiple devices found, using '%s'\n" % devices[0]
+    _conn = iguanaIR.connect(devices[0])
+
+# used detect the version before we try to write it
+def deviceTransaction(type, data = '', quiet = False):
+    global _conn
+
+    # connect on demand
+    if _conn is None:
+        connect()
+
+    retval = False
+    req = iguanaIR.createRequest(type, data)
+    if not iguanaIR.writeRequest(req, _conn):
+        if not quiet:
+            print 'Failed to write packet. %s\n' % _conn
+    else:
+        resp = iguanaIR.readResponse(_conn, 3000)
+        if resp is None:
+            if not quiet:
+                print "No response received.\n"
+        elif type == iguanaIR.IG_DEV_GETVERSION:
+            if not iguanaIR.responseIsError(resp):
+                data = iguanaIR.removeData(resp)
+                retval = ord(data[0]) + (ord(data[1]) << 8)
+        elif iguanaIR.responseIsError(resp):
+            if not quiet:
+                print 'Error response code: 0x%s\n' % iguanaIR.code(resp)
+        else:
+            retval = iguanaIR.removeData(resp)
+
+    return retval
+
+
+#count = 0
+#while True:
+#    try:
+#        print '--- %s' % deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK,
+#                                           data = chr(124) + chr(0) * 67)
+#        print '--- %s %s' % (deviceTransaction(iguanaIR.IG_DEV_GETVERSION),
+#                             deviceTransaction(iguanaIR.IG_DEV_RESET))
+#        print '--- %s' % deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
+#        iguanaIR.iguanaClose(_conn)
+#        _conn = None
+#    except KeyboardInterrupt:
+#        print 'Really quit? (press ctrl-c again) (try %d)' % count
+#        time.sleep(1)
+#    count += 1
+
+count = 0
+seed = time.time()
+print 'Seeding: %s' % seed
+random.seed(seed)
+while True:
+    try:
+        version = versions[random.randrange(len(versions))]
+        upgrade = subprocess.Popen((os.path.join(sys.path[0], 'upgrade-usb'),
+                                    '--version', str(version), '--force'),
+                                   stdin = subprocess.PIPE,
+                                   stdout = subprocess.PIPE,
+                                   stderr = subprocess.STDOUT)
+
+        needNewline = False
+        type = 'hybrid\n'
+        upgrade.stdin.write(type)
+        for line in iter(upgrade.stdout.readline, ''):
+            if line[:-1] in """
+WARNING! WARNING! WARNING!
+
+This application is used to reflash Iguanawork USB IR transceivers.
+This means rewriting the code stored within the chip on the device.
+If something goes wrong the device could be rendered unusable!  Use at
+your own risk.  Non-working devices can be reflashed by Iguanaworks
+for a nominal fee.  You may press ctrl-c to break out of this
+application, but if it is actively writing the flash, please wait
+until it finishes or risk breaking your device.
+
+It is also a good idea to unplug and replug your device after the
+reflasher completes.  In some cases certain functionality (reception
+for example) will not work until the device is powered off and then
+on.
+""".splitlines():
+                line = ''
+            elif line == '  unenclosed, sockets, hybrid, or LEDs? [u/s/h/l]\n':
+                line += '    %s' % type
+            elif line == 'WARNING:   Press enter to continue.\n':
+#                time.sleep(1)
+                upgrade.stdin.write('\n')
+                count += 1
+
+            # check for the page writing progress
+            if line.startswith('  Writing page '):
+                sys.stdout.write('\r%s  ' % line[:-1])
+                sys.stdout.flush()
+                line = ''
+                needNewline = True
+            elif needNewline:
+                line = '\n%s' % line
+                needNewline = False
+
+            sys.stdout.write(line)
+
+        upgrade.wait()
+        print 'Exited with %d\n' % upgrade.returncode
+        if upgrade.returncode != 0:
+            break
+    except KeyboardInterrupt:
+        print 'Really quit? (press ctrl-c again) (try %d)' % count
+        time.sleep(1)
+    count += 1
