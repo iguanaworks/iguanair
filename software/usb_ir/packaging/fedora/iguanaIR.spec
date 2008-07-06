@@ -33,6 +33,14 @@ BuildRequires: python-devel swig
 This package provides the swig-generated Python module for interfacing
 with the Iguanaworks USB IR transceiver.
 
+%package reflasher
+Group: System Environment/Daemons
+Summary: Reflasher for Iguanaworks USB IR transceiver.
+Requires: iguanaIR-python = %{version}
+
+%description reflasher
+This package provides the reflasher/testing script and assorted firmware versions for the Iguanaworks USB IR transceiver.  If you have no idea what this means, you don't need it.
+
 %prep
 %setup -q
 
@@ -46,10 +54,6 @@ make %{?_smp_mflags}
 %install
 rm -rf $RPM_BUILD_ROOT
 make install PREFIX=$RPM_BUILD_ROOT/usr DESTDIR=$RPM_BUILD_ROOT INLIBDIR=$RPM_BUILD_ROOT%{_libdir}
-mkdir -p $RPM_BUILD_ROOT%{pydir}
-install _iguanaIR.so $RPM_BUILD_ROOT%{pydir}
-install iguanaIR.py $RPM_BUILD_ROOT%{pydir}
-
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -97,6 +101,10 @@ fi
 %{pydir}/*
 # TODO: autoconf needed!
 #%ghost %{pydir}/*.pyo
+
+%files reflasher
+/usr/lib/%{name}-reflasher
+/usr/bin/%{name}-reflasher
 
 %changelog
 * Sat Jun 27 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.96-1

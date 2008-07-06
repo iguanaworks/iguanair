@@ -63,17 +63,25 @@ compat.o: compat.c config.h
 # NOTE: I would rather use PYTHON_VERSION, but it doesn't work
 ifneq (@PYTHON_CPPFLAGS@,)
 all: _iguanaIR.$(SHAREEXT)
-install: install-python
+install: install-python install-reflasher
 .PHONY: install-python
 install-python:
 	install -D _iguanaIR.so $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.so
 	install -D iguanaIR.py $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
 
-uninstall: uninstall-python
+.PHONY: install-reflasher
+install-reflasher:
+	make -C reflasher install
+
+uninstall: uninstall-python uninstall-reflasher
 .PHONY: uninstall-python
 uninstall-python:
 	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.so
 	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
+
+.PHONY: uninstall-reflasher
+uninstall-reflasher:
+	make -C reflasher uninstall
 
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python $<
