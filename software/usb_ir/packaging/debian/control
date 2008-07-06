@@ -20,7 +20,7 @@ Package: iguanair-python
 Section: utils
 Architecture: any
 Pre-Depends: ${shlibs:Depends}
-Depends: iguanair (=${binary:Version), python (>= 2.4)
+Depends: iguanair (= ${binary:Version}), python (>= 2.4)
 Essential: no
 Description: This is the Python client bindings IguanaWorks USB IR
 	     driver.
@@ -29,7 +29,7 @@ Description: This is the Python client bindings IguanaWorks USB IR
 Package: iguanair-reflasher
 Section: utils
 Architecture: all
-Depends: ${shlibs:Depends},${misc:Depends}, iguanair-python (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, iguanair-python (= ${binary:Version})
 Essential: no
 Description: The program will reflash the IguanaWorks USB IR Transceiver with the
 		the latest firmware.

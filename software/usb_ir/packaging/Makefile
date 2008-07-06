@@ -37,6 +37,8 @@ ubuntu: ../debian
 	cd ..; dpkg-buildpackage -uc -us -rfakeroot -I.svn -Ipackaging/$(NAMEVER)* -Iwin32 -I*.deb -I*.rpm
 	mv ../../iguanair_* .
 	mv ../../iguanair-python_* .
+	mv ../../iguanair-reflasher_* .
+
 ../debian:
 	ln -s packaging/debian ..
 ubuntu-clean:

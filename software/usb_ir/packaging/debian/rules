@@ -42,7 +42,7 @@ install: build
 	dh_installdirs
 
 	# main install
-	make install DESTDIR=debian/tmp
+	make install DESTDIR=$(CURDIR)/debian/tmp
 
 	# move the python stuff into it's sub package
 	mkdir -p $(CURDIR)/debian/iguanair-python/usr/lib
@@ -51,9 +51,9 @@ install: build
 	#move the reflasher stuff into it's sub systm
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/bin
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher
-	mv ($CURDIR)/debian/tmp/usr/lib/hex $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanaIR-reflasher/
-	mv ($CURDIR)/debian/tmp/usr/lib/update-usb $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher/
-	ln -s $(CURDIR)/debian/iguanair-reflasher/usr/lib/update-usb $(CURDIR)/debian/iguanair-reflasher/usr/bin/iguanair-reflasher
+	mv $(CURDIR)/debian/tmp/usr/lib/iguanaIR-reflasher/hex $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanaIR-reflasher/
+	mv $(CURDIR)/debian/tmp/usr/lib/iguanaIR-reflasher/upgrade-usb $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher/
+#	ln -s $(CURDIR)/debian/iguanair-reflasher/usr/lib/u123pdate-usb $(CURDIR)/debian/iguanair-reflasher/usr/bin/iguanair-reflasher
 
 	
 
