@@ -7,6 +7,7 @@ Standards-Version: 3.7.2.2
 
 Package: iguanair
 Architecture: any
+Section: utils
 Pre-Depends: ${shlibs:Depends}
 Depends: udev (>= 0.99), libusb-0.1-4 (>= 0.1.10)
 Essential: no
@@ -16,10 +17,21 @@ Description: This is the IguanaWorks USB IR daemon/driver and
              USB IR device. Includes software for use with lirc.
 
 Package: iguanair-python
-Section: utildevel
+Section: utils
 Architecture: any
 Pre-Depends: ${shlibs:Depends}
-Depends: iguanair, python (>= 2.4)
+Depends: iguanair (=${binary:Version), python (>= 2.4)
 Essential: no
 Description: This is the Python client bindings IguanaWorks USB IR
 	     driver.
+
+
+Package: iguanair-reflasher
+Section: utils
+Architecture: any
+Depends: ${shlibs:Depends},${misc:Depends}, iguanair-python (= ${binary:Version})
+Essential: no
+Description: The program will reflash the IguanaWorks USB IR Transceiver with the
+		the latest firmware.
+
+

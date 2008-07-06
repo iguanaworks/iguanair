@@ -48,6 +48,16 @@ install: build
 	mkdir -p $(CURDIR)/debian/iguanair-python/usr/lib
 	mv $(CURDIR)/debian/tmp/usr/lib/python* $(CURDIR)/debian/iguanair-python/usr/lib
 
+	#move the reflasher stuff into it's sub systm
+	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/bin
+	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher
+	mv ($CURDIR)/debian/tmp/usr/lib/hex $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanaIR-reflasher/
+	mv ($CURDIR)/debian/tmp/usr/lib/update-usb $(CURDIR)/debian/iguanair-reflasher/usr/lib/iguanair-reflasher/
+	ln -s $(CURDIR)/debian/iguanair-reflasher/usr/lib/update-usb $(CURDIR)/debian/iguanair-reflasher/usr/bin/iguanair-reflasher
+
+	
+
+
 
 
 binary-indep:	build install
