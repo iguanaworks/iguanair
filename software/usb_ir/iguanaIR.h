@@ -56,10 +56,10 @@ enum
 {
     /* Let the client and daemon check their versions.  should be the
        first thing sent by the client. */
-    IG_EXCH_VERSIONS = 0xFE,
+    IG_EXCH_VERSIONS = 0xFE, /* internal to client/daemon */
 
     /* used in response packets */
-    IG_DEV_ERROR      = 0x00,
+    IG_DEV_ERROR = 0x00,
 
     /* FILE:loader.inc bootloader functions */
     IG_DEV_GETVERSION  = 0x01,
@@ -87,6 +87,8 @@ enum
     IG_DEV_EXECUTE      = 0x1F,
     IG_DEV_GETID        = 0x20, /* internal to client/daemon */
     IG_DEV_SETID        = 0x21, /* internal to client/daemon */
+    IG_DEV_IDSOFF       = 0x22, /* internal to client/daemon */
+    IG_DEV_IDSON        = 0x23, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,

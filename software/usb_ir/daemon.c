@@ -129,7 +129,8 @@ static struct poptOption options[] =
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
 
     /* iguanaworks specific options */
-    { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
+    { "no-ids", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
+    { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "DEPRECATED: same as --no-ids", NULL },
     { "receive-timeout", '\0', POPT_ARG_INT, &recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
     { "send-timeout", '\0', POPT_ARG_INT, &sendTimeout, 0, "Specify the device send timeout.", "timeout" },
 

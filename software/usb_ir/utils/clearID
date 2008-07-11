@@ -1,0 +1,55 @@
+#!/usr/bin/python -tt
+
+import warnings
+#import traceback
+#import subprocess
+#import time
+import sys
+import re
+
+import iguanaIR
+
+def deviceTransaction(type, data = '', quiet = True):
+    retval = False
+    req = iguanaIR.createRequest(type, data)
+    if not iguanaIR.writeRequest(req, _conn):
+        if not quiet:
+            print 'Failed to write packet. %s\n' % _conn
+    else:
+        resp = iguanaIR.readResponse(_conn, 3000)
+        if resp is None:
+            if not quiet:
+                print "No response received.\n"
+        elif type == iguanaIR.IG_DEV_GETVERSION:
+            if not iguanaIR.responseIsError(resp):
+                data = iguanaIR.removeData(resp)
+                retval = ord(data[0]) + (ord(data[1]) << 8)
+        elif iguanaIR.responseIsError(resp):
+            if not quiet:
+                print 'Error response code: 0x%s\n' % iguanaIR.code(resp)
+        elif type == iguanaIR.IG_DEV_IDSOFF or \
+             type == iguanaIR.IG_DEV_IDSON or \
+             type == iguanaIR.IG_DEV_SETID:
+            retval = True
+        else:
+            retval = iguanaIR.removeData(resp)
+
+    return retval
+
+_conn = iguanaIR.connect('0')
+if _conn >= 0:
+    print 'Found device...'
+    if deviceTransaction(iguanaIR.IG_DEV_IDSOFF):
+        print 'Please unplug and replug the device, then press enter.'
+
+        sys.stdin.readline()
+        _conn = iguanaIR.connect('0')
+        if deviceTransaction(iguanaIR.IG_DEV_SETID, ''):
+            print 'The id has been cleared.'
+        else:
+            print 'Failed to clear the id.'
+
+        if not deviceTransaction(iguanaIR.IG_DEV_IDSON):
+            print 'Please restart the Iguanaworks daemon.'
+else:
+    print 'Failed to find device.'

@@ -187,6 +187,16 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
 
+    case IG_DEV_IDSOFF:
+        readLabels = false;
+        retval = true;
+        break;
+
+    case IG_DEV_IDSON:
+        readLabels = true;
+        retval = true;
+        break;
+
     case IG_DEV_SEND:
     {
         unsigned char *codes;
