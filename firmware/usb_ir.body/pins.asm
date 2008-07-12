@@ -37,8 +37,11 @@ has_gpios:
     ret
 
 pins_reset:
-    call has_gpios
-    jz reset_done
+    ; directly check the features since this is called during init and
+    ;    we don't want to return an error packet
+    call get_feature_list
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    jnz reset_done
 
     ; clear the data registers
     and REG[P0DATA], 0xF0

@@ -559,8 +559,8 @@ def reflashDevice(features):
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
         deviceTransaction(iguanaIR.IG_DEV_SETID, id)
 # TODO: removed because it was causing testing problems....
-#    else:
-#        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
+    else:
+        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
     if wrote and deviceVersion() < 0x0100:
         replugWarning()
