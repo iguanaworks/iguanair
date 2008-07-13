@@ -66,6 +66,7 @@ userSaysKeep = False
 userSaysKeepAll = False
 onlyOne = True
 defaultType = None
+devOK = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -145,6 +146,8 @@ while index < len(sys.argv):
     arg = sys.argv[index]
     if arg == "--blank-pages":
         fullFlash = True
+    elif arg == "--devel-ok":
+        devOK = True
     elif arg == "-h" or arg == "--help":
         printUsage()
     elif arg == "--loader":
@@ -502,7 +505,7 @@ def findHexFile(type, target = None, mustMatch = True):
                 latest = hex
                 break
     else:
-        if target is None:
+        if target is None and devOK:
             best = glob.glob(os.path.join(sys.path[0],
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
