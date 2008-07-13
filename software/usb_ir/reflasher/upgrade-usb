@@ -502,9 +502,11 @@ def findHexFile(type, target = None, mustMatch = True):
                 latest = hex
                 break
     else:
-        best = glob.glob(os.path.join(sys.path[0], 'hex', '%s-0.hex' % type))
-        if len(best) == 1 and checkFileExists(best[0]):
-            latest = best[0]
+        if target is None:
+            best = glob.glob(os.path.join(sys.path[0],
+                                          'hex', '%s-0.hex' % type))
+            if len(best) == 1 and checkFileExists(best[0]):
+                latest = best[0]
 
     if latest is None and target is not None and mustMatch:
         message(LOG_FATAL, "Failed to find %s version %d\n" % (type, target))

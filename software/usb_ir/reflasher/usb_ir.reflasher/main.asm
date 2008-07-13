@@ -86,8 +86,6 @@ main_recv:
 	jz main_getversion
 	cmp A, CTL_WRITEBLOCK ; program a block of flash
 	jz main_prog
-	cmp A, CTL_CHECKSUM   ; checksum block of flash
-	jz main_chksum
 	cmp A, CTL_RESET      ; reset command
 	jz main_reset
 
@@ -164,21 +162,6 @@ main_prog:
 
   main_prog_done:
     jmp main_loop ; read the next packet
-
-; checksum an individual page much like the ssc checksum function
-main_chksum:
-    mov [tmp3], [control_pkt + CDATA]
-    call sum_page
-
-    ; return the checksum to the PC with the KEY1/KEY2 values
-    mov [control_pkt + CCODE], CTL_CHECKSUM
-    mov [control_pkt + CDATA + 0], [tmp1]
-    mov [control_pkt + CDATA + 1], [tmp2]
-    mov X, CTL_BASE_SIZE + 4
-    lcall write_control_body
-
-    ; read the next packet
-    jmp main_loop
 
 main_reset:
 	lcall USB_Stop ; do this first, or we loop sending 0 length packets....
