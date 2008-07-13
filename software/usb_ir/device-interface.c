@@ -81,8 +81,8 @@ static versionedType types[] =
     {0x101, 0, {IG_DEV_SETPINS,    CTL_TODEV,   2,          true, NO_PAYLOAD}},
 
     /* 1 byte per pin, in the register format */
-    {0, 3, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 8}},
-    {0, 3, {IG_DEV_SETPINCONFIG, CTL_TODEV, 8,          true, NO_PAYLOAD}},
+    {0, 0x003, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 8}},
+    {0, 0x003, {IG_DEV_SETPINCONFIG, CTL_TODEV, 8,          true, NO_PAYLOAD}},
     {0x101, 0, {IG_DEV_GETPINCONFIG, CTL_TODEV, NO_PAYLOAD, true, 8}},
     {0x101, 0, {IG_DEV_SETPINCONFIG, CTL_TODEV, 8,          true, NO_PAYLOAD}},
     {0, 0x003, {IG_DEV_GETCONFIG0,   CTL_TODEV, NO_PAYLOAD, true, 4}},
@@ -92,19 +92,22 @@ static versionedType types[] =
 
     /* supporting functions */
     {0, 0, {IG_DEV_GETBUFSIZE,  CTL_TODEV,   NO_PAYLOAD,  true,  1}},
-    {0, 0, {IG_DEV_WRITEBLOCK,  CTL_TODEV,   68,          true,  NO_PAYLOAD}},
+    {0, 0x1FF, {IG_DEV_WRITEBLOCK,  CTL_TODEV,   68,      true,  NO_PAYLOAD}},
+    {0x200, 0, {IG_DEV_WRITEBLOCK,  CTL_TODEV,   68,      true,  2}},
+    {0x200, 0, {IG_DEV_CHECKSUM,    CTL_TODEV,   1,       true,  2}},
     {0, 0, {IG_DEV_EXECUTE,     CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {2, 2, {IG_DEV_PINBURST,    CTL_TODEV,   64,          true,  NO_PAYLOAD}},
     {3, 0, {IG_DEV_PINBURST,    CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_GETID,       CTL_TODEV,   NO_PAYLOAD,  true,  12}},
-    {0, 0, {IG_DEV_SETID,       CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
+    {0, 0x1FF, {IG_DEV_SETID,   CTL_TODEV,   ANY_PAYLOAD, true,  NO_PAYLOAD}},
+    {0x200, 0, {IG_DEV_SETID,   CTL_TODEV,   ANY_PAYLOAD, true,  2}},
     {0, 0, {IG_DEV_IDSOFF,      CTL_TODEV,   NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_IDSON,       CTL_TODEV,   NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
-    {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD,  true,  4}},
-    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,           true,  4}},
+    {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD, true,  4}},
+    {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,          true,  4}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,     CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -193,10 +196,22 @@ static packetType* findTypeEntry(unsigned char code, uint16_t version)
     unsigned int x;
 
     for(x = 0; types[x].type.code != IG_DEV_ANYCODE; x++)
+    {
+/*
+        if (types[x].type.code == code)
+            fprintf(stderr, "---- 0x%x 0x%x, 0x%x 0x%x\n", code, version, types[x].start, types[x].end);
+*/
+
         if (types[x].type.code == code &&
             types[x].start <= version &&
             (types[x].end >= version || types[x].end == 0))
+        {
+/*
+            fprintf(stderr, "---- 0x%x 0x%x, 0x%x 0x%x\n", code, version, types[x].start, types[x].end);
+*/
             return &(types[x].type);
+        }
+    }
 
     return NULL;
 }
@@ -375,8 +390,6 @@ bool checkVersion(iguanaDev *idev)
             idev->version = (response->data[1] << 8) + response->data[0];
 
             message(LOG_INFO, "Found device version 0x%x\n", idev->version);
- 
-
 
             /* ensure we have an acceptable version by checking a hard
                coded mechanism to see if the version is supported.
@@ -386,7 +399,7 @@ bool checkVersion(iguanaDev *idev)
             */
             if ((idev->version >= 1 && idev->version <= 4) ||
                 idev->version == 0xFF00 ||
-                (idev->version >= 0x0100 && idev->version < 0x0200))
+                (idev->version >= 0x0100 && idev->version < 0x0300))
                 retval = true;
             else
                 message(LOG_ERROR,
@@ -621,7 +634,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                                 "Bad ack for send: 0x%x != 0x%x\n",
                                 pos->code, request->code);
                     else if (! payloadMatch(type->inData, pos->dataLen))
-                        message(LOG_ERROR, "Response size does not match specification (%d != %d)\n", pos->dataLen, type->inData);
+                        message(LOG_ERROR, "Response size does not match specification (version 0x%x: %d != %d)\n", idev->version, pos->dataLen,type->inData);
                     else
                     {
                         unsigned int difference;

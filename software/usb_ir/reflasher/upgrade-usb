@@ -310,8 +310,12 @@ def appendPage(start, page, pages):
     if page:
         for x in page:
             if x != '30':
-                pages.append({ 'start' : start,
-                               'bytes' : page })
+                chksum = 0
+                for x in page:
+                    chksum += int(x, 16)
+                pages.append({ 'start'  : start,
+                               'bytes'  : page,
+                               'chksum' : chksum })
                 break
 
 def readPages(input):
@@ -410,8 +414,15 @@ def writePagesToDevice(pages):
         sys.stdout.flush()
 
         # write the page to the device
-        if deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data']) is None:
+        result = deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data'])
+        if result is None:
             message(LOG_FATAL, "deviceTransaction failed.\n")
+        elif len(result) > 0:
+            chksum = 0
+            for x in struct.unpack('B' * len(result), result):
+                chksum = (chksum << 8) + x
+            if chksum != page['chksum']:
+                message(LOG_WARN, "checksum does not match: 0x%x != 0x%x on page %s\n" % (chksum, page['chksum'], page['start'] / 64))
 
         # if we're in an older device delay and reconnect
         if version <= 4:
@@ -702,8 +713,6 @@ pulse 448
 
     deviceTransaction(iguanaIR.IG_DEV_SEND, data)
 
-
-
 # find the file names to fufill the version requirements
 if targetVersion is not None:
     targetVersion = int(targetVersion, 0)
@@ -831,7 +840,8 @@ What kind of device is plugged in?
         if ((version >> 8) == 0 or (version & 0xFF) == 0) and \
            version != 3 and \
            version != 4:
-            message(LOG_ERROR, "This script cannot test a version %s device.\n" % version)
+            message(LOG_ERROR,
+                    "This script cannot test a version %s device.\n" % version)
             continue
 
         message(LOG_NORMAL, "Checking receiver.\n")

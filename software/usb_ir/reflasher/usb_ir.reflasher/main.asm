@@ -103,6 +103,25 @@ main_getversion:
 	lcall write_control_body
 	jmp main_loop
 
+; compute the actual checksum for a page
+sum_page:
+    ; read a page of flash
+    mov A, 0x01 ; read block code
+    call exec_ssc
+
+    ; compute a very simple checksum
+    mov X, FLASH_BLOCK_SIZE
+    mov [tmp1], 0
+    mov [tmp2], 0
+  mcsum_loop:
+    dec X
+    mov A, [X + buffer]
+    add [tmp2], A ; add to the low byte
+    adc [tmp1], 0 ; sum the overflows in the high byte
+    mov A, X
+    jnz mcsum_loop
+    ret
+
 main_prog:
 	mov [tmp3], [control_pkt + CDATA]           ; save the flash block address
 	mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; set up to read right number of bytes
@@ -110,9 +129,9 @@ main_prog:
 
 	; protect the first 48 pages with a special code
 	cmp [control_pkt + CDATA + 1], MAGIC_WRITE_BYTE
-    jz ack_then_write
+    jz write_page
     cmp [tmp3], 48
-    jnc ack_then_write
+    jnc write_page
     ; throw an error
 	mov [control_pkt + CCODE], CTL_INVALID_ARG
 	mov X, CTL_BASE_SIZE
@@ -120,61 +139,46 @@ main_prog:
 	jmp main_prog_done
 
 	; ack the receive
-  ack_then_write:
-	mov [control_pkt + CCODE], CTL_WRITEBLOCK
-	mov X, CTL_BASE_SIZE
-	lcall write_control_body
-
-	; wait for ack to go through so that the control_pkt buffer is unused
-	lcall wait_for_IN_ready_body
-
+  write_page:
     ; disable ints to avoid race condition on page 0
     and F, 0xFE
-        
-	; do a block erase
-	mov A, 0x03 ;erase block code
-	call exec_ssc
 
-	;now set up the parameter block for the SROM call
-	mov A, 0x02 ;write block code
-	call exec_ssc
+    ; do a block erase
+    mov A, 0x03 ;erase block code
+    call exec_ssc
+
+    ; now set up the parameter block for the SROM call
+    mov A, 0x02 ;write block code
+    call exec_ssc
 
     ; re-enable interrupts
     or F, 0x01
-        
+
+    ; get a checksum done
+    call sum_page
+    mov [control_pkt + CCODE], CTL_WRITEBLOCK
+    mov [control_pkt + CDATA + 0], [tmp1]
+    mov [control_pkt + CDATA + 1], [tmp2]
+    mov X, CTL_BASE_SIZE + 2
+    lcall write_control_body
+
   main_prog_done:
-	jmp main_loop ; read the next packet
+    jmp main_loop ; read the next packet
 
 ; checksum an individual page much like the ssc checksum function
 main_chksum:
-	; read a page of flash
-	mov [tmp3], [control_pkt + CDATA]
-	mov A, 0x01 ;read block code
-	call exec_ssc
+    mov [tmp3], [control_pkt + CDATA]
+    call sum_page
 
-	; compute a very simple checksum
-	mov X, FLASH_BLOCK_SIZE
-	mov [tmp1], 0
-	mov [tmp2], 0
-  mcsum_loop:
-	dec X
-	mov A, [X + buffer]
-	add [tmp2], A ; add to the low byte
-	adc [tmp1], 0 ; sum the overflows in the high byte
-	mov A, X
-	jnz mcsum_loop
+    ; return the checksum to the PC with the KEY1/KEY2 values
+    mov [control_pkt + CCODE], CTL_CHECKSUM
+    mov [control_pkt + CDATA + 0], [tmp1]
+    mov [control_pkt + CDATA + 1], [tmp2]
+    mov X, CTL_BASE_SIZE + 4
+    lcall write_control_body
 
-	; return the checksum to the PC with the KEY1/KEY2 values
-	mov [control_pkt + CCODE], CTL_CHECKSUM
-	mov [control_pkt + CDATA + 0], [tmp1]
-	mov [control_pkt + CDATA + 1], [tmp2]
-	mov [control_pkt + CDATA + 2], [KEY2]
-	mov [control_pkt + CDATA + 3], [KEY1]
-	mov X, CTL_BASE_SIZE + 4
-	lcall write_control_body
-
-	; read the next packet
-	jmp main_loop
+    ; read the next packet
+    jmp main_loop
 
 main_reset:
 	lcall USB_Stop ; do this first, or we loop sending 0 length packets....
