@@ -418,7 +418,7 @@ def writePagesToDevice(pages):
 
         # write the page to the device
         result = deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data'])
-        if result is None:
+        if result is None or result is False:
             message(LOG_FATAL, "deviceTransaction failed.\n")
         elif len(result) > 0:
             chksum = 0

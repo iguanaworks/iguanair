@@ -1,1 +1,1 @@
-../../../../firmware/usb_ir.loader/boot.tpl
+../../../../firmware/usb_ir.loader-2/boot.tpl

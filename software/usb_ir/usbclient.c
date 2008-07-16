@@ -167,11 +167,8 @@ bool updateDeviceList(usbDeviceList *list)
 {
     struct usb_bus *bus;
     struct usb_device *dev;
+    unsigned int pos, count = 0, newCount = 0;
     usbDevice *devPos;
-    unsigned int pos, count = 0;
-
-    devPos = (usbDevice*)firstItem(&list->deviceList);
-    setError(devPos, NULL);
 
     /* initialize usb */
     usb_init();
@@ -189,13 +186,14 @@ bool updateDeviceList(usbDeviceList *list)
                     dev->descriptor.idProduct == list->ids[pos].idProduct)
                 {
                     int busIndex;
-                    count++;
 
                     /* couldn't find the bus index as a number anywhere */
                     busIndex = atoi(bus->dirname);
 
                     /* found a device instance, now find position in
                      * current list */
+                    devPos = (usbDevice*)firstItem(&list->deviceList);
+                    setError(devPos, NULL);
                     while(devPos != NULL &&
                           (devPos->busIndex < busIndex ||
                            (devPos->busIndex == busIndex &&
@@ -257,8 +255,9 @@ bool updateDeviceList(usbDeviceList *list)
                             if (errno == EBUSY)
                                 message(LOG_ERROR,
                                         "Is igdaemon already running?\n");
+                            message(LOG_ERROR, "  trying to claim usb:%d.%d != usb:%d:%d\n", devPos->busIndex, devPos->devIndex, busIndex, DEVNUM(dev));
                             printError(LOG_ERROR,
-                                       "updateDeviceList failed", newDev);
+                                       "  updateDeviceList failed", newDev);
 
                             if (newDev->device != NULL)
                                 usb_close(newDev->device);
@@ -267,10 +266,16 @@ bool updateDeviceList(usbDeviceList *list)
                         }
                         else if (list->newDev != NULL)
                             list->newDev(newDev);
+
+                        /* count how many devices we added */
+                        newCount++;
                     }
+
+                    /* keep a count of the number of devices */
+                    count++;
                 }
 
-    if (wouldOutput(LOG_DEBUG))
+    if (wouldOutput(LOG_DEBUG) && newCount > 0)
     {
         unsigned int index = 0;
 
