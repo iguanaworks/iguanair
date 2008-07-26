@@ -47,6 +47,18 @@ ubuntu-clean:
 	rm -f iguanair*.changes
 	rm -f iguanair*.tar.gz
 	rm -f iguanair*.dsc
+	rm -f debian/iguanair.postinst
+	rm -f debian/iguanair-reflasher.debhelper.log
+	rm -f debian/iguanair.postrm
+	rm -f debian/iguanair.prerm
+	rm -fr debian/iguanair-reflasher
+	rm -fr debian/iguanair-python
+	rm -fr debian/tmp
+	rm -f debian/substvars
+	rm -f debian/debhelper.log
+	rm -f debian/iguanair-python.substvars
+	rm -f debian/iguanair-python.debhelper.log
+	rm -f debian/files	
 
 debian: ubuntu
 debian-clean: ubuntu-clean
