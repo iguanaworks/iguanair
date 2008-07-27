@@ -170,9 +170,11 @@ forcereload()
 # See how we were called.
 case "$1" in
     start)
-        if type udevtrigger > /dev/null 2>&1; then
-            udevtrigger
-        fi
+# NOTE: was necessary on old versions of udev.... why? but now causes weird
+#       keyboard and similar issues on F9 (and F8 has been reported)
+#        if type udevtrigger > /dev/null 2>&1; then
+#            udevtrigger
+#        fi
         start
         ;;
     stop)
