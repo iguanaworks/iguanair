@@ -255,7 +255,7 @@ bool updateDeviceList(usbDeviceList *list)
                             if (errno == EBUSY)
                                 message(LOG_ERROR,
                                         "Is igdaemon already running?\n");
-                            message(LOG_ERROR, "  trying to claim usb:%d.%d != usb:%d:%d\n", devPos->busIndex, devPos->devIndex, busIndex, DEVNUM(dev));
+                            message(LOG_ERROR, "  trying to claim usb:%d:%d\n", busIndex, DEVNUM(dev));
                             printError(LOG_ERROR,
                                        "  updateDeviceList failed", newDev);
 
