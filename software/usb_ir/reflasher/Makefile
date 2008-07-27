@@ -9,7 +9,7 @@ dev devel:
 install:
 	install -d $(DESTDIR)/usr/lib/$(NAME)/hex
 	install upgrade-usb $(DESTDIR)/usr/lib/$(NAME)
-	install hex/*.hex $(DESTDIR)/usr/lib/$(NAME)/hex
+	install $(filter-out hex/loader-0.hex hex/body-0.hex, $(wildcard hex/*.hex)) $(DESTDIR)/usr/lib/$(NAME)/hex
 	install -d $(DESTDIR)/usr/bin
 	ln -s ../lib/$(NAME)/upgrade-usb $(DESTDIR)/usr/bin/$(NAME)
 
