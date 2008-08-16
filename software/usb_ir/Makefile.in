@@ -45,7 +45,7 @@ all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
 libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o compat.o
-	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
+	$(CC) $(SHAREARG) -Wl,-soname=$@ $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o protocol-versions.o
