@@ -2,14 +2,13 @@ Source: iguanair
 Section: utils
 Priority: optional
 Maintainer: IguanaWorks [support@iguanaworks.net]
-Build-Depends: debhelper (>=5), libpopt-dev (>=1.10), libusb-dev (>=0.1.10)
+Build-Depends: debhelper (>=5), libpopt-dev (>=1.10), libusb-dev (>=0.1.11), python-dev (>=2.4)
 Standards-Version: 3.7.2.2
 
 Package: iguanair
 Architecture: any
 Section: utils
-Pre-Depends: ${shlibs:Depends}
-Depends: udev (>= 0.99), libusb-0.1-4 (>= 0.1.10), libpopt0 (>=1.10)
+Depends: libc6 (>=2.0), udev (>= 0.99), libusb-0.1-4 (>= 0.1.11), libpopt0 (>=1.10)
 Essential: no
 Recommends: lirc
 Description: This is the IguanaWorks USB IR daemon/driver and
@@ -19,8 +18,7 @@ Description: This is the IguanaWorks USB IR daemon/driver and
 Package: iguanair-python
 Section: utils
 Architecture: any
-Pre-Depends: ${shlibs:Depends}
-Depends: iguanair (= ${binary:Version}), python (>= 2.4)
+Depends: iguanair (= ${binary:Version}), ${shlibs:Depends}
 Essential: no
 Description: This is the Python client bindings IguanaWorks USB IR
 	     driver.
@@ -29,7 +27,7 @@ Description: This is the Python client bindings IguanaWorks USB IR
 Package: iguanair-reflasher
 Section: utils
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, iguanair-python (= ${binary:Version})
+Depends: iguanair-python (= ${binary:Version})
 Essential: no
 Description: The program will reflash the IguanaWorks USB IR Transceiver with the
 		the latest firmware.
