@@ -18,8 +18,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
 
-SHAREARG = -shared
 SHAREEXT = so
+SHAREARG = -shared -Wl,-soname=libiguanaIR.$(SHAREEXT)
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
@@ -45,7 +45,7 @@ all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
 libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o compat.o pipes.o
-	$(CC) $(SHAREARG) -Wl,-soname=$@ $(LDFLAGS) $^ -o $@
+	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o
