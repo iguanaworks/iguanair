@@ -13,7 +13,7 @@ mandir = $(prefix)/man/man1
 
 CC = @CC@
 CPPFLAGS = @CPPFLAGS@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ -fvisibility=hidden -DIGUANAIR_EXPORTS
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
@@ -44,14 +44,14 @@ endif
 all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
-libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o compat.o
+libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 	$(CC) $(SHAREARG) -Wl,-soname=$@ $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
-          list.o protocol-versions.o
+          list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o
 	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread -L. -liguanaIR -o $@
 
-igclient: client.o list.o
+igclient: client.o list.o support.o compat.o
 	$(CC) $(LDFLAGS) $^ -lpopt -L. -liguanaIR -o $@
 
 %.o: %.c Makefile iguanaIR.h

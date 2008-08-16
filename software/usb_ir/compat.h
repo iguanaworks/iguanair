@@ -48,8 +48,8 @@
     /* thread defines */
     #define THREAD_PTR HANDLE
     #define INVALID_THREAD_PTR NULL
-    IGUANAIR_API bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
-    IGUANAIR_API void joinThread(THREAD_PTR *handle, void **exitVal);
+    bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
+    void joinThread(THREAD_PTR *handle, void **exitVal);
     #define CURRENT_THREAD_PTR OpenThread(THREAD_ALL_ACCESS, FALSE, GetCurrentThreadId())
 
     /* lock defines */
@@ -94,6 +94,6 @@
 
 #endif
 
-IGUANAIR_API uint64_t microsSinceX();
+uint64_t microsSinceX();
 
 #endif

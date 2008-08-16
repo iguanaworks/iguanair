@@ -15,9 +15,9 @@
 #define _PIPES_
 
 #ifdef WIN32
-  IGUANAIR_API bool createPipePair(PIPE_PTR *pair);
-  IGUANAIR_API int readPipe(PIPE_PTR fd, void *buf, int count);
-  IGUANAIR_API int writePipe(PIPE_PTR fd, const void *buf, int count);
+  bool createPipePair(PIPE_PTR *pair);
+  int readPipe(PIPE_PTR fd, void *buf, int count);
+  int writePipe(PIPE_PTR fd, const void *buf, int count);
   #define closePipe CloseHandle
   PIPE_PTR acceptClient(PIPE_PTR *server);
 
