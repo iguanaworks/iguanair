@@ -40,14 +40,14 @@
 #endif
 
 /* functions dealing with the server sockets */
-IGUANAIR_API void socketName(const char *name, char *buffer, unsigned int length);
+void socketName(const char *name, char *buffer, unsigned int length);
 PIPE_PTR connectToPipe(const char *name);
 
 /* reads with timeouts */
-IGUANAIR_API int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
+int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
 
 /* used for notification of packet arrival */
-IGUANAIR_API int notified(PIPE_PTR fd, int timeout);
-IGUANAIR_API bool notify(PIPE_PTR fd);
+int notified(PIPE_PTR fd, int timeout);
+bool notify(PIPE_PTR fd);
 
 #endif
