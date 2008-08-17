@@ -45,8 +45,8 @@ install: build
 	make install DESTDIR=$(CURDIR)/debian/tmp
 
 	#add symlink for library
-	ln -s libiguanaIR.so libiguanaIR.so.0
-	mv libiguanaIR.so.0 $(CURDIR)/debian/tmp/usr/lib/
+	#ln -s libiguanaIR.so libiguanaIR.so.0
+	#mv libiguanaIR.so.0 $(CURDIR)/debian/tmp/usr/lib/
 
 	# move the python stuff into it's sub package
 	mkdir -p $(CURDIR)/debian/iguanair-python/usr/lib
