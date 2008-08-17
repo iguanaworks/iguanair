@@ -18,8 +18,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
 
-SHAREEXT = so
-SHAREARG = -shared -Wl,-soname=libiguanaIR.$(SHAREEXT)
+SHAREEXT = so.0
+SHAREARG = -shared -Wl,-soname=libiguanaIR.$(SHAREEXT),--version-script=ig.ver
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
@@ -66,7 +66,7 @@ all: _iguanaIR.$(SHAREEXT)
 install: install-python install-reflasher
 .PHONY: install-python
 install-python:
-	install -D _iguanaIR.so $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.so
+	install -D _iguanaIR.$(SHAREEXT) $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.$(SHAREEXT)
 	install -D iguanaIR.py $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
 
 .PHONY: install-reflasher
@@ -76,7 +76,7 @@ install-reflasher:
 uninstall: uninstall-python uninstall-reflasher
 .PHONY: uninstall-python
 uninstall-python:
-	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.so
+	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.$(SHAREEXT)
 	rm -f $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
 
 .PHONY: uninstall-reflasher
