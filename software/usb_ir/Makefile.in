@@ -44,13 +44,8 @@ endif
 all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
-<<<<<<< .mine
-libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o pipes.o compat.o
-	$(CC) $(SHAREARG) -Wl,-soname=$@.0 $(LDFLAGS) $^ -o $@
-=======
 libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
->>>>>>> .r759
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o
