@@ -118,6 +118,7 @@ ifneq ($(SYMEXT),)
 install: install-symlink
 .PHONY: install-symlink
 install-symlink:
+	install -d $(DESTDIR)/usr/$(LIBDIR)
 	ln -s libiguanaIR.$(SHAREEXT) \
 	      $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SYMEXT)
 endif
