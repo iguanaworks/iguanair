@@ -1,9 +1,15 @@
+iguanair (0.98.1-1) unstable; urgency=low
+
+  * Upgrade to the 0.98 source.
+  * Fixed some debian specific packaging dependencies
+
+ -- IguanaWorks Support <support@iguanaworks.net>  Mon, 18 Aug 2008 20:42:17 -0600
+
 iguanair (0.97.1-1) unstable; urgency=low
 
   * Upgraded to the 0.97 source (fixing udev)
 
- -- IguanaWorks Support <support@iguanaworks.net>  Fri, 27 Mar 2008 23:28:45 +1000
-
+ -- IguanaWorks Support <support@iguanaworks.net>  Mon, 18 Aug 2008 20:35:47 -0600
 
 iguanair (0.95.1-1) unstable; urgency=low
 
