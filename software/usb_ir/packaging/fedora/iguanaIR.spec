@@ -87,7 +87,7 @@ fi
 %defattr(-,root,root,-)
 %doc AUTHORS LICENSE WHY protocols.txt README.txt notes.txt ChangeLog
 /usr/bin/*
-%{_libdir}/lib%{name}.so
+%{_libdir}/lib%{name}.so*
 /etc/init.d/%{name}
 %config /etc/default/%{name}
 # TODO: autoconf must decide!

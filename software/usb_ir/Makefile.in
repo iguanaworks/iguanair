@@ -18,6 +18,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
 
+SYMEXT = so
 SHAREEXT = so.0
 SHAREARG = -shared -Wl,-soname=libiguanaIR.$(SHAREEXT),--version-script=ig.ver
 ifeq ($(shell uname -m),x86_64)
@@ -34,25 +35,28 @@ else
       CFLAGS += -fPIC
       CPPFLAGS += -I/sw/include
       LDFLAGS += -L/sw/lib
+      SYMEXT =
       SHAREARG = -dynamiclib
       SHAREEXT = dylib
     endif
   endif
 endif
 
+LIBNAME=libiguanaIR.$(SHAREEXT)
+
 .PHONY: all
 all: igclient igdaemon
 igclient igdaemon: libiguanaIR.$(SHAREEXT)
 
-libiguanaIR.$(SHAREEXT): iguanaIR.o support.o dataPackets.o compat.o pipes.o
+$(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o
-	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread -L. -liguanaIR -o $@
+	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread $(LIBNAME) -o $@
 
 igclient: client.o list.o support.o compat.o
-	$(CC) $(LDFLAGS) $^ -lpopt -L. -liguanaIR -o $@
+	$(CC) $(LDFLAGS) $^ -lpopt $(LIBNAME) -o $@
 
 %.o: %.c Makefile iguanaIR.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
@@ -90,7 +94,7 @@ iguanaIR_wrap.o: iguanaIR_wrap.c Makefile
 	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@
 
 _iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
-	$(CC) $(LDFLAGS) @PYTHON_LDFLAGS@ $(SHAREARG) $^ -L. -liguanaIR -o $@
+	$(CC) $(LDFLAGS) @PYTHON_LDFLAGS@ $(SHAREARG) $^ $(LIBNAME) -o $@
 endif
 
 # change ownership unless we're building an rpm
@@ -107,6 +111,15 @@ deluser:
 	/usr/sbin/userdel iguanair || true
 else
   SETOWNER=
+endif
+
+# install a non-versioned symlink
+ifneq ($(SYMEXT),)
+install: install-symlink
+.PHONY: install-symlink
+install-symlink:
+	ln -s libiguanaIR.$(SHAREEXT) \
+	      $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SYMEXT)
 endif
 
 .PHONY: install
