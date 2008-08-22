@@ -20,7 +20,8 @@ INSTALL = @INSTALL@
 
 SHAREEXT = so
 LIBNAME=libiguanaIR.$(SHAREEXT).0
-SHAREARG = -shared -Wl,-soname=$(LIBNAME),--version-script=ig.ver
+SHAREARG = -shared
+LINKARGS = -Wl,-soname=$(LIBNAME),--version-script=ig.ver
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
@@ -35,9 +36,10 @@ else
       CFLAGS += -fPIC
       CPPFLAGS += -I/sw/include
       LDFLAGS += -L/sw/lib
-      SHAREARG = -dynamiclib
       SHAREEXT = dylib
       LIBNAME=libiguanaIR.$(SHAREEXT)
+      SHAREARG = -dynamiclib
+      LINKARGS = 
     endif
   endif
 endif
@@ -48,7 +50,7 @@ all: igclient igdaemon
 igclient igdaemon: $(LIBNAME)
 
 $(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
-	$(CC) $(SHAREARG) $(LDFLAGS) $^ -o $@
+	$(CC) $(SHAREARG) $(LINKARGS) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
           list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o
