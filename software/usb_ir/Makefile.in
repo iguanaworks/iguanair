@@ -20,7 +20,7 @@ INSTALL = @INSTALL@
 
 SHAREEXT = so
 LIBNAME=libiguanaIR.$(SHAREEXT).0
-SHAREARG = -shared -Wl,-soname=libiguanaIR.$(SHVEREXT),--version-script=ig.ver
+SHAREARG = -shared -Wl,-soname=$(LIBNAME),--version-script=ig.ver
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
