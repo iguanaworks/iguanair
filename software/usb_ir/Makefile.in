@@ -156,7 +156,7 @@ uninstall:
 
 .PHONY: clean
 clean:
-	rm -f *~ *.o *iguanaIR.$(SHAREEXT) *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
+	rm -f *~ *.o *iguanaIR.$(SHAREEXT)* *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
 
 .PHONY: distclean
 distclean: clean
