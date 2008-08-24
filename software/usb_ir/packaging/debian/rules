@@ -68,7 +68,7 @@ binary-indep:	build install
 binary-arch:	build install
 	dh_testdir
 	dh_testroot
-#	dh_installdocs README* TODO
+	dh_installdocs AUTHORS LICENSE WHY protocols.txt README.txt notes.txt ChangeLog
 #	dh_installmanpages
 #	dh_installinfo doc/gzip.info
 	dh_installchangelogs ChangeLog

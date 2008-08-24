@@ -85,7 +85,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS LICENSE WHY protocols.txt README.txt notes.txt ChangeLog
+%doc AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog
 /usr/bin/*
 %{_libdir}/lib%{name}.so*
 /etc/init.d/%{name}
