@@ -425,7 +425,10 @@ def writePagesToDevice(pages):
             for x in struct.unpack('B' * len(result), result):
                 chksum = (chksum << 8) + x
             if chksum != page['chksum']:
-                message(LOG_WARN, "checksum does not match: 0x%x != 0x%x on page %s\n" % (chksum, page['chksum'], page['start'] / 64))
+                level = LOG_FATAL
+                if page == pages[-1]:
+                    level = LOG_WARN
+                message(level, "checksum does not match: 0x%x != 0x%x on page %s\n" % (chksum, page['chksum'], page['start'] / 64))
 
         # if we're in an older device delay and reconnect
         if version <= 4:
