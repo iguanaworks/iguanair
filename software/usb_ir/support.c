@@ -8,8 +8,8 @@
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
- * Distributed under the GPL version 2.
- * See LICENSE for license details.
+ * Distributed under the LGPL version 2.1.
+ * See LICENSE for license-LGPL details.
  */
 #include "iguanaIR.h"
 #include "compat.h"
