@@ -9,7 +9,7 @@
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the LGPL version 2.1.
- * See LICENSE for license-LGPL details.
+ * See LICENSE-LGPL for license details.
  */
 
 #include "iguanaIR.h"
