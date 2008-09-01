@@ -187,11 +187,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\compat.c"
+				>
+			</File>
+			<File
+				RelativePath="..\dataPackets.c"
+				>
+			</File>
+			<File
 				RelativePath="..\device-interface.c"
 				>
 			</File>
 			<File
 				RelativePath="..\list.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pipes.c"
 				>
 			</File>
 			<File
@@ -204,6 +216,10 @@
 			</File>
 			<File
 				RelativePath=".\service.c"
+				>
+			</File>
+			<File
+				RelativePath="..\support.c"
 				>
 			</File>
 			<File

@@ -14,13 +14,17 @@
 import sys
 import os
 
+import win32api
+
 exitval = 1
 if len(sys.argv) != 2:
     sys.stderr.write('Need a source directory')
 else:
     vars = {
         'dir' : sys.argv[1],
-        'version' : 'UNKNOWN'
+        'version' : 'UNKNOWN',
+        'pyver'   : '%d%d' % (sys.version_info[0], sys.version_info[1]),
+        'sys32'   : win32api.GetSystemDirectory()
     }
     ISSPath = 'iguanaIR.iss'
 
@@ -43,9 +47,11 @@ OutputBaseFilename=iguanaIR-%(version)s
 
 [Files]
 ; compiled from C sources
-Source: "%(dir)s/igdaemon.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/igclient.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/igdaemon.exe";  DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/igclient.exe";  DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/iguanaIR.dll";  DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/_iguanaIR.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/iguanaIR.py";   DestDir: "{app}"; Flags: ignoreversion
 
 ; popt libraries
 Source: "popt/popt1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -61,6 +67,12 @@ Source: "libusb-win32/iguanaIR.inf"; DestDir: "{app}"; Flags: ignoreversion
 Source: "libusb-win32/libusb0.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "libusb-win32/libusb0.sys"; DestDir: "{app}"; Flags: ignoreversion
 
+; python library
+Source: "%(sys32)s/python%(pyver)s.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+; embed the sub installer we need
+Source: "vcredist_x86.exe"; DestDir: "{app}"; Flags: ignoreversion deleteafterinstall
+
 ; stuff for the menus
 [Icons]
 Name: "{group}\IguanaIR Client"; Filename: "{app}\igclient.exe"
@@ -68,11 +80,11 @@ Name: "{group}\Uninstall IguanaIR"; Filename: "{uninstallexe}"
 
 ; install the daemon
 [Run]
+Filename: "{app}/vcredist_x86.exe"; Parameters: "/q"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--installinf"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--regsvc"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--startsvc"; Flags: runhidden
 ;Filename: "{app}/README.TXT"; Description: "View the README file"; Flags: postinstall shellexec skipifsilent
-;Filename: "{app}/MYPROG.EXE"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked
 
 ; remove the daemon on uninstall
 [UninstallRun]

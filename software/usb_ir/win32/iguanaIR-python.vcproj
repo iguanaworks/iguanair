@@ -2,10 +2,11 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="iguanaIR"
-	ProjectGUID="{B2CA1625-68B8-47B6-A3FA-71D0B635672E}"
+	Name="iguanaIR-python"
+	ProjectGUID="{6AADC9EB-0A7C-49B4-AEB1-398FF2A6A991}"
+	RootNamespace="iguanaIRpython"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
+	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
 		<Platform
@@ -17,16 +18,13 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Using swig to generate wrappers..."
-				CommandLine="c:\cygwin\bin\swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -43,15 +41,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;libusb-win32"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
+				AdditionalIncludeDirectories="c:\Python25\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IGUANAIRPYTHON_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
+				WarningLevel="3"
+				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -64,16 +61,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libusb.lib Ws2_32.lib"
-				OutputFile="$(OutDir)/iguanaIR.dll"
+				OutputFile="$(OutDir)/_iguanaIR.pyd"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="libusb-win32"
+				AdditionalLibraryDirectories="c:\Python25\libs"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/iguanaIR.pdb"
 				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/iguanaIR.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -100,16 +92,14 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Using swig to generate wrappers..."
-				CommandLine="c:\cygwin\bin\swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -125,12 +115,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;libusb-win32"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IGUANAIR_EXPORTS"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="c:\Python25\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IGUANAIRPYTHON_EXPORTS"
 				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="false"
+				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -144,17 +136,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libusb.lib Ws2_32.lib"
-				OutputFile="$(OutDir)/iguanaIR.dll"
+				OutputFile="$(OutDir)/_iguanaIR.pyd"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="libusb-win32"
+				AdditionalLibraryDirectories="c:\Python25\libs"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/iguanaIR.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -185,27 +173,11 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\compat.c"
-				>
-			</File>
-			<File
-				RelativePath="..\dataPackets.c"
-				>
-			</File>
-			<File
-				RelativePath="..\iguanaIR.c"
-				>
-			</File>
-			<File
-				RelativePath=".\pipes.c"
-				>
-			</File>
-			<File
-				RelativePath="..\support.c"
+				RelativePath="..\iguanaIR_wrap.c"
 				>
 			</File>
 		</Filter>
@@ -214,35 +186,13 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\compat.h"
-				>
-			</File>
-			<File
-				RelativePath="..\dataPackets.h"
-				>
-			</File>
-			<File
-				RelativePath=".\iguanaIR-export.h"
-				>
-			</File>
-			<File
-				RelativePath="..\iguanaIR.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pipes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\support.h"
-				>
-			</File>
 		</Filter>
-		<File
-			RelativePath="..\iguanaIR.i"
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-		</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
