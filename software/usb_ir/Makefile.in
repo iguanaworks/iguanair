@@ -162,7 +162,7 @@ clean:
 
 .PHONY: distclean
 distclean: clean
-	rm -f Makefile config.h
+	rm -f Makefile config.h config.status
 	make -C packaging clean
 
 .PHONY: cleanest
