@@ -313,12 +313,8 @@ def appendPage(start, page, pages):
     if page:
         for x in page:
             if x != '30':
-                chksum = 0
-                for x in page:
-                    chksum += int(x, 16)
                 pages.append({ 'start'  : start,
-                               'bytes'  : page,
-                               'chksum' : chksum })
+                               'bytes'  : page })
                 break
 
 def readPages(input):
@@ -421,6 +417,11 @@ def writePagesToDevice(pages):
         if result is None or result is False:
             message(LOG_FATAL, "deviceTransaction failed.\n")
         elif len(result) > 0:
+            chksum = 0
+            for x in page['bytes']:
+                chksum += int(x, 16)
+            page['chksum'] = chksum
+
             chksum = 0
             for x in struct.unpack('B' * len(result), result):
                 chksum = (chksum << 8) + x
