@@ -330,6 +330,14 @@ static char* getID(iguanaDev *idev)
     char *retval = NULL;
 
     request.code = IG_DEV_GETID;
+#if 1 /* support body versions 1 through 4 */
+    /* NOTE: a fake call because in some firmware the first body
+       command fails. */
+    if ((idev->version & 0xFF00) &&
+        (idev->version & 0x00FF) < 5)
+        deviceTransaction(idev, &request, &response);
+#endif
+
     if (! deviceTransaction(idev, &request, &response))
         message(LOG_INFO,
                 "Failed to get id.  Device may not have one assigned.\n");
