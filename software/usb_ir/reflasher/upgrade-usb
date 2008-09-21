@@ -376,11 +376,20 @@ def readPages(input):
 def preparePages(pages):
     # compute the iguana 'writeBlock' data for each page
     for page in pages:
+        # compute the checksum right before we need it
+        chksum = 0
+        for x in page['bytes']:
+            chksum += int(x, 16)
+        page['chksum'] = chksum
+
+        # construct 68 data bytes we need
         page['data'] = chr(page['start'] / 64)
         if UNSAFE:
-            page['data'] += chr(0x42) + chr(0) * 2
+            page['data'] += chr(0x42)
         else:
-            page['data'] += chr(0) * 3
+            page['data'] += chr(0)
+        page['data'] += chr(page['chksum'] / 0x100) + \
+                        chr(page['chksum'] % 0x100)
         for byte in page['bytes']:
             page['data'] += chr(int(byte, 16))
 
@@ -417,11 +426,6 @@ def writePagesToDevice(pages):
         if result is None or result is False:
             message(LOG_FATAL, "deviceTransaction failed.\n")
         elif len(result) > 0:
-            chksum = 0
-            for x in page['bytes']:
-                chksum += int(x, 16)
-            page['chksum'] = chksum
-
             chksum = 0
             for x in struct.unpack('B' * len(result), result):
                 chksum = (chksum << 8) + x

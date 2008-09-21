@@ -142,7 +142,9 @@ sum_page:
     ; read a page of flash
     mov A, 0x01 ; read block code
     call exec_ssc
+    ; fall through to sum the data in the buffer
 
+sum_in_buffer:
     ; compute a very simple checksum
     mov X, FLASH_BLOCK_SIZE
     mov [tmp1], 0
@@ -158,16 +160,39 @@ sum_page:
 
 main_prog:
     mov [tmp3], [control_pkt + CDATA]           ; save the flash block address
-    mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; set up to read right number of bytes
+    mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; read right number of bytes
     lcall read_buffer_body                      ; read the block
 
     ; protect the first 48 pages with a special code
     cmp [control_pkt + CDATA + 1], MAGIC_WRITE_BYTE
-    jz write_page
+    jz chk_if_need_chksum
     cmp [tmp3], 48
-    jnc write_page
+    jnc chk_if_need_chksum
     ; throw an error
     mov [control_pkt + CCODE], CTL_INVALID_ARG
+    mov X, CTL_BASE_SIZE
+    lcall write_control_body
+    jmp main_prog_done
+
+    ; check that the data in memory matches the checksum (if we have one)
+  chk_if_need_chksum:
+    cmp [control_pkt + CDATA + 2], 0
+    jnz chksum_page_data
+    cmp [control_pkt + CDATA + 3], 0
+    ; NOTE: double zeros won't be checked
+    jz write_page
+  chksum_page_data:
+    call sum_in_buffer          
+    mov A, [tmp1]
+    cmp A, [control_pkt + CDATA + 2]
+    jnz chksum_error
+    mov A, [tmp2]
+    cmp A, [control_pkt + CDATA + 3]
+    jz write_page
+
+    ; throw a checksum error (should never happen!)
+  chksum_error:
+    mov [control_pkt + CCODE], CTL_BAD_CHKSUM
     mov X, CTL_BASE_SIZE
     lcall write_control_body
     jmp main_prog_done
