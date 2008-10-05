@@ -168,7 +168,7 @@ main_prog:
     cmp [control_pkt + CDATA], 48
     jnc chk_if_need_chksum
 
-    ; throw an error
+  ; throw an error
   main_prog_invalid_arg:
     mov [control_pkt + CCODE], CTL_INVALID_ARG
     mov X, CTL_BASE_SIZE
@@ -183,7 +183,7 @@ main_prog:
     ; NOTE: double zero checksums won't be checked
     jz write_page
   chksum_page_data:
-    call sum_in_buffer          
+    call sum_in_buffer
     mov A, [tmp1]
     cmp A, [control_pkt + CDATA + 2]
     jnz chksum_error
@@ -204,11 +204,12 @@ main_prog:
     and F, 0xFE
 
     ; do a block erase
-    mov A, 0x03 ;erase block code
+    mov [tmp3], [control_pkt + CDATA]
+    mov A, 0x03   ; erase block code
     call exec_ssc
 
     ; now set up the parameter block for the SROM call
-    mov A, 0x02 ;write block code
+    mov A, 0x02   ; write block code
     call exec_ssc
 
     ; re-enable interrupts

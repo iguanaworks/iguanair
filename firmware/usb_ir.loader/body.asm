@@ -16,7 +16,7 @@
 
 include "loader.inc"
 
-VERSION_ID_LOW:  equ 0x00 ; firmware version ID low byte (code body)
+VERSION_ID_LOW:  equ 0x00 ; firmware version ID low byte (code body version)
 
 ; FUNCTION: body_main
 ;  API used by the loader to call into the body.
@@ -33,7 +33,21 @@ body_tcap_int_handler:
 
 body_twrap_int_handler: 
     reti
-        
+
+; we've discovered that we need a timeout on long reads, so co-opt
+; timer wrap to knock down a dedicated counter
+body_twrap_int_base:
+  ; if we're in the middle of a read then increment the timer wrap count
+    mov A, [loader_flags]
+    and A, FLAG_READING
+    jz btib_jmp_to_body
+    inc [tmp3]
+    reti
+
+  ; otherwise jump to the body twrap handler
+  btib_jmp_to_body:
+    ljmp body_twrap_int_handler
+
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
 area bodyentry (ROM, ABS, CON)
@@ -51,4 +65,4 @@ org body_tcap_int
     jmp body_tcap_int_handler
 
 org body_twrap_int
-    jmp body_twrap_int_handler
+    jmp body_twrap_int_base
