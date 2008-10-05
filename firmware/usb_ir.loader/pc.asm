@@ -26,6 +26,7 @@ include "loader.inc"
 export check_read_body
 export read_packet_body
 export read_buffer_body
+export read_buffer_body_real
 export wait_for_IN_ready_body
 export write_packet_body
 export read_control_body
@@ -88,8 +89,9 @@ read_packet_body:
 ; size is specified in control packet data byte 0
 ; returns 1 if read ok, 0 if read overflow
 read_buffer_body:
-    mov [buffer_ptr], buffer     ; reset to start of buffer
     mov A, [control_pkt + CDATA] ; get number of bytes to read
+read_buffer_body_real:
+    mov [buffer_ptr], buffer     ; reset to start of buffer
     jz rb_done                   ; if no data to read, we're done
     mov [tmp1], A                ; keep number of bytes left in tmp1
 

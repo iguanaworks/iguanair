@@ -143,7 +143,6 @@ sum_page:
     mov A, 0x01 ; read block code
     call exec_ssc
     ; fall through to sum the data in the buffer
-
 sum_in_buffer:
     ; compute a very simple checksum
     mov X, FLASH_BLOCK_SIZE
@@ -159,16 +158,18 @@ sum_in_buffer:
     ret
 
 main_prog:
-    mov [tmp3], [control_pkt + CDATA]           ; save the flash block address
-    mov [control_pkt + CDATA], FLASH_BLOCK_SIZE ; read right number of bytes
-    lcall read_buffer_body                      ; read the block
+    mov A, FLASH_BLOCK_SIZE     ; read right number of bytes
+    lcall read_buffer_body_real ; read the block
+    jz main_prog_invalid_arg    ; make sure the read succeeded
 
     ; protect the first 48 pages with a special code
     cmp [control_pkt + CDATA + 1], MAGIC_WRITE_BYTE
     jz chk_if_need_chksum
-    cmp [tmp3], 48
+    cmp [control_pkt + CDATA], 48
     jnc chk_if_need_chksum
+
     ; throw an error
+  main_prog_invalid_arg:
     mov [control_pkt + CCODE], CTL_INVALID_ARG
     mov X, CTL_BASE_SIZE
     lcall write_control_body
@@ -179,7 +180,7 @@ main_prog:
     cmp [control_pkt + CDATA + 2], 0
     jnz chksum_page_data
     cmp [control_pkt + CDATA + 3], 0
-    ; NOTE: double zeros won't be checked
+    ; NOTE: double zero checksums won't be checked
     jz write_page
   chksum_page_data:
     call sum_in_buffer          
