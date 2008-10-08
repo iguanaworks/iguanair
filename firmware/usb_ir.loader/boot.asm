@@ -128,7 +128,7 @@ export __psoc_config_start
     reti
 
     org 44h                 ;Free Running Counter Wrap Interrupt Vector
-    ljmp body_twrap_int
+    ljmp body_twrap_int_base
     reti
 
     org 48h                 ;INT 2 Interrupt Vector

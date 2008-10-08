@@ -16,13 +16,13 @@
 include "loader.inc"
 
 ; exported variables
-export control_pkt
 export buffer
 export buffer_ptr
 export loader_flags
 export tmp1
 export tmp2
 export tmp3
+export control_pkt
 
 ; pin down all the global variables
 AREA pinned_bss (RAM, ABS, CON)
@@ -45,7 +45,7 @@ tmp3:
 ; intentionally overlap the control packet buffer with the
 ; bytes needed for reflashing pages so that we KNOW what is
 ; being destroyed by the functions used for flashing.
-; NOTE: does not get counted in "RAM % full"
+; NOTE: does not get counted in "RAM X% full" in PSoC Designer
 AREA pkt_bss               (RAM, ABS, CON)
   org FIRST_FLASH_VAR
 control_pkt:

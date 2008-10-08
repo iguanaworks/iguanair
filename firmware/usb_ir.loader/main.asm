@@ -23,7 +23,7 @@ include "memory.inc"      ; Constants & macros for SMM/LMM and Compiler
 include "PSoCAPI.inc"     ; PSoC API definitions for all User Modules
 include "loader.inc"
 
-VERSION_ID_HIGH:  EQU 0x02 ; firmware version ID high byte (bootloader version)
+VERSION_ID_HIGH:  EQU 0x03 ; firmware version ID high byte (bootloader version)
 MAGIC_WRITE_BYTE: EQU 0x42 ; random magic value (meaning of life, but hex)
 
 ;; These functions are actually defined in pc.asm, but the page is
@@ -194,7 +194,9 @@ main_prog:
     ; throw a checksum error (should never happen!)
   chksum_error:
     mov [control_pkt + CCODE], CTL_BAD_CHKSUM
-    mov X, CTL_BASE_SIZE
+    mov [control_pkt + CDATA + 0], [tmp1]
+    mov [control_pkt + CDATA + 1], [tmp2]
+    mov X, CTL_BASE_SIZE + 4
     lcall write_control_body
     jmp main_prog_done
 

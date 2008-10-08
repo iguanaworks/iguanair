@@ -16,6 +16,8 @@
 
 include "loader.inc"
 
+export body_twrap_int_base
+        
 VERSION_ID_LOW:  equ 0x00 ; firmware version ID low byte (code body version)
 
 ; FUNCTION: body_main
@@ -46,7 +48,7 @@ body_twrap_int_base:
 
   ; otherwise jump to the body twrap handler
   btib_jmp_to_body:
-    ljmp body_twrap_int_handler
+    ljmp body_twrap_int
 
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
@@ -65,4 +67,4 @@ org body_tcap_int
     jmp body_tcap_int_handler
 
 org body_twrap_int
-    jmp body_twrap_int_base
+    jmp body_twrap_int_handler
