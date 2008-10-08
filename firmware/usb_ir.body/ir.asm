@@ -27,8 +27,7 @@ export twrap_int
 export write_signal
 
 ; exported variables
-export rx_on
-export rx_overflow
+export rx_flags
 
 AREA bss
 ; transmission variables
@@ -38,10 +37,8 @@ tx_state:
     BLK 1 ; state of tx (on or off)
 
 ; reception variables
-rx_on:
-    BLK 1 ; is the receiver on?
-rx_overflow:
-    BLK 1 ; mark when receive overflows
+rx_flags:
+    BLK 2
 buf_size:
     BLK 1 ; number of bytes in buffer (or waste one for cicular buffer)
 read_ptr:
@@ -87,7 +84,7 @@ put_byte:
     jmp pb_done
 
   pb_oflow:
-    mov [rx_overflow], 1        ; set the overflow flag
+    or [rx_flags], RX_OVERFLOW_FLAG ; set the overflow flag
 
   pb_done:
     ret
@@ -138,12 +135,13 @@ rx_disable:
 ; FUNCTION: rx_reset enables the IR receiver
 rx_reset:
     ; reset a pile of variables related to reception
-    mov [rx_overflow], 0     ; clear overflow flag
+    and [rx_flags], ~RX_OVERFLOW_FLAG ; clear overflow flag
     mov [read_ptr], buffer   ; reset write ptr to start of buffer
     mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
     mov [buf_size], 0        ; reset size to 0
 
-    mov A, [rx_on]           ; check if rx should be enabled
+    mov A, [rx_flags]        ; check if rx should be enabled
+    and A, RX_ON_FLAG
     jz rx_disable            ; disable if necessary
 
     ; enable the timer capture interrupt

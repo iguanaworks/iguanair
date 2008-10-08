@@ -15,7 +15,7 @@ include "m8c.inc"    ; part specific constants and macros
 include "loader.inc"
 include "body.inc"
 
-VERSION_ID_LOW:  equ 0x05 ; firmware version ID low byte (code body)
+VERSION_ID_LOW:  equ 0x06 ; firmware version ID low byte (code body)
 
 export get_feature_list
 
@@ -65,9 +65,9 @@ body_main:
     jz bm_was_reset
 
     ; SOFT RESET
-    mov [rx_on], 0   ; rx starts in the off state
-    lcall rx_reset   ; make sure receiver state matches
-    lcall pins_reset ; clear GPIO pin state
+    and [rx_flags], ~RX_ON_FLAG ; rx starts in the off state
+    lcall rx_reset              ; make sure receiver state matches
+    lcall pins_reset            ; clear GPIO pin state
 
     ; clear the soft reset flag
     mov A, [loader_flags]
@@ -122,7 +122,8 @@ body_main:
 
 body_loop_body:
     ; check for receive overflow
-    mov A, [rx_overflow]
+    mov A, [rx_flags]
+    and A, RX_OVERFLOW_FLAG
     jz no_overflow
     ; send back an overflow packet
     mov [control_pkt + CCODE], CTL_OVERRECV
@@ -152,13 +153,13 @@ get_buf_size_body:
     jmp bm_ret
 
 recv_on_body:
-    mov [rx_on], 0x1 ; note that rx should be on
-    lcall rx_reset   ; make rx state actually match rx_on
+    or [rx_flags], RX_ON_FLAG ; note that rx should be on
+    lcall rx_reset            ; make rx state actually match rx_on
     jmp bm_ack_then_ret
 
 recv_off_body:
-    mov [rx_on], 0x0 ; note that rx should be off
-    lcall rx_reset   ; make rx state actually match rx_on
+    and [rx_flags], ~RX_ON_FLAG ; note that rx should be off
+    lcall rx_reset              ; make rx state actually match rx_on
     jmp bm_ack_then_ret
 
 send_body:

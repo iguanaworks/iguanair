@@ -12,6 +12,10 @@
 ; * See LICENSE for license details.
 ; */
 
+; flags used by the body code
+RX_ON_FLAG:       EQU 0x01
+RX_OVERFLOW_FLAG: EQU 0x02
+
 ;INSERT_CODES_HERE
 
 ; other constants
