@@ -808,18 +808,20 @@ else:
         targetVersion |= hexVersion(body)
 message(LOG_NORMAL, """WARNING! WARNING! WARNING!
 
-This application is used to reflash Iguanawork USB IR transceivers.
-This means rewriting the code stored within the chip on the device.
-If something goes wrong the device could be rendered unusable!  Use at
-your own risk.  Non-working devices can be reflashed by Iguanaworks
-for a nominal fee.  You may press ctrl-c to break out of this
-application, but if it is actively writing the flash, please wait
-until it finishes or risk breaking your device.
+This application is used to reflash your IguanaWorks USB IR transceiver. 
+While we believe this process is safe, there is always the possibility
+of breaking the device. We recommend only reflashing your device if
+you are having a specific problem with your device and IguanaWorks
+support recommends reflashing your device. Otherwise, use at your own
+risk. Non-working devices can be reflashed by IguanaWorks for a nominal
+fee. You may press ctrl-c to break out of this application, but DO NOT
+STOP THE PROGRAM WHILE IT IS WRITING THE FLASH! 
 
-It is also a good idea to unplug and replug your device after the
-reflasher completes.  In some cases certain functionality (reception
-for example) will not work until the device is powered off and then
-on.
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+No other applications may use the device when reflashing the device! 
+Before proceeding, stop LIRC and any other applications that use the 
+device.
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 Reflashing devices to firmware version 0x%4.4x
 """ % targetVersion)
