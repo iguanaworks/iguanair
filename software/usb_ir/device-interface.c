@@ -399,7 +399,7 @@ bool checkVersion(iguanaDev *idev)
             */
             if ((idev->version >= 1 && idev->version <= 4) ||
                 idev->version == 0xFF00 ||
-                (idev->version >= 0x0100 && idev->version < 0x0300))
+                (idev->version >= 0x0100 && idev->version < 0x0400))
                 retval = true;
             else
                 message(LOG_ERROR,
