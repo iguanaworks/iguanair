@@ -227,6 +227,11 @@ static bool handleClientRequest(dataPacket *request, client *target)
                     "Device transaction (0x%2.2x) failed\n", request->code);
     }
     else
+        retval = true;
+
+    /* This is separate from the above else to accommodate internally
+       handled commands. */
+    if (retval)
     {
         /* need to know which clients to contact on a receive */
         if (request->code == IG_DEV_RECVON)
@@ -243,8 +248,6 @@ static bool handleClientRequest(dataPacket *request, client *target)
             request->dataLen = response->dataLen;
             free(response);
         }
-
-        retval = true;
     }
 
     /* translate the newly read data packet code before returning */
