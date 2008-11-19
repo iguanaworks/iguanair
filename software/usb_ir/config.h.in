@@ -138,6 +138,9 @@
 /* whether to use threads with libusb */
 #undef LIBUSB_NO_THREADS
 
+/* whether to makes threads optional with libusb */
+#undef LIBUSB_NO_THREADS_OPTIONS
+
 /* version of libusb */
 #undef LIBUSB_VERSION
 

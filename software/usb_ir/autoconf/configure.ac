@@ -69,19 +69,25 @@ AX_CFLAGS_GCC_OPTION(-Wextra)
 # enable and disable debugging
 AC_ARG_ENABLE(debug,
   [  --enable-debug configure with debugging features enabled ],
-  [ CPPFLAGS="$CPPFLAGS -D_DEBUG"
-    CFLAGS="$CFLAGS -g" ],
-  [ CFLAGS="$CFLAGS -O2" ]
+  [ if test x$enableval = xyes; then
+      ENABLE_DEBUG_FLAGS=yes
+    fi ]
 )
+if test x$ENABLE_DEBUG_FLAGS = xyes; then
+  CPPFLAGS="$CPPFLAGS -D_DEBUG"
+  CFLAGS="$CFLAGS -g"
+else
+  CFLAGS="$CFLAGS -O2"
+fi
 
 # Allow the user to override clock_gettime detection
 AC_ARG_ENABLE(clock_gettime,
   [  --disable-clock_gettime do not use clock_gettime even if it exists],
   [ if test x$enableval = xno; then
-        DISABLE_CLOCK_GETTIME=1
+        DISABLE_CLOCK_GETTIME=yes
     fi ],
 )
-if ! test x$DISABLE_CLOCK_GETTIME = x1; then
+if ! test x$DISABLE_CLOCK_GETTIME = xyes; then
     AC_CHECK_FUNC(clock_gettime,
         AC_DEFINE(USE_CLOCK_GETTIME, 1, [use the available clock_gettime])
     )
@@ -124,6 +130,19 @@ AC_CHECK_LIB([usb], [usb_get_busses],
       else
         AC_DEFINE(LIBUSB_DEVNUM(dev), (dev->devnum),
                                       [what to use for the libusb devnum])
+      fi
+    else
+      AC_ARG_ENABLE(no-threads,
+          [  --disable-no-threads enable the "no threads" option ],
+          [ if test "x$enableval" == "xno"; then
+                LIBUSB_THREADS_OPTIONAL=no
+            fi
+          ]
+      )
+      if test x$LIBUSB_THREADS_OPTIONAL != xno; then
+        AC_DEFINE(LIBUSB_NO_THREADS, 1, [whether to use threads with libusb])
+        AC_DEFINE(LIBUSB_NO_THREADS_OPTIONS, 1,
+                  [whether to makes threads optional with libusb])
       fi
     fi
   ],
