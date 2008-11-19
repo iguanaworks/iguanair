@@ -141,7 +141,7 @@ AC_CHECK_LIB([usb], [usb_get_busses],
       )
       if test x$LIBUSB_THREADS_OPTIONAL != xno; then
         AC_DEFINE(LIBUSB_NO_THREADS, 1, [whether to use threads with libusb])
-        AC_DEFINE(LIBUSB_NO_THREADS_OPTIONS, 1,
+        AC_DEFINE(LIBUSB_NO_THREADS_OPTION, 1,
                   [whether to makes threads optional with libusb])
       fi
     fi

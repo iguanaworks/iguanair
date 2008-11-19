@@ -50,5 +50,8 @@ void startWorker(usbDevice *dev);
 bool reapAllChildren(usbDeviceList *list);
 
 extern bool readLabels;
+#ifdef LIBUSB_NO_THREADS_OPTION
+extern bool noThreads;
+#endif
 
 #endif

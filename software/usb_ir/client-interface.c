@@ -48,6 +48,9 @@ typedef struct receiveInfo
 } receiveInfo;
 
 bool readLabels = true;
+#ifdef LIBUSB_NO_THREADS_OPTION
+bool noThreads = false;
+#endif
 
 static unsigned char* pulsesToIguanaSend(int carrier,
                                          uint32_t *sendCode, int *length)
@@ -572,6 +575,9 @@ void startWorker(usbDevice *dev)
         memset(idev, 0, sizeof(iguanaDev));
         idev->carrier = 38000;
         InitializeCriticalSection(&idev->listLock);
+#ifdef LIBUSB_NO_THREADS_OPTION
+        idev->libusbNoThreads = noThreads;
+#endif
 #ifdef LIBUSB_NO_THREADS
         InitializeCriticalSection(&idev->devLock);
 #endif

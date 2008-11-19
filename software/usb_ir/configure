@@ -6739,7 +6739,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<\_ACEOF
-#define LIBUSB_NO_THREADS_OPTIONS 1
+#define LIBUSB_NO_THREADS_OPTION 1
 _ACEOF
 
       fi

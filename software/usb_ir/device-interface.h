@@ -14,6 +14,7 @@
 #define _PROTOCOL_
 
 #include "list.h"
+#include "config.h"
 
 enum
 {
@@ -64,6 +65,9 @@ typedef struct iguanaDev
     /* might as well keep the list of clients here */
     listHeader clientList;
 
+#ifdef LIBUSB_NO_THREADS_OPTION
+    bool libusbNoThreads;
+#endif
 #ifdef LIBUSB_NO_THREADS
     /* if necessary lock access to the underlying usb device */
     LOCK_PTR devLock;

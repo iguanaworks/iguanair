@@ -133,7 +133,9 @@ static struct poptOption options[] =
     { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "DEPRECATED: same as --no-ids", NULL },
     { "receive-timeout", '\0', POPT_ARG_INT, &recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
     { "send-timeout", '\0', POPT_ARG_INT, &sendTimeout, 0, "Specify the device send timeout.", "timeout" },
-
+#ifdef LIBUSB_NO_THREADS_OPTION
+    { "no-threads", '\0', POPT_ARG_NONE, NULL, 't', "Do not allow two threads to both access libusb calls at the same time.  Try this if the device occasionally crashes.", NULL },
+#endif
     POPT_AUTOHELP
     POPT_TABLEEND
 };
@@ -165,6 +167,12 @@ int main(int argc, const char **argv)
         case 'b':
             readLabels = false;
             break;
+
+#ifdef LIBUSB_NO_THREADS_OPTION
+        case 't':
+            noThreads = true;
+            break;
+#endif
 
         case 'p':
             pidFile = poptGetOptArg(poptCon);

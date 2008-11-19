@@ -573,11 +573,17 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             }
         }
 
+
+#ifdef LIBUSB_NO_THREADS_OPTION
+        if (idev->libusbNoThreads)
+#endif
 #ifdef LIBUSB_NO_THREADS
-        /* force the reader to give up the lock */
-        idev->needToWrite = true;
-        EnterCriticalSection(&idev->devLock);
-        idev->needToWrite = false;
+        {
+            /* force the reader to give up the lock */
+            idev->needToWrite = true;
+            EnterCriticalSection(&idev->devLock);
+            idev->needToWrite = false;
+        }
 #endif
 
         /* time the transfer */
@@ -601,10 +607,15 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         {
             int amount;
 
+#ifdef LIBUSB_NO_THREADS_OPTION
+            if (idev->libusbNoThreads)
+#endif
 #ifdef LIBUSB_NO_THREADS
-            /* unlock as soon as possible after all data has been sent */
-            LeaveCriticalSection(&idev->devLock);
-            unlocked = true;
+            {
+                /* unlock as soon as possible after all data has been sent */
+                LeaveCriticalSection(&idev->devLock);
+                unlocked = true;
+            }
 #endif
 
             /* using sendTimeout to ensure reader has necessary time
@@ -666,10 +677,13 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             }
         }
 
+#ifdef LIBUSB_NO_THREADS_OPTION
+        if (idev->libusbNoThreads)
+#endif
 #ifdef LIBUSB_NO_THREADS
-        /* certain errors may result in unlocking here */
-        if (!unlocked)
-            LeaveCriticalSection(&idev->devLock);
+            /* certain errors may result in unlocking here */
+            if (!unlocked)
+                LeaveCriticalSection(&idev->devLock);
 #endif
     }
 
@@ -712,13 +726,18 @@ void handleIncomingPackets(iguanaDev *idev)
         while(length >= 0 &&
               ! idev->quitRequested)
         {
+#ifdef LIBUSB_NO_THREADS_OPTION
+            if (idev->libusbNoThreads)
+#endif
 #ifdef LIBUSB_NO_THREADS
-            /* writer will set a flag if it need to perform a device
-             * transaction because otherwise we can spin and keep
-             * getting the lock before the writer is scheduled */
-            if (idev->needToWrite)
-                SwitchToThread();
-            EnterCriticalSection(&idev->devLock);
+            {
+                /* writer will set a flag if it need to perform a device
+                 * transaction because otherwise we can spin and keep
+                 * getting the lock before the writer is scheduled */
+                if (idev->needToWrite)
+                    SwitchToThread();
+                EnterCriticalSection(&idev->devLock);
+            }
 #endif
 
             /* wait for data to arrive */
@@ -840,9 +859,12 @@ void handleIncomingPackets(iguanaDev *idev)
                 }
             }
 
+#ifdef LIBUSB_NO_THREADS_OPTION
+            if (idev->libusbNoThreads)
+#endif
 #ifdef LIBUSB_NO_THREADS
-            /* unlock the device between reads */
-            LeaveCriticalSection(&idev->devLock);
+                /* unlock the device between reads */
+                LeaveCriticalSection(&idev->devLock);
 #endif
         }
 
