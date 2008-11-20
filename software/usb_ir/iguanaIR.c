@@ -135,16 +135,17 @@ bool iguanaWriteRequest(const iguanaPacket request, PIPE_PTR connection)
 
 iguanaPacket iguanaReadResponse(PIPE_PTR connection, unsigned int timeout)
 {
-    dataPacket *response;
+    dataPacket *response = NULL;
 
-    response = (dataPacket*)malloc(sizeof(dataPacket));
-    if (response != NULL)
+    if (connection != INVALID_PIPE)
     {
-        if (! readDataPacket(response, connection, timeout))
-        {
-            free(response);
-            response = NULL;
-        }
+        response = (dataPacket*)malloc(sizeof(dataPacket));
+        if (response != NULL &&
+            ! readDataPacket(response, connection, timeout))
+            {
+                free(response);
+                response = NULL;
+            }
     }
 
     return response;
