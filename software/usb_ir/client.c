@@ -134,6 +134,7 @@ typedef struct igtask
 static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
+static int logLevelTemp = 0;
 
 static bool performTask(PIPE_PTR conn, igtask *cmd);
 
@@ -653,6 +654,7 @@ static struct poptOption options[] =
     { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
     { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
+    { "log-level", '\0', POPT_ARG_INT, &logLevelTemp, 'e', "Set the verbosity.", NULL },
 
     /* device commands */
     { "get-version", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETVERSION, "Return the version of the device firmware.", NULL },
@@ -804,6 +806,10 @@ int main(int argc, const char **argv)
 
         case 'v':
             changeLogLevel(+1);
+            break;
+
+        case 'e':
+            setLogLevel(logLevelTemp);
             break;
 
         /* Error handling starts here */

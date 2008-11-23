@@ -40,6 +40,8 @@ PIPE_PTR commPipe[2];
   static unsigned int recvTimeout = 1000;
 #endif
 static unsigned int sendTimeout = 1000;
+static int logLevelTemp = 0;
+
 
 static void quitHandler(int UNUSED(sig))
 {
@@ -127,6 +129,7 @@ static struct poptOption options[] =
     { "pid-file", 'p', POPT_ARG_STRING, NULL, 'p', "Specify where to write the pid of the daemon process.", "filename" },
     { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
+    { "log-level", '\0', POPT_ARG_INT, &logLevelTemp, 'e', "Set the verbosity.", NULL },
 
     /* iguanaworks specific options */
     { "no-ids", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
@@ -188,6 +191,10 @@ int main(int argc, const char **argv)
 
         case 'v':
             changeLogLevel(+1);
+            break;
+
+        case 'e':
+            setLogLevel(logLevelTemp);
             break;
 
         /* Error handling starts here */

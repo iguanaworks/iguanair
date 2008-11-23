@@ -39,6 +39,7 @@ enum
 /* functions for messages (logging) */
 void dieCleanly(int level);
 void changeLogLevel(int difference);
+void setLogLevel(int value);
 void openLog(const char *filename);
 bool wouldOutput(int level);
 int message(int level, char *format, ...);
