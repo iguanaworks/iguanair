@@ -89,8 +89,10 @@ fi
 /usr/bin/*
 %{_libdir}/lib%{name}.so*
 /etc/init.d/%{name}
-%config /etc/default/%{name} # makes .rpmsave
-#%config(noreplace) /etc/default/%{name} # makes .rpmnew
+# makes .rpmsave
+%config /etc/default/%{name}
+# makes .rpmnew
+#%config(noreplace) /etc/default/%{name}
 # TODO: autoconf must decide!
 /etc/udev/rules.d/%{name}.rules
 %attr(755, iguanair, iguanair) /lib/udev/devices/%{name}
