@@ -1,20 +1,23 @@
-##The IguanaWorks daemon (igdaemon) as a few common-line options.
+##The IguanaWorks daemon (igdaemon) as a few common-line options 
+##that are configured here.
 
+##Because of a bug in libusb, using threads when communicating with
+##our device can cause the device to hang. As a work around, we have
+##an option to disable using threads. This option may cause problems
+##when sending long IR signals and will take a slightly larger amount
+##of overhead on your computer. Unless you have problems with the
+##threadless version, we recommend using it for increased stability.
+##The option to disable threads is:
+##"--no-threads"
+##Comment the line below to enable threads
+OPTIONS="--no-threads"
 
-##The debug level can be from 1 - 4. The default is 2
-DEBUG=2
+## There are multiple logging levels for igdaemon
+## 0 = normal
+## 1 = log info
+## 2 = log debug1
+## 3 = log debug2 (excessive)
+## 4 = log debug3 (excessively excessive)
+LOGLEVEL=0
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-IGUANAIR_OPTIONS="-v -v"
+IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL"

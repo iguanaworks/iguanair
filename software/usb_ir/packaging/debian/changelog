@@ -1,14 +1,8 @@
-iguanair (0.98.1-4) unstable; urgency=low
+iguanair (0.99.1-4ubuntu1) gutsy; urgency=low
 
-  * Test again
+  * 0.99 IguanaWorks Release
 
- -- Ben Luey <bluey@iguanaworks.net>  Sat, 11 Oct 2008 10:24:40 -0600
-
-iguanair (0.98.1-2) unstable; urgency=low
-
-  * Devel version of firmware
-
- -- Ben Luey <bluey@iguanaworks.net>  Tue, 07 Oct 2008 23:34:28 -0600
+ -- Ben Luey <bluey@iguanaDevUbuntu64>  Sun, 23 Nov 2008 16:36:37 -0500
 
 iguanair (0.98.1-1) unstable; urgency=low
 
