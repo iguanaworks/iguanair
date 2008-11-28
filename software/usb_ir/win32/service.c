@@ -406,6 +406,7 @@ static void setServiceStatus(DWORD status, DWORD exit_code)
     SetServiceStatus(service_status_handle, &service_status);
 }
 
+/* TODO: need an application with an event loop to have these work outside the service setting */
 static void registerNotifications(void)
 {
     DEV_BROADCAST_DEVICEINTERFACE dev_if;
@@ -464,7 +465,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
     socketName(name, names[0], 256);
     if (alias != NULL && alias[0] != '\0')
     {
-        socketName(alias, names[0], 256);
+        socketName(alias, names[1], 256);
         numNames++;
     }
 

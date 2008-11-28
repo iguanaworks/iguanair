@@ -858,7 +858,14 @@ int main(int argc, const char **argv)
     conn = iguanaConnect(device);
     if (conn == INVALID_PIPE)
     {
-        if (errno != 0)
+#ifdef WIN32
+        /* windows does not set errno correctly on failure */
+        errno = GetLastError();
+#endif
+        if (errno == 2)
+            message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running and the device connected?\n",
+                    strerror(errno));
+        else if (errno != 0)
             message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s\n",
                     strerror(errno));
     }
