@@ -16,7 +16,7 @@ CFLAGS="-g -O2 -Wall"
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	CFLAGS=$(CFLAGS) ./configure 
+	CFLAGS=$(CFLAGS) ./configure --enable-debug
 	touch configure-stamp
 
 build: configure-stamp build-stamp

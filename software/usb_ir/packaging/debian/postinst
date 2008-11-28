@@ -13,3 +13,4 @@ chown iguanair:iguanair /lib/udev/devices/iguanaIR
 mkdir /dev/iguanaIR 2>/dev/null || true
 touch /etc/udev/rules.d/iguanaIR.rules
 chown iguanair:iguanair /dev/iguanaIR
+/etc/init.d/udev restart
