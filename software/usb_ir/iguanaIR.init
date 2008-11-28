@@ -10,9 +10,6 @@
 # Default-Start: 2 3 4 5 
 # Default-Stop: 0 1 2 6
 ### END INIT INFO
-
-
-
 #
 # Startup script for the Iguanaworks USB IR daemon.
 #
@@ -20,9 +17,19 @@
 # chkconfig: 2345 80 20
 # description: Enables the driver for Iguanaworks USB IR devices.
 #
+######################
 
-# need various helper functions, and can use this to detect how to run
-if [ -f /etc/init.d/functions ]; then
+# load the default settings
+[ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
+# combine some variables into a command line
+IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --receive-timeout=$RECEIVETIMEOUT"
+
+# We need to know what helper functions are legal, so detect the
+# distro.  Override this in /etc/defaults/iguanaIR
+if [ "$DISTRO" == "" ]; then
+  DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
+fi
+if [ "$DISTRO" == "fedora" ]; then
     # welcome to fedora land
     . /etc/init.d/functions
 
@@ -39,7 +46,7 @@ if [ -f /etc/init.d/functions ]; then
     {
         echo
     }
-else if [ -f /etc/init.d/functions.sh ]; then
+elif [ "$DISTRO" == "gentoo" ]; then
     # hello gentoo?
     . /etc/init.d/functions.sh
     log_begin_msg()
@@ -50,10 +57,12 @@ else if [ -f /etc/init.d/functions.sh ]; then
     {
         eend $*
     }
-else #if [ -f /lib/lsb/init-functions ]; then
+else #if [ "$DISTRO" == "ubuntu" ]; then
+    if [ "$DISTRO" != "debian" -a "$DISTRO" != "ubuntu" ]; then
+        echo "WARNING: failed to recognize distro, defaulting to Debian."
+    fi
     # ubuntu and others
     . /lib/lsb/init-functions
-fi
 fi
 
 # common defaults
@@ -66,9 +75,6 @@ if [ ! -x $IGPATH ]; then
     echo $"Failed to find igdaemon executable."
     exit 1
 fi
-
-# load the settings
-[ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
 
 # I like the way gentoo does startup scripts, but no dependencies for
 # me.

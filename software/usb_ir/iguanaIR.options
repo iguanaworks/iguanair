@@ -1,5 +1,5 @@
-##The IguanaWorks daemon (igdaemon) as a few common-line options 
-##that are configured here.
+## The IguanaWorks daemon (igdaemon) as a few common-line options that
+## are configured here.
 
 ## There are multiple logging levels for igdaemon
 ## 0 = normal
@@ -9,48 +9,48 @@
 ## 4 = log debug3 (excessively excessive)
 LOGLEVEL=0
 
-##Because of a bug in libusb, using threads when communicating with
-##our device can cause the device to hang. As a work around, we have
-##an option to disable using threads. This option may cause problems
-##when sending long IR signals and will take a slightly larger amount
-##of overhead on your computer. Unless you have problems with the
-##threadless version, we recommend using it for increased stability.
-##The option to disable threads is:
-##"--no-threads"
+## Because of a bug in libusb, using threads when communicating with
+## our device can cause the device to hang. As a work around, we have
+## an option to disable using threads. This option may cause problems
+## when sending long IR signals and will take a slightly larger amount
+## of overhead on your computer. Unless you have problems with the
+## threadless version, we recommend using it for increased stability.
+## The option to disable threads is:
+## "--no-threads"
 
-##Comment the line below to enable threads
+## Comment the line below to enable threads
 OPTIONS="--no-threads"
 
-##If you enable threads, then you can decrease the receive timeout
-##because it does not limit how quickly you can send. It does limit
-##how quickly you can quit the daemon. With threads enabled, we set
-##this timeout to 1000ms. With threads disabled, we put the timeout 
-##at 10ms. You can use 100ms if you want to save a tiny amount of 
-##cpu time at the expensive of how quickly send go.
+## If you enable threads, then you can decrease the receive timeout
+## because it does not limit how quickly you can send. It does limit
+## how quickly you can quit the daemon. With threads enabled, we set
+## this timeout to 1000ms. With threads disabled, we put the timeout
+## at 10ms. You can use 100ms if you want to save a tiny amount of cpu
+## time at the expensive of how quickly sends go.
 
-##--No-threads option used
+## With the --no-threads option used
 RECEIVETIMEOUT=10
 
-##Disable --no-threads (threads used)
+## Disable --no-threads (threads used)
 #RECEIVETIMEOUT=1000
 
 
-##You can set the timeout value for sendings IR signals. This set how
-##long to wait for send to successfully complete before assuming that 
-##the send failed and returning an error. Time is measured in ms and the 
-##default is 1000. Do not change this unless you have good reason to.
+## You can set the timeout value for sendings IR signals. This set how
+## long to wait for send to successfully complete before assuming that
+## the send failed and returning an error. Time is measured in ms and
+## the default is 1000. Do not change this unless you have good
+## reason.
 SENDTIMEOUT=1000
 
-##The init.d script for igdaemon auto detects what distro you are using
-##(fedora, debian, ubuntu, gentoo). You can overwrite this detection
-##by uncommenting one of the lines below. If your distro is not 
-##detected, please send a ticket to http://iguanaworks.net/projects/IguanaIR/
-##including your distrobution and the entire contents of /etc/issue. 
-##We will try to add support for your distro in the next release. In the 
-#meantime, maybe try some of the other distro overrides.
+## The init.d script for igdaemon auto detects what distro you are
+## using (fedora, debian, ubuntu, gentoo). You can overwrite this
+## detection by uncommenting one of the lines below. If your distro is
+## not detected, please send a ticket to:
+## http://iguanaworks.net/projects/IguanaIR/
+## Including your distribution and the entire contents of /etc/issue.
+## We will try to add support for your distro in the next release. In
+## the meantime, maybe try some of the other distro overrides.
 #DISTRO=fedora
 #DISTRO=debian
 #DISTRO=ubuntu
 #DISTRO=gentoo
-
-IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --receive-timeout=$RECEIVETIMEOUT"
