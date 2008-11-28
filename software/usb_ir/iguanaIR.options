@@ -41,10 +41,13 @@ RECEIVETIMEOUT=10
 ##default is 1000. Do not change this unless you have good reason to.
 SENDTIMEOUT=1000
 
-
 ##The init.d script for igdaemon auto detects what distro you are using
 ##(fedora, debian, ubuntu, gentoo). You can overwrite this detection
-##by uncommenting one of the following line
+##by uncommenting one of the lines below. If your distro is not 
+##detected, please send a ticket to http://iguanaworks.net/projects/IguanaIR/
+##including your distrobution and the entire contents of /etc/issue. 
+##We will try to add support for your distro in the next release. In the 
+#meantime, maybe try some of the other distro overrides.
 #DISTRO=fedora
 #DISTRO=debian
 #DISTRO=ubuntu
