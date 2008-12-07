@@ -25,11 +25,12 @@ OPTIONS="--no-threads"
 ## because it does not limit how quickly you can send. It does limit
 ## how quickly you can quit the daemon. With threads enabled, we set
 ## this timeout to 1000ms. With threads disabled, we put the timeout
-## at 10ms. You can use 100ms if you want to save a tiny amount of cpu
-## time at the expensive of how quickly sends go.
+## at 25ms. You can use a larger value if you want to save a little
+## amount of cpu time, but it may cause problems with sends, 
+## particularly long send.
 
 ## With the --no-threads option used
-RECEIVETIMEOUT=10
+RECEIVETIMEOUT=25
 
 ## Disable --no-threads (threads used)
 #RECEIVETIMEOUT=1000
