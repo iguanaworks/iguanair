@@ -1,0 +1,235 @@
+#!/usr/bin/python -tt
+from __future__ import with_statement
+import warnings
+import traceback
+import struct
+import sys
+import os
+
+import iguanaIR
+
+#output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+null = open('/dev/null', 'r+')
+
+#local variables
+currentLevel = LOG_NORMAL
+logFile = None
+device = '0'
+useGap = False
+interactive = False
+outFile = sys.stdout
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= currentLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+
+def printUsage(msg = None):
+    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
+
+-d
+--device : Which device to connect to.
+
+-h
+--help : Print this usage message.
+
+-i
+--interactive : Ask for multiple output names and signals.
+
+-l
+--log-file : Specify a log to receive all messages.
+
+-o
+--out-file : Output file for the recorded signal.
+
+-q
+--quiet : Decrease verbosity.
+
+--use-gap : Figure out the signal gap and stop printing when we find it.
+
+-v
+--verbose : Increase verbosity.
+"""
+
+    if msg != None:
+        message(LOG_FATAL, msg + usage)
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+
+index = 1
+while index < len(sys.argv):
+    arg = sys.argv[index]
+    if arg == "-d" or arg == "--device":
+        index += 1
+        device = sys.argv[index]
+    elif arg == "-h" or arg == "--help":
+        printUsage()
+    elif arg == "-i" or arg == "--interactive":
+        interactive = True
+    elif arg == "-l" or arg == "--log-file":
+        index += 1
+        logFile = sys.argv[index]
+        if logFile == "-":
+            logFile = None
+    elif arg == "-o" or arg == "--out-file":
+        index += 1
+        outFile = open(sys.argv[index], 'w')
+    elif arg == "-q" or arg == "--quiet":
+        if currentLevel > LOG_FATAL:
+            currentLevel -= 1
+    elif arg == "--use-gap":
+        useGap = True
+    elif arg == "-v" or arg == "--verbose":
+        currentLevel += 1
+    else:
+        printUsage("Unknown argument: " + arg + "\n")
+    index += 1
+
+# open the log file if specified
+if logFile != None:
+    sys.log = open(logFile, "a", 1)
+    logFile = "-"
+
+def findSignalGap(signals):
+    # bin the received signals
+    spaces = {}
+    for signal in signals[1:]:
+        if not signal & iguanaIR.IG_PULSE_BIT:
+            length = signal & iguanaIR.IG_PULSE_MASK
+            if length not in spaces:
+                spaces[length] = 0
+            spaces[length] += 1
+
+    # find the gap by finding the huge length difference
+    keys = spaces.keys()
+    keys.sort()
+    gap = 0
+    for x in range(1, len(keys)):
+        if (keys[x] - keys[x - 1]) / float(keys[x - 1]) > 10:
+            gap = keys[x]
+
+    return gap
+
+# list codes until we hit the gap
+def printCodes(output, signals, gap = None):
+    for signal in signals[1:]:
+        if gap is not None and \
+           not signal & iguanaIR.IG_PULSE_BIT and \
+               signal & iguanaIR.IG_PULSE_MASK >= gap:
+            break
+
+        if signal & iguanaIR.IG_PULSE_BIT:
+            output.write('pulse ')
+        else:
+            output.write('space ')
+        output.write('%d\n' % (signal & iguanaIR.IG_PULSE_MASK))
+
+def collectSignals(device):
+    conn = iguanaIR.connect(device)
+    if not conn or conn == -1:
+        message(LOG_FATAL, "Failed to connect to usb device.\n")
+
+    # turn on the receiver
+    request = iguanaIR.createRequest(iguanaIR.IG_DEV_RECVON)
+    iguanaIR.writeRequest(request, conn)
+
+    # collect signals until we have a huge gap of 1 second
+    signals = []
+    currentType = currentLength = 0
+    while True:
+        packet = iguanaIR.readResponse(conn, 1000)
+        if packet is None:
+            message(LOG_FATAL,
+                    "No packet received in the last second, exiting.\n")
+        data = iguanaIR.removeData(packet)
+
+        for signal in struct.unpack('I' * (len(data) / 4), data):
+            if signal & iguanaIR.IG_PULSE_BIT != currentType:
+                if currentLength > iguanaIR.IG_PULSE_MASK:
+                    currentLength = iguanaIR.IG_PULSE_MASK
+                signals.append(currentType | currentLength)
+                # prepare for the next pass
+                currentType = signal & iguanaIR.IG_PULSE_BIT
+                currentLength = 0
+
+            # stop when we've collected a full signal
+            currentLength += signal & iguanaIR.IG_PULSE_MASK
+        if currentLength > 1000000 and signals != []:
+            break
+
+    # done with the device
+    iguanaIR.close(conn)
+
+    return signals
+
+while True:
+    # get a file name
+    if interactive:
+        message(LOG_ALWAYS,
+                "Enter an output file for the next key (ctrl-c to stop): ")
+        try:
+            outFile = open(sys.stdin.readline()[:-1], 'w')
+        except KeyboardInterrupt:
+            message(LOG_ALWAYS, "\n")
+            break
+
+    # output the signal
+    signals = collectSignals(device)
+    gap = None
+    if useGap:
+        gap = findSignalGap(signals)
+    printCodes(outFile, signals, gap)
+
+    # break unless we should be looping
+    if not interactive:
+        break
