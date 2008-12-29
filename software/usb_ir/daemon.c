@@ -35,7 +35,11 @@ static usbId ids[] = {
 static mode_t devMode = 0777;
 PIPE_PTR commPipe[2];
 #ifdef LIBUSB_NO_THREADS
-  static unsigned int recvTimeout = 100;
+  #ifdef LIBUSB_NO_THREADS_OPTION
+    static unsigned int recvTimeout = 1000;
+  #else
+    static unsigned int recvTimeout = 100;
+  #endif
 #else
   static unsigned int recvTimeout = 1000;
 #endif
@@ -59,6 +63,10 @@ static void scanHandler(int UNUSED(sig))
 
 static void workLoop()
 {
+    message(LOG_DEBUG, "Parameters:\n");
+    message(LOG_DEBUG, "  recvTimeout: %d\n", recvTimeout);
+    message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
+
     /* initialize the device list */
     usbDeviceList list;
 
