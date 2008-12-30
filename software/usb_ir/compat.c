@@ -13,6 +13,10 @@
 #include "iguanaIR.h"
 #include "compat.h"
 
+#include <fcntl.h>
+
+#include "support.h"
+
 #if USE_CLOCK_GETTIME
 #include <time.h>
 
@@ -67,3 +71,17 @@ uint64_t microsSinceX()
 #error No supported mechanism for subsecond timing found.
 
 #endif
+
+bool setNonBlocking(PIPE_PTR pipe)
+{
+    int flags;
+
+    flags = fcntl(pipe, F_GETFL);
+    if (flags == -1)
+        message(LOG_ERROR,
+                "Failed read status flags for socket.\n");
+    else
+        return fcntl(pipe, F_SETFL, flags | O_NONBLOCK) != -1;
+
+    return false;
+}

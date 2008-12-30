@@ -63,13 +63,13 @@ static void scanHandler(int UNUSED(sig))
 
 static void workLoop()
 {
+    usbDeviceList list;
+
     message(LOG_DEBUG, "Parameters:\n");
     message(LOG_DEBUG, "  recvTimeout: %d\n", recvTimeout);
     message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
 
     /* initialize the device list */
-    usbDeviceList list;
-
     if (! initDeviceList(&list, ids, recvTimeout, sendTimeout, startWorker))
         message(LOG_ERROR, "failed to initialize device list.\n");
     else if (signal(SIGINT, quitHandler) == SIG_ERR)

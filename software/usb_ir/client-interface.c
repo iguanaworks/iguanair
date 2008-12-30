@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include <errno.h>
 #include <signal.h>
-#include <fcntl.h>
 
 #ifndef WIN32
     #include <arpa/inet.h>
@@ -382,17 +381,10 @@ printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
             message(LOG_ERROR, "Out of memory allocating client struct.");
         else
         {
-            /*
-            int flags;
-
-            flags = fcntl(clientFd, F_GETFL);
-            if (flags == -1)
-                message(LOG_ERROR,
-                        "Failed read status flags for client socket.\n");
-            else if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+            if (! setNonBlocking(clientFd))
                 message(LOG_ERROR,
                         "Failed to set client socket to non-blocking mode.\n");
-            else*/
+            else
             {
                 memset(newClient, 0, sizeof(client));
                 newClient->idev = idev;
