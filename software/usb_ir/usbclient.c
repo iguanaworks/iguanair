@@ -95,6 +95,9 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize)
     appendHex(LOG_DEBUG2, buffer, bufSize);
 
     setError(handle, NULL);
+    /* NOTE: when firmware 0205 hangs during a send this call NEVER
+       times out meaning that we have NO way to recover in the daemon
+       so there's no point in trying to handle it. */
     retval = usb_interrupt_write(handle->device,
                                  handle->epOut->bEndpointAddress,
                                  buffer, bufSize,
