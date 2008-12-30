@@ -409,8 +409,12 @@ static bool tellReceivers(itemHeader *item, void *userData)
             return false;
 
         if (! writeDataPacket(info->packet, me->fd))
+        {
             message(LOG_ERROR, "Failed to send packet to receiver: %d: %s\n",
                     errno, strerror(errno));
+            if (errno == 11)
+                message(LOG_WARN, "A client application may not be closing connections to the daemon.\n");
+        }
         else
         {
             message(LOG_DEBUG3, "Sent receivers: ");
