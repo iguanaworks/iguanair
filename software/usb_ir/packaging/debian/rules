@@ -41,6 +41,7 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
+	dh_makeshlibs
 
 	# main install
 	make install DESTDIR=$(CURDIR)/debian/tmp
