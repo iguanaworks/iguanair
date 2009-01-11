@@ -272,6 +272,10 @@ def deviceTransaction(type, data = '', quiet = False):
                         'Error response code: 0x%s\n' % iguanaIR.code(resp))
         elif type == iguanaIR.IG_DEV_GETFEATURES:
             retval = ord(iguanaIR.removeData(resp)[0])
+        elif type == iguanaIR.IG_DEV_IDSOFF or \
+             type == iguanaIR.IG_DEV_IDSON or \
+             type == iguanaIR.IG_DEV_SETID:
+            retval = True
         else:
             retval = iguanaIR.removeData(resp)
 
@@ -575,14 +579,15 @@ def reflashDevice(features):
 
         if body is not None:
             sys.stdout.write('Writing body to the device:\n')
-            writeHexFile(body, setFeatures = features)
-            deviceVersion((targetVersion & 0xFF00) | hexVersion(body))
+            if deviceTransaction(iguanaIR.IG_DEV_IDSOFF):
+                writeHexFile(body, setFeatures = features)
+                deviceVersion((targetVersion & 0xFF00) | hexVersion(body))
+                deviceTransaction(iguanaIR.IG_DEV_IDSON)
             wrote = True
 
     if id:
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
         deviceTransaction(iguanaIR.IG_DEV_SETID, id)
-# TODO: removed because it was causing testing problems....
     else:
         deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
