@@ -57,6 +57,7 @@ elif [ "$DISTRO" = "gentoo" ]; then
     {
         eend $*
     }
+else
     if [ "$DISTRO" != "debian" -a "$DISTRO" != "ubuntu" ]; then
         echo "WARNING: failed to recognize distro, defaulting to Debian."
     fi
