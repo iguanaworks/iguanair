@@ -30,7 +30,7 @@ OPTIONS="--no-threads"
 ## particularly long send.
 
 ## With the --no-threads option used
-RECEIVETIMEOUT=25
+RECEIVETIMEOUT=50
 
 ## Disable --no-threads (threads used)
 #RECEIVETIMEOUT=1000
