@@ -26,10 +26,10 @@ IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --r
 
 # We need to know what helper functions are legal, so detect the
 # distro.  Override this in /etc/defaults/iguanaIR
-if [ "$DISTRO" == "" ]; then
+if [ "$DISTRO" = "" ]; then
   DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
 fi
-if [ "$DISTRO" == "fedora" ]; then
+if [ "$DISTRO" = "fedora" ]; then
     # welcome to fedora land
     . /etc/init.d/functions
 
@@ -46,7 +46,7 @@ if [ "$DISTRO" == "fedora" ]; then
     {
         echo
     }
-elif [ "$DISTRO" == "gentoo" ]; then
+elif [ "$DISTRO" = "gentoo" ]; then
     # hello gentoo?
     . /etc/init.d/functions.sh
     log_begin_msg()
@@ -57,7 +57,6 @@ elif [ "$DISTRO" == "gentoo" ]; then
     {
         eend $*
     }
-else #if [ "$DISTRO" == "ubuntu" ]; then
     if [ "$DISTRO" != "debian" -a "$DISTRO" != "ubuntu" ]; then
         echo "WARNING: failed to recognize distro, defaulting to Debian."
     fi
