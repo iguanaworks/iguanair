@@ -1,1 +1,1 @@
-../../../../firmware/usb_ir.loader/pc.asm
+../../../../firmware/usb_ir.loader-2/pc.asm
