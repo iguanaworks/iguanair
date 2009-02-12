@@ -67,6 +67,7 @@ userSaysKeepAll = False
 onlyOne = True
 defaultType = None
 devOK = False
+skipReceiver = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -175,6 +176,8 @@ while index < len(sys.argv):
     elif arg == "-q" or arg == "--quiet":
         if currentLevel > LOG_FATAL:
             currentLevel -= 1
+    elif arg == "--skip-receiver":
+        skipReceiver = True
     elif arg == "-t" or arg == "--type":
         index += 1
         defaultType = sys.argv[index]
@@ -912,10 +915,11 @@ What kind of device is plugged in?
                     "This script cannot test a version %s device.\n" % version)
             continue
 
-        message(LOG_NORMAL, "Checking receiver.\n")
-        if not checkReceiver():
-            message(LOG_ERROR, "Receiver FAILURE.\n")
-            continue
+        if not skipReceiver:
+            message(LOG_NORMAL, "Checking receiver.\n")
+            if not checkReceiver():
+                message(LOG_ERROR, "Receiver FAILURE.\n")
+                continue
 
         if plugs:
             message(LOG_NORMAL, "Doing sockets tests.\n")
