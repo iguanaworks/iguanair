@@ -132,7 +132,7 @@ rx_disable:
     call tx_pins_off
     ret
 
-; FUNCTION: rx_reset enables the IR receiver
+; FUNCTION: rx_reset enables the IR receiver OR EXITS THROUGH rx_disable
 rx_reset:
     ; reset a pile of variables related to reception
     and [rx_flags], ~RX_OVERFLOW_FLAG ; clear overflow flag
@@ -142,7 +142,7 @@ rx_reset:
 
     mov A, [rx_flags]        ; check if rx should be enabled
     and A, RX_ON_FLAG
-    jz rx_disable            ; disable if necessary
+    jz rx_disable            ; disable if necessary (JMP NOT CALL!)
 
     ; enable the timer capture interrupt
     mov A, REG[INT_MSK1]
