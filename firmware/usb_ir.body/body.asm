@@ -66,7 +66,6 @@ body_main:
 
     ; SOFT RESET
     and [rx_flags], ~RX_ON_FLAG ; rx starts in the off state
-    lcall rx_reset              ; make sure receiver state matches
     lcall pins_reset            ; clear GPIO pin state
 
     ; clear the soft reset flag
@@ -75,6 +74,18 @@ body_main:
     mov [loader_flags], A
 
   bm_was_reset:
+    mov A, [loader_flags]
+    and A, FLAG_BODY_BUFCLR
+    jz bm_buffer_okay
+    ; make sure receiver state matches
+    lcall rx_reset
+
+    ; clear the bufclr flag
+    mov A, [loader_flags]
+    and A, ~FLAG_BODY_BUFCLR
+    mov [loader_flags], A
+
+  bm_buffer_okay:
     ; reload the control code
     mov A, [tmp1]
 
