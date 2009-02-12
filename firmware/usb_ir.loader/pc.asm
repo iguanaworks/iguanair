@@ -95,32 +95,12 @@ read_buffer_body_real:
     jz rb_done                   ; if no data to read, we're done
     mov [tmp1], A                ; keep number of bytes left in tmp1
 
-    ; INT_MSK3, INT_MSK2, INT_MSK1
-
-    mov [tmp3], 0
-    or [loader_flags], FLAG_READING
-    ; enable the timer wrap interrupt
-    mov A, REG[INT_MSK2]
-    or A, 0b00000010   ; twrap interrupt enable
-    mov REG[INT_MSK2], A
-
-  ; note that we're reading so that the timeout can be detected
-  rb_wait_frag:
-    mov [tmp3], 0
-    or [loader_flags], FLAG_READING
-
   ; get each fragment (packet)
   rb_frag:
     ; check for halt condition
     mov A, [loader_flags]
     and A, FLAG_HALTED
     jnz soft_reset
-
-    ; if the timer wraps at least 25 times (~0.5 sec), we have a timeout
-    cmp [tmp3], 25
-    jnc rb_failure
-
-    ; check for incoming data
     mov A, OUT            ; check OUT endpoint
     lcall USB_bGetEPState ; check state
     CMP A, EVENT_PENDING  ; compare--if equal, zero flag set
@@ -141,35 +121,25 @@ read_buffer_body_real:
   ; copy the bytes of this packet
   rb_loop:
     cmp [buffer_ptr], buffer + BUFFER_SIZE ; check for overflow
-    jz rb_failure       ; more data, but buffer full (tx overflow)
+    jz rb_overflow      ; more data, but buffer full (tx overflow)
     mov A, REG[X]       ; move data into A
     mvi [buffer_ptr], A ; move data into buffer
     dec [tmp1]          ; one less byte total
     jz rb_done          ; done with receive
     dec [tmp2]          ; one less byte to copy in this packet
-    jz rb_wait_frag     ; done with fragment, get next packet
+    jz rb_frag          ; done with fragment, get next packet
     inc X               ; increment data pointer
     jmp rb_loop         ; keep copying from this packet
 
   ; we're done receiving
   rb_done:
-    mov [tmp3], 1 ; return code ok
-    jmp rb_cleanup
+    mov A, 1 ; return code ok
+    ret
 
-  ; had a failure (overflow or timeout)
-  rb_failure:
+  ; had an overflow
+  rb_overflow:
     mov [control_pkt + CDATA], BUFFER_SIZE ; record the number of bytes read
-    mov [tmp3], 0                          ; return failure
-
-  ; clear the loader reading flag
-  rb_cleanup:
-    ; disable the timer wrap (twrap) interrupt
-    mov A, REG[INT_MSK2]
-    and A, ~0b00000010
-    mov REG[INT_MSK2], A
-
-    and [loader_flags], ~FLAG_READING
-    mov A, [tmp3]
+    mov A, 0                               ; return code overflow
     ret
 
 ;FUNCTION read_control
