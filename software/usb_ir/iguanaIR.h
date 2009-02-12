@@ -66,6 +66,7 @@ enum
     IG_DEV_WRITEBLOCK  = 0x02,
     IG_DEV_CHECKSUM    = 0x03,
     IG_DEV_INVALID_ARG = 0x04,
+    IG_DEV_BAD_CHKSUM  = 0x05,
     IG_DEV_RESET       = 0xFF,
 
     /* FILE:body.inc standard "body" functions */
