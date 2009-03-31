@@ -91,9 +91,12 @@ read_packet_body:
 read_buffer_body:
     mov A, [control_pkt + CDATA] ; get number of bytes to read
 read_buffer_body_real:
-    mov [buffer_ptr], buffer     ; reset to start of buffer
     jz rb_done                   ; if no data to read, we're done
+    mov [buffer_ptr], buffer     ; reset to start of buffer
     mov [tmp1], A                ; keep number of bytes left in tmp1
+
+    ; the next step will hose the buffer so notify the body code
+    or [loader_flags], FLAG_BODY_BUFCLR
 
   ; get each fragment (packet)
   rb_frag:
@@ -103,7 +106,7 @@ read_buffer_body_real:
     jnz soft_reset
     mov A, OUT            ; check OUT endpoint
     lcall USB_bGetEPState ; check state
-    CMP A, EVENT_PENDING  ; compare--if equal, zero flag set
+    cmp A, EVENT_PENDING  ; compare--if equal, zero flag set
     jnz rb_frag           ; not equal, keep waiting
 
     ; get packet length
