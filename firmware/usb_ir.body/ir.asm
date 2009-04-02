@@ -25,9 +25,12 @@ export transmit_code
 export tcap_int
 export twrap_int
 export write_signal
+export send_loop
 
 ; exported variables
 export rx_flags
+export tx_pins
+export tx_state
 
 AREA bss
 ; transmission variables
@@ -259,18 +262,23 @@ tcap_int:
     and A, 0x1           ; true if this is a rising edge
     jnz tcapi_rise
 
+; in repeater mode fiddle with the LED by changing tx_state
+
+or REG[TX_BANK], TX_MASK
   ; if here, it's a falling edge
   tcapi_fall:
     mov [rx_pulse], 0x80 ; set pulse bit to indicate space
+mov [tx_state], TX_MASK
     jmp tcapi_done
 
   ; found a rising edge
   tcapi_rise:
     mov [rx_pulse], 0x00 ; clear pulse bit to indicate pulse
+mov [tx_state], 0
     jmp tcapi_done
 
   tcapi_done:
-    jmp load_value          ; store into data buffer
+;    jmp load_value          ; store into data buffer
   tcapi_load_done:
     mov REG[FRTMRL], 0      ; reset timer low byte
     mov REG[FRTMRH], 0      ; reset timer high byte
@@ -330,25 +338,40 @@ transmit_code:
 
   tx_loop:
     mvi A, [buffer_ptr] ; move buffer data into A, increment pointer
+    call send_loop
+    call tx_pins_off
+
+  tx_end_pulse:
+    dec [tmp1]    ; decrement remaining byte count
+    jnz tx_loop   ; if more, go to next pulse
+    ret           ; done
+
+
+send_loop:
     mov [tmp3], A       ; store byte
     and A, 0x7F         ; mask off the pulse length bits
     asl A               ; shift left to multiply by two due to carrier division
     mov [tmp2], A       ; store pulse length in tmp2
 
+    ; do not modify tx_state in repeater mode
+    mov A, [rx_flags]
+    and A, RX_REPEATER_FLAG
+    jnz sl_pulse
+
     mov A, [tmp3]     ; get original byte back
     and A, 0x80       ; mask off pulse on/off bit
-    jz tx_on          ; if on, jump to tx_on, else fall through
+    jz sl_on          ; if on, jump to tx_on, else fall through
     mov [tx_state], 0 ; clear tx
-    jmp tx_pulse      ; start sending pulse
+    jmp sl_pulse      ; start sending pulse
 
-  tx_on:
+  sl_on:
     mov [tx_state], [tx_pins] ; mask on tx bits
-    jmp tx_pulse              ; start sending pulse--this jump seems redundant,
+    jmp sl_pulse              ; start sending pulse--this jump seems redundant,
                         ; but is there to make timing the same on both branches
 
-  tx_pulse: ; ready to send a pulse.  Need to AND in a XX kHz carrier
+  sl_pulse: ; ready to send a pulse.  Need to AND in a XX kHz carrier
     mov A, [tmp2]       ; put pulse length into A. zero flag valid   [5 cycles]
-    jz tx_end_pulse     ; this pulse is done                         [5 cycles]
+    jz sl_end_pulse     ; this pulse is done                         [5 cycles]
     mov A, REG[X]       ; get current register state                 [7 cycles]
     xor A, [tx_state]   ; if on, toggle, else doing nothing          [6 cycles]
     mov REG[X], A       ; write change to register                   [6 cycles]
@@ -498,12 +521,10 @@ transmit_code:
     nop
     nop
 
-    jmp tx_pulse ; continue the pulse                                [5 cycles]
+    jmp sl_pulse ; continue the pulse                                [5 cycles]
 
   ; end of the transmit function
-  tx_end_pulse:
+  sl_end_pulse:
     ; make sure tx pins are off
-    call tx_pins_off
-    dec [tmp1]    ; decrement remaining byte count
-    jnz tx_loop   ; if more, go to next pulse
+;    call tx_pins_off
     ret           ; done

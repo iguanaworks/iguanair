@@ -225,12 +225,36 @@ pin_burst_body:
 
 ; default to executing the final page since nothing else is easy
 execute_body:
-    lcall 0x1FC0
-    jmp bm_ret
+    or [rx_flags], RX_ON_FLAG ; note that rx should be on
+    lcall rx_reset            ; make rx state actually match rx_on
 
+    or [rx_flags], RX_REPEATER_FLAG ; turn the repeater on
+    mov [tx_state], 0
 
+    ; be sure the lights are off
+    or REG[TX_BANK], TX_MASK
+    mov [control_pkt + CDATA + 2], 0x06
+    mov [control_pkt + CDATA + 3], 0x31
+  rm_loop:
+    ; check for data from host
+    lcall check_read ; see if there is a transmission from the host
+    jnz rm_done
 
+    mov X, TX_BANK
+    mov A, 0x7F
+    call send_loop              
 
+;    lcall write_signal ; write back received data
+    jmp rm_loop
+
+  rm_done:
+    ret
+
+        
+;    lcall 0x1FC0
+;    jmp bm_ret
+
+        
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
 area bodyentry (ROM, ABS, CON)
