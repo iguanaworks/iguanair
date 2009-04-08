@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 /usr/sbin/groupadd -f -K GID_MIN=100 -K GID_MAX=500 iguanair
-USERS=`getent passwd|grep iguanair|sed -e 's/\([a-zA-Z]*:\)\(.*\)//g'`
+USERS=`getent passwd|grep iguanair|sed -e 's/\([a-zA-Z]*:\)\(.*\)/\1/g'`
 update-rc.d iguanaIR defaults
 
 if [ "$USERS" != "iguanair:" ] ; then
