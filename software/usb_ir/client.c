@@ -98,6 +98,7 @@ static commandSpec supportedCommands[] =
     {"execute code",    false, IG_DEV_EXECUTE,         0,      false},
     {"get id",          false, IG_DEV_GETID,           0,      false},
     {"set id",          false, IG_DEV_SETID,           0,      false},
+    {"repeater on",     false, IG_DEV_REPEATER,        0,      false},
 
     {"get output pins",     true, INTERNAL_GETOUTPINS,  IG_OUTPUT,     false},
     {"set output pins",     true, INTERNAL_SETOUTPINS,  IG_OUTPUT,     true},
@@ -692,6 +693,7 @@ static struct poptOption options[] =
     { "sleep", '\0', POPT_ARG_INT, NULL, INTERNAL_SLEEP, "Sleep for X seconds.", "seconds" },
     { "get-id", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETID, "Fetch the unique id from the USB device.", NULL },
     { "set-id", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETID, "Set the unique id from the USB device.", NULL },
+    { "repeater-on", '\0', POPT_ARG_NONE, NULL, IG_DEV_REPEATER, "Put the device into a mode that repeats signals.", NULL },
 
 #ifndef WIN32
     POPT_AUTOHELP
@@ -753,6 +755,7 @@ int main(int argc, const char **argv)
         case IG_DEV_EXECUTE:
         case IG_DEV_GETID:
         case IG_DEV_SETID:
+        case IG_DEV_REPEATER:
 
         /* internal commands */
         case INTERNAL_GETOUTPINS:

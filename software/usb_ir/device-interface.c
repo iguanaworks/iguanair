@@ -103,6 +103,7 @@ static versionedType types[] =
     {0x200, 0, {IG_DEV_SETID,   CTL_TODEV,   ANY_PAYLOAD, true,  2}},
     {0, 0, {IG_DEV_IDSOFF,      CTL_TODEV,   NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_IDSON,       CTL_TODEV,   NO_PAYLOAD,  true,  NO_PAYLOAD}},
+    {0x306, 0, {IG_DEV_REPEATER, CTL_TODEV,  NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
@@ -541,7 +542,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         /* SEND and PINBURST do not get their data packed into the
            request packet, unlike everything else. */
         if (request->code != IG_DEV_SEND &&
-            request->code != IG_DEV_PINBURST)
+            request->code != IG_DEV_PINBURST &&
+            request->code != IG_DEV_REPEATER)
         {
             if (request->code != IG_DEV_SETPINCONFIG)
             {
@@ -559,7 +561,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             msg[length++] = request->dataLen;
 
             /* select which channels to transmit on */
-            if (request->code == IG_DEV_SEND)
+            if (request->code == IG_DEV_SEND ||
+                request->code == IG_DEV_REPEATER)
             {
                 msg[length++] = idev->channels;
 
