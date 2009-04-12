@@ -15,6 +15,7 @@
 ; flags used by the body code
 RX_ON_FLAG:       EQU 0x01
 RX_OVERFLOW_FLAG: EQU 0x02
+RX_REPEATER_FLAG: EQU 0x04
 
 ;INSERT_CODES_HERE
 

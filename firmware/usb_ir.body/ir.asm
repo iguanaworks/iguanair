@@ -26,6 +26,7 @@ export tcap_int
 export twrap_int
 export write_signal
 export send_loop
+export ir_repeater
 
 ; exported variables
 export rx_flags
@@ -297,6 +298,33 @@ twrap_int:
 
     pop A
     reti
+
+ir_repeater:
+    or [rx_flags], RX_ON_FLAG ; note that rx should be on
+;;;  TODO: dont enable the rollover interrupt
+    lcall rx_reset            ; make rx state actually match rx_on
+
+    ; turn the repeater on in the interrupt
+    or [rx_flags], RX_REPEATER_FLAG
+    mov [tx_state], 0
+
+    ; be sure the lights are off
+    or REG[TX_BANK], TX_MASK
+        ;;  TODO: take CDATA to get the freq and channels
+    mov [control_pkt + CDATA + 2], 0x06
+    mov [control_pkt + CDATA + 3], 0x31
+  rb_loop:
+    ; check for data from host and break out of the loop
+    lcall check_read
+    jnz rb_done
+
+    ; transmit a long pulse/space depending on the interrupts
+    mov X, TX_BANK
+    mov A, 0x7F
+    call send_loop              
+    jmp rb_loop
+
+  rb_done:
 
 ; FUNCTION: transmit_code
 ; transmit the code over IR
