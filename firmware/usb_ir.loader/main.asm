@@ -65,77 +65,77 @@ _main:
 
 ; wait for usb enumeration
 config_loop:
-	lcall USB_bGetConfiguration
-	jz config_loop ; if return val was zero, try again
+    lcall USB_bGetConfiguration
+    jz config_loop ; if return val was zero, try again
 
 ; now we're connected
 soft_reset:
-	and [loader_flags], ~FLAG_HALTED    ; clear halt flag that Linux sets
-	or  [loader_flags], FLAG_BODY_RESET ; set the body reset flag
+    and [loader_flags], ~FLAG_HALTED    ; clear halt flag that Linux sets
+    or  [loader_flags], FLAG_BODY_RESET ; set the body reset flag
 
-	; clear the IN endpoint by sending 0-byte packet
-	mov [USB_APIEPNumber], 0x1 ; set to endpoint 1
-	mov [USB_APICount], 0      ; set packet size
-	mov X, buffer              ; put packet address into X
-	lcall USB_XLoadEP          ; send packet
+    ; clear the IN endpoint by sending 0-byte packet
+    mov [USB_APIEPNumber], 0x1 ; set to endpoint 1
+    mov [USB_APICount], 0      ; set packet size
+    mov X, buffer              ; put packet address into X
+    lcall USB_XLoadEP          ; send packet
 
-	; enable OUT endpoint
-	MOV A, OUT
-	lcall USB_EnableEP
+    ; enable OUT endpoint
+    MOV A, OUT
+    lcall USB_EnableEP
 
 main_loop:
     ; halt condition 
-	mov A, [loader_flags] ; check for halt condition
-	and A, FLAG_HALTED
-	jnz soft_reset        ; go to known state after halt
+    mov A, [loader_flags] ; check for halt condition
+    and A, FLAG_HALTED
+    jnz soft_reset        ; go to known state after halt
 
-	; check for data from host
-	lcall check_read_body ; see if there is a transmission from the host
-	jnz main_recv
+    ; check for data from host
+    lcall check_read_body ; see if there is a transmission from the host
+    jnz main_recv
 
-	; only call the body loop if the body has successfully initialized
-	mov A, [loader_flags] ; check for halt condition
-	and A, FLAG_BODY_INIT
-	jnz main_loop ; repeat main loop if body has not init'd
+    ; only call the body loop if the body has successfully initialized
+    mov A, [loader_flags] ; check for halt condition
+    and A, FLAG_BODY_INIT
+    jnz main_loop ; repeat main loop if body has not init'd
 
-	lcall body_loop
-	jmp main_loop ; jump back to main loop now that body has run
+    lcall body_loop
+    jmp main_loop ; jump back to main loop now that body has run
 
 ; there is a transmission, so receive and handle it
 main_recv:
-	; get control packet
-	lcall read_control_body
+    ; get control packet
+    lcall read_control_body
 
-	;at this point, A contains control code
-	jz main_loop          ; null control code, just ignore
-	cmp A, CTL_GETVERSION ; get version
-	jz main_getversion
-	cmp A, CTL_WRITEBLOCK ; program a block of flash
-	jz main_prog
-	cmp A, CTL_CHECKSUM   ; checksum block of flash
-	jz main_chksum
-	cmp A, CTL_RESET      ; reset command
-	jz main_reset
+    ;at this point, A contains control code
+    jz main_loop          ; null control code, just ignore
+    cmp A, CTL_GETVERSION ; get version
+    jz main_getversion
+    cmp A, CTL_WRITEBLOCK ; program a block of flash
+    jz main_prog
+    cmp A, CTL_CHECKSUM   ; checksum block of flash
+    jz main_chksum
+    cmp A, CTL_RESET      ; reset command
+    jz main_reset
 
-	lcall body_handler ; default behavior--unknown code
-	jmp main_loop
+    lcall body_handler ; default behavior--unknown code
+    jmp main_loop
 
 main_getversion:
-	; fetch the low byte of the version by loading the body page
-	; read a page of flash
-	mov [tmp3], BODY_JUMPS / 64
-	mov A, 0x01   ; read block code
-	call exec_ssc
+    ; fetch the low byte of the version by loading the body page
+    ; read a page of flash
+    mov [tmp3], BODY_JUMPS / 64
+    mov A, 0x01   ; read block code
+    call exec_ssc
 
-	; send control packet with version id
-	mov [control_pkt + CCODE], CTL_GETVERSION
-	; store the correct byte from the previously read page
-	mov [control_pkt + CDATA], [buffer + 1]
-	; high byte is defined in here
-	mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
-	mov X, CTL_BASE_SIZE + 2
-	lcall write_control_body
-	jmp main_loop
+    ; send control packet with version id
+    mov [control_pkt + CCODE], CTL_GETVERSION
+    ; store the correct byte from the previously read page
+    mov [control_pkt + CDATA], [buffer + 1]
+    ; high byte is defined in here
+    mov [control_pkt + CDATA + 1], VERSION_ID_HIGH
+    mov X, CTL_BASE_SIZE + 2
+    lcall write_control_body
+    jmp main_loop
 
 ; compute the actual checksum for a page
 sum_page:
@@ -244,27 +244,27 @@ main_chksum:
     jmp main_loop
 
 main_reset:
-	lcall USB_Stop ; do this first, or we loop sending 0 length packets....
-	mov [tmp3], 0x0
-	mov A, 0 ;reset code
-	call exec_ssc
+    lcall USB_Stop ; do this first, or we loop sending 0 length packets....
+    mov [tmp3], 0x0
+    mov A, 0 ;reset code
+    call exec_ssc
 
 ; pre: tmp3 holds the block index
 ;      A holds the ssc code
 exec_ssc:
-	; store the ssc code
-	mov [tmp1], A
+    ; store the ssc code
+    mov [tmp1], A
 
-	;now set up the parameter block for the SROM call
-	mov [KEY1], 0x3A
-	mov X, SP             ; get stack pointer
-	mov A, X
-	add A, 3              ; just following directions from datasheet
-	mov [KEY2], A
-	mov [BLOCKID], [tmp3] ; set which flash block to write
-	mov [POINTER], buffer ; write data to the buffer
-	mov [CLOCK], 0x00     ; guessing at the right clock divider
-	mov [DELAY], 0xAC     ; a guess, datasheet says use 0x56 for 12MHz
-	mov A, [tmp1]         ; load the ssc code
-	ssc                   ; execute it
-	ret
+    ;now set up the parameter block for the SROM call
+    mov [KEY1], 0x3A
+    mov X, SP             ; get stack pointer
+    mov A, X
+    add A, 3              ; just following directions from datasheet
+    mov [KEY2], A
+    mov [BLOCKID], [tmp3] ; set which flash block to write
+    mov [POINTER], buffer ; write data to the buffer
+    mov [CLOCK], 0x00     ; guessing at the right clock divider
+    mov [DELAY], 0xAC     ; a guess, datasheet says use 0x56 for 12MHz
+    mov A, [tmp1]         ; load the ssc code
+    ssc                   ; execute it
+    ret
