@@ -600,7 +600,9 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
 static void freeTask(igtask *cmd)
 {
     /* explicitly cast off the const qualifier */
-  /*    free((char*)cmd->arg); TODO: hmmmm*/
+#ifndef WIN32
+    free((char*)cmd->arg);
+#endif
     free(cmd);
 }
 

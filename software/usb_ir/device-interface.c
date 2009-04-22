@@ -822,7 +822,12 @@ void handleIncomingPackets(iguanaDev *idev)
                     /* if the type demands more data then read it here */
                     type = findTypeEntry(current->code, idev->version);
                     if (type == NULL)
+                    {
                         message(LOG_ERROR, "Unknown packet type received from device: 0x%x\n", current->code);
+                        /* still store the rest of the packet */
+                        current->data = (unsigned char*)malloc(current->dataLen);
+                        memcpy(current->data, dataStart, current->dataLen);
+                    }
                     else if (type->inData != NO_PAYLOAD &&
                              type->inData > current->dataLen)
                     {
@@ -934,10 +939,9 @@ uint32_t* iguanaDevToPulses(unsigned char *code, int *length)
     for(x = 0; x < *length + 1; x++)
     {
         if (x > 0 &&
-            (((code[x] & STATE_MASK) != inSpace) ||
-             ((code[x] & LENGTH_MASK) + retval[codeLength] > 
-              IG_PULSE_MASK) ||
-             x == *length))
+            (x == *length||
+             ((code[x] & STATE_MASK) != inSpace) ||
+             ((code[x] & LENGTH_MASK) + retval[codeLength] > IG_PULSE_MASK)))
         {
             retval[codeLength] = (retval[codeLength] << 6) / 3;
 
