@@ -656,6 +656,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                         /* store the retrieved response */
                         if (response != NULL)
                             *response = pos;
+                        else
+                            freeDataPacket(pos);
                         pos = NULL;
 
                         /* how long did this all take? */
