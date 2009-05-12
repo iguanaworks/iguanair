@@ -103,6 +103,7 @@ static versionedType types[] =
     {0x200, 0, {IG_DEV_SETID,   CTL_TODEV,   ANY_PAYLOAD, true,  2}},
     {0, 0, {IG_DEV_IDSOFF,      CTL_TODEV,   NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_IDSON,       CTL_TODEV,   NO_PAYLOAD,  true,  NO_PAYLOAD}},
+    {0, 0, {IG_DEV_IDSTATE,     CTL_TODEV,   NO_PAYLOAD,  true,  1}},
     {0x306, 0, {IG_DEV_REPEATER, CTL_TODEV,  NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},

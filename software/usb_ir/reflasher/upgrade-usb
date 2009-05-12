@@ -582,10 +582,12 @@ def reflashDevice(features):
 
         if body is not None:
             sys.stdout.write('Writing body to the device:\n')
+            checkingIDs = ord(deviceTransaction(iguanaIR.IG_DEV_IDSTATE)) != 0
             if deviceTransaction(iguanaIR.IG_DEV_IDSOFF):
                 writeHexFile(body, setFeatures = features)
                 deviceVersion((targetVersion & 0xFF00) | hexVersion(body))
-                deviceTransaction(iguanaIR.IG_DEV_IDSON)
+                if checkingIDs:
+                    deviceTransaction(iguanaIR.IG_DEV_IDSON)
             wrote = True
 
     if id:
