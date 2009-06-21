@@ -126,7 +126,7 @@ ENDIF
     reti
 
     org 3Ch                 ;Timer Capture 0 Interrupt Vector
-    `@INTERRUPT_15`
+    ljmp body_tcap_int
     reti
 	
     org 40h                 ;Timer Capture 1 Interrupt Vector
@@ -134,7 +134,7 @@ ENDIF
     reti
 
     org 44h                 ;Free Running Counter Wrap Interrupt Vector
-    `@INTERRUPT_17`
+    ljmp body_twrap_int
     reti
 
     org 48h                 ;INT 2 Interrupt Vector
