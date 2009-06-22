@@ -74,25 +74,7 @@ EXPORT USB_D0_CONFIG_LOOKUP
 .LITERAL
 USB_D0_CONFIG_LOOKUP:                            ;
   LT_START    1                                  ; Number of configurations
-  LT_ENTRY    USB_D0_C1_EP_SETUP, USB_D0_C1_INTERFACE_LOOKUP
-.ENDLITERAL
-
-;TODO: why did we have to add this?
-;----------------------------------------------------------------------
-; Interface Look Up Table
-; 
-; This look up table points to three tables.  Each of those tables is
-; indexed by the selected interface number provided by the request.
-;
-; Item 0: HID Report GET_REPORT/SET_REPORT Lookup Table
-; Item 1: HID Report Descriptor Transfer Descriptor Table
-; Item 2: HID Class Descriptor Transfer Descriptor Table
-;----------------------------------------------------------------------
-EXPORT USB_D0_C1_INTERFACE_LOOKUP
-.LITERAL
-USB_D0_C1_INTERFACE_LOOKUP:                      ;
-  DW    USB_D0_C1_INTERFACE_RPT_LOOKUP           ; Interface GET_REPORT/SET_REPORT Lookup Table
-  DW    USB_D0_C1_HID_CLASS_DESCR_TABLE          ; HID Class Descriptor Transfer Descriptor Table
+  LT_ENTRY    NULL_PTR, NULL_PTR                 ; No HID Class Descriptors
 .ENDLITERAL
 
 ;----------------------------------------------------------------------
@@ -128,7 +110,7 @@ EXPORT USB_D0_C1_HID_CLASS_DESCR_TABLE
 .LITERAL
 USB_D0_C1_HID_CLASS_DESCR_TABLE:                 ;
   TD_START_TABLE 1                               ; Number of interfaces/HID Class Descriptors
-  TD_ENTRY       USB_DS_ROM, DESCR_SIZE_HID_CLASS, USB_D0_C1_I0_HID_DESCR_START, NULL_PTR
+  TD_ENTRY       USB_DS_ROM, 0, NULL_PTR, NULL_PTR
 .ENDLITERAL
 
 ;----------------------------------------------------------------------
@@ -158,37 +140,6 @@ USB_DEVICE_DESCR_TABLE:
   TD_ENTRY       USB_DS_ROM, USB_D0_DESCR_SIZE, USB_D0_DESCR_START, NULL_PTR
 .ENDLITERAL
 ;----------------------------------------------------------------------
-;----------------------------------------------------------------------
-; Interface 0 RAM Allocation (Reused across configurations)
-;----------------------------------------------------------------------
-IF WIZARD_DEFINED_REPORT_STORAGE
-AREA  InterruptRAM     (RAM,REL,CON)
-;----------------------------------------------------------------------
-; RAM allocation for IN Reports.
-;----------------------------------------------------------------------
-EXPORT _USB_INTERFACE_0_IN_RPT_DATA
-EXPORT USB_INTERFACE_0_IN_RPT_DATA
-_USB_INTERFACE_0_IN_RPT_DATA:                    
-USB_INTERFACE_0_IN_RPT_DATA:                     
-  BLK  8                                         ;
-;----------------------------------------------------------------------
-; RAM allocation for OUT Reports.
-;----------------------------------------------------------------------
-EXPORT _USB_INTERFACE_0_OUT_RPT_DATA
-EXPORT USB_INTERFACE_0_OUT_RPT_DATA
-_USB_INTERFACE_0_OUT_RPT_DATA:                   
-USB_INTERFACE_0_OUT_RPT_DATA:                    
-  BLK  8                                         ;
-;----------------------------------------------------------------------
-; RAM allocation for FEATURE Reports.
-;----------------------------------------------------------------------
-EXPORT _USB_INTERFACE_0_FEATURE_RPT_DATA
-EXPORT USB_INTERFACE_0_FEATURE_RPT_DATA
-_USB_INTERFACE_0_FEATURE_RPT_DATA:               
-USB_INTERFACE_0_FEATURE_RPT_DATA:                
-  BLK  8                                         ;
-;----------------------------------------------------------------------
-ENDIF  ; WIZARD_DEFINED_REPORT_STORAGE
 ;----------------------------------------------------------------------
 ; Device Descriptor (USB_D0)
 ; This marks the beginning of the Device Descriptor.  This descriptor
@@ -257,17 +208,6 @@ USB_D0_C1_DESCR_START:                           ;
   DB    0                                        ; bInterfaceSubClass
   DB    0                                        ; bInterfaceProtocol
   DB    STR_HASH_0                               ; iInterface
-;----------------------------------------------------------------------
-; HID Class Descriptor (USB_D0_C1_I0)
-;----------------------------------------------------------------------
-USB_D0_C1_I0_HID_DESCR_START:                    
-  DB    9                                        ; bLength--HID Class Descriptor Length (9)
-  DB    0x21                                     ; bDescriptorType: HID Class
-  DWL   0x0111                                   ; bcdHID
-  DB    0                                        ; bCountryCode
-  DB    1                                        ; bNumDescriptors
-  DB    34                                       ; bDescriptorType
-  DWL   0                                        ; wDescriptorLength (No report was selected in the setup wizard)
 ;----------------------------------------------------------------------
 ; Endpoint Descriptor (USB_D0_C1_I0_E0)
 ;----------------------------------------------------------------------
