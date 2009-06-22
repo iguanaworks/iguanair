@@ -1,4 +1,4 @@
-INCLUDES=usb_ir.body/body.inc usb_ir.loader/loader.inc
+INCLUDES=usb_ir_body/usb_ir_body/body.inc usb_ir_loader/usb_ir_loader/loader.inc
 HEADER=../software/usb_ir/iguanaIR.h
 JUNK=project.* memory.inc mkdep linkfile opts.txt output obj backup lib/obj
 

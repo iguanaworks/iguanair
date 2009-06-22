@@ -1,1 +1,42 @@
-../../usb_ir_loader/usb_ir_loader/flashsecurity.txt
+; @Id: flashsecurity.txt#2 @
+;
+; Edit this file to adjust the Flash security for this project.
+; Flash security is provided by marking a 64 byte block with a character
+; that corresponds to the type of security for that block, given:
+;
+; W: Full (Write protected)
+; R: Field Upgrade (Read protected)
+; U: Unprotected
+; F: Factory
+
+; Note #1: Protection characters can be entered in upper or lower case.
+; Note #2: Refer to the Flash Program Memory Protection section in the Data Sheet.
+
+; Comments may be added similar to an assembly language comment, by
+; Using the semicolon (;) followed by your comment.  The comment extends
+; to the end of the line.
+
+; 0 40 80 C0 100 140 180 1C0 200 240 280 2C0 300 340 380 3C0 (+) Base Address
+
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 0 
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 400 
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 800 
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address C00 
+; End 4K parts
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 1000 
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 1400 
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 1800 
+  u  u  u  u  u   u   u   u   u   u   u   u   u   u   u   u ;    Base Address 1C00
+; End 8K parts 
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 2000 
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 2400 
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 2800 
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 2C00 
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 3000 
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 3400
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 3800
+  w  w  w  w  w   w   w   w   w   w   w   w   w   w   w   w ;    Base Address 3C00
+; End 16K parts
+
+
+; Copyright Cypress MicroSystems, 2002, All rights reserved.
