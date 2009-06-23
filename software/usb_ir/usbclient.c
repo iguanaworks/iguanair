@@ -66,6 +66,9 @@ int interruptRecv(usbDevice *handle, void *buffer, int bufSize)
 {
     int retval;
 
+    if (handle->stopped)
+        return -(errno = ENXIO);
+
     retval = usb_interrupt_read(handle->device,
                                 handle->epIn->bEndpointAddress,
                                 buffer, bufSize,
@@ -73,10 +76,9 @@ int interruptRecv(usbDevice *handle, void *buffer, int bufSize)
     if (retval < 0)
     {
         setError(handle, "Failed to read (interrupt end point)");
-#ifdef WIN32
-        /* windows is not setting errno, and is instead returning the error */
-        errno = -retval;
-#endif
+        /* libusb does not reliably set errno */
+        if (retval < -1 || !errno)
+            errno = -retval;
     }
     else
     {
@@ -95,6 +97,8 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize)
     appendHex(LOG_DEBUG2, buffer, bufSize);
 
     setError(handle, NULL);
+    if (handle->stopped)
+        return -(errno = ENXIO);
     /* NOTE: when firmware 0205 hangs during a send this call NEVER
        times out meaning that we have NO way to recover in the daemon
        so there's no point in trying to handle it. */
@@ -119,8 +123,11 @@ void releaseDevice(usbDevice *handle)
         setError(handle, NULL);
         if (usb_release_interface(handle->device, 0) < 0 && errno != ENODEV)
             setError(handle, "Failed to release interface");
+/* TODO: valgrind notes an error here, but this shuts down quickly... */
         else if (usb_close(handle->device) < 0)
             setError(handle, "Failed to close device");
+        else
+            handle->device = NULL;
 
         /* print errors from the usb closes */
         if (handle->error != NULL)

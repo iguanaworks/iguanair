@@ -147,6 +147,8 @@ iguanaPacket iguanaReadResponse(PIPE_PTR connection, unsigned int timeout)
                 response = NULL;
             }
     }
+    else
+        errno = EPIPE;
 
     return response;
 }

@@ -71,8 +71,10 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
     int retval = -1;
     fd_set fdsin, fdserr;
     struct timeval tv = {0,0}, *tvp = NULL;
+    int64_t stoptime = (int64_t)microsSinceX() + timeout * 1000;
 
     /* prepare the fds for the select call */
+    eintr_loop:
     FD_ZERO(&fdsin);
     FD_SET(fd, &fdsin);
     fdserr = fdsin;
@@ -80,16 +82,20 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
     /* configure the timeout if there was one*/
     if (timeout >= 0)
     {
+        int64_t timeremaining = stoptime - (int64_t)microsSinceX();
         tvp = &tv;
-	if (timeout >= 1000)
-            tv.tv_sec = timeout / 1000;
-        tv.tv_usec = (timeout % 1000) * 1000;
+        if (timeremaining < 0) timeremaining = 0;
+        tv.tv_sec = timeremaining / 1000000;
+        tv.tv_usec = timeremaining % 1000000;
     }
 
     switch(select(fd + 1, &fdsin, NULL, &fdserr, tvp))
     {
     /* error */
     case -1:
+        if (errno == EINTR)
+            /* I hate goto, but it's the right move here */
+            goto eintr_loop;
         break;
 
     /* timeout */
@@ -109,8 +115,14 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
                 switch(amount)
                 {
                 case -1:
+                    retval = -1;
                 case 0:
                     /* break out on error or EOF */
+                    if (retval == 0)
+                    {
+                        retval = -1;
+                        errno = EPIPE;
+                    }
                     goal = 0;
                     break;
 
@@ -120,6 +132,8 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
                 }
             }
         }
+        else
+            errno = EIO;
         break;
     }
     return retval;
