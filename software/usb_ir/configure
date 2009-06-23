@@ -578,6 +578,7 @@ PACKAGE_VERSION='0.98'
 PACKAGE_STRING='iguanaIR 0.98'
 PACKAGE_BUGREPORT='support@iguanaworks.net'
 
+ac_default_prefix=/usr
 ac_unique_file="daemon.c"
 # Factoring default headers for most tests.
 ac_includes_default="\

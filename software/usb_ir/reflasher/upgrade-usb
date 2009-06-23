@@ -50,6 +50,10 @@ msgPrefixes = [
 FlasherVersion = 0xFF00
 
 null = open('/dev/null', 'r+')
+if sys.platform == 'darwin':
+    deviceDir = '/tmp/iguanaIR'
+else:
+    deviceDir = '/dev/iguanaIR'
 
 #local variables
 currentLevel = LOG_NORMAL
@@ -199,7 +203,7 @@ if logFile != None:
     sys.log = open(logFile, "a", 1)
     logFile = "-"
 
-def listDevices(path = '/dev/iguanaIR'):
+def listDevices(path = deviceDir):
     devices = []
     for device in os.listdir(path):
         if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):

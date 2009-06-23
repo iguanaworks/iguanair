@@ -10,10 +10,11 @@ bindir = $(exec_prefix)/bin
 infodir = $(prefix)/info
 libdir = $(prefix)/lib/gnudl
 mandir = $(prefix)/man/man1
+builddir = $(shell pwd)
 
 CC = @CC@
 CPPFLAGS = @CPPFLAGS@
-CFLAGS = @CFLAGS@ -fvisibility=hidden -DIGUANAIR_EXPORTS
+CFLAGS = @CFLAGS@ -I. -fvisibility=hidden -DIGUANAIR_EXPORTS
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
@@ -21,7 +22,7 @@ INSTALL = @INSTALL@
 SHAREEXT = so
 LIBNAME=libiguanaIR.$(SHAREEXT).0
 SHAREARG = -shared
-LINKARGS = -Wl,-soname=$(LIBNAME),--version-script=ig.ver
+LINKARGS = -Wl,-soname=$(LIBNAME),--version-script=$(srcdir)/ig.ver
 ifeq ($(shell uname -m),x86_64)
   LIBDIR  = lib64
   CFLAGS += -fpic
@@ -31,15 +32,20 @@ else
   ifeq ($(shell uname -m),ppc)
     CFLAGS += -fpic
   else
-    ifeq ($(shell uname -m),Power Macintosh)
+    ifeq ($(shell uname -s),Darwin)
+      DARWIN = 1
+      PATH = $(shell getconf PATH):/usr/local/bin:/opt/local/bin:/sw/bin
+      export PATH
       LIBDIR  = lib
       CFLAGS += -fPIC
-      CPPFLAGS += -I/sw/include
-      LDFLAGS += -L/sw/lib
-      SHAREEXT = dylib
-      LIBNAME=libiguanaIR.$(SHAREEXT)
+      CPPFLAGS += -I/usr/local/include -I/usr/include -I/opt/local/include -I/sw/include
+      LDFLAGS += -L/usr/local/lib -L/usr/lib -L/opt/local/lib -L/sw/lib -framework CoreFoundation -framework IOKit
+      # Python needs .so but library should be .dylib
+      #SHAREEXT = dylib
+      LIBNAME=libiguanaIR.dylib
       SHAREARG = -dynamiclib
-      LINKARGS = 
+      LINKARGS = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0
+      OSSUPPORT = daemonosx.o
     endif
   endif
 endif
@@ -53,7 +59,8 @@ $(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 	$(CC) $(SHAREARG) $(LINKARGS) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o usbclient.o \
-          list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o
+          list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o \
+          $(OSSUPPORT)
 	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread $(LIBNAME) -o $@
 
 igclient: client.o list.o support.o compat.o
@@ -71,12 +78,13 @@ all: _iguanaIR.$(SHAREEXT)
 install: install-python install-reflasher
 .PHONY: install-python
 install-python:
-	install -D _iguanaIR.$(SHAREEXT) $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.$(SHAREEXT)
-	install -D iguanaIR.py $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
+	install -d $(DESTDIR)@PYTHON_SITE_PKG@
+	install _iguanaIR.$(SHAREEXT) $(DESTDIR)@PYTHON_SITE_PKG@/_iguanaIR.$(SHAREEXT)
+	install iguanaIR.py $(DESTDIR)@PYTHON_SITE_PKG@/iguanaIR.py
 
 .PHONY: install-reflasher
 install-reflasher:
-	make -C reflasher install
+	$(MAKE) -C $(srcdir)/reflasher prefix=$(prefix) install
 
 uninstall: uninstall-python uninstall-reflasher
 .PHONY: uninstall-python
@@ -86,10 +94,10 @@ uninstall-python:
 
 .PHONY: uninstall-reflasher
 uninstall-reflasher:
-	make -C reflasher uninstall
+	$(MAKE) -C $(srcdir)/reflasher prefix=$(prefix) uninstall
 
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
-	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python $<
+	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python -I$(srcdir) $(<F)
 
 iguanaIR_wrap.o: iguanaIR_wrap.c Makefile
 	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@
@@ -99,7 +107,7 @@ _iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
 endif
 
 # change ownership unless we're building an rpm
-ifeq ($(RPM_OS),)
+ifeq ($(RPM_OS)$(DARWIN),)
   SETOWNER=--owner iguanair --group iguanair
 install: adduser
 .PHONY: adduser
@@ -119,22 +127,28 @@ ifneq ($(LIBNAME),libiguanaIR.$(SHAREEXT))
 install: install-symlink
 .PHONY: install-symlink
 install-symlink:
-	install -d $(DESTDIR)/usr/$(LIBDIR)
-	ln -s $(LIBNAME) $(DESTDIR)/usr/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	install -d $(DESTDIR)$(prefix)/$(LIBDIR)
+	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	ln -s $(LIBNAME) $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
 endif
 
 .PHONY: install
 install: all
-	install -D igclient $(DESTDIR)/usr/bin/igclient
-	install -D igdaemon $(DESTDIR)/usr/bin/igdaemon
-	install -D $(LIBNAME) $(DESTDIR)/usr/$(LIBDIR)/$(LIBNAME)
-	install -D iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
-	install -D --mode 644 iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
-	install -D iguanaIR.h $(DESTDIR)/usr/include/iguanaIR.h
-	install -D --mode 644 plug-trigger/udev/iguanaIR.rules \
+	install -d $(DESTDIR)$(prefix)/bin
+	install igclient $(DESTDIR)$(prefix)/bin/igclient
+	install igdaemon $(DESTDIR)$(prefix)/bin/igdaemon
+	install -d $(DESTDIR)$(prefix)/$(LIBDIR)
+	install $(LIBNAME) $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
+	install -d $(DESTDIR)$(prefix)/include
+	install $(srcdir)/iguanaIR.h $(DESTDIR)$(prefix)/include/iguanaIR.h
+ifeq ($(DARWIN),)
+	install -D $(srcdir)/iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
+	install -D --mode 644 $(srcdir)/iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
+	install -D --mode 644 $(srcdir)/plug-trigger/udev/iguanaIR.rules \
 	                      $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/lib/udev/devices/iguanaIR
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
+endif
 #########################################################################
 # This is for fairly old versions of Fedora....
 #	install -D --mode 644 plug-trigger/hotplug/iguanaIR.usermap \
@@ -145,25 +159,30 @@ install: all
 
 .PHONY: uninstall
 uninstall:
+ifeq ($(DARWIN),)
 	/etc/init.d/iguanaIR stop || true
-	rm -f $(DESTDIR)/usr/bin/igclient
-	rm -f $(DESTDIR)/usr/bin/igdaemon
-	rm -f $(DESTDIR)/usr/$(LIBDIR)/$(LIBNAME)
+endif
+	rm -f $(DESTDIR)$(prefix)/bin/igclient
+	rm -f $(DESTDIR)$(prefix)/bin/igdaemon
+	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
+	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	rm -f $(DESTDIR)$(prefix)/include/iguanaIR.h
+ifeq ($(DARWIN),)
 	rm -f $(DESTDIR)/etc/init.d/iguanaIR
 	rm -f $(DESTDIR)/etc/default/iguanaIR
-	rm -f $(DESTDIR)/usr/include/iguanaIR.h
 	rm -f $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
 	rmdir $(DESTDIR)/lib/udev/devices/iguanaIR 2>/dev/null || true
 	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
+endif
 
 .PHONY: clean
 clean:
-	rm -f *~ *.o *iguanaIR.$(SHAREEXT)* *libiguanaIR.a iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
+	rm -f *~ *.o *iguanaIR.$(SHAREEXT)* *libiguanaIR.* iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
 
 .PHONY: distclean
 distclean: clean
 	rm -f Makefile config.h config.status
-	make -C packaging clean
+	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)" $(srcdir)/packaging clean
 
 .PHONY: cleanest
 cleanest: distclean
@@ -171,7 +190,7 @@ cleanest: distclean
 
 .PHONY: package
 package: distclean
-	make -C packaging
+	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)" $(srcdir)/packaging
 
 
 
@@ -190,15 +209,15 @@ devel-clean: distclean
 	rm -rf autoconf/autom4te.cache autoconf/aclocal.m4 
 
 # rules to rebuild the configure script
-M4S=$(filter-out autoconf/aclocal.m4, $(wildcard autoconf/*.m4))
+M4S=$(filter-out $(srcdir)/autoconf/aclocal.m4, $(wildcard $(srcdir)/autoconf/*.m4))
 autoconf/aclocal.m4: $(M4S)
-	cd autoconf; $(ACLOCAL)
+	cd $(srcdir)/autoconf; $(ACLOCAL)
 
 configure: autoconf/configure.ac autoconf/aclocal.m4
-	cd autoconf; $(AUTOCONF) -o ../configure configure.ac
+	cd $(srcdir)/autoconf; $(AUTOCONF) -o ../configure configure.ac
 
 config.h.in: autoconf/configure.ac
-	cd autoconf; autoheader configure.ac; mv config.h.in ..
+	cd $(srcdir)/autoconf; autoheader configure.ac; mv config.h.in ..
 
 config.status: configure
 	./config.status --recheck

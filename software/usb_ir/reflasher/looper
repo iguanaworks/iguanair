@@ -14,7 +14,12 @@ versions = [4]
 
 import iguanaIR
 
-def listDevices(path = '/dev/iguanaIR'):
+if sys.platform == 'darwin':
+    deviceDir = '/tmp/iguanaIR'
+else:
+    deviceDir = '/dev/iguanaIR'
+
+def listDevices(path = deviceDir):
     devices = []
     for device in os.listdir(path):
         try:

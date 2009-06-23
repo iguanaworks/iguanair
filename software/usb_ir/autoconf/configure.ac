@@ -5,6 +5,7 @@ AC_PREREQ(2.59)
 AC_INIT(iguanaIR,
   esyscmd(grep Version: ../packaging/fedora/iguanaIR.spec | sed 's/Version: *//' | tr -d '\n'),
   support@iguanaworks.net)
+AC_PREFIX_DEFAULT([/usr])
 AC_CONFIG_SRCDIR([daemon.c])
 AC_CONFIG_HEADER([config.h])
 
