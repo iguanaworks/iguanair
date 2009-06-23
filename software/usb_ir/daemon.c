@@ -27,6 +27,10 @@
 #include "device-interface.h"
 #include "client-interface.h"
 
+#ifdef __APPLE__
+extern int daemon_osx_support(const usbId *);
+#endif
+
 /* local variables */
 static usbId ids[] = {
     {0x1781, 0x0938}, /* iguanaworks USB transceiver */
@@ -95,6 +99,11 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
 
         /* trigger the initial device scan */
         scanHandler(SIGHUP);
+
+#ifdef __APPLE__
+        /* Support hot plug in on Mac OS X -- returns non-zero for error */
+        daemon_osx_support(ids);
+#endif
 
         /* now wait for commands */
         while(! quit)
