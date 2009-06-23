@@ -226,6 +226,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
     {
         if (request->code == IG_DEV_RESET)
         {
+            usb_clear_halt(getDevHandle(target->idev->usbDev),
+                           target->idev->usbDev->epIn->bEndpointAddress);
             if (usb_reset(getDevHandle(target->idev->usbDev)) != 0)
                 message(LOG_ERROR, "Hard reset failed\n");
             else
@@ -632,9 +634,9 @@ printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
 bool reapAllChildren(usbDeviceList *list)
 {
     unsigned int x;
-    /* stop all the readers and thereby the workers */
-    x = releaseDevices(list);
 
+    /* stop all the readers and thereby the workers */
+    x = stopDevices(list);
     for(; x > 0; x--)
     {
         void *exitval;
@@ -660,6 +662,7 @@ bool reapAllChildren(usbDeviceList *list)
             message(LOG_DEBUG, "Reaped child: %p\n", child);
         }
     }
+    releaseDevices(list);
 
     return true;
 }

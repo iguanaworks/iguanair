@@ -50,6 +50,9 @@ typedef struct usbDevice
     /* usbclient and libusb errors */
     char *error, *usbError;
 
+    /* set when device is logically stopped prior to removal from list */
+    bool stopped;
+
     /* set when device is logically removed from list */
     bool removed;
 } usbDevice;
@@ -98,6 +101,7 @@ bool initDeviceList(usbDeviceList *list, usbId *ids,
                     unsigned int recvTimeout, unsigned int sendTimeout,
                     deviceFunc ndf);
 bool updateDeviceList(usbDeviceList *list);
+unsigned int stopDevices(usbDeviceList *list);
 unsigned int releaseDevices(usbDeviceList *list);
 
 #endif

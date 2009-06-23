@@ -144,6 +144,18 @@ static void queueDataPacket(iguanaDev *idev, dataPacket *current, bool fromDev)
     LeaveCriticalSection(&idev->listLock);
 }
 
+static void flushToDevResponsePackets(iguanaDev *idev)
+{
+    char byte;
+    /* A 0 timeout performs a poll and never waits */
+    while (readPipeTimed(idev->responsePipe[READ], &byte, 1, 0) == 1)
+    {
+        freeDataPacket(idev->response);
+        idev->response = NULL;
+        message(LOG_ERROR, "Flushed extraneous CTL_TODEV response.\n");
+    }
+}
+
 static bool sendData(iguanaDev *idev,
                      const void *buffer, int size, bool addTerminator)
 {
@@ -590,6 +602,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         }
 #endif
 
+        /* flush any extraneous CTL_TODEV responses */
+        flushToDevResponsePackets(idev);
         /* time the transfer */
         then = microsSinceX();
         result = interruptSend(idev->usbDev, msg, length);
@@ -762,7 +776,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     break;
                 }
                 /* (somewhat) quietly released during shutdown */
-                else if (idev->usbDev->removed)
+                else if (idev->usbDev->stopped)
                 {
                     message(LOG_INFO,
                             "Device %d released\n", idev->usbDev->id);

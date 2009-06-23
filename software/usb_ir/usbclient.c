@@ -302,6 +302,17 @@ bool updateDeviceList(usbDeviceList *list)
     return true;
 }
 
+unsigned int stopDevices(usbDeviceList *list)
+{
+    unsigned int count = list->deviceList.count;
+    usbDevice *head;
+
+    while((head = (usbDevice*)firstItem(&list->deviceList)) != NULL)
+        head->stopped = true;
+
+    return count;
+}
+
 unsigned int releaseDevices(usbDeviceList *list)
 {
     unsigned int count = list->deviceList.count;
