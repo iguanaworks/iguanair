@@ -25,13 +25,13 @@ export transmit_code
 export tcap_int
 export twrap_int
 export write_signal
-export send_loop
+;export send_loop
 export ir_repeater
 
 ; exported variables
 export rx_flags
-export tx_pins
-export tx_state
+;export tx_pins
+;export tx_state
 
 AREA bss
 ; transmission variables
@@ -264,22 +264,21 @@ tcap_int:
     jnz tcapi_rise
 
 ; in repeater mode fiddle with the LED by changing tx_state
-
-or REG[TX_BANK], TX_MASK
+;or REG[TX_BANK], TX_MASK
   ; if here, it's a falling edge
   tcapi_fall:
     mov [rx_pulse], 0x80 ; set pulse bit to indicate space
-mov [tx_state], TX_MASK
+;mov [tx_state], TX_MASK
     jmp tcapi_done
 
   ; found a rising edge
   tcapi_rise:
     mov [rx_pulse], 0x00 ; clear pulse bit to indicate pulse
-mov [tx_state], 0
+;mov [tx_state], 0
     jmp tcapi_done
 
   tcapi_done:
-;    jmp load_value          ; store into data buffer
+    jmp load_value          ; store into data buffer
   tcapi_load_done:
     mov REG[FRTMRL], 0      ; reset timer low byte
     mov REG[FRTMRH], 0      ; reset timer high byte
