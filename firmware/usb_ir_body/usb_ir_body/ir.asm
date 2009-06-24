@@ -39,6 +39,8 @@ tx_pins:
     BLK 1 ; pins to use for current tx
 tx_state:
     BLK 1 ; state of tx (on or off)
+tx_bank:
+    BLK 1 ; new or old TX_BANK?
 
 ; reception variables
 rx_flags:
@@ -120,46 +122,6 @@ write_signal:
   ws_done:
     ret
 
-; FUNCTION rx_disable disables the IR receiver
-rx_disable:
-    ; disable the timer capture (tcap) interrupt
-    mov A, REG[INT_MSK1]
-    and A, ~0b10000000
-    mov REG[INT_MSK1], A
-
-    ; disable the timer wrap (twrap) interrupt
-    mov A, REG[INT_MSK2]
-    and A, ~0b00000010
-    mov REG[INT_MSK2], A
-
-    ; make sure the transmit LEDs are OFF
-    call tx_pins_off
-    ret
-
-; FUNCTION: rx_reset enables the IR receiver OR EXITS THROUGH rx_disable
-rx_reset:
-    ; reset a pile of variables related to reception
-    and [rx_flags], ~RX_OVERFLOW_FLAG ; clear overflow flag
-    mov [read_ptr], buffer   ; reset write ptr to start of buffer
-    mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
-    mov [buf_size], 0        ; reset size to 0
-
-    mov A, [rx_flags]        ; check if rx should be enabled
-    and A, RX_ON_FLAG
-    jz rx_disable            ; disable if necessary (JMP NOT CALL!)
-
-    ; enable the timer capture interrupt
-    mov A, REG[INT_MSK1]
-    or A, 0b10000000         ; tcap interrupt enable
-    mov REG[INT_MSK1], A
-
-    ; enable the timer wrap interrupt
-    mov A, REG[INT_MSK2]
-    or A, 0b00000010         ; twrap interrupt enable
-    mov REG[INT_MSK2], A
-
-  rx_reset_done:
-    ret
 
 tx_pins_off:
     call get_feature_list
@@ -177,6 +139,55 @@ tx_pins_off:
 
   tx_disable_done:
     ret
+
+
+; FUNCTION rx_disable disables the IR receiver
+rx_disable:
+    ; disable the timer capture (tcap) interrupt
+    mov A, REG[INT_MSK1]
+    and A, ~0b10000000
+    mov REG[INT_MSK1], A
+
+    ; disable the timer wrap (twrap) interrupt
+    mov A, REG[INT_MSK2]
+    and A, ~0b00000010
+    mov REG[INT_MSK2], A
+
+    ; make sure the transmit LEDs are OFF
+    call tx_pins_off
+    ret
+
+
+; FUNCTION: rx_reset enables the IR receiver
+rx_reset:
+    ; reset a pile of variables related to reception
+    and [rx_flags], ~RX_OVERFLOW_FLAG ; clear overflow flag
+    mov [read_ptr], buffer   ; reset write ptr to start of buffer
+    mov [buffer_ptr], buffer ; reset rx ptr to start of buffer
+    mov [buf_size], 0        ; reset size to 0
+
+    call rx_disable          ; disable no matter what
+
+    mov A, [rx_flags]        ; check if rx should be enabled
+    and A, RX_ON_FLAG
+	jz rx_reset_done
+
+    ; enable the timer capture interrupt
+    mov A, REG[INT_MSK1]
+    or A, 0b10000000         ; tcap interrupt enable
+    mov REG[INT_MSK1], A
+
+    ; enable the timer wrap interrupt
+    mov A, [rx_flags]        ; check if we're in repeater mode
+    and A, RX_REPEATER_FLAG
+	jnz rx_reset_done
+    mov A, REG[INT_MSK2]
+    or A, 0b00000010         ; twrap interrupt enable
+    mov REG[INT_MSK2], A
+
+  rx_reset_done:
+    ret
+
 
 ; used-to-be FUNCTION load_value (now it's a jump in - jump out)
 ; loads a received value into the data buffer
@@ -263,19 +274,25 @@ tcap_int:
     and A, 0x1           ; true if this is a rising edge
     jnz tcapi_rise
 
-; in repeater mode fiddle with the LED by changing tx_state
-;or REG[TX_BANK], TX_MASK
   ; if here, it's a falling edge
   tcapi_fall:
     mov [rx_pulse], 0x80 ; set pulse bit to indicate space
-;mov [tx_state], TX_MASK
-    jmp tcapi_done
+	; if we're in repeat mode then set the tx_state
+	mov A, [rx_flags]
+	and A, RX_REPEATER_FLAG
+	jz tcapi_done
+	mov [tx_state], [tx_pins] ; TODO: this seems backwards and I'm not sure why
+    jmp tcapi_load_done
 
   ; found a rising edge
   tcapi_rise:
-    mov [rx_pulse], 0x00 ; clear pulse bit to indicate pulse
-;mov [tx_state], 0
-    jmp tcapi_done
+    mov [rx_pulse], 0x00 ; clear pulse bit to indicate pulse (seems backwards, I know)
+	; if we're in repeat mode then set the tx_state
+	mov A, [rx_flags]
+	and A, RX_REPEATER_FLAG
+	jz tcapi_done
+	mov [tx_state], 0 ; TODO: this seems backwards and I'm not sure why
+    jmp tcapi_load_done
 
   tcapi_done:
     jmp load_value          ; store into data buffer
@@ -286,6 +303,7 @@ tcap_int:
 
     pop A
     reti
+
 
 ; INTERRUPT: timer wrap interrupt handler
 twrap_int:
@@ -298,48 +316,18 @@ twrap_int:
     pop A
     reti
 
-ir_repeater:
-    or [rx_flags], RX_ON_FLAG ; note that rx should be on
-;;;  TODO: dont enable the rollover interrupt
-    lcall rx_reset            ; make rx state actually match rx_on
 
-    ; turn the repeater on in the interrupt
-    or [rx_flags], RX_REPEATER_FLAG
-    mov [tx_state], 0
-
-    ; be sure the lights are off
-    or REG[TX_BANK], TX_MASK
-        ;;  TODO: take CDATA to get the freq and channels
-    mov [control_pkt + CDATA + 2], 0x06
-    mov [control_pkt + CDATA + 3], 0x31
-  rb_loop:
-    ; check for data from host and break out of the loop
-    lcall check_read
-    jnz rb_done
-
-    ; transmit a long pulse/space depending on the interrupts
-    mov X, TX_BANK
-    mov A, 0x7F
-    call send_loop              
-    jmp rb_loop
-
-  rb_done:
-
-; FUNCTION: transmit_code
-; transmit the code over IR
-; code format: first bit is 1 for on, 0 for off
-; next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
-transmit_code:
+read_send_settings:
     ; does this device support channels?
-    mov X, OLD_TX_BANK
+    mov [tx_bank], OLD_TX_BANK
     mov [tx_pins], OLD_TX_MASK
     call get_feature_list
     and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
-    jz tx_start
+    jz read_send_done
 
     ; read a byte describing channel selection, and make sure it only
     ; specifies valid channels
-    mov X, TX_BANK
+    mov [tx_bank], TX_BANK
     and [control_pkt + CDATA + 1], TX_MASK
     mov [tx_pins], [control_pkt + CDATA + 1]
     ; if the byte was 0 then transmit on all channels
@@ -350,13 +338,47 @@ transmit_code:
   tx_default_carrier:
     ; set a default 38kHz frequency when sent 0,0
     mov A, [control_pkt + CDATA + 2]
-    jnz tx_start
+    jnz read_send_done
     mov A, [control_pkt + CDATA + 3]
-    jnz tx_start
+    jnz read_send_done
     mov [control_pkt + CDATA + 2], 0x06
     mov [control_pkt + CDATA + 3], 0x31
 
-  tx_start:
+  read_send_done:
+    ret
+
+
+ir_repeater:
+    call read_send_settings
+
+	; set rx_flags, then make rx state actually match rx_flags
+    or [rx_flags], RX_ON_FLAG | RX_REPEATER_FLAG
+    call rx_reset
+;    mov [tx_off_pins], REG[X]
+
+  repeat_loop:
+	; break out of the loop if we see data from the host
+    lcall check_read
+    jnz repeat_done
+
+    ; transmit a long pulse/space depending on the interrupts
+    mov A, 0x7F
+    call send_loop
+    jmp repeat_loop
+
+  repeat_done:
+    and [rx_flags], ~RX_ON_FLAG & ~RX_REPEATER_FLAG
+    call rx_reset
+    ret
+
+
+; FUNCTION: transmit_code
+; transmit the code over IR
+; code format: first bit is 1 for on, 0 for off
+; next 7 bits are length in 26.3uS (38KHz) increments--that's 316 clocks up, 316 down at 24MHz
+transmit_code:
+    call read_send_settings
+
     mov [buffer_ptr], buffer          ; reset to start of buffer
     mov [tx_state], 0                 ; clear tx state
     mov [tmp1], [control_pkt + CDATA] ; get number of bytes to transmit
@@ -366,7 +388,6 @@ transmit_code:
   tx_loop:
     mvi A, [buffer_ptr] ; move buffer data into A, increment pointer
     call send_loop
-    call tx_pins_off
 
   tx_end_pulse:
     dec [tmp1]    ; decrement remaining byte count
@@ -379,6 +400,7 @@ send_loop:
     and A, 0x7F         ; mask off the pulse length bits
     asl A               ; shift left to multiply by two due to carrier division
     mov [tmp2], A       ; store pulse length in tmp2
+	mov X, [tx_bank]
 
     ; do not modify tx_state in repeater mode
     mov A, [rx_flags]
@@ -553,5 +575,5 @@ send_loop:
   ; end of the transmit function
   sl_end_pulse:
     ; make sure tx pins are off
-;    call tx_pins_off
+    call tx_pins_off
     ret           ; done

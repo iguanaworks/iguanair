@@ -167,12 +167,12 @@ get_buf_size_body:
 
 recv_on_body:
     or [rx_flags], RX_ON_FLAG ; note that rx should be on
-    lcall rx_reset            ; make rx state actually match rx_on
+    lcall rx_reset            ; make rx state actually match
     jmp bm_ack_then_ret
 
 recv_off_body:
     and [rx_flags], ~RX_ON_FLAG ; note that rx should be off
-    lcall rx_reset              ; make rx state actually match rx_on
+    lcall rx_reset              ; make rx state actually match
     jmp bm_ack_then_ret
 
 send_body:
@@ -231,8 +231,12 @@ execute_body:
     jmp bm_ret
 
 repeater_body:
-    lcall ir_repeater
-    ret
+    ; send ack
+    mov X, CTL_BASE_SIZE
+    lcall write_control
+	; call the repeater
+	lcall ir_repeater
+    jmp bm_ret
 
 ; implementation of the body jump table located at BODY_JUMPS
 ; Do not modify this code unless you KNOW what you are doing!
