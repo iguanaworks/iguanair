@@ -24,7 +24,16 @@ export get_feature_list
 ;  pre: A contains a control code
 ;       ctl_packet contains the whole control packet
 body_main:
-    ; save the control code
+                                ; ;  configure and enable the watchdog timer
+    M8C_ClearWDTAndSleep
+    M8C_SetBank1
+    mov REG[OSC_CR0], (OSC_CR0_SLEEP_1Hz | OSC_CR0_CPU_24MHz) ; 3 sec
+        ;      mov REG[OSC_CR0], (OSC_CR0_SLEEP_8Hz | OSC_CR0_CPU_24MHz) ; 1/3 sec
+                     M8C_SetBank0
+                     M8C_EnableWatchDog
+        
+        
+        ;  save the control code
     mov [tmp1], A
 
     ; check if we need to initialize or reset
