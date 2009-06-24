@@ -59,29 +59,6 @@ AREA text
 _main:
     or [loader_flags], FLAG_BODY_INIT ; set the body init flag
 
-    ;; DELAY!!
-    mov [tmp3], 0xFF
-tmp3_loop:
-    mov [tmp2], 0xFF
-tmp2_loop:
-    mov [tmp1], 0xFF
-tmp1_loop:
-    dec [tmp1]
-    mov A, [tmp1]
-    jz tmp1_done
-    jmp tmp1_loop
-tmp1_done:
-    dec [tmp2]
-    mov A, [tmp2]
-    jz tmp2_done
-    jmp tmp2_loop
-tmp2_done:
-    dec [tmp3]
-    mov A, [tmp3]
-    jz tmp3_done
-    jmp tmp3_loop
-tmp3_done:
-        
     mov A, 0        ; put arg 0 for USB_start
     lcall USB_Start ; enable USB device
     or  F, 0x1      ; enable global interrupts
