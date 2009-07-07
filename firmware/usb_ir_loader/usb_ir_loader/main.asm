@@ -63,10 +63,25 @@ _main:
     lcall USB_Start ; enable USB device
     or  F, 0x1      ; enable global interrupts
 
-; wait for usb enumeration
+; wait for usb enumeration, but after trying for about 3 seconds perform a default action
+    mov [tmp3], 0x10
+    mov [tmp2], 0x00
+    mov [tmp1], 0x00
 config_loop:
     lcall USB_bGetConfiguration
-    jz config_loop ; if return val was zero, try again
+	jnz soft_reset ; if return val was not zero, done
+	; count the calls to the previous function
+	dec [tmp1]
+	jnz dec2_done
+	dec [tmp2]
+  dec2_done:
+	jnz dec3_done
+	dec [tmp3]
+  dec3_done:
+	mov A, [tmp3]
+	jnz config_loop
+	; TODO: perform a default action here (turn on repeat mode)
+	jmp config_loop
 
 ; now we're connected
 soft_reset:
