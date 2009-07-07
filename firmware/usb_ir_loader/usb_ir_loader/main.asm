@@ -57,9 +57,17 @@ export soft_reset
 
 AREA text
 _main:
-    or [loader_flags], FLAG_BODY_INIT ; set the body init flag
+	or [loader_flags], FLAG_BODY_INIT ; set the body init flag
 
-    mov A, 0        ; put arg 0 for USB_start
+    ; clear, configure, and enable the watchdog timer
+    M8C_ClearWDTAndSleep
+    M8C_SetBank1
+;      mov REG[OSC_CR0], (OSC_CR0_SLEEP_8Hz | OSC_CR0_CPU_24MHz) ; 1/3 sec
+    mov REG[OSC_CR0], (OSC_CR0_SLEEP_1Hz | OSC_CR0_CPU_24MHz) ; 3 sec
+	M8C_SetBank0
+	M8C_EnableWatchDog
+
+	mov A, 0        ; put arg 0 for USB_start
     lcall USB_Start ; enable USB device
     or  F, 0x1      ; enable global interrupts
 
@@ -80,7 +88,7 @@ config_loop:
   dec3_done:
 	mov A, [tmp3]
 	jnz config_loop
-	; TODO: perform a default action here (turn on repeat mode)
+	; TODO: perform a default action here (turn on repeater mode)
 	jmp config_loop
 
 ; now we're connected
