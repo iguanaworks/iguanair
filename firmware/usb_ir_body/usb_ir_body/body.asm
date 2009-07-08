@@ -37,14 +37,16 @@ body_main:
     call get_feature_list
     and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
     jnz bm_output_channels
-    mov REG[P06CR], 0x01 ; only had 1 channel back then
+    and REG[OLD_TX_BANK], ~OLD_TX_MASK
+	mov REG[P06CR], 0x01 ; only had 1 channel back then
     jmp bm_output_enabled
-  bm_output_channels:
+   bm_output_channels:
+    or REG[TX_BANK], TX_MASK
     mov REG[P14CR], 0x01 ; channel 0
     mov REG[P15CR], 0x01 ; channel 1
     mov REG[P16CR], 0x01 ; channel 2
     mov REG[P17CR], 0x01 ; channel 3
-  bm_output_enabled:
+   bm_output_enabled:
     ; pins will be set correctly by the rx_reset below
 
     ; configure capture
@@ -55,9 +57,7 @@ body_main:
     ; but don't actually enable the interrupts yet
 
     ; clear the initialize flag
-    mov A, [loader_flags]
-    and A, ~FLAG_BODY_INIT
-    mov [loader_flags], A
+    and [loader_flags], ~FLAG_BODY_INIT
 
   bm_was_initialized:
     mov A, [loader_flags]
@@ -69,9 +69,7 @@ body_main:
     lcall pins_reset            ; clear GPIO pin state
 
     ; clear the soft reset flag
-    mov A, [loader_flags]
-    and A, ~FLAG_BODY_RESET
-    mov [loader_flags], A
+    and [loader_flags], ~FLAG_BODY_RESET
 
   bm_was_reset:
     mov A, [loader_flags]
@@ -81,9 +79,7 @@ body_main:
     lcall rx_reset
 
     ; clear the bufclr flag
-    mov A, [loader_flags]
-    and A, ~FLAG_BODY_BUFCLR
-    mov [loader_flags], A
+    and [loader_flags], ~FLAG_BODY_BUFCLR
 
   bm_buffer_okay:
     ; reload the control code
@@ -122,6 +118,9 @@ body_main:
     jz execute_body
     cmp A, CTL_REPEATER
     jz repeater_body
+	; the "no usb" action is to fall into repeater mode
+    cmp A, CTL_NOUSB
+    jz start_repeating
 
     ; that's everything we handle
     jmp bm_ret
@@ -231,10 +230,12 @@ execute_body:
     jmp bm_ret
 
 repeater_body:
-    ; send ack
+    ; send the ack
     mov X, CTL_BASE_SIZE
     lcall write_control
+
 	; call the repeater
+  start_repeating:
 	lcall ir_repeater
     jmp bm_ret
 

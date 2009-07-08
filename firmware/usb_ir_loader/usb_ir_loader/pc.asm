@@ -29,6 +29,7 @@ export read_buffer_body
 export read_buffer_body_real
 export wait_for_IN_ready_body
 export write_packet_body
+export clear_control_pkt
 export read_control_body
 export write_control_body
         
@@ -145,10 +146,7 @@ read_buffer_body_real:
     mov A, 0                               ; return code overflow
     ret
 
-;FUNCTION read_control
-;  receives a control packet, returning the control code
-;  puts a copy of code and data into control_packet
-read_control_body:
+clear_control_pkt:
     ; zero the entire control_pkt
     mov X, 0
   rc_loop:
@@ -157,6 +155,13 @@ read_control_body:
     mov A, X
     cmp A, PACKET_SIZE
     jnz rc_loop
+	ret
+
+;FUNCTION read_control
+;  receives a control packet, returning the control code
+;  puts a copy of code and data into control_packet
+read_control_body:
+	call clear_control_pkt
 
     mov X, PACKET_SIZE    ; store buffer size
     mov A, control_pkt    ; store data pointer

@@ -357,6 +357,8 @@ ir_repeater:
 ;    mov [tx_off_pins], REG[X]
 
   repeat_loop:
+  	M8C_ClearWDTAndSleep
+  
 	; break out of the loop if we see data from the host
     lcall check_read
     jnz repeat_done

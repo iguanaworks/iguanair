@@ -57,7 +57,7 @@ export soft_reset
 
 AREA text
 _main:
-	or [loader_flags], FLAG_BODY_INIT ; set the body init flag
+	mov [loader_flags], FLAG_BODY_INIT ; set the body init flag
 
     ; clear, configure, and enable the watchdog timer
     M8C_ClearWDTAndSleep
@@ -76,6 +76,9 @@ _main:
     mov [tmp2], 0x00
     mov [tmp1], 0x00
 config_loop:
+    ; be sure the WDT dies not trip in this loop
+	M8C_ClearWDTAndSleep
+
     lcall USB_bGetConfiguration
 	jnz soft_reset ; if return val was not zero, done
 	; count the calls to the previous function
@@ -88,7 +91,13 @@ config_loop:
   dec3_done:
 	mov A, [tmp3]
 	jnz config_loop
-	; TODO: perform a default action here (turn on repeater mode)
+	; trigger the NOUSB action (usually defined by the body)
+	call clear_control_pkt
+    mov [control_pkt + 2], FROM_PC
+    mov [control_pkt + CCODE], CTL_NOUSB
+	; call the handler for the "No USB action"
+	mov A, [control_pkt + CCODE]
+	lcall body_handler
 	jmp config_loop
 
 ; now we're connected
@@ -107,6 +116,8 @@ soft_reset:
     lcall USB_EnableEP
 
 main_loop:
+	M8C_ClearWDTAndSleep
+
     ; halt condition 
     mov A, [loader_flags] ; check for halt condition
     and A, FLAG_HALTED
