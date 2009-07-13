@@ -104,34 +104,23 @@ AC_CHECK_LIB([usb], [usb_get_busses],
     done
 
     AC_DEFINE_UNQUOTED(LIBUSB_VERSION, $VERSION, [version of libusb])
+    # Older versions of libusb do not play with threads at all
+    # nicely.  This driver was actually developed on such a version
+    # of libusb.  However, in later versions threads seem to not eat
+    # the responses for URBs intended for other threads.  By
+    # defining LIBUSB_NO_THREADS you can request the slower (around
+    # 1/4 the speed for USB transaction heavy workloads), but safer,
+    # behavior where 2 threads never use the same libusb object at
+    # once.
+    #
+    # version 0.1.8 and earlier need more than this (i.e. NOT SUPPORTED)
+    # version 0.1.10a and earlier need this
+    # version 0.1.11 and later do not need this;
+    #                works with kernel-2.6.5 and later
+    # version 0.1.12 only works with kernel-2.6.10 and later
+    #
     if test $VERSION -lt 111; then
-      # Older versions of libusb do not play with threads at all
-      # nicely.  This driver was actually developed on such a version
-      # of libusb.  However, in later versions threads seem to not eat
-      # the responses for URBs intended for other threads.  By
-      # defining LIBUSB_NO_THREADS you can request the slower (around
-      # 1/4 the speed for USB transaction heavy workloads), but safer,
-      # behavior where 2 threads never use the same libusb object at
-      # once.
-      #
-      # version 0.1.8 and earlier need more than this (i.e. NOT SUPPORTED)
-      # version 0.1.10a and earlier need this
-      # version 0.1.11 and later do not need this;
-      #                works with kernel-2.6.5 and later
-      # version 0.1.12 only works with kernel-2.6.10 and later
-      #
       AC_DEFINE(LIBUSB_NO_THREADS, 1, [whether to use threads with libusb])
-
-      # Want to use the constantly incrementing devnum if it exists.
-      # This functionality was introduced in version 0.1.9 of libusb.
-      #
-      if test $VERSION -lt 109; then
-        AC_DEFINE(LIBUSB_DEVNUM(dev), (dev->bus->location),
-                                      [what to use for the libusb devnum])
-      else
-        AC_DEFINE(LIBUSB_DEVNUM(dev), (dev->devnum),
-                                      [what to use for the libusb devnum])
-      fi
     else
       AC_ARG_ENABLE(no-threads,
           [  --disable-no-threads enable the "no threads" option ],
@@ -145,6 +134,17 @@ AC_CHECK_LIB([usb], [usb_get_busses],
         AC_DEFINE(LIBUSB_NO_THREADS_OPTION, 1,
                   [whether to makes threads optional with libusb])
       fi
+    fi
+
+    # Want to use the constantly incrementing devnum if it exists.
+    # This functionality was introduced in version 0.1.9 of libusb.
+    #
+    if test $VERSION -lt 109; then
+      AC_DEFINE(LIBUSB_DEVNUM(dev), (dev->bus->location),
+                                    [what to use for the libusb devnum])
+    else
+      AC_DEFINE(LIBUSB_DEVNUM(dev), (dev->devnum),
+                                    [what to use for the libusb devnum])
     fi
   ],
   [

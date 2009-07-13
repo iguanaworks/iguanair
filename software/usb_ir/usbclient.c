@@ -23,15 +23,6 @@
 #include "support.h"
 #include "usbclient.h"
 
-/* We want to use the constantly incrementing devnum if it exists.
- * This functionality was introduced in version 0.1.9 of libusb.
- */
-#if LIBUSB_VERSION < 109
-  #define DEVNUM(dev) (dev->bus->location)
-#else
-  #define DEVNUM(dev) (dev->devnum)
-#endif
-
 static void setError(usbDevice *handle, char *error)
 {
     if (handle != NULL)
@@ -207,7 +198,7 @@ bool updateDeviceList(usbDeviceList *list)
                     while(devPos != NULL &&
                           (devPos->busIndex < busIndex ||
                            (devPos->busIndex == busIndex &&
-                            devPos->devIndex < DEVNUM(dev))))
+                            devPos->devIndex < LIBUSB_DEVNUM(dev))))
                         /* used to release devices here, since they
                          * are no longer used, however, this races
                          * with reinsertion of the device, and
@@ -219,7 +210,7 @@ bool updateDeviceList(usbDeviceList *list)
                     /* append or insert a new device */
                     if (devPos == NULL ||
                         devPos->busIndex != busIndex ||
-                        devPos->devIndex != DEVNUM(dev))
+                        devPos->devIndex != LIBUSB_DEVNUM(dev))
                     {
                         bool success = false;
                         usbDevice *newDev = NULL;
@@ -229,7 +220,7 @@ bool updateDeviceList(usbDeviceList *list)
                         /* basic stuff */
                         newDev->list = list;
                         newDev->busIndex = busIndex;
-                        newDev->devIndex = DEVNUM(dev);
+                        newDev->devIndex = LIBUSB_DEVNUM(dev);
 
                         /* determine the id (reusing if possible) */
                         newDev->id = 0;
@@ -265,7 +256,8 @@ bool updateDeviceList(usbDeviceList *list)
                             if (errno == EBUSY)
                                 message(LOG_ERROR,
                                         "Is igdaemon already running?\n");
-                            message(LOG_ERROR, "  trying to claim usb:%d:%d\n", busIndex, DEVNUM(dev));
+                            message(LOG_ERROR, "  trying to claim usb:%d:%d\n",
+                                    busIndex, LIBUSB_DEVNUM(dev));
                             printError(LOG_ERROR,
                                        "  updateDeviceList failed", newDev);
 
