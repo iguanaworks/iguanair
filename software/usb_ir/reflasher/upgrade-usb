@@ -69,7 +69,7 @@ forceFlash = False
 userSaysKeep = False
 userSaysKeepAll = False
 onlyOne = True
-defaultType = None
+defaultType = 'c'
 devOK = False
 skipReceiver = False
 
@@ -275,8 +275,9 @@ def deviceTransaction(type, data = '', quiet = False):
                 retval = ord(data[0]) + (ord(data[1]) << 8)
         elif iguanaIR.responseIsError(resp):
             if not quiet:
-                message(LOG_ERROR,
-                        'Error response code: 0x%s\n' % iguanaIR.code(resp))
+                # it is alright to get 0x0 on a reset (TODO: why get anything?)
+                if type != iguanaIR.IG_DEV_RESET or iguanaIR.code(resp) != 0:
+                    message(LOG_ERROR, 'Error response code: 0x%s\n' % iguanaIR.code(resp))
         elif type == iguanaIR.IG_DEV_GETFEATURES:
             retval = ord(iguanaIR.removeData(resp)[0])
         elif type == iguanaIR.IG_DEV_IDSOFF or \
@@ -298,7 +299,9 @@ def deviceVersion(target = None):
     count = 0
     version = None
     while not version:
-        version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
+        # usually be quiet, but complain before failure
+        version = deviceTransaction(iguanaIR.IG_DEV_GETVERSION,
+                                    quiet = count < 4)
         if not version:
             count += 1
             if count == 5:
@@ -441,10 +444,13 @@ def writePagesToDevice(pages):
             for x in struct.unpack('B' * len(result), result):
                 chksum = (chksum << 8) + x
             if chksum != page['chksum']:
-                level = LOG_FATAL
-                if page == pages[-1]:
-                    level = LOG_WARN
-                message(level, "checksum does not match: 0x%x != 0x%x on page %s\n" % (chksum, page['chksum'], page['start'] / 64))
+                msg = 'checksum does not match: 0x%x != 0x%x on page %s' % (
+                             chksum, page['chksum'], page['start'] / 64)
+                level = LOG_WARN
+                if page != pages[-1]:
+                    level = LOG_FATAL
+                    msg += ': Is another application accessing the device?'
+                message(level, msg + '\n')
 
         # if we're in an older device delay and reconnect
         if version <= 4:
@@ -845,6 +851,22 @@ default = ' '
 line = defaultType
 while True:
     try:
+        # special option to check for the type of device
+        if line == 'c':
+            line = ''
+            features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES,
+                                         quiet = True)
+            if not features:
+                if not isinstance(features, bool):
+                    line = 'u'
+            elif features == iguanaIR.IG_HAS_SOCKETS:
+                line = 's'
+            elif features == iguanaIR.IG_HAS_BOTH:
+                line = 'h'
+            elif features == iguanaIR.IG_HAS_LEDS:
+                line = 'l'
+
+        # check user input
         type = None
         while True:
             if line and line[0].lower() in 'ushlc':
@@ -859,7 +881,7 @@ while True:
 
             message(LOG_NORMAL, """
 What kind of device is plugged in?
-  unenclosed, sockets, hybrid, or LEDs? %s
+  unenclosed, 2 sockets, hybrid, or 2 LEDs? %s
 """ % selection)
             line = sys.stdin.readline().strip()
             if not line:
@@ -869,20 +891,6 @@ What kind of device is plugged in?
         if _conn is not None:
             iguanaIR.close(_conn)
             _conn = None
-
-        # special option for testing
-        if type == 'c':
-            features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES)
-            if features == 0:
-                type = 'u'
-            elif features == iguanaIR.IG_HAS_SOCKETS:
-                type = 's'
-            elif features == iguanaIR.IG_HAS_BOTH:
-                type = 'h'
-            elif features == iguanaIR.IG_HAS_LEDS:
-                type = 'l'
-            else:
-                continue
 
         if type == 'u':
             type = 'unenclosed'
