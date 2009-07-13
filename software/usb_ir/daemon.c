@@ -67,6 +67,7 @@ static void scanHandler(int UNUSED(sig))
 
 static void workLoop()
 {
+    /* initialize the device list and set up the signal handlers */
     usbDeviceList list;
 
     message(LOG_DEBUG, "Parameters:\n");

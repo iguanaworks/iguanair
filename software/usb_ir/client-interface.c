@@ -199,6 +199,14 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
 
+    case IG_DEV_GETLOCATION:
+        request->data = (unsigned char*)malloc(2);
+        ((uint8_t*)request->data)[0] = target->idev->usbDev->busIndex;
+        ((uint8_t*)request->data)[1] = target->idev->usbDev->devIndex;
+        request->dataLen = 2;
+        retval = true;
+        break;
+
     case IG_DEV_IDSTATE:
         request->data = (unsigned char*)malloc(1);
         request->data[0] = readLabels;
@@ -529,7 +537,9 @@ static void* workLoop(void *instance)
         char name[4], *alias = NULL;
 
         snprintf(name, 4, "%d", idev->usbDev->id);
-        if (readLabels)
+        if (readLabels && 
+            /* reflasher and loader-only devices have no id */
+            idev->version != 0x00FF && (idev->version & 0x00FF) != 0x0000)
             alias = getID(idev);
 
         listenToClients(name, alias, idev,
@@ -597,8 +607,8 @@ void startWorker(usbDevice *dev)
         else
         {
 #if DEBUG
-printf("OPEN %d %s(%d)\n", idev->readerPipe[0], __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", idev->readerPipe[1], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", idev->readerPipe[0],   __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", idev->readerPipe[1],   __FILE__, __LINE__);
 printf("OPEN %d %s(%d)\n", idev->responsePipe[0], __FILE__, __LINE__);
 printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
 #endif

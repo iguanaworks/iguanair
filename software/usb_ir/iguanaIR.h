@@ -93,6 +93,7 @@ enum
     IG_DEV_IDSON        = 0x23, /* internal to client/daemon */
     IG_DEV_IDSTATE      = 0x24, /* internal to client/daemon */
     IG_DEV_REPEATER     = 0x25,
+    IG_DEV_GETLOCATION  = 0x26, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,

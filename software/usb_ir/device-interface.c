@@ -110,6 +110,7 @@ static versionedType types[] =
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
     {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD, true,  4}},
     {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,          true,  4}},
+    {0, 0,    {IG_DEV_GETLOCATION, CTL_TODEV, NO_PAYLOAD, true,  2}},
 
     /* "from device" codes */
     {0, 0, {IG_DEV_RECV,     CTL_FROMDEV, NO_PAYLOAD,  false, ANY_PAYLOAD}},
@@ -417,7 +418,7 @@ bool checkVersion(iguanaDev *idev)
                 retval = true;
             else
                 message(LOG_ERROR,
-                        "Unsupported hardware version %d\n", idev->version);
+                        "Unsupported hardware version 0x%x\n", idev->version);
         }
 
         freeDataPacket(response);
