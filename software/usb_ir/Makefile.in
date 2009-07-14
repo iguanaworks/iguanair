@@ -182,7 +182,7 @@ clean:
 .PHONY: distclean
 distclean: clean
 	rm -f Makefile config.h config.status
-	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)" $(srcdir)/packaging clean
+	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)" clean
 
 .PHONY: cleanest
 cleanest: distclean
@@ -190,7 +190,7 @@ cleanest: distclean
 
 .PHONY: package
 package: distclean
-	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)" $(srcdir)/packaging
+	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)"
 
 
 
