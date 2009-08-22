@@ -24,6 +24,7 @@ import signal
 import os
 import errno
 import tempfile
+import re
 
 #output "constants"
 FATAL  = 0
@@ -147,7 +148,9 @@ def reloadSerialDriver():
     if modprobe.returncode != 0:
         message(FATAL, "Failed to unload the serial driver.\n")
 
-    modprobe = subprocess.Popen(('/sbin/modprobe', 'lirc_serial'),
+    cmd = ['/sbin/modprobe', 'lirc_serial', 'share_irq=1']
+    cmd.extend(serialArgs)
+    modprobe = subprocess.Popen(cmd,
                                 stdin = subprocess.PIPE,
                                 stdout = subprocess.PIPE,
                                 stderr = subprocess.STDOUT)
@@ -170,6 +173,20 @@ def reloadSerialDriver():
     dmesg.wait()
 
     return connected
+
+serialArgs = []
+pattern = re.compile('ttyS0 at I/O (?P<io>[0-9a-fx]+) \(irq = (?P<irq>[0-9]+)\) is a')
+dmesg = subprocess.Popen(('dmesg'),
+                             stdin = subprocess.PIPE,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT)
+dmesg.stdin.close()
+dmesg.wait()
+for line in dmesg.stdout:
+    match = pattern.search(line)
+    if match:
+        for name in match.groupdict():
+            serialArgs.append('%s=%s' % (name, match.groupdict()[name]))
 
 setserial = subprocess.Popen(('/bin/setserial', '/dev/ttyS0', 'uart', 'none'),
                              stdin = subprocess.PIPE,
@@ -233,6 +250,7 @@ def attemptReceive():
     for line in igclient.stdout:
         if line != 'send: success\n':
             message(FATAL, "igclient error: " + line)
+    time.sleep(0.25)
 
     # check mode2 output after killing the process
     os.kill(mode2.pid, signal.SIGINT)
