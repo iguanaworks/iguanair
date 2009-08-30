@@ -242,6 +242,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
                 retval = true;
         }
         else
+            //TODO: changes the errno to 9 sometimes.  need to store the error somewhere before this
             message(LOG_ERROR,
                     "Device transaction (0x%2.2x) failed\n", request->code);
     }
@@ -271,7 +272,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     /* translate the newly read data packet code before returning */
     if (! translateClient(&request->code, target->version, false))
-        return false;
+        retval = false;
 
     return retval;
 }
