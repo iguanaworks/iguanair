@@ -29,6 +29,8 @@ import re
 
 import iguanaIR
 
+
+print sys.path
 #output "constants"
 LOG_FATAL  = 0
 LOG_ERROR  = 1
@@ -520,7 +522,14 @@ def checkFileExists(path):
 def findHexFile(type, target = None, mustFind = True):
     latest = None
     latestVersion = None
-    for hex in glob.glob(os.path.join(sys.path[0], 'hex', '%s-*.hex' % type)):
+
+    testdir=os.path.split(sys.path[0])
+    rootdir=sys.path[0]
+    if len(testdir) == 2 and testdir[1] == 'library.zip':
+        rootdir=testdir[0]
+        
+    print rootdir
+    for hex in glob.glob(os.path.join(rootdir, 'hex', '%s-*.hex' % type)):
         # ensure the file really exists
         if checkFileExists(hex):
             version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
@@ -536,7 +545,7 @@ def findHexFile(type, target = None, mustFind = True):
                 break
     else:        
         if target is None and devOK:
-            best = glob.glob(os.path.join(sys.path[0],
+            best = glob.glob(os.path.join(rootdir,
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
                 latest = best[0]
