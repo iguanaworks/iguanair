@@ -54,6 +54,8 @@ if sys.platform == 'darwin':
     deviceDir = '/tmp/iguanaIR'
 else:
     deviceDir = '/dev/iguanaIR'
+deviceDir = iguanaIR.IGSOCK_NAME
+print deviceDir
 
 #local variables
 currentLevel = LOG_NORMAL
@@ -208,7 +210,10 @@ if logFile != None:
 def listDevices(path = deviceDir):
     global MessageCannotlistdevice
     devices = []
-    try:     
+    try:
+        print os.path.split(path)[0]
+        print os.listdir(path)
+        print glob.glob(path + '*')
         for device in os.listdir(path):
             if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
                 devices.append(device)

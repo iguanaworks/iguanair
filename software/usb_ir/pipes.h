@@ -21,7 +21,6 @@
   #define closePipe CloseHandle
   PIPE_PTR acceptClient(PIPE_PTR *server);
 
-  #define IGSOCK_NAME "\\\\.\\pipe\\iguanaIR-"
 #else
   #include <sys/un.h>
   #include <sys/socket.h>
@@ -31,12 +30,6 @@
   #define writePipe write
   #define closePipe close
   #define acceptClient(a) accept((a), NULL, NULL);
-
-  #ifdef __APPLE__
-    #define IGSOCK_NAME "/tmp/iguanaIR"
-  #else
-    #define IGSOCK_NAME "/dev/iguanaIR"
-  #endif
 #endif
 
 /* functions dealing with the server sockets */

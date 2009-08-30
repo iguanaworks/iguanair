@@ -27,15 +27,15 @@
 void socketName(const char *name, char *buffer, unsigned int length)
 {
     /* based on some people's usage if would be nice to allow full
-     * paths to the socket to be specified. */
+       paths to the socket to be specified. */
     if (strchr(name, '/') != NULL)
         strncpy(buffer, name, length);
     /* left in case there is some daemon functionality that does not
-     * fit well with simple signalling */
+       fit well with simple signalling */
     else if (name == NULL)
-        snprintf(buffer, length, "%s/ctl", IGSOCK_NAME);
+        snprintf(buffer, length, "%sctl", IGSOCK_NAME);
     else
-        snprintf(buffer, length, "%s/%s", IGSOCK_NAME, name);
+        snprintf(buffer, length, "%s%s", IGSOCK_NAME, name);
 }
 
 PIPE_PTR connectToPipe(const char *name)

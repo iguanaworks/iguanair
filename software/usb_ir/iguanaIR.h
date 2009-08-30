@@ -41,12 +41,19 @@
 #include<windows.h>
     #define PIPE_PTR HANDLE
     #define INVALID_PIPE NULL
+    #define IGSOCK_NAME "\\\\.\\pipe\\iguanaIR-"
 #else
     /* hate including headers from headers, but we need a bool */
     #include "stdbool.h"
 
     #define PIPE_PTR int
     #define INVALID_PIPE -1
+
+    #ifdef __APPLE__
+        #define IGSOCK_NAME "/tmp/iguanaIR/"
+    #else
+        #define IGSOCK_NAME "/dev/iguanaIR/"
+    #endif
 #endif
 
 /* NOTE: all IR timings will be in microseconds and packed in uint32_t
