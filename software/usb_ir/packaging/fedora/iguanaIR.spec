@@ -37,6 +37,7 @@ with the Iguanaworks USB IR transceiver.
 Group: System Environment/Daemons
 Summary: Reflasher for Iguanaworks USB IR transceiver.
 Requires: iguanaIR-python = %{version}
+BuildArch: noarch
 
 %description reflasher
 This package provides the reflasher/testing script and assorted firmware versions for the Iguanaworks USB IR transceiver.  If you have no idea what this means, you don't need it.

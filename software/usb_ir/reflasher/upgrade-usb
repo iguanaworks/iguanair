@@ -29,8 +29,6 @@ import re
 
 import iguanaIR
 
-
-print sys.path
 #output "constants"
 LOG_FATAL  = 0
 LOG_ERROR  = 1
@@ -51,7 +49,6 @@ msgPrefixes = [
 
 FLASHER_VERSION = 0xFF00
 
-#null = open('/dev/null', 'r+')
 null = open(os.devnull,'r+')
 if sys.platform == 'darwin':
     deviceDir = '/tmp/iguanaIR'
@@ -523,12 +520,11 @@ def findHexFile(type, target = None, mustFind = True):
     latest = None
     latestVersion = None
 
-    testdir=os.path.split(sys.path[0])
-    rootdir=sys.path[0]
+    testdir = os.path.split(sys.path[0])
+    rootdir = sys.path[0]
     if len(testdir) == 2 and testdir[1] == 'library.zip':
-        rootdir=testdir[0]
+        rootdir = testdir[0]
         
-    print rootdir
     for hex in glob.glob(os.path.join(rootdir, 'hex', '%s-*.hex' % type)):
         # ensure the file really exists
         if checkFileExists(hex):
@@ -549,7 +545,6 @@ def findHexFile(type, target = None, mustFind = True):
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
                 latest = best[0]
-    #print "A: ",latest,target, mustFind        
     
     if latest is None and mustFind:
         if target is not None:
