@@ -320,7 +320,7 @@ static bool handleClient(client *me)
             request.dataLen = -errno;
             message(LOG_ERROR,
                     "handleClientRequest(0x%2.2x) failed with: %d (%s)\n",
-                    request.code, errno, strerror(errno));
+                    request.code, errno, translateError(errno));
         }
 
         if (! writeDataPacket(&request, me->fd))
@@ -388,7 +388,8 @@ printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
 #endif
 
     if (clientFd == INVALID_PIPE)
-        message(LOG_ERROR, "Error accepting client: %s\n", strerror(errno));
+        message(LOG_ERROR,
+                "Error accepting client: %s\n", translateError(errno));
     else
     {
         client *newClient;
@@ -428,7 +429,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
         if (! writeDataPacket(info->packet, me->fd))
         {
             message(LOG_ERROR, "Failed to send packet to receiver: %d: %s\n",
-                    errno, strerror(errno));
+                    errno, translateError(errno));
             if (errno == 11)
                 message(LOG_WARN, "A client application may not be closing connections to the daemon.\n");
         }
@@ -599,11 +600,11 @@ void startWorker(usbDevice *dev)
         if (! createPipePair(idev->readerPipe))
             message(LOG_ERROR,
                     "Failed to create readPipe for %d: %s\n",
-                    dev->id, strerror(errno));
+                    dev->id, translateError(errno));
         else if (! createPipePair(idev->responsePipe))
             message(LOG_ERROR,
                     "Failed to create responsePipe for %d: %s\n",
-                    dev->id, strerror(errno));
+                    dev->id, translateError(errno));
         else
         {
 #if DEBUG

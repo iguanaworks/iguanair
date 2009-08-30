@@ -117,7 +117,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
             /* error */
             default:
                 message(LOG_ERROR,
-                        "Command read failed: %s\n", strerror(errno));
+                        "Command read failed: %s\n", translateError(errno));
                 /* fall through and quit */
             /* close, signalling a shutdown */
             case 0:
@@ -261,7 +261,7 @@ int main(int argc, const char **argv)
             umask(0);
         else
         {
-            message(LOG_ERROR, "daemon() failed: %s\n", strerror(errno));
+            message(LOG_ERROR, "daemon() failed: %s\n", translateError(errno));
             exitval = 1;
         }
     }
@@ -366,8 +366,8 @@ static int startListening(const char *name, const char *alias)
             else if (errno == ENOENT && mkdirs(server.sun_path))
                 retry = true;
             else
-                message(LOG_ERROR,
-                        "failed to bind server socket: %s\n", strerror(errno));
+                message(LOG_ERROR, "failed to bind server socket: %s\n",
+                        translateError(errno));
         }
         /* start listening */
         else if (listen(sockfd, 5) == -1)
@@ -505,7 +505,8 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
             fdsin = fdserr = fds;
             if (select(max + 1, &fdsin, NULL, &fdserr, NULL) < 0)
             {
-                message(LOG_ERROR, "select failed: %s\n", strerror(errno));
+                message(LOG_ERROR,
+                        "select failed: %s\n", translateError(errno));
                 break;
             }
         }

@@ -644,7 +644,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
 
             if (amount < 0)
                 message(LOG_ERROR, "Failed to read control ack: %s\n",
-			strerror(errno));
+			translateError(errno));
             else if (amount > 0)
             {
                 dataPacket *pos;

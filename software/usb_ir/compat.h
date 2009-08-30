@@ -96,5 +96,6 @@
 
 uint64_t microsSinceX();
 bool setNonBlocking(PIPE_PTR pipe);
+char* translateError(int errnum);
 
 #endif

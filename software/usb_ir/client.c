@@ -277,8 +277,8 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
         {
             if (errno != 110 || (cmd->spec->code != FINAL_CHECK &&
                                  cmd->spec->code != INTERNAL_SLEEP))
-                message(LOG_NORMAL,
-                        "%s: failed: %s\n", cmd->spec->text, strerror(errno));
+                message(LOG_NORMAL, "%s: failed: %s\n", cmd->spec->text,
+                        translateError(errno));
             /* failure means stop */
             timeout = -1;
         }
@@ -579,7 +579,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
 
         if (result < 0)
             message(LOG_ERROR,
-                    "Failed to pack data: %s\n", strerror(errno));
+                    "Failed to pack data: %s\n", translateError(errno));
         else
         {
             iguanaPacket request = NULL;
@@ -878,10 +878,10 @@ int main(int argc, const char **argv)
 #endif
         if (errno == 2)
             message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running and the device connected?\n",
-                    strerror(errno));
+                    translateError(errno));
         else if (errno != 0)
             message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s\n",
-                    strerror(errno));
+                    translateError(errno));
     }
     else
     {

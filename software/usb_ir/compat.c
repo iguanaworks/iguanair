@@ -13,6 +13,7 @@
 #include "iguanaIR.h"
 #include "compat.h"
 
+#include <string.h>
 #include <fcntl.h>
 
 #include "support.h"
@@ -84,4 +85,9 @@ bool setNonBlocking(PIPE_PTR pipe)
         return fcntl(pipe, F_SETFL, flags | O_NONBLOCK) != -1;
 
     return false;
+}
+
+char* translateError(int errnum)
+{
+    return strerror(errnum);
 }
