@@ -43,5 +43,15 @@ uint64_t microsSinceX()
 
 bool setNonBlocking(PIPE_PTR pipe)
 {
-	return true;
+    UNUSED(pipe);
+    return true;
+}
+
+char globalBuffer[256];
+char* translateError(int errnum)
+{
+    if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+                      NULL, errnum, 0, globalBuffer, 256, NULL) == 0)
+        sprintf(globalBuffer, "FormatMessage failed to translate %d", errnum);
+    return globalBuffer;
 }

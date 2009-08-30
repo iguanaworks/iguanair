@@ -88,7 +88,7 @@ int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
             break;
 
         case WAIT_TIMEOUT:
-            errno = ETIMEDOUT;
+            errno = ERROR_TIMEOUT;
             /* cancel the IO so it doesn't consume later messages */
             CancelIo(fd);
             /* see if it completed JUST now */
@@ -145,7 +145,6 @@ PIPE_PTR connectToPipe(const char *name)
 {
     PIPE_PTR retval = INVALID_PIPE;
     char buffer[256];
-    DWORD error;
 
     socketName(name, buffer, 256);
     retval = CreateFile(buffer,
@@ -157,7 +156,6 @@ PIPE_PTR connectToPipe(const char *name)
                         NULL);
     if (retval == INVALID_HANDLE_VALUE)
         retval = INVALID_PIPE;
-    error = GetLastError();
 
     return retval;
 }

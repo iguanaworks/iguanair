@@ -277,8 +277,8 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
         {
             if (errno != 110 || (cmd->spec->code != FINAL_CHECK &&
                                  cmd->spec->code != INTERNAL_SLEEP))
-                message(LOG_NORMAL, "%s: failed: %s\n", cmd->spec->text,
-                        translateError(errno));
+                message(LOG_NORMAL, "%s: failed: %d: %s\n", cmd->spec->text,
+                        errno, translateError(errno));
             /* failure means stop */
             timeout = -1;
         }

@@ -103,12 +103,13 @@ static bool changeServiceState(unsigned int action)
 
     scm = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
     if (scm == NULL)
-        message(LOG_ERROR, "Failed to open the SCM: %d\n", GetLastError());
+        message(LOG_ERROR, "Failed to open the SCM: %s\n", translateError(GetLastError()));
     else
     {
         svc = OpenService(scm, "igdaemon", action);
         if (svc == NULL)
-            message(LOG_ERROR, "Failed to open the service: %d\n", GetLastError());
+            message(LOG_ERROR, "Failed to open the service: %s\n",
+                    translateError(GetLastError()));
         else
         {
             SERVICE_STATUS status;
@@ -117,21 +118,24 @@ static bool changeServiceState(unsigned int action)
             {
             case SERVICE_START:
                 if (StartService(svc, 0, NULL) == FALSE)
-                    message(LOG_ERROR, "Failed to start the service: %d\n", GetLastError());
+                    message(LOG_ERROR, "Failed to start the service: %s\n",
+                            translateError(GetLastError()));
                 else
                     retval = true;
                 break;
 
             case SERVICE_STOP:
                 if (ControlService(svc, SERVICE_CONTROL_STOP, &status) == FALSE)
-                    message(LOG_ERROR, "Failed to start the service: %d\n", GetLastError());
+                    message(LOG_ERROR, "Failed to stop the service: %s\n",
+                            translateError(GetLastError()));
                 else
                     retval = true;
                 break;
 
             case DELETE:
                 if (DeleteService(svc) == FALSE)
-                    message(LOG_ERROR, "Failed to delete the service: %d\n", GetLastError());
+                    message(LOG_ERROR, "Failed to delete the service: %s\n",
+                            translateError(GetLastError()));
                 else
                     retval = true;
                 break;
@@ -170,7 +174,8 @@ static struct poptOption options[] =
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
 
     /* iguanaworks specific stuff */
-    { "no-labels", 0, POPT_ARG_NONE, NULL, 'b', "Do not query the Iguanaworks device for its label.", NULL },
+    { "no-ids", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
+    { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "DEPRECATED: same as --no-ids", NULL },
 
     /* Windows specific stuff for controlling the service */
     { "regsvc", 0, POPT_ARG_NONE, NULL, 'r', "Register this executable as the system igdaemon service.", NULL },

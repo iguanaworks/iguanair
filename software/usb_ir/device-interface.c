@@ -767,7 +767,7 @@ void handleIncomingPackets(iguanaDev *idev)
             if (length < 0)
             {
                 /* loop on timeouts */
-                if (errno == EAGAIN || errno == ETIMEDOUT)
+                if (errno == EAGAIN || errno == USB_ETIMEDOUT)
                     length = 0;
                 /* (somewhat) quietly clean up on disconnect */
                 else if (errno == ENODEV)

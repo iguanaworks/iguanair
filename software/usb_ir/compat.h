@@ -32,7 +32,8 @@
     typedef unsigned long long uint64_t;
 
     /* taken from libusb-win32/src/error.h */
-    #define ETIMEDOUT 116
+    #define USB_ETIMEDOUT 116
+    #define ETIMEDOUT ERROR_TIMEOUT
 
     /* must be at least 0x0500 to get HDEVNOTIFY */
     #ifdef _WIN32_WINNT
@@ -65,6 +66,9 @@
     #define __USE_GNU
     #include <pthread.h>
     #undef __USE_GNU
+
+    /* done because it's different in windows */
+    #define USB_ETIMEDOUT ETIMEDOUT
 
     /* thread defines */
     #define THREAD_PTR pthread_t
