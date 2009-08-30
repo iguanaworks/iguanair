@@ -16,6 +16,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <aclapi.h>
 #include <setupapi.h>
 #include <dbt.h>
 #include <initguid.h>
@@ -324,6 +325,9 @@ int main(int argc, char **argv)
 /* this function is the main function for the windows service */
 static void WINAPI serviceMain(int argc, char **argv)
 {
+    UNUSED(argc);
+    UNUSED(argv);
+
     message(LOG_NORMAL, "igdaemon serviceMain started\n");
 
     /* open a handle to our server status */
@@ -368,6 +372,9 @@ static void WINAPI serviceMain(int argc, char **argv)
 static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
                                    VOID *event_data, VOID *context)
 {
+    UNUSED(context);
+    UNUSED(event_data);
+
     switch(code)
     {
     case SERVICE_CONTROL_STOP:
@@ -490,12 +497,96 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
         {
             if (firstPass || listeners[x] == NULL)
             {
+                PSID pEveryoneSID = NULL, pAdminSID = NULL;
+                PACL pACL = NULL;
+                PSECURITY_DESCRIPTOR pSD = NULL;
+                EXPLICIT_ACCESS ea[2];
+                SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+                SECURITY_ATTRIBUTES sa;
+                HKEY hkSub = NULL;
+
+                // Create a well-known SID for the Everyone group.
+                if(!AllocateAndInitializeSid(&SIDAuthWorld, 1,
+                                 SECURITY_WORLD_RID,
+                                 0, 0, 0, 0, 0, 0, 0,
+                                 &pEveryoneSID))
+                {
+                    message(LOG_ERROR, "AllocateAndInitializeSid Error %s\n",
+                            translateError(GetLastError()));
+                    goto Cleanup;
+                }
+
+                // Initialize an EXPLICIT_ACCESS structure for an ACE.
+                // The ACE will allow Everyone read/write access to the pipe
+                ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
+                ea[0].grfAccessPermissions = FILE_GENERIC_WRITE | FILE_GENERIC_READ;
+                ea[0].grfAccessMode = SET_ACCESS;
+                ea[0].grfInheritance= NO_INHERITANCE;
+                ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+                ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+                ea[0].Trustee.ptstrName  = (LPTSTR) pEveryoneSID;
+
+                // Create a new ACL that contains the new ACEs.
+                if (ERROR_SUCCESS != SetEntriesInAcl(1, ea, NULL, &pACL))
+                {
+                    message(LOG_ERROR, "SetEntriesInAcl Error %s\n",
+                            translateError(GetLastError()));
+                    goto Cleanup;
+                }
+
+                // Initialize a security descriptor.  
+                pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, 
+                             SECURITY_DESCRIPTOR_MIN_LENGTH); 
+                if (NULL == pSD) 
+                { 
+                    message(LOG_ERROR, "LocalAlloc Error %s\n",
+                            translateError(GetLastError()));
+                    goto Cleanup; 
+                } 
+             
+                if (!InitializeSecurityDescriptor(pSD,
+                        SECURITY_DESCRIPTOR_REVISION)) 
+                {  
+                    message(LOG_ERROR, "InitializeSecurityDescriptor Error %s\n",
+                            translateError(GetLastError()));
+                    goto Cleanup; 
+                } 
+             
+                // Add the ACL to the security descriptor. 
+                if (!SetSecurityDescriptorDacl(pSD, 
+                        TRUE,     // bDaclPresent flag   
+                        pACL, 
+                        FALSE))   // not a default DACL 
+                {  
+                    message(LOG_ERROR, "SetSecurityDescriptorDacl Error %s\n",
+                            translateError(GetLastError()));
+                    goto Cleanup; 
+                } 
+
+                // Initialize a security attributes structure.
+                sa.nLength = sizeof (SECURITY_ATTRIBUTES);
+                sa.lpSecurityDescriptor = pSD;
+                sa.bInheritHandle = FALSE;
+
+                // Use the security attributes to set the security descriptor 
                 listeners[x] = CreateNamedPipe(names[x],
                                                PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                                                PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                                                PIPE_UNLIMITED_INSTANCES,
-                                               64, 64, NMPWAIT_USE_DEFAULT_WAIT, NULL);
+                                               64, 64, NMPWAIT_USE_DEFAULT_WAIT, &sa);
                 handles[count] = startOverlappedAction(listeners[x], NULL, true);
+
+            Cleanup:
+                if (pEveryoneSID) 
+                    FreeSid(pEveryoneSID);
+                if (pAdminSID) 
+                    FreeSid(pAdminSID);
+                if (pACL) 
+                    LocalFree(pACL);
+                if (pSD) 
+                    LocalFree(pSD);
+                if (hkSub) 
+                    RegCloseKey(hkSub);
             }
             count++;
         }
