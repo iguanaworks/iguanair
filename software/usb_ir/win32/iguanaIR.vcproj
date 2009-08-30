@@ -26,7 +26,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Using swig to generate wrappers..."
-				CommandLine="c:\cygwin\bin\swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
+				CommandLine="c:\cygwin\bin\swig -python -outdir &quot;$(OutDir)&quot; &quot;$(InputDir)\..\iguanaIR.i&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -109,7 +109,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Using swig to generate wrappers..."
-				CommandLine="c:\cygwin\bin\swig -python -outdir $(OutDir) $(InputDir)\..\iguanaIR.i"
+				CommandLine="c:\cygwin\bin\swig -python -outdir &quot;$(OutDir)&quot; &quot;$(InputDir)\..\iguanaIR.i&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

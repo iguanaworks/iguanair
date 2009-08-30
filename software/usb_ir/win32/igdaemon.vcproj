@@ -187,7 +187,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\compat.c"
+				RelativePath=".\compat.c"
 				>
 			</File>
 			<File
@@ -203,7 +203,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pipes.c"
+				RelativePath=".\pipes.c"
 				>
 			</File>
 			<File

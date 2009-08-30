@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="c:\python25\python setup.py $(OutDir)"
+				BuildCommandLine="c:\python26\python setup.py &quot;$(OutDir)&quot;"
 				ReBuildCommandLine=""
 				CleanCommandLine="del iguanaIR.iss"
 				Output=""
@@ -46,7 +46,7 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="c:\python25\python setup.py $(OutDir)"
+				BuildCommandLine="c:\python26\python setup.py &quot;$(OutDir)&quot;"
 				ReBuildCommandLine=""
 				CleanCommandLine="del iguanaIR.iss"
 				Output="IguanaIR Packaging.exe"

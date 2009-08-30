@@ -40,3 +40,8 @@ uint64_t microsSinceX()
 
     return retval;
 }
+
+bool setNonBlocking(PIPE_PTR pipe)
+{
+	return true;
+}
