@@ -49,7 +49,8 @@ msgPrefixes = [
 
 FLASHER_VERSION = 0xFF00
 
-null = open('/dev/null', 'r+')
+#null = open('/dev/null', 'r+')
+null = open(os.devnull,'r+')
 if sys.platform == 'darwin':
     deviceDir = '/tmp/iguanaIR'
 else:
@@ -72,6 +73,8 @@ onlyOne = True
 defaultType = 'c'
 devOK = False
 skipReceiver = False
+#Global Message Flag -- only print can't list devices once
+MessageCannotlistdevice=False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -204,10 +207,18 @@ if logFile != None:
     logFile = "-"
 
 def listDevices(path = deviceDir):
+    global MessageCannotlistdevice
     devices = []
-    for device in os.listdir(path):
-        if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
-            devices.append(device)
+    try:     
+        for device in os.listdir(path):
+            if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
+                devices.append(device)
+    except Exception, inst:
+        devices = ['0']
+        if MessageCannotlistdevice==False:
+            message(LOG_WARN,"""Guessing device "0", failed to list devices: \n%s\n""" % (inst) )
+            MessageCannotlistdevice=True
+
     return devices
 
 _conn = None
@@ -506,7 +517,7 @@ def checkFileExists(path):
         return False
     return True
 
-def findHexFile(type, target = None, mustMatch = True):
+def findHexFile(type, target = None, mustFind = True):
     latest = None
     latestVersion = None
     for hex in glob.glob(os.path.join(sys.path[0], 'hex', '%s-*.hex' % type)):
@@ -523,16 +534,22 @@ def findHexFile(type, target = None, mustMatch = True):
             elif version == target:
                 latest = hex
                 break
-    else:
+    else:        
         if target is None and devOK:
             best = glob.glob(os.path.join(sys.path[0],
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
                 latest = best[0]
-
-    if latest is None and target is not None and mustMatch:
-        message(LOG_FATAL, "Failed to find %s version %d\n" % (type, target))
-
+    #print "A: ",latest,target, mustFind        
+    
+    if latest is None and mustFind:
+        if target is not None:
+            message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?" % (type, target))
+        else:
+            message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?" % (type))
+            
+        
+        
     return latest
 
 def hexVersion(filename):
@@ -816,14 +833,14 @@ if usb_ir is None:
     if loader is None:
         usb_ir = findHexFile('usb_ir')
     elif body is None or isinstance(body, int):
-        body = findHexFile('body', body, mustMatch = (body != 0))
+        body = findHexFile('body', body, body != 0)
 elif isinstance(usb_ir, int):
     usb_ir = findHexFile('usb_ir', usb_ir)    
 
 # compute the target version from the files to report to the user
 if usb_ir:
     targetVersion = hexVersion(usb_ir)
-else:
+else:    
     targetVersion = hexVersion(loader) << 8
     if body:
         targetVersion |= hexVersion(body)
