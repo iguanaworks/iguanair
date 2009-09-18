@@ -9,7 +9,7 @@
 # on FC6 and Debian unstable.
 
 SYSFS{manufacturer} == "IguanaWorks", \
-               OWNER = "iguanair", GROUP = "iguanair", MODE = "0660", \
+               OWNER = "iguanair", GROUP = "iguanair", MODE = "0664", \
                RUN = "/etc/init.d/iguanaIR rescan"
 
 # DEBUGGING ADDITION:
