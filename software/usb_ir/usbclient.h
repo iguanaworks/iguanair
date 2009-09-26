@@ -23,12 +23,15 @@ enum
     INVALID_VENDOR = 0
 };
 
-#define END_OF_USB_ID_LIST {INVALID_VENDOR,0}
+#define END_OF_USB_ID_LIST {INVALID_VENDOR,0,NULL}
 
 typedef struct usbId
 {
     unsigned short idVendor;
     unsigned short idProduct;
+
+    /* generic pointer to store info specific to this device type */
+    void *data;
 } usbId;
 
 typedef struct usbDevice
@@ -96,8 +99,8 @@ typedef struct usbDeviceList
 void printError(int level, char *msg, usbDevice *handle);
 
 /* "simplifying" send and recv wrappers with logging */
-int interruptRecv(usbDevice *handle, void *buffer, int bufSize);
-int interruptSend(usbDevice *handle, void *buffer, int bufSize);
+int interruptRecv(usbDevice *handle, void *buffer, int bufSize, int timeout);
+int interruptSend(usbDevice *handle, void *buffer, int bufSize, int timeout);
 
 /* release a single device (during destruction) */
 void releaseDevice(usbDevice *handle);

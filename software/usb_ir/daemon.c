@@ -36,7 +36,7 @@ extern int daemon_osx_support(const usbId *);
 
 /* local variables */
 static usbId ids[] = {
-    {0x1781, 0x0938}, /* iguanaworks USB transceiver */
+    {0x1781, 0x0938, NULL}, /* iguanaworks USB transceiver */
     END_OF_USB_ID_LIST
 };
 static mode_t devMode = 0777;

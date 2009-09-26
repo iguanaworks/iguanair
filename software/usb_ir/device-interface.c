@@ -184,7 +184,8 @@ static bool sendData(iguanaDev *idev,
         /* ensure we send idev->maxPacketSize bytes */
         if (interruptSend(idev->usbDev,
                           (char*)buffer + x * idev->maxPacketSize,
-                          idev->maxPacketSize) != idev->maxPacketSize)
+                          idev->maxPacketSize,
+                          idev->usbDev->list->sendTimeout) != idev->maxPacketSize)
         {
             printError(LOG_ERROR, "failed to write data packet", idev->usbDev);
             retval = false;
@@ -193,7 +194,8 @@ static bool sendData(iguanaDev *idev,
 
     /* send the last packet (with at least the data terminator) */
     if (retval && lastPacket != NULL &&
-        interruptSend(idev->usbDev, lastPacket, lastSize) != lastSize)
+        interruptSend(idev->usbDev, lastPacket, lastSize,
+                      idev->usbDev->list->sendTimeout) != lastSize)
     {
         printError(LOG_ERROR,
                    "failed to write final data packet", idev->usbDev);
@@ -608,7 +610,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         flushToDevResponsePackets(idev);
         /* time the transfer */
         then = microsSinceX();
-        result = interruptSend(idev->usbDev, msg, length);
+        result = interruptSend(idev->usbDev, msg, length,
+                               idev->usbDev->list->sendTimeout);
         /* error if we were not able to write ALL the data */
         if (result != length)
             printError(LOG_ERROR,
@@ -763,7 +766,8 @@ void handleIncomingPackets(iguanaDev *idev)
 #endif
 
             /* wait for data to arrive */
-            length = interruptRecv(idev->usbDev, buffer, idev->maxPacketSize);
+            length = interruptRecv(idev->usbDev, buffer, idev->maxPacketSize,
+                                   idev->usbDev->list->recvTimeout);
 
             if (length < 0)
             {
@@ -857,7 +861,8 @@ void handleIncomingPackets(iguanaDev *idev)
                         {
                             length = interruptRecv(idev->usbDev,
                                                    buffer,
-                                                   idev->maxPacketSize);
+                                                   idev->maxPacketSize,
+                                                   idev->usbDev->list->recvTimeout);
                             /* timeouts should never happen, but handle it */
                             if (length > 0 && length <= idev->maxPacketSize)
                             {

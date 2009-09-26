@@ -15,6 +15,7 @@
 
 typedef struct client
 {
+    /* we keep a list of clients for each device */
     itemHeader header;
 
     /* which iguana device is this associated with? */

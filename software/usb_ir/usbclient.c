@@ -53,7 +53,7 @@ void printError(int level, char *msg, usbDevice *handle)
         message(level, "No error recorded\n");
 }
 
-int interruptRecv(usbDevice *handle, void *buffer, int bufSize)
+int interruptRecv(usbDevice *handle, void *buffer, int bufSize, int timeout)
 {
     int retval;
 
@@ -63,7 +63,7 @@ int interruptRecv(usbDevice *handle, void *buffer, int bufSize)
     retval = usb_interrupt_read(handle->device,
                                 handle->epIn->bEndpointAddress,
                                 buffer, bufSize,
-                                handle->list->recvTimeout);
+                                timeout);
     if (retval < 0)
     {
         setError(handle, "Failed to read (interrupt end point)");
@@ -80,7 +80,7 @@ int interruptRecv(usbDevice *handle, void *buffer, int bufSize)
     return retval;
 }
 
-int interruptSend(usbDevice *handle, void *buffer, int bufSize)
+int interruptSend(usbDevice *handle, void *buffer, int bufSize, int timeout)
 {
     int retval;
 
@@ -96,7 +96,7 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize)
     retval = usb_interrupt_write(handle->device,
                                  handle->epOut->bEndpointAddress,
                                  buffer, bufSize,
-                                 handle->list->sendTimeout);
+                                 timeout);
     if (retval < 0)
         setError(handle, "Failed to write (interrupt end point)");
 
@@ -218,6 +218,7 @@ bool updateDeviceList(usbDeviceList *list)
                         memset(newDev, 0, sizeof(usbDevice));
 
                         /* basic stuff */
+                        newDev->type = list->ids[pos];
                         newDev->list = list;
                         newDev->busIndex = busIndex;
                         newDev->devIndex = LIBUSB_DEVNUM(dev);
