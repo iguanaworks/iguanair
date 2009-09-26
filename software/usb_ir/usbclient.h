@@ -34,79 +34,43 @@ typedef struct usbId
     void *data;
 } usbId;
 
-typedef struct usbDevice
+typedef struct deviceInfo
 {
-    /* fields for the linked list of devices */
-    /* MUST be listed first for casting */
-    itemHeader header;
-    struct usbDeviceList *list;
-
     /* unique id (counter) */
     unsigned int id;
 
     /* what device id did it match? */
     usbId type;
 
-    /* identifiers from the USB bus */
-    uint8_t busIndex, devIndex;
-
-    /* handle(s) to the actual device */
-    struct usb_dev_handle *device;
-
-    /* read and write endpoints (set by higher layer) */
-    struct usb_endpoint_descriptor *epIn, *epOut;
-
-    /* usbclient and libusb errors */
-    char *error, *usbError;
-
     /* set when device is logically stopped prior to removal from list */
     bool stopped;
+} deviceInfo;
 
-    /* set when device is logically removed from list */
-    bool removed;
-} usbDevice;
+/* prototype of the function called when a new device is found */
+typedef void (*deviceFunc)(deviceInfo *info);
 
-/* called when a new device is found by a list */
-typedef void (*deviceFunc)(usbDevice *dev);
-
-typedef struct usbDeviceList
-{
-    /* for keeping the list of devices */
-    listHeader deviceList;
-
-    /* count makes life easier */
-    unsigned int count;
-
-    /* id generator */
-    unsigned int nextId;
-
-    /* ids that are in this list */
-    usbId *ids;
-
-    /* callback when creating a device */
-    deviceFunc newDev;
-} usbDeviceList;
-
-/* device methods */
 /* dump errors to stream */
-void printError(int level, char *msg, usbDevice *handle);
-
-/* "simplifying" send and recv wrappers with logging */
-int interruptRecv(usbDevice *handle, void *buffer, int bufSize, int timeout);
-int interruptSend(usbDevice *handle, void *buffer, int bufSize, int timeout);
-
-/* release a single device (during destruction) */
-void releaseDevice(usbDevice *handle);
-
-/* methods of a device list */
-void initDeviceList(usbDeviceList *list, usbId *ids, deviceFunc ndf);
-bool updateDeviceList(usbDeviceList *list);
-unsigned int stopDevices(usbDeviceList *list);
-unsigned int releaseDevices(usbDeviceList *list);
+void printError(int level, char *msg, deviceInfo *info);
 
 /* wrapped usb methods */
-bool findDeviceEndpoints(usbDevice *handle, int *maxPacketSize);
-int clearHalt(usbDevice *handle, unsigned int ep);
-int usbReset(usbDevice *handle);
+bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize);
+int interruptRecv(deviceInfo *info, void *buffer, int bufSize, int timeout);
+int interruptSend(deviceInfo *info, void *buffer, int bufSize, int timeout);
+int clearHalt(deviceInfo *info, unsigned int ep);
+int usbReset(deviceInfo *info);
+
+/* miscellaneous helper functions */
+void getDeviceLocation(deviceInfo *info, uint8_t loc[2]);
+
+/* release a single device (during destruction) */
+void releaseDevice(deviceInfo *info);
+void freeDevice(deviceInfo *info);
+
+/* methods of a device list */
+typedef void deviceList;
+deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf);
+bool updateDeviceList(deviceList *devList);
+unsigned int stopDevices(deviceList *devList);
+unsigned int releaseDevices(deviceList *devList);
 
 #endif

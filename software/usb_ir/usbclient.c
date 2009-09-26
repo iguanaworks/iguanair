@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include <usb.h>
 #include <errno.h>
@@ -22,6 +23,9 @@
 #include "pipes.h"
 #include "support.h"
 #include "usbclient.h"
+#include "libusbpre1.h"
+
+#define handleFromInfoPtr(ptr) (usbDevice*)((char*)ptr - offsetof(usbDevice, info))
 
 static void setError(usbDevice *handle, char *error)
 {
@@ -34,17 +38,18 @@ static void setError(usbDevice *handle, char *error)
     }
 }
 
-void printError(int level, char *msg, usbDevice *handle)
+void printError(int level, char *msg, deviceInfo *info)
 {
+    usbDevice *handle = handleFromInfoPtr(info);
     if (msg != NULL)
-        if (handle == NULL || handle->error == NULL)
+        if (info == NULL || handle->error == NULL)
             message(level, "%s\n", msg);
         else if (handle->usbError == NULL)
             message(level, "%s: %s\n", msg, handle->error);
         else
             message(level,
                     "%s: %s: %s\n", msg, handle->error, handle->usbError);
-    else if (handle != NULL && handle->error != NULL)
+    else if (info != NULL && handle->error != NULL)
         if (handle->usbError == NULL)
             message(level, "%s\n", handle->error);
         else
@@ -53,11 +58,12 @@ void printError(int level, char *msg, usbDevice *handle)
         message(level, "No error recorded\n");
 }
 
-int interruptRecv(usbDevice *handle, void *buffer, int bufSize, int timeout)
+int interruptRecv(deviceInfo *info, void *buffer, int bufSize, int timeout)
 {
+    usbDevice *handle = handleFromInfoPtr(info);
     int retval;
 
-    if (handle->stopped)
+    if (handle->info.stopped)
         return -(errno = ENXIO);
 
     retval = usb_interrupt_read(handle->device,
@@ -80,15 +86,16 @@ int interruptRecv(usbDevice *handle, void *buffer, int bufSize, int timeout)
     return retval;
 }
 
-int interruptSend(usbDevice *handle, void *buffer, int bufSize, int timeout)
+int interruptSend(deviceInfo *info, void *buffer, int bufSize, int timeout)
 {
+    usbDevice *handle = handleFromInfoPtr(info);
     int retval;
 
     message(LOG_DEBUG2, "o");
     appendHex(LOG_DEBUG2, buffer, bufSize);
 
     setError(handle, NULL);
-    if (handle->stopped)
+    if (handle->info.stopped)
         return -(errno = ENXIO);
     /* NOTE: when firmware 0205 hangs during a send this call NEVER
        times out meaning that we have NO way to recover in the daemon
@@ -103,9 +110,10 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize, int timeout)
     return retval;
 }
 
-void releaseDevice(usbDevice *handle)
+void releaseDevice(deviceInfo *info)
 {
-    if (handle != NULL && ! handle->removed)
+    usbDevice *handle = handleFromInfoPtr(info);
+    if (info != NULL && ! handle->removed)
     {
         /* record the removal */
         handle->removed = true;
@@ -122,18 +130,30 @@ void releaseDevice(usbDevice *handle)
 
         /* print errors from the usb closes */
         if (handle->error != NULL)
-            printError(LOG_ERROR, NULL, handle);
+            printError(LOG_ERROR, NULL, &handle->info);
 
         /* remove the device from the list */
         removeItem((itemHeader*)handle);
     }
 }
 
-void initDeviceList(usbDeviceList *list, usbId *ids, deviceFunc ndf)
+void freeDevice(deviceInfo *info)
 {
-    memset(list, 0, sizeof(usbDeviceList));
-    list->ids = ids;
-    list->newDev = ndf;
+    usbDevice *handle = handleFromInfoPtr(info);
+    free(handle);
+}
+
+deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf)
+{
+    usbDeviceList *list;
+    list = (usbDeviceList*)malloc(sizeof(usbDeviceList));
+    if (list != NULL)
+    {
+        memset(list, 0, sizeof(usbDeviceList));
+        list->ids = ids;
+        list->newDev = ndf;
+    }
+    return list;
 }
 
 /* increment the id for each item in the list */
@@ -142,13 +162,14 @@ static bool findId(itemHeader *item, void *userData)
     unsigned int *id = (unsigned int*)userData;
     usbDevice *usbDev = (usbDevice*)item;
 
-    if (! usbDev->removed && usbDev->id == *id)
+    if (! usbDev->removed && usbDev->info.id == *id)
         (*id)++;
     return true;
 }
 
-bool updateDeviceList(usbDeviceList *list)
+bool updateDeviceList(deviceList *devList)
 {
+    usbDeviceList *list = (usbDeviceList*)devList;
     struct usb_bus *bus;
     struct usb_device *dev;
     unsigned int pos, count = 0, newCount = 0;
@@ -201,18 +222,18 @@ bool updateDeviceList(usbDeviceList *list)
                         memset(newDev, 0, sizeof(usbDevice));
 
                         /* basic stuff */
-                        newDev->type = list->ids[pos];
-                        newDev->list = list;
+                        newDev->info.type = list->ids[pos];
                         newDev->busIndex = busIndex;
                         newDev->devIndex = LIBUSB_DEVNUM(dev);
 
                         /* determine the id (reusing if possible) */
-                        newDev->id = 0;
+                        newDev->info.id = 0;
                         while(true)
                         {
-                            unsigned int prev = newDev->id;
-                            forEach(&list->deviceList, findId, &newDev->id);
-                            if (prev == newDev->id)
+                            unsigned int prev = newDev->info.id;
+                            forEach(&list->deviceList,
+                                    findId, &newDev->info.id);
+                            if (prev == newDev->info.id)
                                 break;
                         }
 
@@ -242,8 +263,8 @@ bool updateDeviceList(usbDeviceList *list)
                                         "Is igdaemon already running?\n");
                             message(LOG_ERROR, "  trying to claim usb:%d:%d\n",
                                     busIndex, LIBUSB_DEVNUM(dev));
-                            printError(LOG_ERROR,
-                                       "  updateDeviceList failed", newDev);
+                            printError(LOG_ERROR, "  updateDeviceList failed",
+                                       &newDev->info);
 
                             if (newDev->device != NULL)
                                 usb_close(newDev->device);
@@ -251,7 +272,7 @@ bool updateDeviceList(usbDeviceList *list)
                             return false;
                         }
                         else if (list->newDev != NULL)
-                            list->newDev(newDev);
+                            list->newDev(&newDev->info);
 
                         /* count how many devices we added */
                         newCount++;
@@ -272,38 +293,43 @@ bool updateDeviceList(usbDeviceList *list)
             message(LOG_DEBUG,
                     "  %d) usb:%d.%d id=%d addr=%p\n", index++,
                     devPos->busIndex, devPos->devIndex,
-                    devPos->id, (void*)devPos);
+                    devPos->info.id, (void*)devPos);
     }
 
     return true;
 }
 
-unsigned int stopDevices(usbDeviceList *list)
+unsigned int stopDevices(deviceList *devList)
 {
+    usbDeviceList *list = (usbDeviceList*)devList;
     unsigned int count = list->deviceList.count;
     usbDevice *head;
 
     while((head = (usbDevice*)firstItem(&list->deviceList)) != NULL)
-        head->stopped = true;
+        head->info.stopped = true;
 
     return count;
 }
 
-unsigned int releaseDevices(usbDeviceList *list)
+unsigned int releaseDevices(deviceList *devList)
 {
+    usbDeviceList *list = (usbDeviceList*)devList;
     unsigned int count = list->deviceList.count;
     usbDevice *head;
 
     while((head = (usbDevice*)firstItem(&list->deviceList)) != NULL)
-        releaseDevice(head);
+        releaseDevice(&head->info);
 
+    /* illegal to access the list after this call */
+    free(list);
     return count;
 }
 
 /* set dev_ep_in and dev_ep_out to the in/out endpoints of the given
  * device. returns 1 on success, 0 on failure. */
-bool findDeviceEndpoints(usbDevice *handle, int *maxPacketSize)
+bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize)
 {
+    usbDevice *handle = handleFromInfoPtr(info);
     struct usb_device *dev;
     struct usb_interface_descriptor *idesc;
 
@@ -342,8 +368,9 @@ bool findDeviceEndpoints(usbDevice *handle, int *maxPacketSize)
     return false;
 }
 
-int clearHalt(usbDevice *handle, unsigned int ep)
+int clearHalt(deviceInfo *info, unsigned int ep)
 {
+    usbDevice *handle = handleFromInfoPtr(info);
     switch (ep)
     {
     case EP_IN:
@@ -357,7 +384,15 @@ int clearHalt(usbDevice *handle, unsigned int ep)
     return -1;
 }
 
-int usbReset(usbDevice *handle)
+int usbReset(deviceInfo *info)
 {
+    usbDevice *handle = handleFromInfoPtr(info);
     return usb_reset(handle->device);
+}
+
+void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
+{
+    usbDevice *handle = handleFromInfoPtr(info);
+    loc[0] = handle->busIndex;
+    loc[1] = handle->devIndex;
 }

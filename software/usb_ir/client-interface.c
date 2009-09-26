@@ -28,8 +28,8 @@
 #include "support.h"
 #include "pipes.h"
 #include "dataPackets.h"
-#include "device-interface.h"
 #include "usbclient.h"
+#include "device-interface.h"
 #include "client-interface.h"
 #include "protocol-versions.h"
 
@@ -201,8 +201,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     case IG_DEV_GETLOCATION:
         request->data = (unsigned char*)malloc(2);
-        ((uint8_t*)request->data)[0] = target->idev->usbDev->busIndex;
-        ((uint8_t*)request->data)[1] = target->idev->usbDev->devIndex;
+        getDeviceLocation(target->idev->usbDev, (uint8_t*)request->data);
         request->dataLen = 2;
         retval = true;
         break;
@@ -241,7 +240,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
                 retval = true;
         }
         else
-            //TODO: changes the errno to 9 sometimes.  need to store the error somewhere before this
+            /* TODO: changes the errno to 9 sometimes.  need to store the error somewhere before this */
             message(LOG_ERROR,
                     "Device transaction (0x%2.2x) failed\n", request->code);
     }
@@ -568,7 +567,7 @@ printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
         message(LOG_ERROR, "Failed to write thread id to childPipe.\n");
 
     /* now actually free the malloc'd data */
-    free(idev->usbDev);
+    freeDevice(idev->usbDev);
 
     /* go ahead and free the idev since the thread id has been written
        to the main application thread for reaping. */
@@ -578,7 +577,7 @@ printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
     return NULL;
 }
 
-void startWorker(usbDevice *dev)
+void startWorker(deviceInfo *info)
 {
     iguanaDev *idev = NULL;
 
@@ -589,7 +588,7 @@ void startWorker(usbDevice *dev)
     else
     {
         memset(idev, 0, sizeof(iguanaDev));
-        idev->settings = (deviceSettings*)dev->type.data;
+        idev->settings = (deviceSettings*)info->type.data;
         idev->carrier = 38000;
         InitializeCriticalSection(&idev->listLock);
 #ifdef LIBUSB_NO_THREADS_OPTION
@@ -601,11 +600,11 @@ void startWorker(usbDevice *dev)
         if (! createPipePair(idev->readerPipe))
             message(LOG_ERROR,
                     "Failed to create readPipe for %d: %s\n",
-                    dev->id, translateError(errno));
+                    info->id, translateError(errno));
         else if (! createPipePair(idev->responsePipe))
             message(LOG_ERROR,
                     "Failed to create responsePipe for %d: %s\n",
-                    dev->id, translateError(errno));
+                    info->id, translateError(errno));
         else
         {
 #if DEBUG
@@ -616,21 +615,21 @@ printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
 #endif
 
             /* this must be set before the call to findDeviceEndpoints */
-            idev->usbDev = dev;
+            idev->usbDev = info;
 
             if (! findDeviceEndpoints(idev->usbDev, &idev->maxPacketSize))
                 message(LOG_ERROR,
-                        "Failed find device endpoints for %d\n", dev->id);
+                        "Failed find device endpoints for %d\n", info->id);
             else if (! startThread(&idev->reader,
                                    (void *(*)(void*))handleIncomingPackets,
                                    idev))
                 message(LOG_ERROR,
-                        "Failed to create reader thread %d\n", dev->id);
+                        "Failed to create reader thread %d\n", info->id);
             else
             {
                 if (! startThread(&idev->worker, workLoop, idev))
                     message(LOG_ERROR,
-                            "Failed to create worker thread %d\n", dev->id);
+                            "Failed to create worker thread %d\n", info->id);
                 else
                     /* return on success to skip cleanup */
                     return;
@@ -640,10 +639,10 @@ printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
         }
         free(idev);
     }
-    releaseDevice(dev);
+    releaseDevice(info);
 }
 
-bool reapAllChildren(usbDeviceList *list, deviceSettings *settings)
+bool reapAllChildren(deviceList *list, deviceSettings *settings)
 {
     unsigned int x;
 

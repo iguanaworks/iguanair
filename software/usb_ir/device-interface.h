@@ -47,7 +47,7 @@ typedef struct iguanaDev
     int maxPacketSize;
 
     /* usb device pointer */
-    struct usbDevice *usbDev;
+    struct deviceInfo *usbDev;
 
     /* so we can join with the reader thread */
     THREAD_PTR worker, reader;
