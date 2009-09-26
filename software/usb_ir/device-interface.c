@@ -20,7 +20,7 @@
 
 #include "pipes.h"
 #include "support.h"
-#include "usbclient.h"
+#include "driver.h"
 #include "dataPackets.h"
 #include "device-interface.h"
 #include "protocol-versions.h"

@@ -24,7 +24,7 @@
 
 #include <popt.h>
 
-#include "usbclient.h"
+#include "driver.h"
 #include "pipes.h"
 #include "support.h"
 #include "device-interface.h"

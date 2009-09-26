@@ -59,7 +59,7 @@ $(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 	$(CC) $(SHAREARG) $(LINKARGS) $(LDFLAGS) $^ -o $@
 
 igdaemon: daemon.o client-interface.o device-interface.o \
-	  usbclient.o libusbpre1.o \
+	  driver.o libusbpre1.o \
           list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o \
           $(OSSUPPORT)
 	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread $(LIBNAME) -o $@

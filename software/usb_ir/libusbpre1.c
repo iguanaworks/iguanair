@@ -23,7 +23,6 @@
 #include "pipes.h"
 #include "support.h"
 #include "driverapi.h"
-#include "libusbpre1.h"
 
 #include "list.h"
 

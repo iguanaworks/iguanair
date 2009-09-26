@@ -28,7 +28,7 @@
 #include "support.h"
 #include "pipes.h"
 #include "dataPackets.h"
-#include "usbclient.h"
+#include "driver.h"
 #include "device-interface.h"
 #include "client-interface.h"
 #include "protocol-versions.h"

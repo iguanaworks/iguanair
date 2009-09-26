@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <CoreFoundation/CFDictionary.h>
 
 #include "iguanaIR.h"
-#include "usbclient.h"
+#include "driver.h"
 
 extern int daemon_osx_support(const usbId *);
 

@@ -1,5 +1,5 @@
 /****************************************************************************
- ** usbclient.h *************************************************************
+ ** driver.h ****************************************************************
  ****************************************************************************
  *
  * Header for the lowest level interface to the USB device.
@@ -10,8 +10,8 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#ifndef _USBCLIENT_
-#define _USBCLIENT_
+#ifndef _DRIVER_H_
+#define _DRIVER_H_
 
 #include "devicebase.h"
 
