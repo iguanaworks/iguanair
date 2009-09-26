@@ -323,7 +323,7 @@ bool findDeviceEndpoints(usbDevice *handle, int *maxPacketSize)
     struct usb_device *dev;
     struct usb_interface_descriptor *idesc;
 
-    dev = usb_device(getDevHandle(handle));
+    dev = usb_device(handle->device);
 
     /* sanity checks that we're looking at an acceptable device */
     if (dev->descriptor.bNumConfigurations != 1 ||

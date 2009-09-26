@@ -94,13 +94,13 @@ typedef struct usbDeviceList
 /* device methods */
 /* dump errors to stream */
 void printError(int level, char *msg, usbDevice *handle);
+
 /* "simplifying" send and recv wrappers with logging */
 int interruptRecv(usbDevice *handle, void *buffer, int bufSize);
 int interruptSend(usbDevice *handle, void *buffer, int bufSize);
+
 /* release a single device (during destruction) */
 void releaseDevice(usbDevice *handle);
-/* rarely higher levels need the device handle */
-#define getDevHandle(a) ((a)->device)
 
 /* methods of a device list */
 bool initDeviceList(usbDeviceList *list, usbId *ids,
