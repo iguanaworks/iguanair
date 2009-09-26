@@ -94,9 +94,6 @@ struct dataPacket* removeNextPacket(iguanaDev *idev);
 /* read incoming data into the buffer */
 void handleIncomingPackets(iguanaDev *idev);
 
-/* dunno where else to put this */
-bool findDeviceEndpoints(iguanaDev *idev);
-
 /* translation of data for transmission */
 uint32_t* iguanaDevToPulses(unsigned char *code, int *length);
 

@@ -315,3 +315,65 @@ unsigned int releaseDevices(usbDeviceList *list)
 
     return count;
 }
+
+/* set dev_ep_in and dev_ep_out to the in/out endpoints of the given
+ * device. returns 1 on success, 0 on failure. */
+bool findDeviceEndpoints(usbDevice *handle, int *maxPacketSize)
+{
+    struct usb_device *dev;
+    struct usb_interface_descriptor *idesc;
+
+    dev = usb_device(getDevHandle(handle));
+
+    /* sanity checks that we're looking at an acceptable device */
+    if (dev->descriptor.bNumConfigurations != 1 ||
+        dev->config[0].bNumInterfaces != 1 ||
+        dev->config[0].interface[0].num_altsetting != 1)
+        return false;
+
+    idesc = &dev->config[0].interface[0].altsetting[0];
+    if (idesc->bNumEndpoints != 2)
+        return false;
+
+    /* grab the pointers */
+    handle->epIn = &idesc->endpoint[0];
+    handle->epOut = &idesc->endpoint[1];
+
+    /* set the max packet size to the minimum of in and out */
+    *maxPacketSize = idesc->endpoint[0].wMaxPacketSize;
+    if (*maxPacketSize > idesc->endpoint[1].wMaxPacketSize)
+        *maxPacketSize = idesc->endpoint[1].wMaxPacketSize;
+
+    /* check the pointer targets */
+    if ((handle->epIn->bEndpointAddress &
+         USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN &&
+        (handle->epIn->bmAttributes &
+         USB_ENDPOINT_TYPE_MASK) == USB_ENDPOINT_TYPE_INTERRUPT &&
+        (handle->epOut->bEndpointAddress &
+         USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT &&
+        (handle->epOut->bmAttributes &
+         USB_ENDPOINT_TYPE_MASK) == USB_ENDPOINT_TYPE_INTERRUPT)
+        return true;
+
+    return false;
+}
+
+int clearHalt(usbDevice *handle, unsigned int ep)
+{
+    switch (ep)
+    {
+    case EP_IN:
+        return usb_clear_halt(handle->device, 
+                              handle->epIn->bEndpointAddress);
+
+    case EP_OUT:
+        return usb_clear_halt(handle->device, 
+                              handle->epOut->bEndpointAddress);
+    }
+    return -1;
+}
+
+int usbReset(usbDevice *handle)
+{
+    return usb_reset(handle->device);
+}

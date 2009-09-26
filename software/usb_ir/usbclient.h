@@ -13,17 +13,23 @@
 #ifndef _USBCLIENT_
 #define _USBCLIENT_
 
-#include <usb.h>
 #include "list.h"
+
+enum
+{
+    EP_IN,
+    EP_OUT,
+
+    INVALID_VENDOR = 0
+};
+
+#define END_OF_USB_ID_LIST {INVALID_VENDOR,0}
 
 typedef struct usbId
 {
     unsigned short idVendor;
     unsigned short idProduct;
 } usbId;
-
-#define INVALID_VENDOR 0
-#define END_OF_USB_ID_LIST {INVALID_VENDOR,0}
 
 typedef struct usbDevice
 {
@@ -103,5 +109,10 @@ bool initDeviceList(usbDeviceList *list, usbId *ids,
 bool updateDeviceList(usbDeviceList *list);
 unsigned int stopDevices(usbDeviceList *list);
 unsigned int releaseDevices(usbDeviceList *list);
+
+/* wrapped usb methods */
+bool findDeviceEndpoints(usbDevice *handle, int *maxPacketSize);
+int clearHalt(usbDevice *handle, unsigned int ep);
+int usbReset(usbDevice *handle);
 
 #endif

@@ -234,9 +234,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
     {
         if (request->code == IG_DEV_RESET)
         {
-            usb_clear_halt(getDevHandle(target->idev->usbDev),
-                           target->idev->usbDev->epIn->bEndpointAddress);
-            if (usb_reset(getDevHandle(target->idev->usbDev)) != 0)
+            clearHalt(target->idev->usbDev, EP_IN);
+            if (usbReset(target->idev->usbDev) != 0)
                 message(LOG_ERROR, "Hard reset failed\n");
             else
                 retval = true;
@@ -618,7 +617,7 @@ printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
             /* this must be set before the call to findDeviceEndpoints */
             idev->usbDev = dev;
 
-            if (! findDeviceEndpoints(idev))
+            if (! findDeviceEndpoints(idev->usbDev, &idev->maxPacketSize))
                 message(LOG_ERROR,
                         "Failed find device endpoints for %d\n", dev->id);
             else if (! startThread(&idev->reader,

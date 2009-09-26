@@ -15,11 +15,14 @@
 #include "iguanaIR.h"
 #include "compat.h"
 
-#include <popt.h>
+#include <stdlib.h>
+#include <limits.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
+
+#include <popt.h>
 
 #include "usbclient.h"
 #include "pipes.h"
