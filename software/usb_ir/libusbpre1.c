@@ -22,10 +22,57 @@
 
 #include "pipes.h"
 #include "support.h"
-#include "usbclient.h"
+#include "driverapi.h"
 #include "libusbpre1.h"
 
+#include "list.h"
+
+typedef struct usbDevice
+{
+    /* fields for the linked list of devices */
+    /* MUST be listed first for casting */
+    itemHeader header;
+
+    /* identifiers from the USB bus */
+    uint8_t busIndex, devIndex;
+
+    /* handle(s) to the actual device */
+    struct usb_dev_handle *device;
+
+    /* read and write endpoints (set by higher layer) */
+    struct usb_endpoint_descriptor *epIn, *epOut;
+
+    /* usbclient and libusb errors */
+    char *error, *usbError;
+
+    /* set when device is logically removed from list */
+    bool removed;
+
+    deviceInfo info;
+} usbDevice;
+
+typedef struct usbDeviceList
+{
+    /* for keeping the list of devices */
+    listHeader deviceList;
+
+    /* count makes life easier */
+    unsigned int count;
+
+    /* id generator */
+    unsigned int nextId;
+
+    /* ids that are in this list */
+    usbId *ids;
+
+    /* callback when creating a device */
+    deviceFunc newDev;
+} usbDeviceList;
+
 #define handleFromInfoPtr(ptr) (usbDevice*)((char*)ptr - offsetof(usbDevice, info))
+
+
+
 
 static void setError(usbDevice *handle, char *error)
 {
@@ -38,7 +85,7 @@ static void setError(usbDevice *handle, char *error)
     }
 }
 
-void printError(int level, char *msg, deviceInfo *info)
+static void printError(int level, char *msg, deviceInfo *info)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     if (msg != NULL)
@@ -58,7 +105,8 @@ void printError(int level, char *msg, deviceInfo *info)
         message(level, "No error recorded\n");
 }
 
-int interruptRecv(deviceInfo *info, void *buffer, int bufSize, int timeout)
+static int interruptRecv(deviceInfo *info,
+                         void *buffer, int bufSize, int timeout)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     int retval;
@@ -86,7 +134,8 @@ int interruptRecv(deviceInfo *info, void *buffer, int bufSize, int timeout)
     return retval;
 }
 
-int interruptSend(deviceInfo *info, void *buffer, int bufSize, int timeout)
+static int interruptSend(deviceInfo *info,
+                         void *buffer, int bufSize, int timeout)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     int retval;
@@ -110,7 +159,7 @@ int interruptSend(deviceInfo *info, void *buffer, int bufSize, int timeout)
     return retval;
 }
 
-void releaseDevice(deviceInfo *info)
+static void releaseDevice(deviceInfo *info)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     if (info != NULL && ! handle->removed)
@@ -137,13 +186,13 @@ void releaseDevice(deviceInfo *info)
     }
 }
 
-void freeDevice(deviceInfo *info)
+static void freeDevice(deviceInfo *info)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     free(handle);
 }
 
-deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf)
+static deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf)
 {
     usbDeviceList *list;
     list = (usbDeviceList*)malloc(sizeof(usbDeviceList));
@@ -167,7 +216,7 @@ static bool findId(itemHeader *item, void *userData)
     return true;
 }
 
-bool updateDeviceList(deviceList *devList)
+static bool updateDeviceList(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
     struct usb_bus *bus;
@@ -299,7 +348,7 @@ bool updateDeviceList(deviceList *devList)
     return true;
 }
 
-unsigned int stopDevices(deviceList *devList)
+static unsigned int stopDevices(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
     unsigned int count = list->deviceList.count;
@@ -311,7 +360,7 @@ unsigned int stopDevices(deviceList *devList)
     return count;
 }
 
-unsigned int releaseDevices(deviceList *devList)
+static unsigned int releaseDevices(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
     unsigned int count = list->deviceList.count;
@@ -327,7 +376,7 @@ unsigned int releaseDevices(deviceList *devList)
 
 /* set dev_ep_in and dev_ep_out to the in/out endpoints of the given
  * device. returns 1 on success, 0 on failure. */
-bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize)
+static bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     struct usb_device *dev;
@@ -368,7 +417,7 @@ bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize)
     return false;
 }
 
-int clearHalt(deviceInfo *info, unsigned int ep)
+static int clearHalt(deviceInfo *info, unsigned int ep)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     switch (ep)
@@ -384,15 +433,31 @@ int clearHalt(deviceInfo *info, unsigned int ep)
     return -1;
 }
 
-int usbReset(deviceInfo *info)
+static int resetDevice(deviceInfo *info)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     return usb_reset(handle->device);
 }
 
-void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
+static void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
 {
     usbDevice *handle = handleFromInfoPtr(info);
     loc[0] = handle->busIndex;
     loc[1] = handle->devIndex;
 }
+
+driverImpl impl_libusbpre1 = {
+    findDeviceEndpoints,
+    interruptRecv,
+    interruptSend,
+    clearHalt,
+    resetDevice,
+    getDeviceLocation,
+    releaseDevice,
+    freeDevice,
+    prepareDeviceList,
+    updateDeviceList,
+    stopDevices,
+    releaseDevices,
+    printError
+};

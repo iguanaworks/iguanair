@@ -85,9 +85,10 @@ static void workLoop()
     message(LOG_DEBUG, "  recvTimeout: %d\n", recvTimeout);
     message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
 
-    /* initialize the device list */
-    list = prepareDeviceList(ids, startWorker);
-    if (list == NULL)
+    /* initialize the driver and device list */
+    if (! findDriver())
+        message(LOG_ERROR, "failed to find an acceptable driver layer.\n");
+    else if ((list = prepareDeviceList(ids, startWorker)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
     else if (! createPipePair(settings.childPipe))
         message(LOG_ERROR, "failed to open child pipe.\n");

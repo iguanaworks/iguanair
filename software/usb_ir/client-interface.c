@@ -234,7 +234,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
         if (request->code == IG_DEV_RESET)
         {
             clearHalt(target->idev->usbDev, EP_IN);
-            if (usbReset(target->idev->usbDev) != 0)
+            if (resetDevice(target->idev->usbDev) != 0)
                 message(LOG_ERROR, "Hard reset failed\n");
             else
                 retval = true;
