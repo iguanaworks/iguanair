@@ -307,7 +307,7 @@ static bool handleClient(client *me)
     dataPacket request;
 
     if (! readDataPacket(&request, me->fd,
-                         me->idev->usbDev->list->recvTimeout))
+                         me->idev->settings->recvTimeout))
     {
         releaseClient(me);
         retval = false;
@@ -563,7 +563,7 @@ printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
     releaseDevice(idev->usbDev);
 
     message(LOG_INFO, "Worker %d exiting\n", idev->usbDev->id);
-    if (writePipe(idev->usbDev->list->childPipe[WRITE],
+    if (writePipe(idev->settings->childPipe[WRITE],
                   &idev->worker, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
         message(LOG_ERROR, "Failed to write thread id to childPipe.\n");
 
@@ -589,6 +589,7 @@ void startWorker(usbDevice *dev)
     else
     {
         memset(idev, 0, sizeof(iguanaDev));
+        idev->settings = (deviceSettings*)dev->type.data;
         idev->carrier = 38000;
         InitializeCriticalSection(&idev->listLock);
 #ifdef LIBUSB_NO_THREADS_OPTION
@@ -642,7 +643,7 @@ printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
     releaseDevice(dev);
 }
 
-bool reapAllChildren(usbDeviceList *list)
+bool reapAllChildren(usbDeviceList *list, deviceSettings *settings)
 {
     unsigned int x;
 
@@ -655,9 +656,9 @@ bool reapAllChildren(usbDeviceList *list)
         THREAD_PTR child;
 
         /* NOTE: using 2*recv timeout to allow readers to exit. */
-        result = readPipeTimed(list->childPipe[READ],
+        result = readPipeTimed(settings->childPipe[READ],
                                (char*)&child, sizeof(THREAD_PTR),
-                               2 * list->recvTimeout);
+                               2 * settings->recvTimeout);
         /* no one ready */
         if (result == 0)
             break;

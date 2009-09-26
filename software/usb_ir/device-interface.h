@@ -26,6 +26,16 @@ enum
 /* forward declaration */
 struct dataPacket;
 
+typedef struct deviceSettings
+{
+    /* a method for children to communicate back to the list owner */
+    PIPE_PTR childPipe[2];
+
+    /* time outs for send and receive */
+    unsigned int recvTimeout;
+    unsigned int sendTimeout;
+} deviceSettings;
+
 typedef struct iguanaDev
 {
     /* used to pass data from the reader to the worker, closed to
@@ -64,6 +74,9 @@ typedef struct iguanaDev
 
     /* might as well keep the list of clients here */
     listHeader clientList;
+
+    /* link to the global settings object */
+    deviceSettings *settings;
 
 #ifdef LIBUSB_NO_THREADS_OPTION
     bool libusbNoThreads;

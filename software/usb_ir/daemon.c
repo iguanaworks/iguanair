@@ -70,16 +70,25 @@ static void scanHandler(int UNUSED(sig))
 
 static void workLoop()
 {
-    /* initialize the device list and set up the signal handlers */
     usbDeviceList list;
+    deviceSettings settings;
+    int x;
+    for(x = 0; ids[x].idVendor != INVALID_VENDOR; x++)
+        ids[x].data = &settings;
 
+    /* basic initialization */
+    initDeviceList(&list, ids, startWorker);
+    settings.recvTimeout = recvTimeout;
+    settings.sendTimeout = sendTimeout;
+
+    /* print a few parameters for the user */
     message(LOG_DEBUG, "Parameters:\n");
     message(LOG_DEBUG, "  recvTimeout: %d\n", recvTimeout);
     message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
 
     /* initialize the device list */
-    if (! initDeviceList(&list, ids, recvTimeout, sendTimeout, startWorker))
-        message(LOG_ERROR, "failed to initialize device list.\n");
+    if (! createPipePair(settings.childPipe))
+        message(LOG_ERROR, "failed to open child pipe.\n");
     else if (signal(SIGINT, quitHandler) == SIG_ERR)
         message(LOG_ERROR, "failed to install SIGINT handler.\n");
     else if (signal(SIGTERM, quitHandler) == SIG_ERR)
@@ -138,7 +147,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
         }
 
         /* wait for all the workers to finish */
-        reapAllChildren(&list);
+        reapAllChildren(&list, &settings);
     }
 }
 

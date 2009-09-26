@@ -74,18 +74,11 @@ typedef struct usbDeviceList
     /* for keeping the list of devices */
     listHeader deviceList;
 
-    /* a method for children to communicate back to the list owner */
-    PIPE_PTR childPipe[2];
-
     /* count makes life easier */
     unsigned int count;
 
     /* id generator */
     unsigned int nextId;
-
-    /* time outs for send and receive */
-    unsigned int recvTimeout;
-    unsigned int sendTimeout;
 
     /* ids that are in this list */
     usbId *ids;
@@ -106,9 +99,7 @@ int interruptSend(usbDevice *handle, void *buffer, int bufSize, int timeout);
 void releaseDevice(usbDevice *handle);
 
 /* methods of a device list */
-bool initDeviceList(usbDeviceList *list, usbId *ids,
-                    unsigned int recvTimeout, unsigned int sendTimeout,
-                    deviceFunc ndf);
+void initDeviceList(usbDeviceList *list, usbId *ids, deviceFunc ndf);
 bool updateDeviceList(usbDeviceList *list);
 unsigned int stopDevices(usbDeviceList *list);
 unsigned int releaseDevices(usbDeviceList *list);

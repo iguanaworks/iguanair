@@ -48,7 +48,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
 /* start a thread to handle a single device instance */
 void startWorker(usbDevice *dev);
 /* terminate and join with each child thread */
-bool reapAllChildren(usbDeviceList *list);
+bool reapAllChildren(usbDeviceList *list, deviceSettings *settings);
 
 extern bool readLabels;
 #ifdef LIBUSB_NO_THREADS_OPTION

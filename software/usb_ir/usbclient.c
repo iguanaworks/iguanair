@@ -129,28 +129,11 @@ void releaseDevice(usbDevice *handle)
     }
 }
 
-bool initDeviceList(usbDeviceList *list, usbId *ids,
-                    unsigned int recvTimeout, unsigned int sendTimeout,
-                    deviceFunc ndf)
+void initDeviceList(usbDeviceList *list, usbId *ids, deviceFunc ndf)
 {
-    bool retval = false;
-
     memset(list, 0, sizeof(usbDeviceList));
-    if (createPipePair(list->childPipe))
-    {
-#if DEBUG
-printf("OPEN %d %s(%d)\n", list->childPipe[0], __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", list->childPipe[1], __FILE__, __LINE__);
-#endif
-
-        list->ids = ids;
-        list->recvTimeout = recvTimeout;
-        list->sendTimeout = sendTimeout;
-        list->newDev = ndf;
-        retval = true;
-    }
-
-    return retval;
+    list->ids = ids;
+    list->newDev = ndf;
 }
 
 /* increment the id for each item in the list */
