@@ -347,14 +347,19 @@ static bool updateDeviceList(deviceList *devList)
     return true;
 }
 
+static bool setStopped(itemHeader *item, void UNUSED(*userData))
+{
+    usbDevice *head = (usbDevice*)item;
+    head->info.stopped = true;
+    return true;
+}
+
 static unsigned int stopDevices(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
     unsigned int count = list->deviceList.count;
-    usbDevice *head;
 
-    while((head = (usbDevice*)firstItem(&list->deviceList)) != NULL)
-        head->info.stopped = true;
+    forEach(&list->deviceList, setStopped, NULL);
 
     return count;
 }
@@ -363,10 +368,17 @@ static unsigned int releaseDevices(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
     unsigned int count = list->deviceList.count;
-    usbDevice *head;
+    usbDevice *head, *prev = NULL;
 
+    /* loop, but if head does not change then sleep a bit */
     while((head = (usbDevice*)firstItem(&list->deviceList)) != NULL)
-        releaseDevice(&head->info);
+    {
+        if (head != prev)
+            releaseDevice(&head->info);
+        else
+            sleep(100);
+        prev = head;
+    }
 
     /* illegal to access the list after this call */
     free(list);
