@@ -7571,7 +7571,7 @@ $as_echo "$as_me: WARNING: cannot determine SWIG version" >&2;}
 
 
 # Output some files
-ac_config_files="$ac_config_files Makefile"
+ac_config_files="$ac_config_files Makefile drivers/Makefile"
 
 ac_config_files="$ac_config_files autoconf/stamp-h"
 
@@ -8171,6 +8171,7 @@ do
   case $ac_config_target in
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "drivers/Makefile") CONFIG_FILES="$CONFIG_FILES drivers/Makefile" ;;
     "autoconf/stamp-h") CONFIG_FILES="$CONFIG_FILES autoconf/stamp-h" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

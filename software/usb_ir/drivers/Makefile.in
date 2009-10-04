@@ -1,0 +1,14 @@
+DRIVERS=libusbpre1.so
+
+all: $(DRIVERS)
+
+libusbpre1.so: libusbpre1.c ../list.o ../support.o
+	gcc -shared -o $@ -lusb $^
+
+.PHONY: clean
+clean:
+	rm -f *~ *.o $(DRIVERS)
+
+#.PHONY: distclean
+#distclean: clean
+#	rm -f Makefile config.h config.status

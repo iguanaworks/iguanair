@@ -51,18 +51,21 @@ else
 endif
 
 
-.PHONY: all
-all: igclient igdaemon
+.PHONY: all drivers
+all: igclient igdaemon drivers
 igclient igdaemon: $(LIBNAME)
 
 $(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 	$(CC) $(SHAREARG) $(LINKARGS) $(LDFLAGS) $^ -o $@
 
+drivers:
+	$(MAKE) -C $(srcdir)/drivers prefix=$(prefix)
+
 igdaemon: daemon.o client-interface.o device-interface.o \
-	  driver.o libusbpre1.o \
+	  driver.o \
           list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o \
           $(OSSUPPORT)
-	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread $(LIBNAME) -o $@
+	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread -ldl $(LIBNAME) -o $@
 
 igclient: client.o list.o support.o compat.o
 	$(CC) $(LDFLAGS) $^ -lpopt $(LIBNAME) -o $@
@@ -176,9 +179,12 @@ ifeq ($(DARWIN),)
 	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
 endif
 
-.PHONY: clean
-clean:
+.PHONY: clean drivers-clean
+clean: drivers-clean
 	rm -f *~ *.o *iguanaIR.$(SHAREEXT)* *libiguanaIR.* iguanaIR.py* iguanaIR_wrap.c igdaemon igclient config.log
+
+drivers-clean:
+	$(MAKE) -C $(srcdir)/drivers prefix=$(prefix) clean
 
 .PHONY: distclean
 distclean: clean

@@ -169,5 +169,5 @@ fi
 AC_PROG_SWIG(1.3.31)
 
 # Output some files
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile drivers/Makefile])
 AC_OUTPUT(autoconf/stamp-h)

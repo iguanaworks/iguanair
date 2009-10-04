@@ -10,8 +10,8 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "iguanaIR.h"
-#include "compat.h"
+#include "../iguanaIR.h"
+#include "../compat.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,11 +20,11 @@
 #include <usb.h>
 #include <errno.h>
 
-#include "pipes.h"
-#include "support.h"
-#include "driverapi.h"
+#include "../pipes.h"
+#include "../support.h"
+#include "../driverapi.h"
 
-#include "list.h"
+#include "../list.h"
 
 typedef struct usbDevice
 {
@@ -472,3 +472,8 @@ driverImpl impl_libusbpre1 = {
     releaseDevices,
     printError
 };
+
+driverImpl* getImplementation()
+{
+    return &impl_libusbpre1;
+}

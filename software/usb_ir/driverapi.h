@@ -32,4 +32,6 @@ typedef struct driverImpl
 
 } driverImpl;
 
+driverImpl* getImplementation();
+
 #endif
