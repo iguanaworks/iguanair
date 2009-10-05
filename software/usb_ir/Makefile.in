@@ -61,11 +61,11 @@ $(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 drivers:
 	$(MAKE) -C $(srcdir)/drivers prefix=$(prefix)
 
-igdaemon: daemon.o client-interface.o device-interface.o \
-	  driver.o \
-          list.o protocol-versions.o support.o pipes.o dataPackets.o compat.o \
-          $(OSSUPPORT)
-	$(CC) $(LDFLAGS) $^ -lpopt -lusb -lpthread -ldl $(LIBNAME) -o $@
+igdaemon: daemon.o client-interface.o device-interface.o driver.o \
+          list.o protocol-versions.o pipes.o dataPackets.o compat.o \
+          support.c $(OSSUPPORT)
+	$(CC) -Wl,-export-dynamic $(CPPFLAGS) $(CFLAGS) -DSUPPORT_EXPORTS \
+              $(LDFLAGS) $^ -lpopt -lusb -lpthread -ldl $(LIBNAME) -o $@
 
 igclient: client.o list.o support.o compat.o
 	$(CC) $(LDFLAGS) $^ -lpopt $(LIBNAME) -o $@
@@ -186,10 +186,13 @@ clean: drivers-clean
 drivers-clean:
 	$(MAKE) -C $(srcdir)/drivers prefix=$(prefix) clean
 
-.PHONY: distclean
-distclean: clean
+.PHONY: distclean drivers-distclean
+distclean: clean drivers-distclean
 	rm -f Makefile config.h config.status
 	$(MAKE) -C $(srcdir)/packaging prefix=$(prefix) builddir="$(builddir)" clean
+
+drivers-distclean:
+	$(MAKE) -C $(srcdir)/drivers prefix=$(prefix) distclean
 
 .PHONY: cleanest
 cleanest: distclean

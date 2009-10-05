@@ -7,6 +7,7 @@
 #include "sys/types.h"
 #include "dirent.h"
 
+#include "support.h"
 #include "driverapi.h"
 
 /* will hold driver-supplied function pointers */
@@ -41,10 +42,11 @@ bool loadDriver(char *path)
     ext = strrchr(path, '.');
     if (ext != NULL &&
         strcmp(ext, ".so") == 0 &&
-        (library = dlopen(path, RTLD_NOW | RTLD_LOCAL)) != NULL &&
+        (library = dlopen(path, RTLD_LAZY | RTLD_LOCAL)) != NULL &&
         (*(void**)(&getImplementation) = dlsym(library,
                                                "getImplementation")) != NULL)
         return (implementation = getImplementation()) != NULL;
+
     return false;
 }
 
@@ -64,7 +66,10 @@ bool findDriver()
             strcpy(soPath, path);
             strcat(soPath, dent->d_name);
             if (loadDriver(soPath))
+            {
+                message(LOG_INFO, "Loaded driver: %s\n", soPath);
                 return true;
+            }
         }
     return false;
 }

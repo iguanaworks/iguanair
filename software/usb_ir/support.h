@@ -13,6 +13,20 @@
 #ifndef _SUPPORT_H_
 #define _SUPPORT_H_
 
+#ifdef WIN32
+    #ifdef SUPPORT_EXPORTS
+        #define SUPPORT_API __declspec(dllexport)
+    #else
+        #define SUPPORT_API __declspec(dllimport)
+    #endif
+#else
+    #ifdef SUPPORT_EXPORTS
+        #define SUPPORT_API __attribute__((visibility("default")))
+    #else
+        #define SUPPORT_API
+    #endif
+#endif
+
 enum
 {
     /* message levels */
@@ -37,13 +51,15 @@ enum
 };
 
 /* functions for messages (logging) */
-void dieCleanly(int level);
 void changeLogLevel(int difference);
 void setLogLevel(int value);
 void openLog(const char *filename);
-bool wouldOutput(int level);
-int message(int level, char *format, ...);
-void appendHex(int level, void *location, unsigned int length);
+
+/* exported by the igdaemon executable to allow dlopen'd drivers to
+   link to these */
+SUPPORT_API bool wouldOutput(int level);
+SUPPORT_API int message(int level, char *format, ...);
+SUPPORT_API void appendHex(int level, void *location, unsigned int length);
 
 /* used during shutdown to clean up threads */
 void setParentPipe(PIPE_PTR pp);

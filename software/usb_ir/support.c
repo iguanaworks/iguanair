@@ -39,15 +39,6 @@ static char *msgPrefixes[] =
 static int currentLevel = LOG_NORMAL;
 static FILE *logFile = NULL;
 
-/* Exit the application with proper cleanup. */
-void dieCleanly(int level)
-{
-    /* exit with appropriate value */
-    if (level == LOG_FATAL)
-        exit(1);
-    exit(0);
-}
-
 void changeLogLevel(int difference)
 {
     currentLevel += difference;
@@ -144,7 +135,7 @@ int message(int level, char *format, ...)
     va_end(list);
 
     if (level <= LOG_FATAL)
-        dieCleanly(level);
+        exit(1);
 
     return retval;
 }
