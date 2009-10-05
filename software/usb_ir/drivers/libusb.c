@@ -1,5 +1,5 @@
 /****************************************************************************
- ** usbclient.c *************************************************************
+ ** libusb.c ****************************************************************
  ****************************************************************************
  *
  * Lowest level interface to the USB devices.  
@@ -70,8 +70,6 @@ typedef struct usbDeviceList
 
 #define handleFromInfoPtr(ptr) (usbDevice*)((char*)ptr - offsetof(usbDevice, info))
 
-
-
 static void setError(usbDevice *handle, char *error, int usbError)
 {
     if (handle != NULL)
@@ -81,18 +79,78 @@ static void setError(usbDevice *handle, char *error, int usbError)
         {
         case LIBUSB_SUCCESS:
             handle->usbError = "Success";
+            errno = 0;
+            break;
+
+        case LIBUSB_ERROR_IO:
+            handle->usbError = "Input/output error";
+            errno = EIO;
+            break;
+
+        case LIBUSB_ERROR_INVALID_PARAM:
+            handle->usbError = "Invalid parameter";
+            errno = EINVAL;
+            break;
+
+        case LIBUSB_ERROR_ACCESS:
+            handle->usbError = "Access denied";
+            errno = EPERM;
+            break;
+
+        case LIBUSB_ERROR_NO_DEVICE:
+            handle->usbError = "No such device";
+            errno = ENXIO;
+            break;
+
+        case LIBUSB_ERROR_NOT_FOUND:
+            handle->usbError = "Entity not found";
+            errno = ENOENT;
             break;
 
         case LIBUSB_ERROR_BUSY:
             handle->usbError = "Resource busy";
+            errno = EBUSY;
             break;
 
         case LIBUSB_ERROR_TIMEOUT:
             handle->usbError = "Operation timed out";
+            errno = ETIMEDOUT;
+            break;
+
+        case LIBUSB_ERROR_OVERFLOW:
+            handle->usbError = "Overflow";
+/*            errno = XXXXX;*/
+            break;
+
+        case LIBUSB_ERROR_PIPE:
+            handle->usbError = "Pipe error";
+            errno = EPIPE;
+            break;
+
+        case LIBUSB_ERROR_INTERRUPTED:
+            handle->usbError = "System call interrupted";
+            errno = EINTR;
+            break;
+
+        case LIBUSB_ERROR_NO_MEM:
+            handle->usbError = "Insufficient memory";
+            errno = ENOMEM;
+            break;
+
+        case LIBUSB_ERROR_NOT_SUPPORTED:
+            handle->usbError = "Operation not supported or unimplemented";
+            errno = ENOSYS;
+            break;
+
+        case LIBUSB_ERROR_OTHER:
+            handle->usbError = "Other error";
+/*            errno = XXXXX;*/
             break;
 
         default:
             handle->usbError = "Untranslated error.";
+            errno = -1;
+            break;
         }
     }
 }
