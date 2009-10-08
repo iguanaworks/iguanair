@@ -55,7 +55,7 @@ if sys.platform == 'darwin':
 else:
     deviceDir = '/dev/iguanaIR'
 deviceDir = iguanaIR.IGSOCK_NAME
-print deviceDir
+#print deviceDir
 
 #local variables
 currentLevel = LOG_NORMAL
@@ -211,9 +211,9 @@ def listDevices(path = deviceDir):
     global MessageCannotlistdevice
     devices = []
     try:
-        print os.path.split(path)[0]
-        print os.listdir(path)
-        print glob.glob(path + '*')
+#        print os.path.split(path)[0]
+#        print os.listdir(path)
+#        print glob.glob(path + '*')
         for device in os.listdir(path):
             if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
                 devices.append(device)
@@ -259,7 +259,7 @@ def connect(timeout = 2, willChange = False, quiet = False):
     if len(devices) == 0:
         if not quiet:
             message(LOG_ERROR,
-                    "Device not found.  Plug the device in and try again.\n")
+                    "Device not found.  Please be sure the device is plugged in and the daemon/driver/service is running.\n")
             raise KeyboardInterrupt()
     # connect to the device
     else:
