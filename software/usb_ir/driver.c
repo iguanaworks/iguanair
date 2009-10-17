@@ -10,29 +10,13 @@
 #include "support.h"
 #include "driverapi.h"
 
+#include <dlfcn.h>
+
 /* will hold driver-supplied function pointers */
 static driverImpl *implementation = NULL;
 
-/* guessing the following 2 functions will need to be re-implemented
+/* guessing the following function will need to be re-implemented
    on other platforms */
-#include <dlfcn.h>
-
-static bool findDriversDir(char *path)
-{
-    char *pos;
-    pid_t pid;
-
-    pid = getpid();
-    path[PATH_MAX - 1] = '\0';
-    if (snprintf(path, PATH_MAX - 1, "/proc/%d/exe", pid) <= 0 ||
-        readlink(path, path, PATH_MAX - 1) <= 0)
-        return false;
-
-    pos = strrchr(path, '/');
-    strcpy(pos + 1, "drivers/");
-    return true;
-}
-
 bool loadDriver(char *path)
 {
     char *ext;
@@ -41,7 +25,7 @@ bool loadDriver(char *path)
 
     ext = strrchr(path, '.');
     if (ext != NULL &&
-        strcmp(ext, ".so") == 0 &&
+        strcmp(ext, DYNLIB_EXT) == 0 &&
         (library = dlopen(path, RTLD_LAZY | RTLD_LOCAL)) != NULL &&
         (*(void**)(&getImplementation) = dlsym(library,
                                                "getImplementation")) != NULL)
@@ -50,27 +34,64 @@ bool loadDriver(char *path)
     return false;
 }
 
+bool checkDriver(const char *root, const char *name)
+{
+    bool retval = false;
+    char driver[PATH_MAX];
+
+    /* combine the root with the name */
+#ifdef WIN32
+    if (name[1] == ':')
+#else
+    if (name[0] == '/')
+#endif
+        strcpy(driver, name);
+    else
+    {
+        strcpy(driver, root);
+        /* make sure we append a / (or \) if need be */
+        if (driver[strlen(driver) - 1] != PATH_SEP)
+        {
+            char sep[2] = { PATH_SEP, '\0' };
+            strcat(driver, sep);
+        }
+        strcat(driver, name);
+    }
+
+    /* attempt to load the driver */
+    if (loadDriver(driver))
+        retval = true;
+    else if (strrchr(name, '.')  == NULL &&
+             strrchr(name, PATH_SEP)  == NULL)
+    {
+        strcat(driver, DYNLIB_EXT);
+        retval = loadDriver(driver);
+    }
+
+    if (retval)
+        message(LOG_INFO, "Loaded driver: %s\n", driver);
+    return retval;
+}
+
 /* search for shared objects in the drivers directory and use the
    first that will load. */
-bool findDriver()
+bool findDriver(const char *path, const char **preferred, bool onlyPreferred)
 {
-    char path[PATH_MAX];
     DIR *dir = NULL;
     struct dirent *dent;
+    int x;
 
-    if (findDriversDir(path) &&
-        (dir = opendir(path)) != NULL)
-        while((dent = readdir(dir)) != NULL)
-        {
-            char soPath[PATH_MAX];
-            strcpy(soPath, path);
-            strcat(soPath, dent->d_name);
-            if (loadDriver(soPath))
-            {
-                message(LOG_INFO, "Loaded driver: %s\n", soPath);
+    /* check through the preferred list */
+    if (preferred != NULL)
+        for(x = 0; preferred[x] != NULL; x++)
+            if (checkDriver(path, preferred[x]))
                 return true;
-            }
-        }
+
+    /* check through all files in the path if allowed */
+    if (! onlyPreferred && (dir = opendir(path)) != NULL)
+        while((dent = readdir(dir)) != NULL)
+            if (checkDriver(path, dent->d_name))
+                return true;
     return false;
 }
 

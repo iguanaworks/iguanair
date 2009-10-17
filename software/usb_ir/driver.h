@@ -16,7 +16,7 @@
 #include "devicebase.h"
 
 /* all other function calls are illegal until this returns true */
-bool findDriver();
+bool findDriver(const char *path, const char **preferred, bool onlyPreferred);
 
 /* wrapped usb methods */
 bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize);

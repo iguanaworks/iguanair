@@ -59,6 +59,9 @@
     /* windows has no way to flag specific variables as unused */
     #define UNUSED(a) a
 
+    #define PATH_SEP '\\'
+    #define DYNLIB_EXT ".dll"
+
 #else
     #include <stdint.h>
     #include <unistd.h>
@@ -79,8 +82,10 @@
 
     #if __APPLE__
         #define SwitchToThread() pthread_yield_np()
+        #define DYNLIB_EXT ".dynlib"
     #else
         #define SwitchToThread() pthread_yield()
+        #define DYNLIB_EXT ".so"
     #endif
 
     /* lock defines */
@@ -95,6 +100,8 @@
     #else
         #define UNUSED(a) a __attribute__((unused))
     #endif
+
+    #define PATH_SEP '/'
 
 #endif
 

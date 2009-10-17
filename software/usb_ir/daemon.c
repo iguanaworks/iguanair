@@ -53,6 +53,11 @@ PIPE_PTR commPipe[2];
 static unsigned int sendTimeout = 1000;
 static int logLevelTemp = 0;
 
+/* driver location and preference information */
+static bool onlyPreferred = false;
+static const char *driverDir = NULL,
+                 **preferred = NULL;
+static int preferredCount = 0;
 
 static void quitHandler(int UNUSED(sig))
 {
@@ -86,8 +91,9 @@ static void workLoop()
     message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
 
     /* initialize the driver and device list */
-    if (! findDriver())
-        message(LOG_ERROR, "failed to find an loadble driver layer.\n");
+    if (! findDriver(driverDir == NULL ? "/usr/lib/iguanaIR" : driverDir,
+                     preferred, onlyPreferred))
+        message(LOG_ERROR, "failed to find an loadable driver layer.\n");
     else if ((list = prepareDeviceList(ids, startWorker)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
     else if (! createPipePair(settings.childPipe))
@@ -154,24 +160,50 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
     }
 }
 
+enum
+{
+    /* generic actions */
+    ARG_LOG_FILE,
+    ARG_QUIETER,
+    ARG_LOUDER,
+    ARG_LOG_LEVEL,
+
+    /* igdaemon specific actions */
+    ARG_FOREGROUND,
+    ARG_PID_FILE,
+    ARG_NO_IDS,
+    ARG_NO_THREADS,
+    ARG_DRIVER,
+    ARG_ONLY_PREFER,
+    ARG_DRIVER_DIR
+};
+
 static struct poptOption options[] =
 {
     /* general daemon options */
-    { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
-    { "no-daemon", 'n', POPT_ARG_NONE, NULL, 'n', "Do not fork into the background.", NULL },
-    { "pid-file", 'p', POPT_ARG_STRING, NULL, 'p', "Specify where to write the pid of the daemon process.", "filename" },
-    { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
-    { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
-    { "log-level", '\0', POPT_ARG_INT, &logLevelTemp, 'e', "Set the verbosity.", NULL },
+    { "log-file",  'l',  POPT_ARG_STRING, NULL, ARG_LOG_FILE,   "Specify a log file (defaults to \"-\").", "filename" },
+    { "quiet",     'q',  POPT_ARG_NONE,   NULL, ARG_QUIETER,    "Reduce the verbosity.", NULL },
+    { "verbose",   'v',  POPT_ARG_NONE,   NULL, ARG_LOUDER,     "Increase the verbosity.", NULL },
+    { "log-level", '\0', POPT_ARG_INT,    &logLevelTemp, ARG_LOG_LEVEL, "Set the verbosity.", NULL },
 
     /* iguanaworks specific options */
-    { "no-ids", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
-    { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "DEPRECATED: same as --no-ids", NULL },
-    { "receive-timeout", '\0', POPT_ARG_INT, &recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
-    { "send-timeout", '\0', POPT_ARG_INT, &sendTimeout, 0, "Specify the device send timeout.", "timeout" },
+    { "no-daemon", 'n',  POPT_ARG_NONE,   NULL, ARG_FOREGROUND, "Do not fork into the background.", NULL },
+    { "pid-file",  'p',  POPT_ARG_STRING, NULL, ARG_PID_FILE,   "Specify where to write the pid of the daemon process.", "filename" },
+    { "no-ids", '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
+    { "no-labels",       '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "DEPRECATED: same as --no-ids", NULL },
+    { "receive-timeout", '\0', POPT_ARG_INT,  &recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
+    { "send-timeout",    '\0', POPT_ARG_INT,  &sendTimeout, 0, "Specify the device send timeout.", "timeout" },
+
 #ifdef LIBUSB_NO_THREADS_OPTION
-    { "no-threads", '\0', POPT_ARG_NONE, NULL, 't', "Do not allow two threads to both access libusb calls at the same time.  Try this if the device occasionally crashes.", NULL },
+    { "no-threads", '\0', POPT_ARG_NONE, NULL, ARG_NO_THREADS, "Do not allow two threads to both access libusb calls at the same time.  Try this if the device occasionally crashes.", NULL },
 #endif
+
+    /* options specific to the drivers */
+    { "driver", 'd', POPT_ARG_STRING, NULL, ARG_DRIVER, "Use this driver in preference to others.  This command can be used multiple times.", "preferred driver" },
+    { "only-preferred", '\0', POPT_ARG_NONE, NULL, ARG_ONLY_PREFER, "Use only drivers specified by the --driver option.", "only preferred drivers" },
+    { "driver-dir", '\0', POPT_ARG_STRING, NULL, ARG_DRIVER_DIR, "Specify the location of driver objects.", "driver directory" },
+
+
     POPT_AUTOHELP
     POPT_TABLEEND
 };
@@ -190,44 +222,61 @@ int main(int argc, const char **argv)
     const char *pidFile = NULL, **leftOvers;
     poptContext poptCon;
 
-    poptCon = poptGetContext(NULL, argc, argv, options, 0);
+    preferred = (const char**)malloc(sizeof(char*));
+    preferred[preferredCount++] = NULL;
 
+    poptCon = poptGetContext(NULL, argc, argv, options, 0);
     while(x != -1)
     {
         switch(x = poptGetNextOpt(poptCon))
         {
-        case 'n':
+        case ARG_LOG_FILE:
+            openLog(poptGetOptArg(poptCon));
+            break;
+
+        case ARG_QUIETER:
+            changeLogLevel(-1);
+            break;
+
+        case ARG_LOUDER:
+            changeLogLevel(+1);
+            break;
+
+        case ARG_LOG_LEVEL:
+            setLogLevel(logLevelTemp);
+            break;
+
+        case ARG_FOREGROUND:
             runAsDaemon = false;
             break;
 
-        case 'b':
+        case ARG_NO_IDS:
             readLabels = false;
             break;
 
 #ifdef LIBUSB_NO_THREADS_OPTION
-        case 't':
+        case ARG_NO_THREADS:
             noThreads = true;
             break;
 #endif
 
-        case 'p':
+        case ARG_PID_FILE:
             pidFile = poptGetOptArg(poptCon);
             break;
 
-        case 'l':
-            openLog(poptGetOptArg(poptCon));
+        /* driver options */
+        case ARG_DRIVER:
+            preferred = (const char**)realloc(preferred, sizeof(char*) * (preferredCount + 1));
+            preferred[preferredCount - 1] = poptGetOptArg(poptCon);
+            preferred[preferredCount++] = NULL;
             break;
 
-        case 'q':
-            changeLogLevel(-1);
+        case ARG_ONLY_PREFER:
+            onlyPreferred = true;
             break;
 
-        case 'v':
-            changeLogLevel(+1);
-            break;
-
-        case 'e':
-            setLogLevel(logLevelTemp);
+        case ARG_DRIVER_DIR:
+            driverDir = poptGetOptArg(poptCon);
             break;
 
         /* Error handling starts here */
