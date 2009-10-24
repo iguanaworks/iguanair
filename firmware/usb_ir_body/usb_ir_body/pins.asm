@@ -37,15 +37,13 @@ has_gpios:
     ret
 
 pins_reset:
-    ; directly check the features since this is called during init and
-    ;    we don't want to return an error packet
+    ; directly check the features
     call get_feature_list
     and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
     jnz reset_done
 
     ; clear the data registers
     and REG[P0DATA], 0xF0
-    and REG[P1DATA], 0x87
 
     ; clear the config registers for pins we use
     ; port 0, pins 0-3
@@ -54,11 +52,25 @@ pins_reset:
     mov REG[P02CR], 0
     mov REG[P03CR], 0
 
-    ; port 1, pins 3-6
-    mov REG[P13CR], 0
+    ; port 1, pins 3-6 but not on slot devices (extra channels)
+    call get_feature_list
+    and A, SLOT_DEV
+	jnz slot_reset
+
+    ; clear the data registers
+    and REG[P1DATA], 0x87
+	mov REG[P13CR], 0
     mov REG[P14CR], 0
     mov REG[P15CR], 0
     mov REG[P16CR], 0
+	jmp reset_done
+
+  slot_reset:
+    and REG[P0DATA], 0x20
+    or REG[P0DATA],  0x80 ; last channel is special (default the LED to off)
+    mov REG[P07CR],  1
+    mov REG[P06CR],  0
+    mov REG[P04CR],  0
   reset_done:
     ret
 
@@ -86,6 +98,11 @@ get_pin_config:
     and A, PIN_CFG_MASK ; mask off the bits we will accept
     mov [control_pkt + 3], A ; store pin config byte
 
+    ; port 1, pins 3-6 but not on slot devices (extra channels)
+    call get_feature_list
+    and A, SLOT_DEV
+	jnz slot_get_pin_config
+
     mov A, REG[P13CR]   ; read the pin control register
     and A, PIN_CFG_MASK ; mask off the bits we will accept
     mov [control_pkt + 4], A ; store pin config byte
@@ -101,7 +118,24 @@ get_pin_config:
     mov A, REG[P16CR]   ; read the pin control register
     and A, PIN_CFG_MASK ; mask off the bits we will accept
     mov [control_pkt + 7], A ; store pin config byte
+	jmp gpc_send_config;
 
+  slot_get_pin_config:
+    mov A, REG[P04CR]   ; read the pin control register
+    and A, PIN_CFG_MASK ; mask off the bits we will accept
+    mov [control_pkt + 4], A ; store pin config byte
+
+	mov [control_pkt + 5], 0 // skip the receiver
+
+    mov A, REG[P05CR]   ; read the pin control register
+    and A, PIN_CFG_MASK ; mask off the bits we will accept
+    mov [control_pkt + 6], A ; store pin config byte
+
+    mov A, REG[P07CR]   ; read the pin control register
+    and A, PIN_CFG_MASK ; mask off the bits we will accept
+    mov [control_pkt + 7], A ; store pin config byte
+
+  gpc_send_config:
     ; return the config data in a second packet
     mov X, PACKET_SIZE
     mov A, control_pkt
@@ -143,6 +177,11 @@ set_pin_config:
     and A, PIN_CFG_MASK ; mask off the bits we will accept
     mov REG[P03CR], A   ; set the pin control register
 
+    ; port 1, pins 3-6 but not on slot devices (extra channels)
+    call get_feature_list
+    and A, SLOT_DEV
+	jnz slot_set_pin_config
+
     mov A, [control_pkt + 4] ; get pin config byte
     and A, PIN_CFG_MASK ; mask off the bits we will accept
     mov REG[P13CR], A   ; set the pin control register
@@ -158,7 +197,24 @@ set_pin_config:
     mov A, [control_pkt + 7] ; get pin config byte
     and A, PIN_CFG_MASK ; mask off the bits we will accept
     mov REG[P16CR], A   ; set the pin control register
+	jmp spc_ack
 
+  slot_set_pin_config:
+    mov A, [control_pkt + 4] ; get pin config byte
+    and A, PIN_CFG_MASK ; mask off the bits we will accept
+    mov REG[P04CR], A   ; set the pin control register
+
+	; 5 is the receiver
+
+    mov A, [control_pkt + 6] ; get pin config byte
+    and A, PIN_CFG_MASK ; mask off the bits we will accept
+    mov REG[P06CR], A   ; set the pin control register
+
+    mov A, [control_pkt + 7] ; get pin config byte
+    and A, PIN_CFG_MASK ; mask off the bits we will accept
+    mov REG[P07CR], A   ; set the pin control register
+
+  spc_ack:
     ; ack the request
     mov [control_pkt + CCODE], CTL_SETPINCONFIG
     mov X, CTL_BASE_SIZE
@@ -170,6 +226,11 @@ set_pin_config:
 get_pins:
     call has_gpios
     jz get_pins_done
+
+    ; for slot devices we want to do something quite a bit different
+    call get_feature_list
+    and A, SLOT_DEV
+	jnz slot_get_pins
 
     ; disable ints to avoid race conditions on the ports
     and F, 0xFE
@@ -187,6 +248,17 @@ get_pins:
     ; mask away the upper bits of both bytes
     and [control_pkt + CDATA + 0], 0x0F
     and [control_pkt + CDATA + 1], 0x0F
+	jmp get_pins_done
+
+  slot_get_pins:
+    ; disable ints to avoid race conditions on the ports
+    and F, 0xFE
+    mov A, REG[P0DATA]               ; get the current pin state
+    mov [control_pkt + CDATA + 0], A ; read the state
+    or  F, 0x1 ; re-enable global interrupts
+
+	and [control_pkt + CDATA + 0], ~0x20
+    mov [control_pkt + CDATA + 1], 0
 
   get_pins_done:
     ret
@@ -198,6 +270,11 @@ set_pins:
     call has_gpios
     jz set_pins_done
 
+    ; for slot devices we want to do something quite a bit different
+    call get_feature_list
+    and A, SLOT_DEV
+	jnz slot_set_pins
+
     ; mask away the upper bits of both bytes
     and [control_pkt + CDATA + 0], 0x0F
     and [control_pkt + CDATA + 1], 0x0F
@@ -207,9 +284,9 @@ set_pins:
     asl [control_pkt + CDATA + 1]
     asl [control_pkt + CDATA + 1]
 
-    ; disable ints to avoid race conditions on the ports
-    and F, 0xFE
-    mov A, REG[P0DATA]              ; get the current pin state
+    and F, 0xFE ; disable ints to avoid race conditions on the ports
+
+	mov A, REG[P0DATA]              ; get the current pin state
     and A, 0xF0                     ; mask off the ones we're setting
     or A, [control_pkt + CDATA + 0] ; set the appropriate bits
     mov REG[P0DATA], A              ; write out the new value
@@ -220,6 +297,22 @@ set_pins:
     mov REG[P1DATA], A              ; write out the new value
 
     or  F, 0x1 ; re-enable global interrupts
+	jmp set_pins_done
+
+  slot_set_pins:
+    ; clear the bit in the packet that could screw up the receiver
+    and [control_pkt + CDATA + 0], ~0x20
+
+	; disable ints to avoid race conditions on the ports
+    and F, 0xFE
+
+	mov A, REG[P0DATA]              ; get the current pin state
+    and A, 0x20                     ; mask off the one we're not setting
+    or A, [control_pkt + CDATA + 0] ; set the appropriate bits
+    mov REG[P0DATA], A              ; write out the new value
+
+    or  F, 0x1 ; re-enable global interrupts
+  
   set_pins_done:
     ret
 

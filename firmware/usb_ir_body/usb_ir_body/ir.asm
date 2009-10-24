@@ -125,7 +125,7 @@ write_signal:
 
 tx_pins_off:
     call get_feature_list
-    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS | SLOT_DEV
     jnz tx_disable_new
 
   tx_disable_old:
@@ -322,7 +322,7 @@ read_send_settings:
     mov [tx_bank], OLD_TX_BANK
     mov [tx_pins], OLD_TX_MASK
     call get_feature_list
-    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS | SLOT_DEV
     jz read_send_done
 
     ; read a byte describing channel selection, and make sure it only

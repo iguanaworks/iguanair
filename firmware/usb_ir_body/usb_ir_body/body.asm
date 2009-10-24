@@ -35,17 +35,19 @@ body_main:
     ;  INITIALIZE
     ; enable output for tx on all channels
     call get_feature_list
-    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS
+    and A, HAS_LEDS | HAS_BOTH | HAS_SOCKETS | SLOT_DEV
     jnz bm_output_channels
     and REG[OLD_TX_BANK], ~OLD_TX_MASK
 	mov REG[P06CR], 0x01 ; only had 1 channel back then
     jmp bm_output_enabled
    bm_output_channels:
     or REG[TX_BANK], TX_MASK
-    mov REG[P14CR], 0x01 ; channel 0
-    mov REG[P15CR], 0x01 ; channel 1
-    mov REG[P16CR], 0x01 ; channel 2
-    mov REG[P17CR], 0x01 ; channel 3
+    mov REG[P12CR], 0x01 ; channel NA / 0
+    mov REG[P13CR], 0x01 ; channel NA / 1
+    mov REG[P14CR], 0x01 ; channel 0  / 2
+    mov REG[P15CR], 0x01 ; channel 1  / 3
+    mov REG[P16CR], 0x01 ; channel 2  / 4
+    mov REG[P17CR], 0x01 ; channel 3  / 5
    bm_output_enabled:
     ; pins will be set correctly by the rx_reset below
 
