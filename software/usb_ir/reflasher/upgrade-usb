@@ -901,23 +901,25 @@ while True:
                 line = 'h'
             elif features == iguanaIR.IG_HAS_LEDS:
                 line = 'l'
+            elif features == iguanaIR.IG_SLOT_DEV:
+                line = 'p'
 
         # check user input
         type = None
         while True:
-            if line and line[0].lower() in 'ushlc':
+            if line and line[0].lower() in 'ushlpc':
                 type = line[0].lower()
                 default = type.upper()
                 line = ' '
                 break
 
-            selection = '[u/s/h/l]'.replace(default.lower(), default)
+            selection = '[u/s/h/l/p]'.replace(default.lower(), default)
             if default.strip() and onlyOne:
                 raise KeyboardInterrupt()
 
             message(LOG_NORMAL, """
 What kind of device is plugged in?
-  unenclosed, 2 socket, hybrid, or 2 LED? %s
+  unenclosed, 2 socket, hybrid, 2 LED, or pci slot? %s
 """ % selection)
             line = sys.stdin.readline().strip()
             if not line:
@@ -928,6 +930,12 @@ What kind of device is plugged in?
             plugs = ()
             leds = (0x0,)
             features = 0
+        elif type == 'p':
+            type = 'pci slot device'
+            plugs = (0x3F, 0x1, 0x2, 0x4, 0x8, 0x10, 0x20,
+                     0x10, 0x8, 0x4, 0x2, 0x1, 0x3F)
+            leds = ()
+            features = iguanaIR.IG_SLOT_DEV
         elif type == 's':
             type = '2 socket'
             plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
