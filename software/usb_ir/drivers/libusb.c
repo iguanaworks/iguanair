@@ -560,7 +560,5 @@ driverImpl impl_libusbpre1 = {
 
 driverImpl* getImplementation()
 {
-//    setLogLevel(LOG_NORMAL);
-
     return &impl_libusbpre1;
 }

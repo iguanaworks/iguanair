@@ -1,55 +1,10 @@
-SHELL = /bin/sh
-VPATH = @srcdir@
+include Make.settings
 
-subdirs = @subdirs@
-top_srcdir = @top_srcdir@
-srcdir = @srcdir@
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = $(exec_prefix)/bin
-infodir = $(prefix)/info
-libdir = $(prefix)/lib/gnudl
-mandir = $(prefix)/man/man1
-builddir = $(shell pwd)
-
-CC = @CC@
-CPPFLAGS = @CPPFLAGS@
-CFLAGS = @CFLAGS@ -I. -fvisibility=hidden -DIGUANAIR_EXPORTS
-LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
-INSTALL = @INSTALL@
-
-SHAREEXT = so
-LIBNAME=libiguanaIR.$(SHAREEXT).0
-SHAREARG = -shared
+CFLAGS += -I. -fvisibility=hidden -DIGUANAIR_EXPORTS
 LINKARGS = -Wl,-soname=$(LIBNAME),--version-script=$(srcdir)/ig.ver
-ifeq ($(shell uname -m),x86_64)
-  LIBDIR  = lib64
-  CFLAGS += -fpic
-else
-  LIBDIR  = lib
-
-  ifeq ($(shell uname -m),ppc)
-    CFLAGS += -fpic
-  else
-    ifeq ($(shell uname -s),Darwin)
-      DARWIN = 1
-      PATH = $(shell getconf PATH):/usr/local/bin:/opt/local/bin:/sw/bin
-      export PATH
-      LIBDIR  = lib
-      CFLAGS += -fPIC
-      CPPFLAGS += -I/usr/local/include -I/usr/include -I/opt/local/include -I/sw/include
-      LDFLAGS += -L/usr/local/lib -L/usr/lib -L/opt/local/lib -L/sw/lib -framework CoreFoundation -framework IOKit
-      # Python needs .so but library should be .dylib
-      #SHAREEXT = dylib
-      LIBNAME=libiguanaIR.dylib
-      SHAREARG = -dynamiclib
-      LINKARGS = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0
-      OSSUPPORT = daemonosx.o
-    endif
-  endif
+ifeq ($(shell uname -s),Darwin)
+  LINKARGS = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0
 endif
-
 
 .PHONY: all drivers
 all: igclient igdaemon drivers
@@ -72,6 +27,9 @@ igclient: client.o list.o support.o compat.o
 
 %.o: %.c Makefile iguanaIR.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+
+driver.o: driver.c Makefile iguanaIR.h
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) -Wno-strict-aliasing $< -o $@
 
 # need a special dependency for config.h
 compat.o: compat.c config.h
@@ -104,7 +62,8 @@ iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python -I$(srcdir) $(<F)
 
 iguanaIR_wrap.o: iguanaIR_wrap.c Makefile
-	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@
+#	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@
+	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-missing-field-initializers -Wno-unused -Wno-long-long -Wno-strict-aliasing $< -o $@
 
 _iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
 	$(CC) $(LDFLAGS) @PYTHON_LDFLAGS@ $(SHAREARG) $^ $(LIBNAME) -o $@
@@ -141,8 +100,10 @@ install: all
 	install -d $(DESTDIR)$(prefix)/bin
 	install igclient $(DESTDIR)$(prefix)/bin/igclient
 	install igdaemon $(DESTDIR)$(prefix)/bin/igdaemon
-	install -d $(DESTDIR)$(prefix)/$(LIBDIR)
+	install -d $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR
 	install $(LIBNAME) $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
+	install drivers/libusbpre1.$(SHAREEXT) $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR/libusbpre1.$(SHAREEXT)
+	install drivers/libusb.$(SHAREEXT) $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
 	install -d $(DESTDIR)$(prefix)/include
 	install $(srcdir)/iguanaIR.h $(DESTDIR)$(prefix)/include/iguanaIR.h
 ifeq ($(DARWIN),)
@@ -230,11 +191,11 @@ config.h.in: autoconf/configure.ac
 	cd $(srcdir)/autoconf; autoheader configure.ac; mv config.h.in ..
 
 config.status: configure
-	./config.status --recheck
+	$(SHELL) ./config.status --recheck
 
-Makefile: Makefile.in config.status
-	./config.status
+Makefile: ./config.status Makefile.in ./Make.settings.in
+	$(SHELL) $<
 
 config.h: autoconf/stamp-h
-autoconf/stamp-h: config.h.in config.status
-	./config.status
+autoconf/stamp-h: ./config.status config.h.in
+	$(SHELL) $<

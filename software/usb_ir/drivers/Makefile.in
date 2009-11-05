@@ -1,17 +1,25 @@
+include ../Make.settings
+
 DRIVERS=libusbpre1.so libusb.so
+LISTS=../list.o
 
 all: $(DRIVERS)
 
-libusb.so: libusb.c ../list.o
-	gcc -shared -o $@ -lusb-1.0 $^
+libusb.so: libusb.c $(LISTS) Makefile
+#	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) -lusb-1.0 $< $(LISTS) -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) -lusb-1.0 $< $(LISTS) -o $@
 
-libusbpre1.so: libusbpre1.c ../list.o
-	gcc -shared -o $@ -lusb $^
+libusbpre1.so: libusbpre1.c $(LISTS) Makefile
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) -lusb $< $(LISTS) -o $@
 
 .PHONY: clean
 clean:
-	rm -f *~ *.o $(DRIVERS)
+	$(RM) -f *~ *.o $(DRIVERS)
 
 .PHONY: distclean
 distclean: clean
-	rm -f Makefile
+	$(RM) -f Makefile
+
+
+Makefile: ../config.status Makefile.in ../Make.settings.in
+	cd ..; $(SHELL) ./config.status

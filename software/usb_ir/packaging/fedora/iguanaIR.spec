@@ -6,7 +6,7 @@
 %{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
 Name:           iguanaIR
-Version:        1.0pre1
+Version:        1.0pre2
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
@@ -89,6 +89,7 @@ fi
 %doc AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog
 /usr/bin/*
 %{_libdir}/lib%{name}.so*
+%{_libdir}/%{name}
 /etc/init.d/%{name}
 # makes .rpmsave
 %config /etc/default/%{name}
