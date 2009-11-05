@@ -133,6 +133,18 @@ static bool handleClientRequest(dataPacket *request, client *target)
         break;
     }
 
+    case IG_DEV_GETFEATURES:
+        /* shortcut the request if possible */
+        if (checkFeatures(target->idev, UNKNOWN_FEATURES))
+        {
+            request->data = (unsigned char*)malloc(1);
+            request->data[0] = target->idev->features;
+            request->dataLen = 1;
+            retval = true;
+        }
+        /* TODO: an else would be nice to handle failure! */
+        break;
+
     case IG_DEV_RECVON:
     case IG_DEV_RAWRECVON:
         request->code = IG_DEV_RECVON;
@@ -152,13 +164,19 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     case IG_DEV_GETCHANNELS:
         request->data = (unsigned char*)malloc(1);
-        request->data[0] = target->idev->channels >> 4;
+        if (checkFeatures(target->idev, IG_SLOT_DEV))
+            request->data[0] = target->idev->channels >> 2;
+        else
+            request->data[0] = target->idev->channels >> 4;
         request->dataLen = 1;
         retval = true;
         break;
 
     case IG_DEV_SETCHANNELS:
-        target->idev->channels = request->data[0] << 4;
+        if (checkFeatures(target->idev, IG_SLOT_DEV))
+            target->idev->channels = request->data[0] << 2;
+        else
+            target->idev->channels = request->data[0] << 4;
         retval = true;
         break;
 
@@ -355,7 +373,7 @@ static char* getID(iguanaDev *idev)
     /* NOTE: a fake call because in some firmware the first body
        command fails. */
     if ((idev->version & 0xFF00) &&
-        (idev->version & 0x00FF) < 5)
+        (idev->version & 0x00FF) < 0x05)
         deviceTransaction(idev, &request, &response);
 #endif
 
@@ -588,6 +606,7 @@ void startWorker(deviceInfo *info)
     else
     {
         memset(idev, 0, sizeof(iguanaDev));
+        idev->features = UNKNOWN_FEATURES;
         idev->settings = (deviceSettings*)info->type.data;
         idev->carrier = 38000;
         InitializeCriticalSection(&idev->listLock);

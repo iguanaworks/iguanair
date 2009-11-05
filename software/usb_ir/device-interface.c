@@ -269,7 +269,8 @@ static bool payloadMatch(unsigned char spec, unsigned char length)
    delay 4 * (120 - 61) = 59 bytes
    FINAL: delay (6, 59)
 */
-static void computeCarrierDelays(uint32_t carrier, unsigned char *delays)
+static void computeCarrierDelays(uint32_t carrier, unsigned char *delays,
+                                 uint8_t loopCycles)
 {
     unsigned char sevens = 0, fours;
     unsigned int cycles;
@@ -287,8 +288,7 @@ static void computeCarrierDelays(uint32_t carrier, unsigned char *delays)
        counter specifically because the delay 4 actually requires less
        space on the flash for a given delay.
     */
-    /* TODO: get this data from get features instead of hard coding it */
-    cycles -= 5 + 5 + 7 + 6 + 6 + 7 + (5 + 7) + (5 + 7) + 5;
+    cycles -= loopCycles;
 
     /* TODO: this next line is too magical */
     sevens = (4 - (cycles % 4)) % 4;
@@ -428,6 +428,41 @@ bool checkVersion(iguanaDev *idev)
     }
 
     return retval;
+}
+
+bool checkFeatures(iguanaDev *idev, unsigned char targetSet)
+{
+    /* only ask for features from devices w a body */
+    if ((! (idev->version & 0x00FF)) ||
+        (! (idev->version & 0xFF00)))
+        return false;
+
+    /* try and get the features if we haven't already */
+    if (idev->features == UNKNOWN_FEATURES)
+    {
+        dataPacket request = DATA_PACKET_INIT, *response = NULL;
+
+        request.code = IG_DEV_GETFEATURES;
+        if (! deviceTransaction(idev, &request, &response))
+            message(LOG_INFO, "Failed to get device features.\n");
+        else
+        {
+            /* save the returned data and free the buffer */
+            idev->features = response->data[0];
+            if (response->dataLen > 1)
+                idev->cycles = response->data[1];
+            freeDataPacket(response);
+        }
+    }
+
+    if (idev->features != UNKNOWN_FEATURES)
+    {
+        if (targetSet == UNKNOWN_FEATURES)
+            return true;
+        return idev->features == targetSet;
+    }
+
+    return false;
 }
 
 packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
@@ -584,10 +619,21 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 msg[length++] = idev->channels;
 
                 /* is the carrier frequency finally adjustable? */
-                if (idev->version >= 0x0101)
+                if ((idev->version & 0x00FF) &&
+                    (idev->version & 0xFF00))
                 {
+                    /* for a long time the cycle count has remained stable: */
+                    uint8_t loopCycles = 5 + 5 + 7 + 6 + 6 + 7 + \
+                                         (5 + 7) + (5 + 7) + 5;
+                    /* we can use the cycle count provided by the
+                       firmware with body-4 */
+                    if ((idev->version & 0x00FF) >= 0x0004 &&
+                        checkFeatures(idev, UNKNOWN_FEATURES))
+                        loopCycles = idev->cycles;
+
                     /* compute the delay length off the carrier */
-                    computeCarrierDelays(idev->carrier, msg + length);
+                    computeCarrierDelays(idev->carrier, msg + length,
+                                         loopCycles);
                     length += 2;
                 }
             }

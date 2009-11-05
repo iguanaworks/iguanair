@@ -20,7 +20,10 @@ enum
 {
     /* masks for encoding and decoding the usb data */
     STATE_MASK  = 0x80,
-    LENGTH_MASK = 0x7F
+    LENGTH_MASK = 0x7F,
+
+    /* other internal constants */
+    UNKNOWN_FEATURES = 0xFF
 };
 
 /* forward declaration */
@@ -66,6 +69,9 @@ typedef struct iguanaDev
     /* need to know what protocol version to support. */
     uint16_t version;
 
+    /* sometimes we need to know the feature set */
+    unsigned char features, cycles;
+
     /* what channels should we use in transmit? default 0 ==> ALL*/
     unsigned char channels;
 
@@ -90,6 +96,9 @@ typedef struct iguanaDev
 
 /* use the protocol table to see if the version is supported */
 bool checkVersion(iguanaDev *idev);
+
+/* check that the device features match the targetSet */
+bool checkFeatures(iguanaDev *idev, unsigned char targetSet);
 
 /* check that the client is using the proper protocol */
 struct packetType* checkIncomingProtocol(iguanaDev *idev,

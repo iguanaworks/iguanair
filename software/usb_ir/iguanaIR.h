@@ -120,6 +120,7 @@ enum
     IG_HAS_BOTH    = 0x02,
     IG_HAS_SOCKETS = 0x04,
     IG_HAS_LCD     = 0x08,
+    IG_SLOT_DEV    = 0x10,
 
     /* used to include support for old protocol */
     IG_DEV_GETCONFIG0 = 0x07,
