@@ -96,7 +96,7 @@ fi
 # makes .rpmnew
 #%config(noreplace) /etc/default/%{name}
 # TODO: autoconf must decide!
-/etc/udev/rules.d/%{name}.rules
+/lib/udev/rules.d/%{name}.rules
 %attr(755, iguanair, iguanair) /lib/udev/devices/%{name}
 # This is for fairly old versions of Fedora....
 #/etc/hotplug/usb/%{name}*

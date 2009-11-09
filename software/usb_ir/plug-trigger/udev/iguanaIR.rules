@@ -4,13 +4,15 @@
 #   BUS   -> SUBSYSTEMS
 #   ID    -> KERNELS
 #
-# Be nice to detect the version and do the right thing, but for now
-# I'll use the old names and rely on backwards compatibility.  Tested
-# on FC6 and Debian unstable.
+# So if someone is using an old version of udev they may need to use a
+# different first line like:
+#    SYSFS{manufacturer} == "IguanaWorks", 
 
-SYSFS{manufacturer} == "IguanaWorks", \
-               OWNER = "iguanair", GROUP = "iguanair", MODE = "0664", \
-               RUN = "/etc/init.d/iguanaIR rescan"
+SYSFS{manufacturer} == "IguanaWorks", ATTR{product} == "USB IR Transceiver",
+               OWNER = "iguanair", GROUP = "iguanair", MODE = "0664",
+               RUN  = "/bin/mkdir -p /dev/iguanaIR".
+               RUN += "/bin/chown iguanair /dev/iguanaIR",
+               RUN += "/etc/init.d/iguanaIR rescan"
 
-# DEBUGGING ADDITION:
+# FOR DEBUGGING TRY ADDING TO THE RUN LINES:
 #RUN += "/bin/bash -c 'echo $major $minor r=$result i=$id n=$number k=$kernel p=$parent r=$root >> /tmp/udev.txt'"
