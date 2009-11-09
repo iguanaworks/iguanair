@@ -1,3 +1,0 @@
-# usb module         match_flags idVendor idProduct bcdDevice_lo bcdDevice_hi bDeviceClass bDeviceSubClass bDeviceProtocol bInterfaceClass bInterfaceSubClass bInterfaceProtocol driver_info
-
-iguanaIR             0x0003      0x1781   0x0938    0x0000       0x0000       0x00         0x00            0x00            0x00            0x00               0x00               0x00000000

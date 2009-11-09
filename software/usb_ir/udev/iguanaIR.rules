@@ -8,10 +8,10 @@
 # different first line like:
 #    SYSFS{manufacturer} == "IguanaWorks", 
 
-SYSFS{manufacturer} == "IguanaWorks", ATTR{product} == "USB IR Transceiver",
-               OWNER = "iguanair", GROUP = "iguanair", MODE = "0664",
-               RUN  = "/bin/mkdir -p /dev/iguanaIR".
-               RUN += "/bin/chown iguanair /dev/iguanaIR",
+ATTR{manufacturer} == "IguanaWorks", ATTR{product} == "USB IR Transceiver", \
+               OWNER = "iguanair", MODE = "0644", \
+               RUN  = "/bin/mkdir -p /dev/iguanaIR", \
+               RUN += "/bin/chown iguanair /dev/iguanaIR", \
                RUN += "/etc/init.d/iguanaIR rescan"
 
 # FOR DEBUGGING TRY ADDING TO THE RUN LINES:
