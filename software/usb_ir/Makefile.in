@@ -109,18 +109,11 @@ install: all
 ifeq ($(DARWIN),)
 	install -D $(srcdir)/iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
 	install -D --mode 644 $(srcdir)/iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
-	install -D --mode 644 $(srcdir)/plug-trigger/udev/iguanaIR.rules \
-	                      $(DESTDIR)/lib/udev/rules.d/iguanaIR.rules
+	install -D --mode 644 $(srcdir)/udev/iguanaIR.rules \
+	                      $(DESTDIR)/lib/udev/rules.d/80-iguanaIR.rules
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/lib/udev/devices/iguanaIR
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
 endif
-#########################################################################
-# This is for fairly old versions of Fedora....
-#	install -D --mode 644 plug-trigger/hotplug/iguanaIR.usermap \
-#	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR.usermap
-#	install -D --mode 755 plug-trigger/hotplug/iguanaIR \
-#	                      $(DESTDIR)/etc/hotplug/usb/iguanaIR
-#########################################################################
 
 .PHONY: uninstall
 uninstall:
