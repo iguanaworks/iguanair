@@ -18,7 +18,7 @@ LOGLEVEL=0
 ## The option to disable threads is:
 ## "--no-threads"
 
-## Uncomment the line below to enable threads
+## Uncomment the line below to disable threads
 #OPTIONS="--no-threads"
 
 ## If you enable threads, then you can decrease the receive timeout
