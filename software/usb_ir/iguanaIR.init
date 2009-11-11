@@ -22,7 +22,7 @@
 # load the default settings
 [ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
 # combine some variables into a command line
-IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --receive-timeout=$RECEIVETIMEOUT"
+IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --receive-timeout=$RECEIVETIMEOUT $DRIVERS"
 
 # We need to know what helper functions are legal, so detect the
 # distro.  Override this in /etc/defaults/iguanaIR

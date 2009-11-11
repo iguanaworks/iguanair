@@ -32,9 +32,13 @@ LOGLEVEL=0
 ## With the --no-threads option used
 #RECEIVETIMEOUT=50
 
-## Disable --no-threads (threads used)
+## When threads are used (and not --no-threads)
 RECEIVETIMEOUT=1000
 
+## the igdaemon can use different backend USB drivers and should be
+## told which to try first since we prefer the libusb driver to the
+## libusbpre1.0
+DRIVERS=--driver=libusb
 
 ## You can set the timeout value for sendings IR signals. This set how
 ## long to wait for send to successfully complete before assuming that
