@@ -1,3 +1,9 @@
+iguanair (1.0pre2) jaunty; urgency=low
+
+  * Works with Ubuntu 9.10. Supports slot device, bug fixes
+
+ -- Ben Luey <bluey@iguanaworks.net>  Sun, 08 Nov 2009 08:48:53 -0600
+
 iguanair (1.0pre1) jaunty; urgency=low
 
   * Pre Release of 1.0.
