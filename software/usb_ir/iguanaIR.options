@@ -18,22 +18,22 @@ LOGLEVEL=0
 ## The option to disable threads is:
 ## "--no-threads"
 
-## Comment the line below to enable threads
-OPTIONS="--no-threads"
+## Uncomment the line below to enable threads
+#OPTIONS="--no-threads"
 
 ## If you enable threads, then you can decrease the receive timeout
 ## because it does not limit how quickly you can send. It does limit
 ## how quickly you can quit the daemon. With threads enabled, we set
 ## this timeout to 1000ms. With threads disabled, we put the timeout
-## at 25ms. You can use a larger value if you want to save a little
+## at 50ms. You can use a larger value if you want to save a little
 ## amount of cpu time, but it may cause problems with sends, 
 ## particularly long send.
 
 ## With the --no-threads option used
-RECEIVETIMEOUT=50
+#RECEIVETIMEOUT=50
 
 ## Disable --no-threads (threads used)
-#RECEIVETIMEOUT=1000
+RECEIVETIMEOUT=1000
 
 
 ## You can set the timeout value for sendings IR signals. This set how
