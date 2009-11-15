@@ -29,7 +29,7 @@ IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --r
 if [ "$DISTRO" = "" ]; then
   DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
 fi
-if [ "$DISTRO" = "fedora" ]; then
+if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" ]; then
     # welcome to fedora land
     . /etc/init.d/functions
 
