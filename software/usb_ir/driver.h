@@ -15,7 +15,10 @@
 
 #include "devicebase.h"
 
-/* all other function calls are illegal until this returns true */
+/* locate the expected location of the driver directory */
+bool findDriverDir(char *path);
+
+/* remaining function calls are illegal until this returns true */
 bool findDriver(const char *path, const char **preferred, bool onlyPreferred);
 
 /* wrapped usb methods */

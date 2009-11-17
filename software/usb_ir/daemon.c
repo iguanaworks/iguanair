@@ -75,6 +75,7 @@ static void scanHandler(int UNUSED(sig))
 
 static void workLoop()
 {
+    char expectedDir[PATH_MAX];
     deviceList *list;
     deviceSettings settings;
     int x;
@@ -90,9 +91,18 @@ static void workLoop()
     message(LOG_DEBUG, "  recvTimeout: %d\n", recvTimeout);
     message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
 
+    /* if we are expected to find the driver directory.... attempt it */
+    if (driverDir == NULL)
+    {
+        if (findDriverDir(expectedDir))
+            driverDir = expectedDir;
+        else
+            /* fall back on something reasonable? */
+            driverDir = "/usr/lib/iguanaIR";
+    }
+
     /* initialize the driver and device list */
-    if (! findDriver(driverDir == NULL ? "/usr/lib/iguanaIR" : driverDir,
-                     preferred, onlyPreferred))
+    if (! findDriver(driverDir, preferred, onlyPreferred))
         message(LOG_ERROR, "failed to find an loadable driver layer.\n");
     else if ((list = prepareDeviceList(ids, startWorker)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");

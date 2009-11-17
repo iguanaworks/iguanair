@@ -15,8 +15,33 @@
 /* will hold driver-supplied function pointers */
 static driverImpl *implementation = NULL;
 
-/* guessing the following function will need to be re-implemented
+/* guessing the following functions will need to be re-implemented
    on other platforms */
+bool findDriverDir(char *path)
+{
+    void *library;
+    unsigned long start, target, end;
+    FILE *maps;
+    char buffer[256], *object;
+
+    library = dlopen("libiguanaIR.so", RTLD_LAZY | RTLD_LOCAL);
+    target = (unsigned long)dlsym(library, "iguanaClose");
+
+    maps = fopen("/proc/self/maps", "r");
+    while(fgets(buffer, 256, maps) != NULL)
+        if (sscanf(buffer, "%lx-%lx", &start, &end) == 2 &&
+            start < target && target < end)
+        {
+            object = strrchr(buffer, ' ') + 1;
+            strrchr(buffer, '/')[1] = '\0';
+            strcpy(path, object);
+            strcat(path, "iguanaIR");
+            return true;
+        }
+
+    return false;
+}
+
 bool loadDriver(char *path)
 {
     char *ext;
