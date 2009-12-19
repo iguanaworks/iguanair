@@ -102,6 +102,8 @@ body_main:
     ; send functions
     cmp A, CTL_SEND
     jz send_body
+    cmp A, CTL_RESEND
+    jz resend_body
 
     ; pin functions
     cmp A, CTL_GETPINCONFIG
@@ -191,10 +193,17 @@ send_body:
     ; send overflow instead of ack
     mov [control_pkt + CCODE], CTL_OVERSEND
 
-    ; send ack
+    ; send the overflow packet
     mov X, CTL_BASE_SIZE + 1
     lcall write_control
     jmp bm_ret
+
+; send the data that is already in the buffer 
+resend_body:
+    lcall rx_disable      ; disable timer interrupt, clear rx state
+    lcall transmit_code   ; transmit
+    lcall rx_reset        ; turn rx on if necessary
+    jmp bm_ack_then_ret
 
 get_pin_config_body:
     lcall get_pin_config

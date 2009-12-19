@@ -70,10 +70,11 @@ static versionedType types[] =
 
     /* device functionality */
     {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV, NO_PAYLOAD, true,ANY_PAYLOAD}},
-    {0, 0, {IG_DEV_SEND,        CTL_TODEV,   ANY_PAYLOAD, true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RECVON,      CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
-    {0x0101, 0, {IG_DEV_RAWRECVON,   CTL_TODEV, NO_PAYLOAD, true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RECVOFF,     CTL_TODEV,   NO_PAYLOAD,  true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_SEND,           CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
+    {0x0307, 0, {IG_DEV_RESEND,    CTL_TODEV,           4, true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_RECVON,         CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0x0101, 0, {IG_DEV_RAWRECVON, CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_RECVOFF,        CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
 
     /* 1 bit per pin of state */
     {0,     3, {IG_DEV_GETPINS,    CTL_TODEV,   NO_PAYLOAD, true, 2}},
@@ -594,6 +595,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         /* SEND and PINBURST do not get their data packed into the
            request packet, unlike everything else. */
         if (request->code != IG_DEV_SEND &&
+            request->code != IG_DEV_RESEND &&
             request->code != IG_DEV_PINBURST &&
             request->code != IG_DEV_REPEATER)
         {
@@ -614,6 +616,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
 
             /* select which channels to transmit on */
             if (request->code == IG_DEV_SEND ||
+                request->code == IG_DEV_RESEND ||
                 request->code == IG_DEV_REPEATER)
             {
                 msg[length++] = idev->channels;
