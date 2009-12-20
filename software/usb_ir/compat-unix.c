@@ -91,3 +91,24 @@ char* translateError(int errnum)
 {
     return strerror(errnum);
 }
+
+DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer)
+{
+    if (hFind == NULL)
+        hFind = opendir(buffer);
+
+    if (hFind != NULL)
+    {
+        struct dirent *dent;
+
+        if ((dent = readdir(hFind)) == NULL)
+        {
+            closedir(hFind);
+            hFind = NULL;
+        }
+        else
+            strcpy(buffer, dent->d_name);
+    }
+
+    return hFind;
+}

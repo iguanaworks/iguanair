@@ -5,12 +5,9 @@
 #include "string.h"
 #include "limits.h"
 #include "sys/types.h"
-#include "dirent.h"
 
 #include "support.h"
 #include "driverapi.h"
-
-#include <dlfcn.h>
 
 /* will hold driver-supplied function pointers */
 static driverImpl *implementation = NULL;
@@ -24,7 +21,7 @@ bool findDriverDir(char *path)
     FILE *maps;
     char buffer[256], *object;
 
-    library = dlopen("libiguanaIR.so", RTLD_LAZY | RTLD_LOCAL);
+    library = loadLibrary("libiguanaIR.so");
     target = (unsigned long)dlsym(library, "iguanaClose");
 
     maps = fopen("/proc/self/maps", "r");
@@ -51,7 +48,7 @@ bool loadDriver(char *path)
     ext = strrchr(path, '.');
     if (ext != NULL &&
         strcmp(ext, DYNLIB_EXT) == 0 &&
-        (library = dlopen(path, RTLD_LAZY | RTLD_LOCAL)) != NULL &&
+        (library = loadLibrary(path)) != NULL &&
         (*(void**)(&getImplementation) = dlsym(library,
                                                "getImplementation")) != NULL)
         return (implementation = getImplementation()) != NULL;

@@ -29,35 +29,17 @@
 #include "support.h"
 #include "device-interface.h"
 #include "client-interface.h"
+#include "server.h"
 
 #ifdef __APPLE__
 extern int daemon_osx_support(const usbId *);
 #endif
 
 /* local variables */
-static usbId ids[] = {
-    {0x1781, 0x0938, NULL}, /* iguanaworks USB transceiver */
-    END_OF_USB_ID_LIST
-};
 static mode_t devMode = 0777;
 PIPE_PTR commPipe[2];
-#ifdef LIBUSB_NO_THREADS
-  #ifdef LIBUSB_NO_THREADS_OPTION
-    static unsigned int recvTimeout = 1000;
-  #else
-    static unsigned int recvTimeout = 100;
-  #endif
-#else
-  static unsigned int recvTimeout = 1000;
-#endif
-static unsigned int sendTimeout = 1000;
 static int logLevelTemp = 0;
-
-/* driver location and preference information */
-static bool onlyPreferred = false;
-static const char *driverDir = NULL,
-                 **preferred = NULL;
-static int preferredCount = 0;
+static serverSettings settings;
 
 static void quitHandler(int UNUSED(sig))
 {
@@ -75,38 +57,12 @@ static void scanHandler(int UNUSED(sig))
 
 static void workLoop()
 {
-    char expectedDir[PATH_MAX];
     deviceList *list;
-    deviceSettings settings;
-    int x;
-    for(x = 0; ids[x].idVendor != INVALID_VENDOR; x++)
-        ids[x].data = &settings;
-
-    /* basic initialization */
-    settings.recvTimeout = recvTimeout;
-    settings.sendTimeout = sendTimeout;
-
-    /* print a few parameters for the user */
-    message(LOG_DEBUG, "Parameters:\n");
-    message(LOG_DEBUG, "  recvTimeout: %d\n", recvTimeout);
-    message(LOG_DEBUG, "  sendTimeout: %d\n", sendTimeout);
-
-    /* if we are expected to find the driver directory.... attempt it */
-    if (driverDir == NULL)
-    {
-        if (findDriverDir(expectedDir))
-            driverDir = expectedDir;
-        else
-            /* fall back on something reasonable? */
-            driverDir = "/usr/lib/iguanaIR";
-    }
 
     /* initialize the driver and device list */
-    if (! findDriver(driverDir, preferred, onlyPreferred))
-        message(LOG_ERROR, "failed to find an loadable driver layer.\n");
-    else if ((list = prepareDeviceList(ids, startWorker)) == NULL)
+    if ((list = initServer(&settings)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
-    else if (! createPipePair(settings.childPipe))
+    else if (! createPipePair(settings.devSettings.childPipe))
         message(LOG_ERROR, "failed to open child pipe.\n");
     else if (signal(SIGINT, quitHandler) == SIG_ERR)
         message(LOG_ERROR, "failed to install SIGINT handler.\n");
@@ -166,7 +122,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
         }
 
         /* wait for all the workers to finish */
-        reapAllChildren(list, &settings);
+        reapAllChildren(list, &settings.devSettings);
     }
 }
 
@@ -201,8 +157,8 @@ static struct poptOption options[] =
     { "pid-file",  'p',  POPT_ARG_STRING, NULL, ARG_PID_FILE,   "Specify where to write the pid of the daemon process.", "filename" },
     { "no-ids", '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
     { "no-labels",       '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "DEPRECATED: same as --no-ids", NULL },
-    { "receive-timeout", '\0', POPT_ARG_INT,  &recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
-    { "send-timeout",    '\0', POPT_ARG_INT,  &sendTimeout, 0, "Specify the device send timeout.", "timeout" },
+    { "receive-timeout", '\0', POPT_ARG_INT,  &settings.devSettings.recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
+    { "send-timeout",    '\0', POPT_ARG_INT,  &settings.devSettings.sendTimeout, 0, "Specify the device send timeout.", "timeout" },
 
 #ifdef LIBUSB_NO_THREADS_OPTION
     { "no-threads", '\0', POPT_ARG_NONE, NULL, ARG_NO_THREADS, "Do not allow two threads to both access libusb calls at the same time.  Try this if the device occasionally crashes.", NULL },
@@ -232,8 +188,12 @@ int main(int argc, const char **argv)
     const char *pidFile = NULL, **leftOvers;
     poptContext poptCon;
 
-    preferred = (const char**)malloc(sizeof(char*));
-    preferred[preferredCount++] = NULL;
+    /* initialize the settings for the server process */
+    initServerSettings(&settings);
+    settings.devFunc = startWorker;
+
+    settings.preferred = (const char**)malloc(sizeof(char*));
+    settings.preferred[settings.preferredCount++] = NULL;
 
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     while(x != -1)
@@ -276,17 +236,17 @@ int main(int argc, const char **argv)
 
         /* driver options */
         case ARG_DRIVER:
-            preferred = (const char**)realloc(preferred, sizeof(char*) * (preferredCount + 1));
-            preferred[preferredCount - 1] = poptGetOptArg(poptCon);
-            preferred[preferredCount++] = NULL;
+            settings.preferred = (const char**)realloc(settings.preferred, sizeof(char*) * (settings.preferredCount + 1));
+            settings.preferred[settings.preferredCount - 1] = poptGetOptArg(poptCon);
+            settings.preferred[settings.preferredCount++] = NULL;
             break;
 
         case ARG_ONLY_PREFER:
-            onlyPreferred = true;
+            settings.onlyPreferred = true;
             break;
 
         case ARG_DRIVER_DIR:
-            driverDir = poptGetOptArg(poptCon);
+            settings.driverDir = poptGetOptArg(poptCon);
             break;
 
         /* Error handling starts here */

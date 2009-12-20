@@ -38,7 +38,7 @@
         true
     };
 
-#include<windows.h>
+    #include <windows.h>
     #define PIPE_PTR HANDLE
     #define INVALID_PIPE NULL
     #define IGSOCK_NAME "\\\\.\\pipe\\iguanaIR-"

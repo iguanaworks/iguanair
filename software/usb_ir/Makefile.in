@@ -16,7 +16,8 @@ $(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
 drivers:
 	$(MAKE) -C $(srcdir)/drivers prefix=$(prefix)
 
-igdaemon: daemon.o client-interface.o device-interface.o driver.o \
+igdaemon: daemon.o \
+	  server.o client-interface.o device-interface.o driver.o \
           list.o protocol-versions.o pipes.o dataPackets.o compat.o \
           support.c $(OSSUPPORT)
 	$(CC) -Wl,-export-dynamic $(CPPFLAGS) $(CFLAGS) -DSUPPORT_EXPORTS \
