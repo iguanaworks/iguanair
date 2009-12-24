@@ -64,7 +64,11 @@ deviceList* initServer(serverSettings *settings)
             settings->driverDir = expectedDir;
         else
             /* fall back on something reasonable? */
+#ifdef _WIN32
+            settings->driverDir = ".";
+#else
             settings->driverDir = "/usr/lib/iguanaIR";
+#endif
     }
 
     /* initialize the driver and device list */

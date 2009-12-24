@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="igdaemon"
 	ProjectGUID="{84C520CA-58A1-4E16-8141-91CFD166959D}"
+	RootNamespace="igdaemon"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;libusb-win32;popt"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;LIBUSB_NO_THREADS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;LIBUSB_NO_THREADS;SUPPORT_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -121,7 +122,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..;libusb-win32;popt"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;LIBUSB_NO_THREADS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;LIBUSB_NO_THREADS;SUPPORT_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -187,7 +188,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\compat.c"
+				RelativePath=".\compat-windows.c"
 				>
 			</File>
 			<File
@@ -196,6 +197,10 @@
 			</File>
 			<File
 				RelativePath="..\device-interface.c"
+				>
+			</File>
+			<File
+				RelativePath="..\driver.c"
 				>
 			</File>
 			<File
@@ -215,15 +220,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\server.c"
+				>
+			</File>
+			<File
 				RelativePath=".\service.c"
 				>
 			</File>
 			<File
 				RelativePath="..\support.c"
-				>
-			</File>
-			<File
-				RelativePath="..\usbclient.c"
 				>
 			</File>
 		</Filter>
@@ -249,6 +254,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\driver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\driverapi.h"
+				>
+			</File>
+			<File
 				RelativePath="..\list.h"
 				>
 			</File>
@@ -265,11 +278,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\support.h"
+				RelativePath="..\server.h"
 				>
 			</File>
 			<File
-				RelativePath="..\usbclient.h"
+				RelativePath="..\support.h"
 				>
 			</File>
 		</Filter>

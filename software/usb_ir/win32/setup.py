@@ -47,11 +47,12 @@ OutputBaseFilename=iguanaIR-%(version)s
 
 [Files]
 ; compiled from C sources
-Source: "%(dir)s/igdaemon.exe";  DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/igclient.exe";  DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR.dll";  DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/_iguanaIR.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR.py";   DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/igdaemon.exe";      DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/igclient.exe";      DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/iguanaIR.dll";      DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/iguanaIR.py";       DestDir: "{app}"; Flags: ignoreversion
 
 ; popt libraries
 Source: "popt/popt1.dll"; DestDir: "{app}"; Flags: ignoreversion

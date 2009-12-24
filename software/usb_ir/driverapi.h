@@ -3,6 +3,20 @@
 
 #include "devicebase.h"
 
+#ifdef WIN32
+    #ifdef DRIVER_EXPORTS
+        #define DRIVER_API __declspec(dllexport)
+    #else
+        #define DRIVER_API __declspec(dllimport)
+    #endif
+#else
+    #ifdef DRIVER_EXPORTS
+        #define DRIVER_API __attribute__((visibility("default")))
+    #else
+        #define DRIVER_API
+    #endif
+#endif
+
 typedef struct driverImpl
 {
     /* wrapped usb methods */
@@ -32,6 +46,6 @@ typedef struct driverImpl
 
 } driverImpl;
 
-driverImpl* getImplementation();
+DRIVER_API driverImpl* getImplementation();
 
 #endif

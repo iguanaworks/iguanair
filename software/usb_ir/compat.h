@@ -52,15 +52,17 @@
     #define LOCK_PTR CRITICAL_SECTION
 
     /* windows has no way to flag specific variables as unused */
-    #define UNUSED(a) (void)a
+    #define UNUSED(a) a
 
     /* defines for dealing with the file system and libraries */
+    #define PATH_MAX MAX_PATH
     #define PATH_SEP '\\'
     #define DYNLIB_EXT ".dll"
     typedef HANDLE DIR_HANDLE;
 
     /* functions to dynamically load drivers */
     #define loadLibrary(name) LoadLibrary(name)
+    #define getFuncAddress    GetProcAddress
 
 #else
     #include <stdint.h>
@@ -108,6 +110,7 @@
 
     /* functions to dynamically load drivers */
     #define loadLibrary(name) dlopen((name), RTLD_LAZY | RTLD_LOCAL)
+    #define getFuncAddress    dlsym
 
 #endif
 
@@ -115,5 +118,6 @@
 uint64_t microsSinceX();
 bool setNonBlocking(PIPE_PTR pipe);
 char* translateError(int errnum);
+DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer);
 
 #endif

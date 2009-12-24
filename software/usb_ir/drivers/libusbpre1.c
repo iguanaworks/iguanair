@@ -376,7 +376,7 @@ static unsigned int releaseDevices(deviceList *devList)
         if (head != prev)
             releaseDevice(&head->info);
         else
-            sleep(100);
+            Sleep(100);
         prev = head;
     }
 

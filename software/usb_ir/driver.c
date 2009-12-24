@@ -12,8 +12,20 @@
 /* will hold driver-supplied function pointers */
 static driverImpl *implementation = NULL;
 
-/* guessing the following functions will need to be re-implemented
-   on other platforms */
+#ifdef _WIN32
+bool findDriverDir(char *path)
+{
+    HMODULE hModule = GetModuleHandle("iguanaIR.dll");
+    if (hModule != NULL &&
+        GetModuleFileName(hModule, path, PATH_MAX) > 0)
+    {
+        strrchr(path, PATH_SEP)[0] = '\0';
+        return true;
+    }
+    return false;
+}
+
+#else
 bool findDriverDir(char *path)
 {
     void *library;
@@ -38,6 +50,7 @@ bool findDriverDir(char *path)
 
     return false;
 }
+#endif
 
 bool loadDriver(char *path)
 {
@@ -49,8 +62,8 @@ bool loadDriver(char *path)
     if (ext != NULL &&
         strcmp(ext, DYNLIB_EXT) == 0 &&
         (library = loadLibrary(path)) != NULL &&
-        (*(void**)(&getImplementation) = dlsym(library,
-                                               "getImplementation")) != NULL)
+        (*(void**)(&getImplementation) = getFuncAddress(library,
+                                                        "getImplementation")) != NULL)
         return (implementation = getImplementation()) != NULL;
 
     return false;
@@ -99,8 +112,8 @@ bool checkDriver(const char *root, const char *name)
    first that will load. */
 bool findDriver(const char *path, const char **preferred, bool onlyPreferred)
 {
-    DIR *dir = NULL;
-    struct dirent *dent;
+    DIR_HANDLE dir = NULL;
+    char buffer[PATH_MAX];
     int x;
 
     /* check through the preferred list */
@@ -110,10 +123,12 @@ bool findDriver(const char *path, const char **preferred, bool onlyPreferred)
                 return true;
 
     /* check through all files in the path if allowed */
-    if (! onlyPreferred && (dir = opendir(path)) != NULL)
-        while((dent = readdir(dir)) != NULL)
-            if (checkDriver(path, dent->d_name))
-                return true;
+    strcpy(buffer, path);
+    while(! onlyPreferred &&
+          (dir = findNextFile(dir, buffer)) != NULL)
+        if (checkDriver(path, buffer))
+            return true;
+
     return false;
 }
 

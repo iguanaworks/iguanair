@@ -55,3 +55,25 @@ char* translateError(int errnum)
         sprintf(globalBuffer, "FormatMessage failed to translate %d", errnum);
     return globalBuffer;
 }
+
+DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer)
+{
+    WIN32_FIND_DATA findFileData;
+
+    if (hFind == NULL)
+    {
+        strcat(buffer, "\\*");
+        hFind = FindFirstFile(buffer, &findFileData);
+        if (hFind == INVALID_HANDLE_VALUE) 
+            hFind = NULL;
+    }
+    else if (! FindNextFile(hFind, &findFileData))
+    {
+        FindClose(hFind);
+        hFind = NULL;
+    }
+
+    if (hFind != NULL)
+        strcpy(buffer, findFileData.cFileName);
+    return hFind;
+}

@@ -23,27 +23,19 @@
 #include <popt.h>
 #include "popt-fix.h"
 
-#include "usbclient.h"
+#include "driver.h"
 #include "pipes.h"
 #include "support.h"
 #include "device-interface.h"
 #include "client-interface.h"
+#include "server.h"
 
 #define SERVICE_NAME "igdaemon"
 
 /* iguana local variables */
-static usbId ids[] = {
-    {0x1781, 0x0938}, /* iguanaworks USB transceiver */
-    END_OF_USB_ID_LIST
-};
 static PIPE_PTR commPipe[2];
-#ifdef LIBUSB_NO_THREADS
-  static unsigned int recvTimeout = 100;
-#else
-  static unsigned int recvTimeout = 1000;
-#endif
-static unsigned int sendTimeout = 1000;
-static usbDeviceList list;
+static deviceList *list;
+static serverSettings settings;
 
 /* guids for registering for device notifications */
 DEFINE_GUID(GUID_DEVINTERFACE_USB_HUB, 0xf18a0e88, 0xc30c, 0x11d0, 0x88,
@@ -168,6 +160,24 @@ static bool installINF()
     return false;
 }
 
+enum
+{
+    /* generic actions */
+    ARG_LOG_FILE,
+    ARG_QUIETER,
+    ARG_LOUDER,
+    ARG_LOG_LEVEL,
+
+    /* igdaemon specific actions */
+    ARG_FOREGROUND,
+    ARG_PID_FILE,
+    ARG_NO_IDS,
+    ARG_NO_THREADS,
+    ARG_DRIVER,
+    ARG_ONLY_PREFER,
+    ARG_DRIVER_DIR
+};
+
 static struct poptOption options[] =
 {
     { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
@@ -185,6 +195,11 @@ static struct poptOption options[] =
     { "stopsvc", 0, POPT_ARG_NONE, NULL, 't', "Stop the system igdaemon service.", NULL },
     { "installinf", 0, POPT_ARG_NONE, NULL, 'i', "Stop the system igdaemon service.", NULL },
 
+    /* options specific to the drivers */
+    { "driver", 'd', POPT_ARG_STRING, NULL, ARG_DRIVER, "Use this driver in preference to others.  This command can be used multiple times.", "preferred driver" },
+    { "only-preferred", '\0', POPT_ARG_NONE, NULL, ARG_ONLY_PREFER, "Use only drivers specified by the --driver option.", "only preferred drivers" },
+    { "driver-dir", '\0', POPT_ARG_STRING, NULL, ARG_DRIVER_DIR, "Specify the location of driver objects.", "driver directory" },
+
     POPT_TABLEEND
 };
 
@@ -200,6 +215,13 @@ int main(int argc, char **argv)
     const char **leftOvers, *temp;
     int x = 0;
     poptContext poptCon;
+
+    /* initialize the settings for the server process */
+    initServerSettings(&settings);
+    settings.devFunc = startWorker;
+
+    settings.preferred = (const char**)malloc(sizeof(char*));
+    settings.preferred[settings.preferredCount++] = NULL;
 
     temp = strrchr(argv[0], '\\');
     if (temp == NULL)
@@ -253,6 +275,21 @@ int main(int argc, char **argv)
                 return 0;
             return 1;
 
+        /* driver options */
+        case ARG_DRIVER:
+            settings.preferred = (const char**)realloc((void*)settings.preferred, sizeof(char*) * (settings.preferredCount + 1));
+            settings.preferred[settings.preferredCount - 1] = poptGetOptArg(poptCon);
+            settings.preferred[settings.preferredCount++] = NULL;
+            break;
+
+        case ARG_ONLY_PREFER:
+            settings.onlyPreferred = true;
+            break;
+
+        case ARG_DRIVER_DIR:
+            settings.driverDir = poptGetOptArg(poptCon);
+            break;
+
         /* Error handling starts here */
         case POPT_ERROR_NOARG:
             exitOnOptError(poptCon, "Missing argument for '%s'\n");
@@ -290,7 +327,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (! initDeviceList(&list, ids, recvTimeout, sendTimeout, startWorker))
+    if ((list = initServer(&settings)) == NULL)
         message(LOG_ERROR, "failed to initialize device list.\n");
     else
     {
@@ -309,7 +346,7 @@ int main(int argc, char **argv)
             if (error == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
             {
                 /* populate the device list once */
-                if (! updateDeviceList(&list))
+                if (! updateDeviceList(list))
                     message(LOG_ERROR, "scan failed.\n");
 
                 /* just block indefinitely */
