@@ -76,6 +76,7 @@
 
     /* because it's different in windows */
     #define USB_ETIMEDOUT ETIMEDOUT
+    #define Sleep(a) usleep((a) * 1000)
 
     /* thread defines */
     #define THREAD_PTR pthread_t
