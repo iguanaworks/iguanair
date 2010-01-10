@@ -74,6 +74,8 @@ onlyOne = True
 defaultType = 'c'
 devOK = False
 skipReceiver = False
+pauseAtStart = True
+
 #Global Message Flag -- only print can't list devices once
 MessageCannotlistdevice=False
 
@@ -125,6 +127,8 @@ def printUsage(msg = None):
 
 --flash-multiple : Loop flashing and testing multiple devices in a row.
 
+--go : Start flashing without waiting for the user to confirm.
+
 -h
 --help : Print this usage message.
 
@@ -166,6 +170,8 @@ while index < len(sys.argv):
         forceFlash = True
     elif arg == "--flash-multiple":
         onlyOne = False
+    elif arg == "--go":
+        pauseAtStart = False
     elif arg == "--body":
         index += 1
         body = sys.argv[index]
@@ -853,7 +859,7 @@ else:
     targetVersion = hexVersion(loader) << 8
     if body:
         targetVersion |= hexVersion(body)
-message(LOG_NORMAL, """WARNING! WARNING! WARNING!
+message(LOG_ALWAYS, """WARNING! WARNING! WARNING!
 
 This application is used to reflash your IguanaWorks USB IR transceiver. 
 While we believe this process is safe, there is always the possibility
@@ -877,6 +883,14 @@ on.
 
 Using firmware version 0x%4.4x
 """ % targetVersion)
+if pauseAtStart:
+    message(LOG_ALWAYS,
+            "\n---- Press enter to proceed or ctrl-c to stop. ----\n")
+    try:
+        sys.stdin.readline()
+    except KeyboardInterrupt:
+        sys.stdout.write('\n')
+        sys.exit(0)
 
 # must default to at least a 1 character string
 default = ' '
