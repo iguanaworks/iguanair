@@ -50,12 +50,7 @@ msgPrefixes = [
 FLASHER_VERSION = 0xFF00
 
 null = open(os.devnull,'r+')
-if sys.platform == 'darwin':
-    deviceDir = '/tmp/iguanaIR'
-else:
-    deviceDir = '/dev/iguanaIR'
 deviceDir = iguanaIR.IGSOCK_NAME
-#print deviceDir
 
 #local variables
 currentLevel = LOG_NORMAL
@@ -76,8 +71,8 @@ devOK = False
 skipReceiver = False
 pauseAtStart = True
 
-#Global Message Flag -- only print can't list devices once
-MessageCannotlistdevice=False
+# Global Message Flag -- only print can't list devices once
+MessageCannotlistdevice = False
 
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
@@ -217,17 +212,17 @@ def listDevices(path = deviceDir):
     global MessageCannotlistdevice
     devices = []
     try:
-#        print os.path.split(path)[0]
-#        print os.listdir(path)
-#        print glob.glob(path + '*')
+        if os.name == 'nt':
+            raise Exception('Listing devices is not supported in Windows')
+
         for device in os.listdir(path):
             if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
                 devices.append(device)
     except Exception, inst:
         devices = ['0']
-        if MessageCannotlistdevice==False:
-            message(LOG_WARN,"""Guessing device "0", failed to list devices: \n%s\n""" % (inst) )
-            MessageCannotlistdevice=True
+        if MessageCannotlistdevice == False:
+            message(LOG_WARN,"""Guessing device "0", failed to list devices:\n  %s\n""" % inst)
+            MessageCannotlistdevice = True
 
     return devices
 
@@ -326,11 +321,11 @@ def deviceVersion(target = None):
                                     quiet = count < 4)
         if not version:
             count += 1
-            if count == 3:
+            if count == 5:
                 replugWarning()
                 count = 0
             else:
-                time.sleep(0.20)
+                time.sleep(0.25)
             message(LOG_INFO, "Attempting to connect to device....\n")
             connect(quiet = True)
 
@@ -436,18 +431,18 @@ def preparePages(pages):
 
 def writePageToDevice(page):
     # write the page to the device
-#TODO: DEBUG:
-#    deviceTransaction(iguanaIR.IG_DEV_RECVON)
     result = deviceTransaction(iguanaIR.IG_DEV_WRITEBLOCK, page['data'])
     if result is None or result is False:
-        message(LOG_FATAL, "deviceTransaction failed.\n")
+        message(LOG_ERROR, "deviceTransaction failed.\n")
     elif len(result) > 0:
         chksum = 0
         for x in struct.unpack('B' * len(result), result):
             chksum = (chksum << 8) + x
-#        print '%x' % chksum, len(result), [result]
         if chksum != page['chksum']:
             message(LOG_FATAL, "checksum does not match: 0x%x != 0x%x on page %s\n" % (chksum, page['chksum'], page['start'] / 64))
+        else:
+            return True
+    return False
 
 def writePagesToDevice(pages):
     # need to know the starting version
@@ -473,7 +468,8 @@ def writePagesToDevice(pages):
             sys.stdout.write('\n')
         sys.stdout.flush()
 
-        writePageToDevice(page)
+        if not writePageToDevice(page):
+            return False
 
         # if we're in an older device delay and reconnect
         if version <= 4:
@@ -484,6 +480,7 @@ def writePagesToDevice(pages):
     if version > 4:
         message(LOG_INFO, "Rebooting the device.\n")
         deviceTransaction(iguanaIR.IG_DEV_RESET)
+    return True
 
 def writeHexFile(filename, fullFlash = False, setFeatures = False):
     blanks = []
@@ -506,7 +503,8 @@ def writeHexFile(filename, fullFlash = False, setFeatures = False):
 
     # write out the code pages
     preparePages(pages)
-    writePagesToDevice(pages)
+    if not writePagesToDevice(pages):
+        return False
 
     # prepare and write out the blank pages if requested
     pages = []
@@ -516,7 +514,9 @@ def writeHexFile(filename, fullFlash = False, setFeatures = False):
     if pages:
         sys.stdout.write('Blanking pages on the device:\n')
         preparePages(pages)
-        writePagesToDevice(pages)
+        if not writePagesToDevice(pages):
+            return False
+    return True
 
 def checkFileExists(path):
     try:
@@ -589,7 +589,8 @@ def reflashDevice(features):
     page = { 'start' : 8128, 'bytes' : ['30'] * 64 }
     page['bytes'][0] = '7F'
     preparePages([page])
-    writePageToDevice(page)
+    if not writePageToDevice(page):
+        return False
 
     # write the reflasher if necessary but first detect the version
     # before we try to write it
@@ -605,7 +606,8 @@ def reflashDevice(features):
             message(LOG_NORMAL, "Keeping the previously installed firmware.\n")
         else:
             sys.stdout.write('  Writing usb_ir to the device:\n')
-            writeHexFile(usb_ir, fullFlash)
+            if not writeHexFile(usb_ir, fullFlash):
+                return False
             deviceVersion(hexVersion(usb_ir))
             wrote = True
     # put on the boot loader and the correct body
@@ -618,7 +620,8 @@ def reflashDevice(features):
             blank = fullFlash
             if body is None:
                 blank = True
-            writeHexFile(loader, blank)
+            if not writeHexFile(loader, blank):
+                return False
             version = deviceVersion(hexVersion(loader) << 8)
             wrote = True
 
@@ -626,7 +629,8 @@ def reflashDevice(features):
             sys.stdout.write('  Writing body to the device:\n')
             checkingIDs = ord(deviceTransaction(iguanaIR.IG_DEV_IDSTATE)) != 0
             if deviceTransaction(iguanaIR.IG_DEV_IDSOFF):
-                writeHexFile(body, setFeatures = features)
+                if not writeHexFile(body, setFeatures = features):
+                    return False
                 deviceVersion((targetVersion & 0xFF00) | hexVersion(body))
                 if checkingIDs:
                     deviceTransaction(iguanaIR.IG_DEV_IDSON)
@@ -641,6 +645,7 @@ def reflashDevice(features):
 
     if wrote and deviceVersion() < 0x0100:
         replugWarning()
+    return True
 
 def checkReceiver():
     # read 40 signals to test the receiver
@@ -973,9 +978,7 @@ What kind of device is plugged in?
 
         # reflash the device with information about what kind it is
         message(LOG_NORMAL, 'Writing firmware to "%s" device.\n' % type)
-        if not userSaysKeepAll:
-            reflashDevice(features)
-        if not test:
+        if (not userSaysKeepAll and not reflashDevice(features)) or not test:
             continue
 
         # connect to the device and check the version
