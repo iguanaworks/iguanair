@@ -571,6 +571,7 @@ def hexVersion(filename):
     return int(re.search('.*?(\d+)\.hex$', filename).group(1))
 
 def reflashDevice(features):
+    wroteLoader = False
     wrote = False
     id = None
 
@@ -623,6 +624,7 @@ def reflashDevice(features):
             if not writeHexFile(loader, blank):
                 return False
             version = deviceVersion(hexVersion(loader) << 8)
+            wroteLoader = True
             wrote = True
 
         if body is not None:
@@ -643,7 +645,7 @@ def reflashDevice(features):
         message(LOG_NORMAL, "Clearing device id.\n")
         deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
-    if wrote and deviceVersion() < 0x0100:
+    if wrote and (deviceVersion() < 0x0100 or not wroteLoader):
         replugWarning()
     return True
 
