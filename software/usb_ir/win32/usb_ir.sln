@@ -6,6 +6,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igclient", "igclient.vcproj
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iguanaIR", "iguanaIR.vcproj", "{B2CA1625-68B8-47B6-A3FA-71D0B635672E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B82A1C20-33A6-428B-A0D4-4EEC79AA0C6C} = {B82A1C20-33A6-428B-A0D4-4EEC79AA0C6C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "igdaemon", "igdaemon.vcproj", "{84C520CA-58A1-4E16-8141-91CFD166959D}"
 	ProjectSection(ProjectDependencies) = postProject

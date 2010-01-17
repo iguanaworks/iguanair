@@ -535,7 +535,7 @@ def findHexFile(type, target = None, mustFind = True):
     rootdir = sys.path[0]
     if len(testdir) == 2 and testdir[1] == 'library.zip':
         rootdir = testdir[0]
-        
+
     for hex in glob.glob(os.path.join(rootdir, 'hex', '%s-*.hex' % type)):
         # ensure the file really exists
         if checkFileExists(hex):
@@ -550,21 +550,21 @@ def findHexFile(type, target = None, mustFind = True):
             elif version == target:
                 latest = hex
                 break
-    else:        
+    else:
         if target is None and devOK:
             best = glob.glob(os.path.join(rootdir,
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
                 latest = best[0]
-    
+
     if latest is None and mustFind:
         if target is not None:
             message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?" % (type, target))
         else:
             message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?" % (type))
-            
-        
-        
+
+
+
     return latest
 
 def hexVersion(filename):
@@ -819,11 +819,16 @@ space 2496
 pulse 832
 """
 
-    output = tempfile.NamedTemporaryFile()
+    # store the requested signal in a temporary file
+    output = tempfile.NamedTemporaryFile(delete = False)
     output.write(panasonicPower)
-    output.flush()
-    (count, data) = iguanaIR.readPulseFile(output.name)
     output.close()
+
+    # read that file using the readPulseFile API (kinda round-about, I know)
+    (count, data) = iguanaIR.readPulseFile(output.name)
+
+    # now delete the file.  i would use delete = True, but for windows...
+    os.unlink(output.name)
 
     deviceTransaction(iguanaIR.IG_DEV_SEND, data)
 
@@ -850,29 +855,29 @@ if usb_ir is None:
     elif body is None or isinstance(body, int):
         body = findHexFile('body', body, body != 0)
 elif isinstance(usb_ir, int):
-    usb_ir = findHexFile('usb_ir', usb_ir)    
+    usb_ir = findHexFile('usb_ir', usb_ir)
 
 # compute the target version from the files to report to the user
 if usb_ir:
     targetVersion = hexVersion(usb_ir)
-else:    
+else:
     targetVersion = hexVersion(loader) << 8
     if body:
         targetVersion |= hexVersion(body)
 message(LOG_ALWAYS, """WARNING! WARNING! WARNING!
 
-This application is used to reflash your IguanaWorks USB IR transceiver. 
+This application is used to reflash your IguanaWorks USB IR transceiver.
 While we believe this process is safe, there is always the possibility
 of breaking the device. We recommend only reflashing your device if
 you are having a specific problem with your device and IguanaWorks
 support recommends reflashing your device. Otherwise, use at your own
 risk. Non-working devices can be reflashed by IguanaWorks for a nominal
 fee. You may press ctrl-c to break out of this application, but DO NOT
-STOP THE PROGRAM WHILE IT IS WRITING THE FLASH! 
+STOP THE PROGRAM WHILE IT IS WRITING THE FLASH!
 
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-No other applications may use the device when reflashing the device! 
-Before proceeding, stop LIRC and any other applications that use the 
+No other applications may use the device when reflashing the device!
+Before proceeding, stop LIRC and any other applications that use the
 device.
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
