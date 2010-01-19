@@ -645,7 +645,7 @@ def reflashDevice(features):
         message(LOG_NORMAL, "Clearing device id.\n")
         deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
-    if wrote and (deviceVersion() < 0x0100 or not wroteLoader):
+    if wrote and (deviceVersion() < 0x0100 or (test and not wroteLoader)):
         replugWarning()
     return True
 
@@ -909,27 +909,6 @@ default = ' '
 line = defaultType
 while True:
     try:
-        # reconnect as necessary
-        if _conn is not None:
-            iguanaIR.close(_conn)
-            _conn = None
-
-        if line == 'c':
-            line = ''
-            features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES,
-                                         quiet = True)
-            if not features:
-                if not isinstance(features, bool):
-                    line = 'u'
-            elif features == iguanaIR.IG_HAS_SOCKETS:
-                line = 's'
-            elif features == iguanaIR.IG_HAS_BOTH:
-                line = 'h'
-            elif features == iguanaIR.IG_HAS_LEDS:
-                line = 'l'
-            elif features == iguanaIR.IG_SLOT_DEV:
-                line = 'p'
-
         # check user input
         type = None
         while True:
@@ -950,6 +929,27 @@ What kind of device is plugged in?
             line = sys.stdin.readline().strip()
             if not line:
                 line = default
+
+        # reconnect as necessary
+        if _conn is not None:
+            iguanaIR.close(_conn)
+            _conn = None
+
+        if type == 'c':
+            type = ''
+            features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES,
+                                         quiet = True)
+            if not features:
+                if not isinstance(features, bool):
+                    type = 'u'
+            elif features == iguanaIR.IG_HAS_SOCKETS:
+                type = 's'
+            elif features == iguanaIR.IG_HAS_BOTH:
+                type = 'h'
+            elif features == iguanaIR.IG_HAS_LEDS:
+                type = 'l'
+            elif features == iguanaIR.IG_SLOT_DEV:
+                type = 'p'
 
         if type == 'u':
             type = 'unenclosed'
