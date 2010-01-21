@@ -826,6 +826,79 @@ space 2496
 pulse 832
 """
 
+    tivoRightArrow = """pulse 9152
+space 4458
+pulse 554
+space 1600
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 490
+pulse 554
+space 512
+pulse 554
+space 490
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 554
+space 490
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 1600
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 490
+pulse 576
+space 1600
+pulse 576
+space 1600
+pulse 576
+space 1600
+pulse 576
+space 46080
+pulse 9066
+space 2176
+pulse 576
+"""
+
     # store the requested signal in a temporary file
     output = tempfile.NamedTemporaryFile(delete = False)
     output.write(panasonicPower)
