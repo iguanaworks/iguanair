@@ -10,7 +10,7 @@ endif
 all: igclient igdaemon drivers
 igclient igdaemon: $(LIBNAME)
 
-$(LIBNAME): iguanaIR.o support.o dataPackets.o compat.o pipes.o
+$(LIBNAME): iguanaIR.o support.o dataPackets.o compat-unix.o pipes.o
 	$(CC) $(SHAREARG) $(LINKARGS) $(LDFLAGS) $^ -o $@
 
 drivers:
@@ -18,12 +18,12 @@ drivers:
 
 igdaemon: daemon.o \
 	  server.o client-interface.o device-interface.o driver.o \
-          list.o protocol-versions.o pipes.o dataPackets.o compat.o \
+          list.o protocol-versions.o pipes.o dataPackets.o compat-unix.o \
           support.c $(OSSUPPORT)
 	$(CC) -Wl,-export-dynamic $(CPPFLAGS) $(CFLAGS) -DSUPPORT_EXPORTS \
               $(LDFLAGS) $^ -lpopt -lusb -lpthread -ldl $(LIBNAME) -o $@
 
-igclient: client.o list.o support.o compat.o
+igclient: client.o list.o support.o compat-unix.o
 	$(CC) $(LDFLAGS) $^ -lpopt $(LIBNAME) -o $@
 
 %.o: %.c Makefile iguanaIR.h
@@ -33,7 +33,7 @@ driver.o: driver.c Makefile iguanaIR.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) -Wno-strict-aliasing $< -o $@
 
 # need a special dependency for config.h
-compat.o: compat.c config.h
+compat-unix.o: compat-unix.c config.h
 
 # NOTE: I would rather use PYTHON_VERSION, but it doesn't work
 ifneq (@PYTHON_CPPFLAGS@,)
