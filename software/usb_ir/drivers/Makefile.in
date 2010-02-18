@@ -3,14 +3,19 @@ include ../Make.settings
 DRIVERS=libusbpre1.so libusb.so
 LISTS=../list.o
 
+ifdef DARWIN
+  LDFLAGS += -undefined dynamic_lookup
+endif
+
 all: $(DRIVERS)
 
 libusb.so: libusb.c $(LISTS) Makefile
-#	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) -lusb-1.0 $< $(LISTS) -o $@
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) -lusb-1.0 $< $(LISTS) -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) -lusb-1.0 $< \
+		$(LISTS) -o $@
 
 libusbpre1.so: libusbpre1.c $(LISTS) Makefile
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) -lusb $< $(LISTS) -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) -lusb $< \
+		$(LISTS) -o $@
 
 .PHONY: clean
 clean:

@@ -1062,8 +1062,7 @@ What kind of device is plugged in?
         if ((version >> 8) == 0 or (version & 0xFF) == 0) and \
            version != 3 and \
            version != 4:
-            message(LOG_ERROR,
-                    "This script cannot test a version %s device.\n" % version)
+            message(LOG_ERROR, "This script cannot test a version 0x%x device.\n" % version)
             continue
 
         if not skipReceiver:

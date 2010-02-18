@@ -39,6 +39,6 @@ else
     #SHAREEXT = dylib
     LIBNAME=libiguanaIR.dylib
     SHAREARG = -dynamiclib
-    OSSUPPORT = daemonosx.o
+    OSSUPPORT = osx/daemonosx.o
   endif
 endif

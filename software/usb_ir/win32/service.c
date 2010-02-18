@@ -193,7 +193,7 @@ static struct poptOption options[] =
     { "unregsvc", 0, POPT_ARG_NONE, NULL, 'u', "Remove the system igdaemon service.", NULL },
     { "startsvc", 0, POPT_ARG_NONE, NULL, 's', "Start the system igdaemon service.", NULL },
     { "stopsvc", 0, POPT_ARG_NONE, NULL, 't', "Stop the system igdaemon service.", NULL },
-    { "installinf", 0, POPT_ARG_NONE, NULL, 'i', "Stop the system igdaemon service.", NULL },
+    { "installinf", 0, POPT_ARG_NONE, NULL, 'i', "Manually install the INF for the device.", NULL },
 
     /* options specific to the drivers */
     { "driver", 'd', POPT_ARG_STRING, NULL, ARG_DRIVER, "Use this driver in preference to others.  This command can be used multiple times.", "preferred driver" },

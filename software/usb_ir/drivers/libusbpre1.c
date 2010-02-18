@@ -191,6 +191,7 @@ static void freeDevice(deviceInfo *info)
     free(handle);
 }
 
+/* the list must be allocated here where the struct is defined */
 static deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf)
 {
     usbDeviceList *list;

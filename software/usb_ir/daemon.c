@@ -129,7 +129,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
 enum
 {
     /* generic actions */
-    ARG_LOG_FILE,
+    ARG_LOG_FILE = 1, /* popt in MacPorts does not like starting w 0 */
     ARG_QUIETER,
     ARG_LOUDER,
     ARG_LOG_LEVEL,

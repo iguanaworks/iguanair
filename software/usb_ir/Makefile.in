@@ -1,9 +1,13 @@
 include Make.settings
 
 CFLAGS += -I. -fvisibility=hidden -DIGUANAIR_EXPORTS
-LINKARGS = -Wl,-soname=$(LIBNAME),--version-script=$(srcdir)/ig.ver
-ifeq ($(shell uname -s),Darwin)
-  LINKARGS = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0
+
+ifdef DARWIN
+  LINKARGS   = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0 -install_name $(prefix)/$(LIBDIR)/$(LIBNAME)
+  EXPORTARGS =
+else
+  LINKARGS   = -Wl,-soname=$(LIBNAME),--version-script=$(srcdir)/ig.ver
+  EXPORTARGS = -Wl,-export-dynamic
 endif
 
 .PHONY: all drivers
@@ -20,7 +24,7 @@ igdaemon: daemon.o \
 	  server.o client-interface.o device-interface.o driver.o \
           list.o protocol-versions.o pipes.o dataPackets.o compat-unix.o \
           support.c $(OSSUPPORT)
-	$(CC) -Wl,-export-dynamic $(CPPFLAGS) $(CFLAGS) -DSUPPORT_EXPORTS \
+	$(CC) $(EXPORTARGS) $(CPPFLAGS) $(CFLAGS) -DSUPPORT_EXPORTS \
               $(LDFLAGS) $^ -lpopt -lusb -lpthread -ldl $(LIBNAME) -o $@
 
 igclient: client.o list.o support.o compat-unix.o
@@ -107,7 +111,11 @@ install: all
 	install drivers/libusb.$(SHAREEXT) $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
 	install -d $(DESTDIR)$(prefix)/include
 	install $(srcdir)/iguanaIR.h $(DESTDIR)$(prefix)/include/iguanaIR.h
-ifeq ($(DARWIN),)
+ifdef DARWIN
+	install -D --mode 644 osx/com.iguana.igdaemon.plist \
+                              /Library/LaunchDaemons/com.iguana.igdaemon.plist
+	launchctl load -w /Library/LaunchDaemons/com.iguana.igdaemon.plist
+else
 	install -D $(srcdir)/iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
 	install -D --mode 644 $(srcdir)/iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
 	install -D --mode 644 $(srcdir)/udev/iguanaIR.rules \
@@ -118,21 +126,24 @@ endif
 
 .PHONY: uninstall
 uninstall:
-ifeq ($(DARWIN),)
+ifdef DARWIN
+	launchctl unload -w /Library/LaunchDaemons/com.iguana.igdaemon.plist || true
+	rm -f /Library/LaunchDaemons/com.iguana.igdaemon.plist
+else
 	/etc/init.d/iguanaIR stop || true
-endif
-	rm -f $(DESTDIR)$(prefix)/bin/igclient
-	rm -f $(DESTDIR)$(prefix)/bin/igdaemon
-	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
-	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
-	rm -f $(DESTDIR)$(prefix)/include/iguanaIR.h
-ifeq ($(DARWIN),)
 	rm -f $(DESTDIR)/etc/init.d/iguanaIR
 	rm -f $(DESTDIR)/etc/default/iguanaIR
 	rm -f $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
 	rmdir $(DESTDIR)/lib/udev/devices/iguanaIR 2>/dev/null || true
 	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
 endif
+	rm -f $(DESTDIR)$(prefix)/bin/igclient
+	rm -f $(DESTDIR)$(prefix)/bin/igdaemon
+	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
+	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	rm -f $(DESTDIR)$(prefix)/include/iguanaIR.h
+	rm -fr $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR
+	rm -fr $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR-reflasher
 
 .PHONY: clean drivers-clean
 clean: drivers-clean

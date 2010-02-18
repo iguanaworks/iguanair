@@ -102,7 +102,7 @@
     #define PATH_SEP '/'
     #if __APPLE__
         #define SwitchToThread() pthread_yield_np()
-        #define DYNLIB_EXT ".dynlib"
+        #define DYNLIB_EXT ".dylib"
     #else
         #define SwitchToThread() pthread_yield()
         #define DYNLIB_EXT ".so"
