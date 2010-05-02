@@ -50,8 +50,6 @@ enum
 
     FINAL_CHECK = 0xFFFF,
 
-    CHANNEL_MASK = 0x0F,
-
     /* valid because we use the last 8 bytes of RAM as packet scratch space */
     PACKET_BUFFER_BASE = 0xF8
 };
@@ -138,6 +136,7 @@ static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
 static int logLevelTemp = 0;
+static int deviceFeatures = 0;
 
 static bool performTask(PIPE_PTR conn, igtask *cmd);
 
@@ -315,7 +314,8 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
             }
             else
             {
-                message(LOG_NORMAL, "%s: success", cmd->spec->text);
+                if (! cmd->isSubTask)
+                    message(LOG_NORMAL, "%s: success", cmd->spec->text);
                 switch(code)
                 {
                 case IG_DEV_GETVERSION:
@@ -325,7 +325,10 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     break;
 
                 case IG_DEV_GETFEATURES:
-                    message(LOG_NORMAL, ": features=0x%x", ((char*)data)[0]);
+                    deviceFeatures = ((char*)data)[0];
+                    if (! cmd->isSubTask)
+                        message(LOG_NORMAL,
+                                ": features=0x%x", deviceFeatures);
                     break;
 
                 case IG_DEV_GETBUFSIZE:
@@ -353,8 +356,9 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     break;
 
                 case IG_DEV_GETPINS:
-                    message(LOG_NORMAL,
-                            ": 0x%2.2x", iguanaDataToPinSpec(data));
+                    message(LOG_NORMAL, ": 0x%2.2x",
+                            iguanaDataToPinSpec(data,
+                                                deviceFeatures & IG_SLOT_DEV));
                     break;
 
                 case IG_DEV_GETPINCONFIG:
@@ -383,7 +387,8 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                 timeout = -1;
                 retval = true;
             }
-            message(LOG_NORMAL, "\n");
+            if (! cmd->isSubTask)
+                message(LOG_NORMAL, "\n");
 
             free(data);
         }
@@ -460,8 +465,15 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
             /* translate cmd->pins */
             if (parseNumber(cmd->arg, &value))
             {
+                unsigned char mask = 0xFF;
+                if (deviceFeatures & IG_SLOT_DEV)
+                    mask >>= 2;
+                else
+                    mask >>= 4;
+                message(LOG_WARN, "Mask is now: 0x%x\n", mask);
+
                 if (cmd->spec->code == IG_DEV_SETCHANNELS &&
-                    value != (CHANNEL_MASK & value))
+                    value != (mask & value))
                     message(LOG_ERROR, "Too many channels specified.\n");
                 else
                 {
@@ -525,7 +537,8 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
                 if (value > 0xFF)
                     message(LOG_ERROR, "Only %d pins are available, invalid pin specification.\n", IG_PIN_COUNT);
                 else
-                    result = iguanaPinSpecToData(value, &data);
+                    result = iguanaPinSpecToData(value, &data,
+                                                 deviceFeatures & IG_SLOT_DEV);
             }
             break;
         }
@@ -544,14 +557,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
             break;
 
         case IG_DEV_WRITEBLOCK:
-            if (cmd->isSubTask)
-            {
-                /* this frees data allocated in the caller */
-                data = (void*)cmd->arg;
-                result = 68;
-            }
-            /* read block from cmd->arg */
-            else if (iguanaReadBlockFile(cmd->arg, &data))
+            if (iguanaReadBlockFile(cmd->arg, &data))
                 result = 68;
             break;
 
@@ -630,7 +636,7 @@ static int performQueuedTasks(PIPE_PTR conn)
     return failed;
 }
 
-static void enqueueTask(char *text, const char *arg)
+static igtask* enqueueTask(char *text, const char *arg)
 {
     igtask *cmd;
 
@@ -641,20 +647,39 @@ static void enqueueTask(char *text, const char *arg)
         cmd->arg = arg;
         insertItem(&tasks, NULL, (itemHeader*)cmd);
     }
+    return cmd;
 }
 
-static void enqueueTaskById(unsigned short code, const char *arg)
+static igtask* enqueueTaskById(unsigned short code, const char *arg)
 {
     unsigned int x;
+
+    if (code == IG_DEV_SETCHANNELS ||
+        code == IG_DEV_GETPINS ||
+        code == IG_DEV_SETPINS)
+    {
+        igtask *cur = (igtask*)tasks.head;
+        for(; cur; cur = (igtask*)cur->header.next)
+            if (strcmp(cur->command,
+                       supportedCommands[IG_DEV_GETFEATURES].text) == 0)
+                break;
+
+        /* since pci slot-cover devices have 6 channels we
+           need the feature information in order to tell what
+           channel mask to use. */
+        if (cur == NULL)
+        {
+            cur = enqueueTaskById(IG_DEV_GETFEATURES, NULL);
+            cur->isSubTask = true;
+        }
+    }
+
     for(x = 0; supportedCommands[x].text != NULL; x++)
         if (code == supportedCommands[x].code)
-        {
-            enqueueTask(supportedCommands[x].text, arg);
-            break;
-        }
+            return enqueueTask(supportedCommands[x].text, arg);
 
-    if (supportedCommands[x].text == NULL)
-        message(LOG_FATAL, "enqueueTaskById failed on code %d\n", code);
+    message(LOG_FATAL, "enqueueTaskById failed on code %d\n", code);
+    return NULL;
 }
 
 static struct poptOption options[] =

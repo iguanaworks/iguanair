@@ -288,23 +288,38 @@ int iguanaReadBlockFile(const char *filename, void **data)
     return retval;
 }
 
-int iguanaPinSpecToData(unsigned int value, void **data)
+int iguanaPinSpecToData(unsigned int value, void **data, bool slotDev)
 {
     int retval = -1;
 
     *data = malloc(2);
     if (data != NULL)
     {
-        ((char*)*data)[0] = (char)(value & 0x0F);
-        ((char*)*data)[1] = (char)((value & 0xF0) >> 4);
+        if (slotDev)
+        {
+            ((char*)*data)[0] = value;
+            ((char*)*data)[1] = 0;
+        }
+        /* In non-slot devices the GPIO pins are divided between 2
+           ports so we divide them into 2 different bytes here. */
+        else
+        {
+            ((char*)*data)[0] = (char)(value & 0x0F);
+            ((char*)*data)[1] = (char)((value & 0xF0) >> 4);
+        }
         retval = 2;
     }
 
     return retval;
 }
 
-unsigned char iguanaDataToPinSpec(const void *data)
+unsigned char iguanaDataToPinSpec(const void *data, bool slotDev)
 {
-    return (((char*)data)[0] & 0x0F) |
-          ((((char*)data)[1] & 0x0F) << 4);
+    if (slotDev)
+        return ((char*)data)[0];
+    else
+        /* In non-slot devices the GPIO pins are divided between 2
+           ports so we recombine the bytes here. */
+        return (((char*)data)[0] & 0x0F) |
+              ((((char*)data)[1] & 0x0F) << 4);
 }

@@ -157,8 +157,10 @@ IGUANAIR_API bool iguanaResponseIsError(const iguanaPacket response);
 /* a few helper functions for dealing with function arguments */
 IGUANAIR_API int iguanaReadPulseFile(const char *filename, void **pulses);
 IGUANAIR_API int iguanaReadBlockFile(const char *filename, void **data);
-IGUANAIR_API int iguanaPinSpecToData(unsigned int value, void **data);
-IGUANAIR_API unsigned char iguanaDataToPinSpec(const void *data);
+IGUANAIR_API int iguanaPinSpecToData(unsigned int value, void **data,
+                                     bool slotDev);
+IGUANAIR_API unsigned char iguanaDataToPinSpec(const void *data,
+                                               bool slotDev);
 
 /* The following enum is for configuring various settings for GPIO
  * pins.  An explanation of each value, from low to high bit, is
