@@ -31,12 +31,14 @@
 #define IG_PROTOCOL_VERSION 1
 
 #ifdef WIN32
-    typedef int bool;
-    enum
-    {
-        false,
-        true
-    };
+    #ifndef __cplusplus
+        typedef int bool;
+        enum
+        {
+            false,
+            true
+        };
+    #endif
 
     #include <windows.h>
     #define PIPE_PTR HANDLE
