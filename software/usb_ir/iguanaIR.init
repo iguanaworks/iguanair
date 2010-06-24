@@ -8,7 +8,7 @@
 # Should-Start:
 # Should-Stop:
 # Default-Start: 2 3 4 5 
-# Default-Stop: 0 1 2 6
+# Default-Stop: 0 1 6
 ### END INIT INFO
 #
 # Startup script for the Iguanaworks USB IR daemon.
