@@ -1,0 +1,129 @@
+#!/usr/bin/python -tt
+from __future__ import with_statement
+import optparse
+import sys
+import os
+import re
+
+#output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+#local variables
+null = open(os.devnull, 'r+')
+parser = optparse.OptionParser()
+options = None
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    global options
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= options.logLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if options.logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+def printUsage(msg = None):
+    global parser
+    if msg != None:
+        message(LOG_FATAL, msg + parser.get_usage())
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+def parseOptions():
+    global parser, options
+    parser.add_option('-l', '--log-file',
+                      metavar = 'FILE', dest = 'logFile',
+                      help = 'Specify a log to receive all messages.')
+    parser.add_option('-s', '--source-file',
+                      metavar = 'FILE', dest = 'srcFile',
+                      help = 'Specify a file containing igclient output.')
+    parser.add_option('-q', '--quiet',
+                      action = 'count',
+                      help = 'Decrease verbosity.')
+    parser.add_option('-v', '--verbose',
+                      action = 'count',
+                      help = 'Increase verbosity.')
+    (options, leftover) = parser.parse_args()
+    options.logLevel = LOG_NORMAL;
+    if options.verbose:
+        options.logLevel += options.verbose
+    if options.quiet:
+        options.logLevel -= options.quiet
+        if options.logLevel <= LOG_FATAL:
+            options.logLevel = LOG_FATAL
+    if options.logFile == '-':
+        options.logFile = None
+    if leftover:
+        printUsage("Unknown argument: " + leftover[0] + "\n")
+
+parseOptions()
+# open the log file if specified
+if options.logFile != None:
+    sys.log = open(options.logFile, "a", 1)
+    options.logFile = "-"
+
+if not options.srcFile:
+    message(LOG_FATAL, "A source file of igclient pulse/space output must be specified on the command line.")
+
+with open(options.srcFile, 'r') as input:
+    prevType = None
+    prevLen = 0
+    for line in input:
+        line = line.strip()
+        if re.match('received \d+ signal\(s\):', line) or \
+           line == 'receiver on: success':
+            continue
+
+        (stype, length) = line.split(': ')
+        if prevType == stype:
+            prevLen += int(length)
+        else:
+            if prevLen:
+                message(LOG_NORMAL, '%s: %s\n' % (prevType, prevLen))
+            prevLen = int(length)
+        prevType = stype
+
+    message(LOG_NORMAL, '%s: %s\n' % (prevType, prevLen))
