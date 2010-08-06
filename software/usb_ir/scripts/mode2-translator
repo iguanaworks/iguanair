@@ -4,6 +4,9 @@ import optparse
 import sys
 import os
 import re
+import struct
+
+import iguanaIR
 
 #output "constants"
 LOG_FATAL  = 0
@@ -77,9 +80,21 @@ def parseOptions():
     parser.add_option('-l', '--log-file',
                       metavar = 'FILE', dest = 'logFile',
                       help = 'Specify a log to receive all messages.')
+    parser.add_option('--collect',
+                      action = 'store_true',
+                      help = 'Connect to a device and listen for signals.')
+    parser.add_option('-d', '--device',
+                      metavar = 'ID', default = '0',
+                      help = 'Only useful with the --live option to connect to a specific device.')
+    parser.add_option('--keep-one',
+                      action = 'store_true', dest = 'one',
+                      help = 'Just print a single signal in --send format.')
     parser.add_option('-s', '--source-file',
                       metavar = 'FILE', dest = 'srcFile',
                       help = 'Specify a file containing igclient output.')
+    parser.add_option('-g', '--gap',
+                      type = 'int', dest = 'gap',
+                      help = 'Length of the gap in microseconds.')
     parser.add_option('-q', '--quiet',
                       action = 'count',
                       help = 'Decrease verbosity.')
@@ -99,16 +114,37 @@ def parseOptions():
     if leftover:
         printUsage("Unknown argument: " + leftover[0] + "\n")
 
-parseOptions()
-# open the log file if specified
-if options.logFile != None:
-    sys.log = open(options.logFile, "a", 1)
-    options.logFile = "-"
+def readLiveSignals(device):
+    results = []
 
-if not options.srcFile:
-    message(LOG_FATAL, "A source file of igclient pulse/space output must be specified on the command line.")
+    conn = iguanaIR.connect(device)
 
-with open(options.srcFile, 'r') as input:
+    req = iguanaIR.createRequest(iguanaIR.IG_DEV_RECVON)
+    if not iguanaIR.writeRequest(req, conn):
+        message(LOG_FATAL, "Failed to turn on the device's receiver.\n")
+
+    try:
+        while True:
+            response = iguanaIR.readResponse(conn, 1000);
+            if iguanaIR.responseIsError(response):
+                message(LOG_ERROR, "Error reading response from device.\n")
+                break
+
+            data = iguanaIR.removeData(response)
+            for signal in struct.unpack('I' * (len(data) / 4), data):
+                kind = 'space'
+                if signal & iguanaIR.IG_PULSE_BIT:
+                    kind = 'pulse'
+                result = '%s: %d\n' % (kind, signal & iguanaIR.IG_PULSE_MASK)
+                message(LOG_NORMAL, result)
+                results.append(result)
+    except KeyboardInterrupt:
+        message(LOG_NORMAL, 'Formatting collected signals....\n')
+
+    return results
+
+def parseSignals(input):
+    signals = [[]]
     prevType = None
     prevLen = 0
     for line in input:
@@ -121,9 +157,72 @@ with open(options.srcFile, 'r') as input:
         if prevType == stype:
             prevLen += int(length)
         else:
-            if prevLen:
-                message(LOG_NORMAL, '%s: %s\n' % (prevType, prevLen))
+            # record the signals discarding leading spaces
+            if prevLen and \
+               (len(signals[-1]) > 0 or prevType != 'space'):
+                message(LOG_DEBUG, '%s %s\n' % (prevType, prevLen))
+                if options.gap and \
+                   prevType == 'space' and prevLen > options.gap:
+                    signals.append([])
+                else:
+                    signals[-1].append(prevLen)
             prevLen = int(length)
         prevType = stype
 
-    message(LOG_NORMAL, '%s: %s\n' % (prevType, prevLen))
+    if prevType != 'space':
+        signals[-1].append(prevLen)
+        message(LOG_DEBUG, '%s %s\n' % (prevType, prevLen))
+
+    return signals
+
+parseOptions()
+# open the log file if specified
+if options.logFile != None:
+    sys.log = open(options.logFile, "a", 1)
+    options.logFile = "-"
+
+if options.collect:
+    input = readLiveSignals(options.device)
+elif not options.srcFile:
+    message(LOG_FATAL, "A source file of igclient pulse/space output must be specified on the command line.\n")
+else:
+    input = open(options.srcFile, 'r')
+
+signals = parseSignals(input)
+
+# some people just want the first signal in --send format
+if options.one:
+    signals[1:] = []
+signals[10:] = []
+
+# find the max length signal
+length = 0
+for signal in signals:
+    if len(signal) > length:
+        length = len(signal)
+
+text = ''
+# print a header only if we need it
+if len(signals) > 1:
+    text += 'action '
+    parts = []
+    for x in range(len(signals)):
+        parts.append('signal%d' % x)
+    text += ' | '.join(parts) + '\n'
+
+    text += re.sub('[^|]', '-', text).replace('|', '+') + '\n'
+
+# print in a nice format
+for x in range(length):
+    if x % 2 == 0:
+        text += 'pulse  '
+    else:
+        text += 'space  '
+
+    parts = []
+    for signal in signals:
+        if len(signal) > x:
+            parts.append('%6d' % signal[x])
+    text += '  | '.join(parts) + '\n'
+
+message(LOG_NORMAL, text)
