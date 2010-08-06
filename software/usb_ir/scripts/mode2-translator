@@ -114,7 +114,7 @@ def parseOptions():
     if leftover:
         printUsage("Unknown argument: " + leftover[0] + "\n")
 
-def readLiveSignals(device):
+def collectLiveSignals(device):
     results = []
 
     conn = iguanaIR.connect(device)
@@ -122,15 +122,19 @@ def readLiveSignals(device):
     req = iguanaIR.createRequest(iguanaIR.IG_DEV_RECVON)
     if not iguanaIR.writeRequest(req, conn):
         message(LOG_FATAL, "Failed to turn on the device's receiver.\n")
+    response = iguanaIR.readResponse(conn, 1000);
+    if iguanaIR.responseIsError(response):
+        message(LOG_ERROR, "Error reading response from device.\n")
 
     try:
         while True:
             response = iguanaIR.readResponse(conn, 1000);
             if iguanaIR.responseIsError(response):
-                message(LOG_ERROR, "Error reading response from device.\n")
+                message(LOG_ERROR, "Error reading signals from device.\n")
                 break
 
             data = iguanaIR.removeData(response)
+            message(LOG_NORMAL, 'received %d signal(s):\n' % (len(data) / 4))
             for signal in struct.unpack('I' * (len(data) / 4), data):
                 kind = 'space'
                 if signal & iguanaIR.IG_PULSE_BIT:
