@@ -118,6 +118,8 @@ def collectLiveSignals(device):
     results = []
 
     conn = iguanaIR.connect(device)
+    if conn == -1:
+        message(LOG_FATAL, "Failed to connect to the device.\n")
 
     req = iguanaIR.createRequest(iguanaIR.IG_DEV_RECVON)
     if not iguanaIR.writeRequest(req, conn):
@@ -127,6 +129,8 @@ def collectLiveSignals(device):
         message(LOG_ERROR, "Error reading response from device.\n")
 
     try:
+        message(LOG_NORMAL, "This program will now collect signals from USB device %s.  Press ctrl-c to stop and reformat these signals.\n" % device)
+
         while True:
             response = iguanaIR.readResponse(conn, 1000);
             if iguanaIR.responseIsError(response):
@@ -185,10 +189,12 @@ if options.logFile != None:
     sys.log = open(options.logFile, "a", 1)
     options.logFile = "-"
 
+if not options.srcFile and not options.collect:
+    message(LOG_NORMAL, "No source file specified on the command line.  Defaulting to live collection\n")
+    options.collect = True
+
 if options.collect:
-    input = readLiveSignals(options.device)
-elif not options.srcFile:
-    message(LOG_FATAL, "A source file of igclient pulse/space output must be specified on the command line.\n")
+    input = collectLiveSignals(options.device)
 else:
     input = open(options.srcFile, 'r')
 

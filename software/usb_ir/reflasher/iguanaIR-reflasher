@@ -15,8 +15,7 @@
 # * See LICENSE for license details.
 # */
 
-import warnings
-import traceback
+import optparse
 import tempfile
 import struct
 import errno
@@ -49,27 +48,10 @@ msgPrefixes = [
 
 FLASHER_VERSION = 0xFF00
 
-null = open(os.devnull,'r+')
-deviceDir = iguanaIR.IGSOCK_NAME
-
 #local variables
-currentLevel = LOG_NORMAL
-logFile = None
-UNSAFE = True
-usb_ir = None
-loader = None
-body = None
-fullFlash = False
-targetVersion = None
-test = False
-forceFlash = False
-userSaysKeep = False
-userSaysKeepAll = False
-onlyOne = True
-defaultType = 'c'
-devOK = False
-skipReceiver = False
-pauseAtStart = True
+null = open(os.devnull,'r+')
+parser = optparse.OptionParser()
+options = None
 
 # Global Message Flag -- only print can't list devices once
 MessageCannotlistdevice = False
@@ -88,13 +70,14 @@ def dieCleanly(level = None):
 
 def message(level, msg):
     """Print a message to a certain debug level"""
+    global options
     retval = None
 
-    if level <= currentLevel or level == LOG_ALWAYS:
+    if level <= options.logLevel or level == LOG_ALWAYS:
         out = sys.stdout
 
         # if logfile is open print to it instead
-        if logFile == "-":
+        if options.logFile == "-":
             out = sys.log
         elif level <= LOG_WARN:
             out = sys.stderr
@@ -108,107 +91,112 @@ def message(level, msg):
 
     return retval
 
-
 def printUsage(msg = None):
-    usage = "Usage: " + sys.argv[0] + " [OPTION]..." + """
-
---blank-pages : Write out blank pages in addition to code pages.
-
---body : Specify the file to read the body from.
-
---dry-run : Do not write any "dangerous" pages.
-
---force : Write the firmware regardless of the device version.
-
---flash-multiple : Loop flashing and testing multiple devices in a row.
-
---go : Start flashing without waiting for the user to confirm.
-
--h
---help : Print this usage message.
-
---keep-loader : Keep the loader regardless of version detection.
-
---loader : Specify the file to read the loader from.
-
--l
---log-file : Specify a log to receive all messages.
-
---old-firmware : Specify the file to read old (monolithic) firmware from.
-
--q
---quiet : Decrease verbosity.
-
--v
---verbose : Increase verbosity.
-"""
-
+    global parser
     if msg != None:
-        message(LOG_FATAL, msg + usage)
+        message(LOG_FATAL, msg + parser.get_usage())
     message(LOG_ALWAYS, usage)
     dieCleanly(LOG_ALWAYS)
 
+def parseOptions():
+    global parser, options
 
-index = 1
-while index < len(sys.argv):
-    arg = sys.argv[index]
-    if arg == "--blank-pages":
-        fullFlash = True
-    elif arg == "--devel-ok":
-        devOK = True
-    elif arg == "-h" or arg == "--help":
-        printUsage()
-    elif arg == "--loader":
-        index += 1
-        loader = sys.argv[index]
-    elif arg == "--force":
-        forceFlash = True
-    elif arg == "--flash-multiple":
-        onlyOne = False
-    elif arg == "--go":
-        pauseAtStart = False
-    elif arg == "--body":
-        index += 1
-        body = sys.argv[index]
-    elif arg == "--old-firmware":
-        index += 1
-        usb_ir = sys.argv[index]
-    elif arg == '--keep-loader':
-        userSaysKeep = True
-    elif arg == '--keep-all':
-        userSaysKeepAll = True
-    elif arg == "-l" or arg == "--log-file":
-        index += 1
-        logFile = sys.argv[index]
-        if logFile == "-":
-            logFile = None
-    elif arg == "-q" or arg == "--quiet":
-        if currentLevel > LOG_FATAL:
-            currentLevel -= 1
-    elif arg == "--skip-receiver":
-        skipReceiver = True
-    elif arg == "-t" or arg == "--type":
-        index += 1
-        defaultType = sys.argv[index]
-    elif arg == "-v" or arg == "--verbose":
-        currentLevel += 1
-    elif arg == "--version":
-        index += 1
-        targetVersion = sys.argv[index]
-    elif arg == "--dry-run":
-        UNSAFE = False
-    elif arg == "--test":
-        test = True
-    else:
-        printUsage("Unknown argument: " + arg + "\n")
-    index += 1
+    parser.add_option('--blank-pages',
+                      action = 'store_true',
+                      help = 'Write blank pages around the code pages.')
+    
+    parser.add_option('--dry-run', default = True,
+                      action = 'store_false', dest = 'UNSAFE',
+                      help = 'Do not write any "dangerous" pages.')
 
+    parser.add_option('--force',
+                      action = 'store_true',
+                      help = 'Write the firmware no matter what.')
+
+    parser.add_option('--flash-multiple',
+                      action = 'store_true',
+                      help = 'Loop through flashing multiple devices.')
+
+    parser.add_option('--go', default = True,
+                      action = 'store_false', dest = 'pauseAtStart',
+                      help = 'Do not wait for the user to read the warnings.')
+
+    parser.add_option('-t', '--type',
+                      metavar = 'TYPE', default = 'c',
+                      help = 'Specify the device type: u,l,h,s,p.')
+
+    parser.add_option('--version',
+                      metavar = '0xVERSION',
+                      help = 'Specify a hexadecimal target version.')
+
+    parser.add_option('--body',
+                      metavar = 'FILE',
+                      help = 'Specify the file to read the body from.')
+
+    parser.add_option('--keep-loader',
+                      action = 'store_true',
+                      help = 'Keep the loader currently flashed loader.')
+
+    parser.add_option('--loader',
+                      metavar = 'FILE',
+                      help = 'Specify the file to read the loader from.')
+
+    parser.add_option('--old-firmware',
+                      metavar = 'FILE',
+                      help = 'Specify a file of old (monolithic) firmware.')
+
+
+    parser.add_option('-l', '--log-file',
+                      metavar = 'FILE', dest = 'logFile',
+                      help = 'Specify a log to receive all messages.')
+
+    parser.add_option('-q', '--quiet',
+                      action = 'count',
+                      help = 'Decrease verbosity.')
+
+    parser.add_option('-v', '--verbose',
+                      action = 'count',
+                      help = 'Increase verbosity.')
+
+    # some options are only intended for internal company use, so no help
+    parser.add_option("--devel-ok",
+                      action = 'store_true',
+                      help = optparse.SUPPRESS_HELP)
+
+    parser.add_option("--keep-all",
+                      action = 'store_true',
+                      help = optparse.SUPPRESS_HELP)
+
+    parser.add_option("--test",
+                      action = 'store_true',
+                      help = optparse.SUPPRESS_HELP)
+
+    parser.add_option("--skip-receiver",
+                      action = 'store_true',
+                      help = optparse.SUPPRESS_HELP)
+
+
+
+    (options, leftover) = parser.parse_args()
+    options.logLevel = LOG_NORMAL;
+    if options.verbose:
+        options.logLevel += options.verbose
+    if options.quiet:
+        options.logLevel -= options.quiet
+        if options.logLevel <= LOG_FATAL:
+            options.logLevel = LOG_FATAL
+    if options.logFile == '-':
+        options.logFile = None
+    if leftover:
+        printUsage("Unknown argument: " + leftover[0] + "\n")
+
+parseOptions()
 # open the log file if specified
-if logFile != None:
-    sys.log = open(logFile, "a", 1)
-    logFile = "-"
+if options.logFile != None:
+    sys.log = open(options.logFile, "a", 1)
+    options.logFile = "-"
 
-def listDevices(path = deviceDir):
+def listDevices(path = iguanaIR.IGSOCK_NAME):
     global MessageCannotlistdevice
     devices = []
     try:
@@ -333,7 +321,7 @@ def deviceVersion(target = None):
     message(LOG_INFO, "Found device version 0x%x\n" % version)
 
     if target and target != version:
-        if not UNSAFE:
+        if not options.UNSAFE:
             message(LOG_NORMAL, "Dry run completed.\n")
             raise KeyboardInterrupt
         else:
@@ -416,7 +404,7 @@ def preparePages(pages):
 
         # construct 68 data bytes we need
         page['data'] = chr(page['start'] / 64)
-        if UNSAFE:
+        if options.UNSAFE:
             page['data'] += chr(0x42)
         else:
             page['data'] += chr(0)
@@ -453,7 +441,7 @@ def writePagesToDevice(pages):
     for page in pages:
         count += 1
 
-        if page['start'] == 0 and not UNSAFE:
+        if page['start'] == 0 and not options.UNSAFE:
             message(LOG_WARN, "Not writing page 0 during dry run.\n")
             continue
 
@@ -482,20 +470,20 @@ def writePagesToDevice(pages):
         deviceTransaction(iguanaIR.IG_DEV_RESET)
     return True
 
-def writeHexFile(filename, fullFlash = False, setFeatures = False):
+def writeHexFile(filename, blank_pages = False, setFeatures = False):
     blanks = []
 
     # read the firmware memory map in
     pages = readPages(open(filename, 'r'))
 
-    if fullFlash:
+    if blank_pages:
         blanks = range(128)
         for page in pages:
             blanks.remove(page['start'] / 64)
 
     # place the features if necessary (and possible)
     if setFeatures and \
-       (targetVersion >= 0x0101 or targetVersion == 0x0000):
+       (options.version >= 0x0101 or options.version == 0x0000):
         message(LOG_INFO, "Setting features to 0x%x\n" % setFeatures)
         for page in pages:
             if page['start'] == 0xC00:
@@ -551,7 +539,7 @@ def findHexFile(type, target = None, mustFind = True):
                 latest = hex
                 break
     else:
-        if target is None and devOK:
+        if target is None and options.devel_ok:
             best = glob.glob(os.path.join(rootdir,
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
@@ -571,21 +559,28 @@ def hexVersion(filename):
     return int(re.search('.*?(\d+)\.hex$', filename).group(1))
 
 def reflashDevice(features):
+    global options
     wroteLoader = False
     wrote = False
     id = None
 
     # not necessary when only writing the body
     version = deviceVersion()
-    keepLoader = userSaysKeep
-    if (not usb_ir and \
-        (version >> 8) == hexVersion(loader) and hexVersion(loader) != 0) or \
-       (usb_ir and version == hexVersion(usb_ir)):
-        keepLoader = not forceFlash
+    keepLoader = options.keep_loader
+    if (not options.old_firmware and \
+        (version >> 8) == hexVersion(options.loader) and \
+        hexVersion(options.loader) != 0) or \
+       (options.old_firmware and version == hexVersion(options.old_firmware)):
+        keepLoader = not options.force
 
     # get the id so we can reset it at the end
-    if not forceFlash and (version & 0xFF) != 0x00:
+    if not options.force and (version & 0xFF) != 0x00:
         id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
+        # Check if the ID fetch crashed the device.  The
+        # deviceVersion() function should trigger a replug if
+        # necessary
+        deviceVersion()
+
     # write a single page at the end of the device to avoid id problems
     page = { 'start' : 8128, 'bytes' : ['30'] * 64 }
     page['bytes'][0] = '7F'
@@ -601,39 +596,40 @@ def reflashDevice(features):
         deviceVersion(FLASHER_VERSION)
         wrote = True
 
-    # put on the usb_ir if that's the final target version
-    if usb_ir is not None:
+    # put on the options.old_firmware if that's the final target version
+    if options.old_firmware is not None:
         if keepLoader:
             message(LOG_NORMAL, "Keeping the previously installed firmware.\n")
         else:
             sys.stdout.write('  Writing usb_ir to the device:\n')
-            if not writeHexFile(usb_ir, fullFlash):
+            if not writeHexFile(options.old_firmware, options.blank_pages):
                 return False
-            deviceVersion(hexVersion(usb_ir))
+            deviceVersion(hexVersion(options.old_firmware))
             wrote = True
     # put on the boot loader and the correct body
     else:
         version = deviceVersion()
-        if keepLoader and body is not None:
+        if keepLoader and options.body is not None:
             message(LOG_NORMAL, "Keeping the previously installed loader.\n")
         else:
             sys.stdout.write('  Writing loader to the device:\n')
-            blank = fullFlash
-            if body is None:
+            blank = options.blank_pages
+            if options.body is None:
                 blank = True
-            if not writeHexFile(loader, blank):
+            if not writeHexFile(options.loader, blank):
                 return False
-            version = deviceVersion(hexVersion(loader) << 8)
+            version = deviceVersion(hexVersion(options.loader) << 8)
             wroteLoader = True
             wrote = True
 
-        if body is not None:
+        if options.body is not None:
             sys.stdout.write('  Writing body to the device:\n')
             checkingIDs = ord(deviceTransaction(iguanaIR.IG_DEV_IDSTATE)) != 0
             if deviceTransaction(iguanaIR.IG_DEV_IDSOFF):
-                if not writeHexFile(body, setFeatures = features):
+                if not writeHexFile(options.body, setFeatures = features):
                     return False
-                deviceVersion((targetVersion & 0xFF00) | hexVersion(body))
+                deviceVersion((options.version & 0xFF00) | \
+                               hexVersion(options.body))
                 if checkingIDs:
                     deviceTransaction(iguanaIR.IG_DEV_IDSON)
             wrote = True
@@ -645,7 +641,8 @@ def reflashDevice(features):
         message(LOG_NORMAL, "Clearing device id.\n")
         deviceTransaction(iguanaIR.IG_DEV_SETID, '')
 
-    if wrote and (deviceVersion() < 0x0100 or (test and not wroteLoader)):
+    if wrote and (deviceVersion() < 0x0100 or \
+                  (options.test and not wroteLoader)):
         replugWarning()
     return True
 
@@ -777,55 +774,6 @@ pulse 448
 space 1237
 pulse 448
 """
-    panasonicPower = """pulse 3498
-space 3157
-pulse 981
-space 2368
-pulse 1002
-space 2325
-pulse 1002
-space 618
-pulse 1002
-space 2325
-pulse 874
-space 2474
-pulse 853
-space 768
-pulse 874
-space 768
-pulse 874
-space 2474
-pulse 874
-space 768
-pulse 874
-space 768
-pulse 853
-space 768
-pulse 874
-space 768
-pulse 874
-space 768
-pulse 874
-space 2474
-pulse 874
-space 768
-pulse 874
-space 768
-pulse 874
-space 2474
-pulse 874
-space 2474
-pulse 874
-space 768
-pulse 874
-space 2474
-pulse 874
-space 2474
-pulse 853
-space 2496
-pulse 832
-"""
-
     tivoRightArrow = """pulse 9152
 space 4458
 pulse 554
@@ -899,9 +847,110 @@ space 2176
 pulse 576
 """
 
+    panasonic0 = """pulse 3519
+space 1685
+pulse 469
+space 362
+pulse 469
+space 1216
+pulse 469
+space 341
+pulse 469
+space 362
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 469
+space 341
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 469
+space 362
+pulse 490
+space 362
+pulse 469
+space 1237
+pulse 469
+space 362
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 469
+space 362
+pulse 469
+space 362
+pulse 469
+space 362
+pulse 490
+space 341
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 1216
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 341
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 341
+pulse 490
+space 1216
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 1216
+pulse 490
+space 1216
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 469
+space 362
+pulse 490
+space 1216
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 490
+space 1216
+pulse 490
+space 1216
+pulse 490
+space 362
+pulse 469
+space 362
+pulse 469
+space 1237
+pulse 490
+"""
+
     # store the requested signal in a temporary file
     output = tempfile.NamedTemporaryFile(delete = False)
-    output.write(panasonicPower)
+    output.write(panasonic0)
     output.close()
 
     # read that file using the readPulseFile API (kinda round-about, I know)
@@ -913,37 +962,37 @@ pulse 576
     deviceTransaction(iguanaIR.IG_DEV_SEND, data)
 
 # find the file names to fufill the version requirements
-if targetVersion is not None:
-    targetVersion = int(targetVersion, 0)
-    if targetVersion < 0x0100:
-        if usb_ir is None:
-            usb_ir = targetVersion
+if options.version is not None:
+    options.version = int(options.version, 0)
+    if options.version < 0x0100:
+        if options.old_firmware is None:
+            options.old_firmware = options.version
     else:
-        if loader is None:
-            loader = targetVersion >> 8
-        if body is None:
-            body = targetVersion & 0xFF
+        if options.loader is None:
+            options.loader = options.version >> 8
+        if options.body is None:
+            options.body = options.version & 0xFF
 
 # find the files that will be loaded onto the device
-if usb_ir is None:
-    if loader is None or isinstance(loader, int):
+if options.old_firmware is None:
+    if options.loader is None or isinstance(options.loader, int):
         # find the most recent loader
-        loader = findHexFile('loader', loader)
+        options.loader = findHexFile('loader', options.loader)
 
-    if loader is None:
-        usb_ir = findHexFile('usb_ir')
-    elif body is None or isinstance(body, int):
-        body = findHexFile('body', body, body != 0)
-elif isinstance(usb_ir, int):
-    usb_ir = findHexFile('usb_ir', usb_ir)
+    if options.loader is None:
+        options.old_firmware = findHexFile('usb_ir')
+    elif options.body is None or isinstance(options.body, int):
+        options.body = findHexFile('body', options.body, options.body != 0)
+elif isinstance(options.old_firmware, int):
+    options.old_firmware = findHexFile('usb_ir', options.old_firmware)
 
 # compute the target version from the files to report to the user
-if usb_ir:
-    targetVersion = hexVersion(usb_ir)
+if options.old_firmware:
+    options.version = hexVersion(options.old_firmware)
 else:
-    targetVersion = hexVersion(loader) << 8
-    if body:
-        targetVersion |= hexVersion(body)
+    options.version = hexVersion(options.loader) << 8
+    if options.body:
+        options.version |= hexVersion(options.body)
 message(LOG_ALWAYS, """WARNING! WARNING! WARNING!
 
 This application is used to reflash your IguanaWorks USB IR transceiver.
@@ -967,8 +1016,8 @@ for example) will not work until the device is powered off and then
 on.
 
 Using firmware version 0x%4.4x
-""" % targetVersion)
-if pauseAtStart:
+""" % options.version)
+if options.pauseAtStart:
     message(LOG_ALWAYS,
             "\n---- Press enter to proceed or ctrl-c to stop. ----\n")
     try:
@@ -979,7 +1028,7 @@ if pauseAtStart:
 
 # must default to at least a 1 character string
 default = ' '
-line = defaultType
+line = options.type
 while True:
     try:
         # check user input
@@ -992,7 +1041,7 @@ while True:
                 break
 
             selection = '[u/s/h/l/p]'.replace(default.lower(), default)
-            if default.strip() and onlyOne:
+            if default.strip() and not options.flash_multiple:
                 raise KeyboardInterrupt()
 
             message(LOG_NORMAL, """
@@ -1028,32 +1077,38 @@ What kind of device is plugged in?
             type = 'unenclosed'
             plugs = ()
             leds = (0x0,)
+            gpios = ()
             features = 0
         elif type == 'p':
             type = 'pci slot device'
             plugs = (0x3F, 0x1, 0x2, 0x4, 0x8, 0x10, 0x20,
                      0x10, 0x8, 0x4, 0x2, 0x1, 0x3F)
             leds = ()
+            gpios = (0x80, 0x00, 0x80)
             features = iguanaIR.IG_SLOT_DEV
         elif type == 's':
             type = '2 socket'
             plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
             leds = ()
+            gpios = ()
             features = iguanaIR.IG_HAS_SOCKETS
         elif type == 'h':
             type = 'hybrid'
             plugs = (0xC, 0x4, 0x8, 0x4, 0xC)
             leds = (0x1,)
+            gpios = ()
             features = iguanaIR.IG_HAS_BOTH
         elif type == 'l':
             type = '2 LED'
             plugs = ()
             leds = (0x1, 0x4)
+            gpios = ()
             features = iguanaIR.IG_HAS_LEDS
 
         # reflash the device with information about what kind it is
         message(LOG_NORMAL, 'Writing firmware to "%s" device.\n' % type)
-        if (not userSaysKeepAll and not reflashDevice(features)) or not test:
+        if (not options.keep_all and not reflashDevice(features)) or \
+           not options.test:
             continue
 
         # connect to the device and check the version
@@ -1065,7 +1120,7 @@ What kind of device is plugged in?
             message(LOG_ERROR, "This script cannot test a version 0x%x device.\n" % version)
             continue
 
-        if not skipReceiver:
+        if not options.skip_receiver:
             message(LOG_NORMAL, "Checking receiver.\n")
             if not checkReceiver():
                 message(LOG_ERROR, "Receiver FAILURE.\n")
@@ -1097,6 +1152,17 @@ What kind of device is plugged in?
                                   chr(channels))
                 sendPanasonicPower()
 
+        if gpios:
+            if type == 'p':
+                message(LOG_NORMAL, "Testing the indicator LED.\n")
+            else:
+                message(LOG_NORMAL, "Press ENTER to start gpio tests.\n")
+            sys.stdin.readline()
+            for mask in gpios:
+                deviceTransaction(iguanaIR.IG_DEV_SETPINS,
+                                  chr(mask) + chr(0x00))
+                time.sleep(0.1)
+
     except KeyboardInterrupt:
-        if type is None or onlyOne:
+        if type is None or not options.flash_multiple:
             break
