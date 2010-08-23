@@ -1,0 +1,11 @@
+pulse 8000
+space 8000
+pulse 4000
+space 4000
+pulse 2000
+space 2000
+pulse 1000
+space 1000
+pulse  500
+space  500
+pulse 8000
