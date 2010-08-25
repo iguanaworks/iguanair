@@ -143,15 +143,11 @@ tx_pins_off:
 
 ; FUNCTION rx_disable disables the IR receiver
 rx_disable:
-    ; disable the timer capture (tcap) interrupt
-    mov A, REG[INT_MSK1]
-    and A, ~0b10000000
-    mov REG[INT_MSK1], A
+	; disable the timer capture (tcap) interrupt
+    and REG[INT_MSK1], ~0b10000000
 
     ; disable the timer wrap (twrap) interrupt
-    mov A, REG[INT_MSK2]
-    and A, ~0b00000010
-    mov REG[INT_MSK2], A
+    and REG[INT_MSK2], ~0b00000010
 
     ; make sure the transmit LEDs are OFF
     call tx_pins_off
@@ -172,18 +168,24 @@ rx_reset:
     and A, RX_ON_FLAG
 	jz rx_reset_done
 
-    ; enable the timer capture interrupt
-    mov A, REG[INT_MSK1]
-    or A, 0b10000000         ; tcap interrupt enable
-    mov REG[INT_MSK1], A
+	; clear the timer capture registers from when the receiver was "off"
+    mov REG[FRTMRL], 0      ; reset timer low byte
+    mov REG[FRTMRH], 0      ; reset timer high byte
+    mov REG[TCAPINTS], 0x03 ; clear int status
+	; acceptably small race between this and the next instruction
 
-    ; enable the timer wrap interrupt
+	; need to clear any pending interrupts
+    and REG[INT_CLR1], ~0b10000000         ; tcap interrupt
+    and REG[INT_CLR2], ~0b00000010         ; twrap interrupt
+
+    ; enable the timer capture interrupt
+    or REG[INT_MSK1], 0b10000000
+
+    ; enable the timer wrap interrupt unless we're in repeater mode
     mov A, [rx_flags]        ; check if we're in repeater mode
     and A, RX_REPEATER_FLAG
 	jnz rx_reset_done
-    mov A, REG[INT_MSK2]
-    or A, 0b00000010         ; twrap interrupt enable
-    mov REG[INT_MSK2], A
+    or REG[INT_MSK2], 0b00000010
 
   rx_reset_done:
     ret
