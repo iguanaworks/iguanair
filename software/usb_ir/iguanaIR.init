@@ -26,10 +26,26 @@ IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --r
 
 # We need to know what helper functions are legal, so detect the
 # distro.  Override this in /etc/defaults/iguanaIR
-if [ "$DISTRO" = "" ]; then
-  DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
+# First try lsb, if it exists, if not then use our
+# /etc/issue hack.
+
+LSBLOCATION=`which lsb_release`
+
+
+
+if [ "$DISTRO" == "" ]; then
+
+	if [ -a "$LSBLOCATION" ]; then
+		DISTRO=`lsb_release -s -i`
+	else
+		DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
+	fi
 fi
-if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" ]; then
+
+#convert to lower case 
+DISTRO=`echo ${DISTRO,,}`
+
+if [ "$DISTRO" == "fedora" -o "$DISTRO" == "mythdora" ]; then
     # welcome to fedora land
     . /etc/init.d/functions
 
@@ -46,7 +62,7 @@ if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" ]; then
     {
         echo
     }
-elif [ "$DISTRO" = "gentoo" ]; then
+elif [ "$DISTRO" == "gentoo" ]; then
     # hello gentoo?
     . /etc/init.d/functions.sh
     log_begin_msg()
@@ -64,7 +80,6 @@ else
     # ubuntu and others
     . /lib/lsb/init-functions
 fi
-
 # common defaults
 IGPATH=/usr/bin/igdaemon
 LOGFILE=/var/log/iguanaIR.log
