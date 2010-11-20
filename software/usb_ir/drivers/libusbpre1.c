@@ -272,7 +272,7 @@ static bool updateDeviceList(deviceList *devList)
 
                         /* basic stuff */
                         newDev->info.type = list->ids[pos];
-                        newDev->busIndex = busIndex;
+                        newDev->busIndex = (uint8_t)busIndex;
                         newDev->devIndex = LIBUSB_DEVNUM(dev);
 
                         /* determine the id (reusing if possible) */

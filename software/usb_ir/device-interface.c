@@ -293,7 +293,7 @@ static void computeCarrierDelays(uint32_t carrier, unsigned char *delays,
 
     /* TODO: this next line is too magical */
     sevens = (4 - (cycles % 4)) % 4;
-    fours = (cycles - sevens * 7) / 4;
+    fours = (unsigned char)((cycles - sevens * 7) / 4);
 
     /* NOTE: We will never need more than 4 7s due to the properties
        of mathmatical groups. */
@@ -357,7 +357,7 @@ static void* generateIDBlock(const char *label, uint16_t version)
             for(y = 0; y < 8; y++)
             {
                 data[len++] = 0x55;
-                data[len++] = packet_start + y;
+                data[len++] = (unsigned char)(packet_start + y);
                 data[len++] = buf[x * 8 + y];
             }
             /* load the packet size into A (or X) */
@@ -479,7 +479,7 @@ packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
     else if (type->direction != CTL_TODEV)
         message(LOG_ERROR, "Cannot request to send a FROMDEV packet (0x%x %x %x).\n",
                 request->code, CTL_TODEV, type->direction);
-    else if (! payloadMatch(type->outData, request->dataLen))
+    else if (! payloadMatch((unsigned char)type->outData, (unsigned char)request->dataLen))
         message(LOG_ERROR,
                 "Request size does not match type specification (%d != %d)\n",
                 request->dataLen, type->outData);
@@ -612,7 +612,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         /* as of version 3 SEND and PINBURST require a length argument */
         else if (idev->version >= 3)
         {
-            msg[length++] = request->dataLen;
+            msg[length++] = (unsigned char)request->dataLen;
 
             /* select which channels to transmit on */
             if (request->code == IG_DEV_SEND ||
@@ -716,12 +716,10 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                         message(LOG_ERROR,
                                 "Bad ack for send: 0x%x != 0x%x\n",
                                 pos->code, request->code);
-                    else if (! payloadMatch(type->inData, pos->dataLen))
+                    else if (! payloadMatch((unsigned char)type->inData, (unsigned char)pos->dataLen))
                         message(LOG_ERROR, "Response size does not match specification (version 0x%x: %d != %d)\n", idev->version, pos->dataLen,type->inData);
                     else
                     {
-                        unsigned int difference;
-
                         /* store the retrieved response */
                         if (response != NULL)
                             *response = pos;
@@ -731,10 +729,9 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
 
                         /* how long did this all take? */
                         now = microsSinceX();
-                        difference = now - then;
                         message(LOG_INFO,
-                                "Transaction: 0x%x (%d microseconds)\n",
-                                request->code, difference);
+                                "Transaction: 0x%x (%lld microseconds)\n",
+                                request->code, now - then);
                         retval = true;
                     }
                 }

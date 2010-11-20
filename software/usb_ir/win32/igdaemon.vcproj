@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib Setupapi.lib"
+				AdditionalDependencies="ws2_32.lib libpopt.lib Setupapi.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;libusb-win32&quot;;popt"
+				AdditionalLibraryDirectories="popt"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/igdaemon.pdb"
 				SubSystem="1"

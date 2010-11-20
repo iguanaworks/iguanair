@@ -6,7 +6,7 @@
 %{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
 Name:           iguanaIR
-Version:        1.0pre2
+Version:        1.0
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
@@ -113,6 +113,9 @@ fi
 /usr/bin/%{name}-reflasher
 
 %changelog
+* Sat Nov 20 2010 Joseph Dunn <jdunn@iguanaworks.net> 1.0-1
+- Significant release to try and get back on track.
+
 * Sat Jun 27 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.96-1
 - Bug fix release.
 

@@ -478,7 +478,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
                 else
                 {
                     data = malloc(1);
-                    ((char*)data)[0] = value;
+                    ((char*)data)[0] = (char)value;
                     result = 1;
                 }
             }
@@ -578,7 +578,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
                 b[2] = (c & 0x0F) << 4 | 0x0D;
                 b[3] = (c & 0x0F) << 4 | 0x0C;
             }
-            ((unsigned char*)data)[0] = x * 4;
+            ((unsigned char*)data)[0] = (unsigned char)(x * 4);
             
             break;
         }
@@ -771,7 +771,7 @@ int main(int argc, const char **argv)
 
     while(x != -1)
     {
-        switch(x = poptGetNextOpt(poptCon))
+        switch(x = (unsigned short)poptGetNextOpt(poptCon))
         {
         /* device commands */
         case IG_DEV_GETVERSION:

@@ -297,7 +297,7 @@ int iguanaPinSpecToData(unsigned int value, void **data, bool slotDev)
     {
         if (slotDev)
         {
-            ((char*)*data)[0] = value;
+            ((char*)*data)[0] = value & 0xFF;
             ((char*)*data)[1] = 0;
         }
         /* In non-slot devices the GPIO pins are divided between 2
