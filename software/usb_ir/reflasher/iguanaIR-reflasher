@@ -556,7 +556,7 @@ def findHexFile(type, target = None, mustFind = True):
     return latest
 
 def hexVersion(filename):
-    return int(re.search('.*?(\d+)\.hex$', filename).group(1))
+    return int(re.search('.*?(\d+).*\.hex$', filename).group(1))
 
 def reflashDevice(features):
     global options
