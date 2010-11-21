@@ -1,9 +1,14 @@
 include Make.settings
 
+LIBDIR=@libdir@
+BINDIR=@bindir@
+
+
+
 CFLAGS += -I. -fvisibility=hidden -DIGUANAIR_EXPORTS
 
 ifdef DARWIN
-  LINKARGS   = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0 -install_name $(prefix)/$(LIBDIR)/$(LIBNAME)
+  LINKARGS   = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0 -install_name $(DESTDIR)/$(LIBDIR)/$(LIBNAME)
   EXPORTARGS =
 else
   LINKARGS   = -Wl,-soname=$(LIBNAME),--version-script=$(srcdir)/ig.ver
@@ -51,7 +56,7 @@ install-python:
 
 .PHONY: install-reflasher
 install-reflasher:
-	$(MAKE) -C $(srcdir)/reflasher prefix=$(prefix) install
+	$(MAKE) -C $(srcdir)/reflasher prefix=$(prefix) LIBDIR=$(LIBDIR) BINDIR=$(BINDIR) install
 
 uninstall: uninstall-python uninstall-reflasher
 .PHONY: uninstall-python
@@ -61,7 +66,7 @@ uninstall-python:
 
 .PHONY: uninstall-reflasher
 uninstall-reflasher:
-	$(MAKE) -C $(srcdir)/reflasher prefix=$(prefix) uninstall
+	$(MAKE) -C $(srcdir)/reflasher prefix=$(prefix) LIBDIR=$(LIBDIR) BINDIR=$(BINDIR) uninstall
 
 iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python -I$(srcdir) $(<F)
@@ -95,20 +100,20 @@ ifneq ($(LIBNAME),libiguanaIR.$(SHAREEXT))
 install: install-symlink
 .PHONY: install-symlink
 install-symlink:
-	install -d $(DESTDIR)$(prefix)/$(LIBDIR)
-	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
-	ln -s $(LIBNAME) $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	install -d $(DESTDIR)/$(LIBDIR)
+	rm -f $(DESTDIR)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	ln -s $(LIBNAME) $(DESTDIR)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
 endif
 
 .PHONY: install
 install: all
-	install -d $(DESTDIR)$(prefix)/bin
-	install igclient $(DESTDIR)$(prefix)/bin/igclient
-	install igdaemon $(DESTDIR)$(prefix)/bin/igdaemon
-	install -d $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR
-	install $(LIBNAME) $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
-	install drivers/libusbpre1.$(SHAREEXT) $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR/libusbpre1.$(SHAREEXT)
-	install drivers/libusb.$(SHAREEXT) $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
+	install -d $(DESTDIR)/$(BINDIR)
+	install igclient $(DESTDIR)/$(BINDIR)/igclient
+	install igdaemon $(DESTDIR)/$(BINDIR)/igdaemon
+	install -d $(DESTDIR)/$(LIBDIR)/iguanaIR
+	install $(LIBNAME) $(DESTDIR)/$(LIBDIR)/$(LIBNAME)
+	install drivers/libusbpre1.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusbpre1.$(SHAREEXT)
+	install drivers/libusb.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
 	install -d $(DESTDIR)$(prefix)/include
 	install $(srcdir)/iguanaIR.h $(DESTDIR)$(prefix)/include/iguanaIR.h
 ifdef DARWIN
@@ -137,13 +142,13 @@ else
 	rmdir $(DESTDIR)/lib/udev/devices/iguanaIR 2>/dev/null || true
 	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
 endif
-	rm -f $(DESTDIR)$(prefix)/bin/igclient
-	rm -f $(DESTDIR)$(prefix)/bin/igdaemon
-	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/$(LIBNAME)
-	rm -f $(DESTDIR)$(prefix)/$(LIBDIR)/libiguanaIR.$(SHAREEXT)
+	rm -f $(DESTDIR)$(BINDIR)/igclient
+	rm -f $(DESTDIR)$(BINDIR)/igdaemon
+	rm -f $(DESTDIR)$(LIBDIR)/$(LIBNAME)
+	rm -f $(DESTDIR)$(LIBDIR)/libiguanaIR.$(SHAREEXT)
 	rm -f $(DESTDIR)$(prefix)/include/iguanaIR.h
-	rm -fr $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR
-	rm -fr $(DESTDIR)$(prefix)/$(LIBDIR)/iguanaIR-reflasher
+	rm -fr $(DESTDIR)$(LIBDIR)/iguanaIR
+	rm -fr $(DESTDIR)$(LIBDIR)/iguanaIR-reflasher
 
 .PHONY: clean drivers-clean
 clean: drivers-clean

@@ -44,7 +44,7 @@ install: build
 	dh_makeshlibs
 
 	# main install
-	make install DESTDIR=$(CURDIR)/debian/tmp LIBDIR=lib
+	make install DESTDIR=$(CURDIR)/debian/tmp
 
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
