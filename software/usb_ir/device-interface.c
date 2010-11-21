@@ -705,6 +705,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 EnterCriticalSection(&idev->listLock);
                 pos = idev->response;
 
+                /* un-translate the SETID/WRITEBLOCK codes */
                 if (request->code == IG_DEV_SETID &&
                     pos->code == IG_DEV_WRITEBLOCK)
                     pos->code = IG_DEV_SETID;

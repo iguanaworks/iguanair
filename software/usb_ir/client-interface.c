@@ -357,16 +357,19 @@ static bool handleClient(client *me)
                 appendHex(LOG_DEBUG3, packet->data, packet->dataLen);
         }
 
+        /* for SETID calls we need to do a GETID to then update the
+           aliases correctly */
+        if (request.code == IG_DEV_SETID)
+            getID(me->name, me->idev);
         free(request.data);
     }
 
     return retval;
 }
 
-static char* getID(iguanaDev *idev)
+void getID(const char *name, iguanaDev *idev)
 {
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
-    char *retval = NULL;
 
     request.code = IG_DEV_GETID;
 #if 1 /* support body versions 1 through 4 */
@@ -378,15 +381,16 @@ static char* getID(iguanaDev *idev)
 #endif
 
     if (! deviceTransaction(idev, &request, &response))
+    {
+        setAlias(name, NULL);
         message(LOG_INFO,
                 "Failed to get id.  Device may not have one assigned.\n");
+    }
     else
     {
-        retval = (char*)iguanaRemoveData(response, NULL);
+        setAlias(name, (char*)response->data);
         freeDataPacket(response);
     }
-
-    return retval;
 }
 
 static void joinWithReader(iguanaDev *idev)
@@ -398,7 +402,8 @@ static void joinWithReader(iguanaDev *idev)
     joinThread(idev->reader, &exitVal);
 }
 
-static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
+static void clientConnected(const char *name,
+                            PIPE_PTR clientFd, iguanaDev *idev)
 {
 #if DEBUG
 printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
@@ -414,19 +419,17 @@ printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
         newClient = (client*)malloc(sizeof(client));
         if (newClient == NULL)
             message(LOG_ERROR, "Out of memory allocating client struct.");
+        else if (! setNonBlocking(clientFd))
+            message(LOG_ERROR,
+                    "Failed to set client socket to non-blocking mode.\n");
         else
         {
-            if (! setNonBlocking(clientFd))
-                message(LOG_ERROR,
-                        "Failed to set client socket to non-blocking mode.\n");
-            else
-            {
-                memset(newClient, 0, sizeof(client));
-                newClient->idev = idev;
-                newClient->receiving = 0;
-                newClient->fd = clientFd;
-                insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
-            }
+            memset(newClient, 0, sizeof(client));
+            newClient->idev = idev;
+            newClient->receiving = 0;
+            newClient->fd = clientFd;
+            newClient->name = name;
+            insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
         }
     }
 }
@@ -552,16 +555,10 @@ static void* workLoop(void *instance)
     message(LOG_INFO, "Worker %d starting\n", idev->usbDev->id);
     if (checkVersion(idev))
     {
-        char name[4], *alias = NULL;
-
+        char name[4];
         snprintf(name, 4, "%d", idev->usbDev->id);
-        if (readLabels && 
-            /* reflasher and loader-only devices have no id */
-            idev->version != 0x00FF && (idev->version & 0x00FF) != 0x0000)
-            alias = getID(idev);
-
-        listenToClients(name, alias, idev,
-                        handleReader, clientConnected, handleClient);
+        listenToClients(name, idev,
+                        handleReader, clientConnected, handleClient);        
 
         /* Close some of the pipes.  Leave one to note when the device
            reader exits. */

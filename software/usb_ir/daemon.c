@@ -357,7 +357,7 @@ static bool mkdirs(char *path)
     return retval;
 }
 
-static int startListening(const char *name, const char *alias)
+static int startListening(const char *name)
 {
     int sockfd, attempt = 0;
     struct sockaddr_un server;
@@ -412,31 +412,7 @@ static int startListening(const char *name, const char *alias)
             message(LOG_ERROR,
                     "failed to set permissions on the server socket.\n");
         else
-        {
-            if (alias != NULL)
-            {
-                char path[PATH_MAX], *slash, *aliasCopy;
-                struct stat st;
-
-                aliasCopy = strdup(alias);
-                while(1)
-                {
-                    slash = strchr(aliasCopy, '/');
-                    if (slash == NULL)
-                        break;
-                    slash[0] = '|';
-                }
-                socketName(aliasCopy, path, PATH_MAX);
-                free(aliasCopy);
-
-                if (lstat(path, &st) == 0 &&
-                    S_ISLNK(st.st_mode))
-                    unlink(path);
-                symlink(name, path);
-            }
-
             return sockfd;
-        }
 #if DEBUG
 printf("CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
 #endif
@@ -446,10 +422,9 @@ printf("CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
     return -1;
 }
 
-static void stopListening(int fd, const char *name, const char *alias)
+static void stopListening(int fd, const char *name)
 {
-    char path[PATH_MAX], ptr[PATH_MAX];
-    int length;
+    char path[PATH_MAX];
 
     /* figure out the name */
     socketName(name, path, PATH_MAX);
@@ -460,35 +435,30 @@ static void stopListening(int fd, const char *name, const char *alias)
 printf("CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
 #endif
     close(fd);
-
-    /* find the alias and nuke it if it is a link to the name */
-    if (alias != NULL)
-    {
-        socketName(alias, path, PATH_MAX);
-        length = readlink(path, ptr, PATH_MAX - 1);
-        if (length > 0)
-        {
-            ptr[length] = '\0';
-            if (strcmp(name, ptr) == 0)
-                unlink(path);
-        }
-    }
 }
 
-void listenToClients(char *name, char *alias, iguanaDev *idev,
+void listenToClients(const char *name, iguanaDev *idev,
                      handleReaderFunc handleReader,
                      clientConnectedFunc clientConnected,
                      handleClientFunc handleClient)
 {
     PIPE_PTR listener;
 
-    listener = startListening(name, alias);
+    /* start the listener */
+    listener = startListening(name);
     if (listener == INVALID_PIPE)
         message(LOG_ERROR, "Worker failed to start listening.\n");
     else
     {
         fd_set fds, fdsin, fdserr;
 
+        /* check the initial aliases */
+        if (readLabels && 
+            /* reflasher and loader-only devices have no id */
+            idev->version != 0x00FF && (idev->version & 0x00FF) != 0x0000)
+            getID(name, idev);
+
+        /* loop while checking the pipes for activity */
         FD_ZERO(&fdsin);
         FD_ZERO(&fdserr);
         while(true)
@@ -511,7 +481,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
 
             /* next handle incoming connections */
             if (FD_ISSET(listener, &fdsin))
-                clientConnected(accept(listener, NULL, NULL), idev);
+                clientConnected(name, accept(listener, NULL, NULL), idev);
             FD_SET(listener, &fds);
             if (listener > max)
                 max = listener;
@@ -545,6 +515,54 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
             }
         }
 
-        stopListening(listener, name, alias);
+        setAlias(name, NULL);
+        stopListening(listener, name);
+    }
+}
+
+void setAlias(const char *name, const char *alias)
+{
+    /* find the alias and nuke it if it is a link to the name */
+    DIR_HANDLE dir = NULL;
+    char buffer[PATH_MAX];
+
+    /* look through all symlinks in the directory and delete links to
+       name */
+    strcpy(buffer, IGSOCK_NAME);
+    while((dir = findNextFile(dir, buffer)) != NULL)
+    {
+        char ptr[PATH_MAX], buf[PATH_MAX];
+        int length;
+
+        sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
+        length = readlink(buf, ptr, PATH_MAX - 1);
+        if (length > 0)
+        {
+            ptr[length] = '\0';
+            if (strcmp(name, ptr) == 0)
+                unlink(buf);
+        }
+    }
+
+    /* create a new symlink from alias to name */
+    if (alias != NULL)
+    {
+        char path[PATH_MAX], *slash, *aliasCopy;
+        struct stat st;
+
+        aliasCopy = strdup(alias);
+        while(1)
+        {
+            slash = strchr(aliasCopy, '/');
+            if (slash == NULL)
+                break;
+            slash[0] = '|';
+        }
+        socketName(aliasCopy, path, PATH_MAX);
+        free(aliasCopy);
+
+        if (lstat(path, &st) == 0 && S_ISLNK(st.st_mode))
+            unlink(path);
+        symlink(name, path);
     }
 }
