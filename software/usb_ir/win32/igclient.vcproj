@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;popt"
+				AdditionalIncludeDirectories=".;..;popt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;SUPPORT_INCLUDE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -121,7 +121,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;popt"
+				AdditionalIncludeDirectories=".;..;popt"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;SUPPORT_INCLUDE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

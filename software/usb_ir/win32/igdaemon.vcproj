@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;popt"
+				AdditionalIncludeDirectories=".;..;popt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;LIBUSB_NO_THREADS;SUPPORT_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib libpopt.lib Setupapi.lib"
+				AdditionalDependencies="ws2_32.lib libpopt.lib setupapi.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="popt"
@@ -121,7 +121,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;popt"
+				AdditionalIncludeDirectories=".;..;popt"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;LIBUSB_NO_THREADS;SUPPORT_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib libusb.lib libpopt.lib setupapi.lib"
+				AdditionalDependencies="ws2_32.lib libpopt.lib setupapi.lib"
 				OutputFile="$(OutDir)/igdaemon.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="libusb-win32;popt"

@@ -61,12 +61,15 @@ Source: "popt/libintl-2.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; the rest are created by libusb's tools
 Source: "libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "libusb-win32/iguanaIR_x64.cat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "libusb-win32/iguanaIR.inf"; DestDir: "{app}"; Flags: ignoreversion
 
-; libusb libraries
-Source: "libusb-win32/libusb0.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "libusb-win32/libusb0.sys"; DestDir: "{app}"; Flags: ignoreversion
+; libusb libraries for various archs
+Source: "libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}/x86"; Flags: ignoreversion
+Source: "libusb-win32/x86/libusb0.sys"; DestDir: "{app}/x86"; Flags: ignoreversion
+Source: "libusb-win32/amd64/libusb0.dll"; DestDir: "{app}/amd64"; Flags: ignoreversion
+Source: "libusb-win32/amd64/libusb0.sys"; DestDir: "{app}/amd64"; Flags: ignoreversion
+Source: "libusb-win32/ia64/libusb0.dll"; DestDir: "{app}/ia64"; Flags: ignoreversion
+Source: "libusb-win32/ia64/libusb0.sys"; DestDir: "{app}/ia64"; Flags: ignoreversion
 
 ; python library
 Source: "%(sys32)s/python%(pyver)s.dll"; DestDir: "{app}"; Flags: ignoreversion
