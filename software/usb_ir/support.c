@@ -128,6 +128,9 @@ int message(int level, char *format, ...)
             buffer = format;
 
         retval = vfprintf(out, buffer, list);
+        /* flushing the log file after each write */
+        if (out == logFile)
+            fflush(logFile);
         /* free the format if it ws allocated */
         if (buffer != format)
             free(buffer);
@@ -154,6 +157,9 @@ void appendHex(int level, void *location, unsigned int length)
         for(x = 0; x < length; x++)
             retval += fprintf(out, "%2.2x", ((unsigned char*)location)[x]);
         retval += fprintf(out, "\n");
+        /* flushing the log file after each write */
+        if (out == logFile)
+            fflush(logFile);
     }
 }
 
