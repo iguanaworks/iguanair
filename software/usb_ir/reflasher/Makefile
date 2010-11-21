@@ -14,7 +14,7 @@ install:
 	install $(filter-out hex/loader-0.hex hex/body-0.hex, $(wildcard hex/*.hex)) $(DESTDIR)$(LIBDIR)/$(NAME)/hex
 	install -d $(DESTDIR)$(BINDIR)
 	rm -f $(DESTDIR)$(BINDIR)/$(NAME)
-	ln -s ../lib/$(NAME)/$(NAME) $(DESTDIR)$(BINDIR)/$(NAME)
+	ln -s $(LIBDIR)/$(NAME)/$(NAME) $(DESTDIR)$(BINDIR)/$(NAME)
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(NAME)

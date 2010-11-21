@@ -45,7 +45,7 @@ fi
 #convert to lower case 
 DISTRO=`echo ${DISTRO,,}`
 
-if [ "$DISTRO" == "fedora" -o "$DISTRO" == "mythdora" ]; then
+if [ "$DISTRO" == "fedora" -o "$DISTRO" == "mythdora" -o "$DISTRO" == "centos" -o "$DISTRO" == "rhel" ]; then
     # welcome to fedora land
     . /etc/init.d/functions
 

@@ -2,6 +2,10 @@
 %define pydir /usr/lib/python%{pyver}/site-packages
 %define uid   213
 
+# stop building the debug packages?
+#%define debug_package  %{nil}
+#%define debug_packages %{nil}
+
 # some features can be disabled during the rpm build
 %{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
@@ -15,8 +19,11 @@ License:        GPL
 URL:            http://iguanaworks.net/ir
 Source0:        http://iguanaworks.net/ir/releases/%{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-PreReq:         /sbin/chkconfig, /sbin/service
-Requires:       libusb >= 0.1.10 lirc >= 0.8.1
+Requires:         libusb >= 0.1.10 lirc >= 0.8.1 libusb1
+Requires(post):   /usr/bin/install /sbin/chkconfig
+Requires(pre):    /usr/sbin/useradd
+Requires(preun):  /sbin/chkconfig /sbin/service /bin/rmdir
+Requires(postun): /usr/sbin/userdel
 BuildRequires:  libusb-devel libusb1-devel popt-devel 
 
 %description
@@ -27,7 +34,7 @@ to interact with igdaemon are also included.
 %package python
 Group: System Environment/Daemons
 Summary: Python module for Iguanaworks USB IR transceiver.
-Requires: python >= 2.4 iguanaIR = %{version} /usr/bin/install /usr/sbin/useradd /usr/sbin/userdel /sbin/chkconfig
+Requires: python >= 2.4 iguanaIR = %{version}
 BuildRequires: python-devel swig
 
 %description python
@@ -88,7 +95,8 @@ fi
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog
-/usr/bin/*
+/usr/bin/igclient
+/usr/bin/igdaemon
 %{_libdir}/lib%{name}.so*
 %{_libdir}/%{name}
 /etc/init.d/%{name}
@@ -96,11 +104,8 @@ fi
 %config /etc/default/%{name}
 # makes .rpmnew
 #%config(noreplace) /etc/default/%{name}
-# TODO: autoconf must decide!
 /lib/udev/rules.d/80-%{name}.rules
 %attr(755, iguanair, iguanair) /lib/udev/devices/%{name}
-# This is for fairly old versions of Fedora....
-#/etc/hotplug/usb/%{name}*
 /usr/include/%{name}.h
 
 %files python
@@ -109,7 +114,7 @@ fi
 #%ghost %{pydir}/*.pyo
 
 %files reflasher
-/usr/lib/%{name}-reflasher
+%{_libdir}/%{name}-reflasher
 /usr/bin/%{name}-reflasher
 
 %changelog
