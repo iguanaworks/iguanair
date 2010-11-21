@@ -31,11 +31,9 @@ IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --r
 
 LSBLOCATION=`which lsb_release`
 
-
-
 if [ "$DISTRO" = "" ]; then
 
-	if [ -a "$LSBLOCATION" ]; then
+	if [ -x "$LSBLOCATION" ]; then
 		DISTRO=`lsb_release -s -i | tr 'A-Z' 'a-z'`
 	else
 		DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
