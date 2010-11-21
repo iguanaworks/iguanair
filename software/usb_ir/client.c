@@ -771,7 +771,7 @@ int main(int argc, const char **argv)
 
     while(x != -1)
     {
-        switch(x = (unsigned short)poptGetNextOpt(poptCon))
+        switch(x = poptGetNextOpt(poptCon))
         {
         /* device commands */
         case IG_DEV_GETVERSION:
