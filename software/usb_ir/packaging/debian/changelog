@@ -1,3 +1,9 @@
+iguanair (1.0) maverick; urgency=low
+
+  * 1.0 Iguanaworks Release
+
+ -- IguanaWorks Support <support@iguanaworks.net>  Sat, 20 Nov 2010 20:25:29 -0700
+
 iguanair (1.0pre2) jaunty; urgency=low
 
   * Works with Ubuntu 9.10. Supports slot device, bug fixes
