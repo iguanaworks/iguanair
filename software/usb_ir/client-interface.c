@@ -360,16 +360,21 @@ static bool handleClient(client *me)
         /* for SETID calls we need to do a GETID to then update the
            aliases correctly */
         if (request.code == IG_DEV_SETID)
-            getID(me->name, me->idev);
+            getID(me->idev);
         free(request.data);
     }
 
     return retval;
 }
 
-void getID(const char *name, iguanaDev *idev)
+void getID(iguanaDev *idev)
 {
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
+
+    if (! readLabels ||
+        /* reflasher and loader-only devices have no id */
+        idev->version == 0x00FF || (idev->version & 0x00FF) == 0x0000)
+        return;
 
     request.code = IG_DEV_GETID;
 #if 1 /* support body versions 1 through 4 */
@@ -382,13 +387,13 @@ void getID(const char *name, iguanaDev *idev)
 
     if (! deviceTransaction(idev, &request, &response))
     {
-        setAlias(name, NULL);
+        setAlias(idev->usbDev->id, NULL);
         message(LOG_INFO,
                 "Failed to get id.  Device may not have one assigned.\n");
     }
     else
     {
-        setAlias(name, (char*)response->data);
+        setAlias(idev->usbDev->id, (char*)response->data);
         freeDataPacket(response);
     }
 }
@@ -402,8 +407,7 @@ static void joinWithReader(iguanaDev *idev)
     joinThread(idev->reader, &exitVal);
 }
 
-static void clientConnected(const char *name,
-                            PIPE_PTR clientFd, iguanaDev *idev)
+static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
 {
 #if DEBUG
 printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
@@ -428,7 +432,6 @@ printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
             newClient->idev = idev;
             newClient->receiving = 0;
             newClient->fd = clientFd;
-            newClient->name = name;
             insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
         }
     }
@@ -555,10 +558,7 @@ static void* workLoop(void *instance)
     message(LOG_INFO, "Worker %d starting\n", idev->usbDev->id);
     if (checkVersion(idev))
     {
-        char name[4];
-        snprintf(name, 4, "%d", idev->usbDev->id);
-        listenToClients(name, idev,
-                        handleReader, clientConnected, handleClient);        
+        listenToClients(idev, handleReader, clientConnected, handleClient);
 
         /* Close some of the pipes.  Leave one to note when the device
            reader exits. */

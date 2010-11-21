@@ -437,14 +437,16 @@ printf("CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
     close(fd);
 }
 
-void listenToClients(const char *name, iguanaDev *idev,
+void listenToClients(iguanaDev *idev,
                      handleReaderFunc handleReader,
                      clientConnectedFunc clientConnected,
                      handleClientFunc handleClient)
 {
     PIPE_PTR listener;
+    char name[4];
 
     /* start the listener */
+    sprintf(name, "%d", idev->usbDev->id);
     listener = startListening(name);
     if (listener == INVALID_PIPE)
         message(LOG_ERROR, "Worker failed to start listening.\n");
@@ -453,10 +455,7 @@ void listenToClients(const char *name, iguanaDev *idev,
         fd_set fds, fdsin, fdserr;
 
         /* check the initial aliases */
-        if (readLabels && 
-            /* reflasher and loader-only devices have no id */
-            idev->version != 0x00FF && (idev->version & 0x00FF) != 0x0000)
-            getID(name, idev);
+        getID(idev);
 
         /* loop while checking the pipes for activity */
         FD_ZERO(&fdsin);
@@ -481,7 +480,7 @@ void listenToClients(const char *name, iguanaDev *idev,
 
             /* next handle incoming connections */
             if (FD_ISSET(listener, &fdsin))
-                clientConnected(name, accept(listener, NULL, NULL), idev);
+                clientConnected(accept(listener, NULL, NULL), idev);
             FD_SET(listener, &fds);
             if (listener > max)
                 max = listener;
@@ -515,16 +514,19 @@ void listenToClients(const char *name, iguanaDev *idev,
             }
         }
 
-        setAlias(name, NULL);
+        setAlias(idev->usbDev->id, NULL);
         stopListening(listener, name);
     }
 }
 
-void setAlias(const char *name, const char *alias)
+void setAlias(unsigned int id, const char *alias)
 {
     /* find the alias and nuke it if it is a link to the name */
     DIR_HANDLE dir = NULL;
-    char buffer[PATH_MAX];
+    char buffer[PATH_MAX], name[4];
+
+    /* prepare the name string */
+    sprintf(name, "%d", id);
 
     /* look through all symlinks in the directory and delete links to
        name */

@@ -78,6 +78,8 @@ typedef struct iguanaDev
     /* what carrier frequency should we transmit at?  default 38k */
     unsigned int carrier;
 
+    /*  */
+
     /* might as well keep the list of clients here */
     listHeader clientList;
 

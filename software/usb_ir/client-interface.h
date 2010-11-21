@@ -30,9 +30,6 @@ typedef struct client
     /* protocol version that should be used with this client */
     uint16_t version;
 
-    /* true name of the device */
-    const char *name;
-
 #ifdef WIN32
     /* used in the win32 driver to keep track of overlapped actions */
     HANDLE listenData;
@@ -40,18 +37,17 @@ typedef struct client
 } client;
 
 typedef bool (*handleReaderFunc)(iguanaDev *idev);
-typedef void (*clientConnectedFunc)(const char *name,
-                                    PIPE_PTR who, iguanaDev *idev);
+typedef void (*clientConnectedFunc)(PIPE_PTR who, iguanaDev *idev);
 typedef bool (*handleClientFunc)(client *me);
 
-void listenToClients(const char *name, iguanaDev *idev,
+void listenToClients(iguanaDev *idev,
                      handleReaderFunc handleReader,
                      clientConnectedFunc clientConnected,
                      handleClientFunc handleClient);
-void setAlias(const char *name, const char *alias);
+void setAlias(unsigned int id, const char *alias);
 
 /* the worker thread has to check the id at startup */
-void getID(const char *name, iguanaDev *idev);
+void getID(iguanaDev *idev);
 /* start a thread to handle a single device instance */
 void startWorker(deviceInfo *info);
 /* terminate and join with each child thread */

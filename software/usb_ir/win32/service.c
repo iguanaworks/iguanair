@@ -37,6 +37,12 @@ static PIPE_PTR commPipe[2];
 static deviceList *list;
 static serverSettings settings;
 
+/* we keep a global list of aliases and  */
+#define MAX_DEVICES 64
+char aliases[MAX_DEVICES][MAX_PATH] = {{'\0'}};
+HANDLE listeners[MAX_DEVICES][2] = {{NULL, NULL}};
+CRITICAL_SECTION aliasLock;
+
 /* guids for registering for device notifications */
 DEFINE_GUID(GUID_DEVINTERFACE_USB_HUB, 0xf18a0e88, 0xc30c, 0x11d0, 0x88,
             0x15, 0x00, 0xa0, 0xc9, 0x06, 0xbe, 0xd8);
@@ -217,6 +223,7 @@ int main(int argc, char **argv)
     poptContext poptCon;
 
     /* initialize the settings for the server process */
+    InitializeCriticalSection(&aliasLock);
     initServerSettings(&settings);
     settings.devFunc = startWorker;
 
@@ -356,6 +363,8 @@ int main(int argc, char **argv)
                 return error;
         }
     }
+
+    DeleteCriticalSection(&aliasLock);
     return 0;
 }
 
@@ -499,24 +508,23 @@ static HANDLE startOverlappedAction(PIPE_PTR fd, HANDLE event, bool connect)
 }
 
 /* list to clients connecting to either name or alias, and the idev->reader */
-void listenToClients(char *name, char *alias, iguanaDev *idev,
+void listenToClients(iguanaDev *idev,
                      handleReaderFunc handleReader,
                      clientConnectedFunc clientConnected,
                      handleClientFunc handleClient)
 {
-    HANDLE *handles = NULL, listeners[2] = {NULL,NULL};
+    HANDLE *handles = NULL;
     OVERLAPPED over;
-    char names[2][256];
-    int numNames = 1, x;
+    char names[2][PATH_MAX], name[4];
+    int x;
     bool firstPass = true;
 
+    /* prepare the name variables */
+    sprintf(name, "%d", idev->usbDev->id);
+
     /* create an array of names to make life simpler */
-    socketName(name, names[0], 256);
-    if (alias != NULL && alias[0] != '\0')
-    {
-        socketName(alias, names[1], 256);
-        numNames++;
-    }
+    socketName(name, names[0], PATH_MAX);
+    getID(idev);
 
     memset(&over, 0, sizeof(OVERLAPPED));
     while(true)
@@ -525,14 +533,19 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
         client *john;
 
         /* allocate the handles and overlap objects that I need to populate */
-        handles = realloc(handles, sizeof(HANDLE) * (1 + numNames + idev->clientList.count));
+        handles = realloc(handles, sizeof(HANDLE) * (1 + 2 + idev->clientList.count));
         if (firstPass)
             handles[0] = startOverlappedAction(idev->readerPipe[READ], NULL, false);
 
         /* next add events for the named pipes */
-        for(x = 0; x < numNames; x++)
+        for(x = 0; x < 2; x++)
         {
-            if (firstPass || listeners[x] == NULL)
+            /* handle the case there there is no alias */
+            if (x == 1 && aliases[idev->usbDev->id][0] == '\0')
+                break;
+
+            EnterCriticalSection(&aliasLock);
+            if (firstPass || listeners[idev->usbDev->id][x] == NULL)
             {
                 PSID pEveryoneSID = NULL, pAdminSID = NULL;
                 PACL pACL = NULL;
@@ -606,12 +619,12 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
                 sa.bInheritHandle = FALSE;
 
                 // Use the security attributes to set the security descriptor 
-                listeners[x] = CreateNamedPipe(names[x],
-                                               PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
-                                               PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-                                               PIPE_UNLIMITED_INSTANCES,
-                                               64, 64, NMPWAIT_USE_DEFAULT_WAIT, &sa);
-                handles[count] = startOverlappedAction(listeners[x], NULL, true);
+                listeners[idev->usbDev->id][x] = CreateNamedPipe(names[x],
+                                                       PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+                                                       PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                                                       PIPE_UNLIMITED_INSTANCES,
+                                                       64, 64, NMPWAIT_USE_DEFAULT_WAIT, &sa);
+                handles[count] = startOverlappedAction(listeners[idev->usbDev->id][x], NULL, true);
 
             Cleanup:
                 if (pEveryoneSID) 
@@ -625,6 +638,7 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
                 if (hkSub) 
                     RegCloseKey(hkSub);
             }
+            LeaveCriticalSection(&aliasLock);
             count++;
         }
 
@@ -650,14 +664,23 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
         }
 
         /* now accept new clients */
-        for(x = 0; x < numNames; x++)
+        EnterCriticalSection(&aliasLock);
+        for(x = 0; x < 2; x++)
+        {
+            /* handle the case there there is no alias */
+            if (x == 1 && aliases[idev->usbDev->id][0] == '\0')
+                break;
+
             if (WaitForSingleObject(handles[x + 1], 0) == WAIT_OBJECT_0)
             {
-                clientConnected(listeners[x], idev);
+                clientConnected(listeners[idev->usbDev->id][x], idev);
+
                 /* create a new pipe instance on the next pass */
                 CloseHandle(handles[x + 1]);
-                listeners[x] = NULL;
+                listeners[idev->usbDev->id][x] = NULL;
             }
+        }
+        LeaveCriticalSection(&aliasLock);
 
         /* last, handle existing clients */
         for(john = (client*)idev->clientList.head; john != NULL;)
@@ -678,7 +701,22 @@ void listenToClients(char *name, char *alias, iguanaDev *idev,
     }
     free(handles);
 
-    for(x = 0; x < numNames; x++)
-        if (listeners[x] != NULL)
-            CloseHandle(listeners[x]);
+    EnterCriticalSection(&aliasLock);
+    for(x = 0; x < 2; x++)
+        if (listeners[idev->usbDev->id][x] != NULL)
+            CloseHandle(listeners[idev->usbDev->id][x]);
+    LeaveCriticalSection(&aliasLock);
+}
+
+void setAlias(unsigned int id, const char *alias)
+{
+    EnterCriticalSection(&aliasLock);
+    if (listeners[id][1] != NULL)
+    {
+        CloseHandle(listeners[id][1]);
+        listeners[id][1] = NULL;
+    }
+    if (alias == NULL)
+        strcpy(aliases[id], alias);
+    LeaveCriticalSection(&aliasLock);
 }
