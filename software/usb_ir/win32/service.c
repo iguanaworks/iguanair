@@ -401,7 +401,7 @@ static void WINAPI serviceMain(int argc, char **argv)
         registerNotifications();
 
         /* populate the device list as soon as we have notifications */
-        if (! updateDeviceList(&list))
+        if (! updateDeviceList(list))
             message(LOG_ERROR, "scan failed.\n");
 
         /* tell SCM about our progress and wait for death */
@@ -433,7 +433,7 @@ static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
     case SERVICE_CONTROL_DEVICEEVENT:
         /* receive one of these on device plug */
         if (event_type == DBT_DEVICEARRIVAL &&
-            ! updateDeviceList(&list))
+            ! updateDeviceList(list))
             message(LOG_ERROR, "scan failed.\n");
         break;
 
@@ -515,15 +515,10 @@ void listenToClients(iguanaDev *idev,
 {
     HANDLE *handles = NULL;
     OVERLAPPED over;
-    char names[2][PATH_MAX], name[4];
     int x;
     bool firstPass = true;
 
-    /* prepare the name variables */
-    sprintf(name, "%d", idev->usbDev->id);
-
-    /* create an array of names to make life simpler */
-    socketName(name, names[0], PATH_MAX);
+    /* get any intial ID from the device */
     getID(idev);
 
     memset(&over, 0, sizeof(OVERLAPPED));
@@ -547,6 +542,7 @@ void listenToClients(iguanaDev *idev,
             EnterCriticalSection(&aliasLock);
             if (firstPass || listeners[idev->usbDev->id][x] == NULL)
             {
+                char path[PATH_MAX], name[4];
                 PSID pEveryoneSID = NULL, pAdminSID = NULL;
                 PACL pACL = NULL;
                 PSECURITY_DESCRIPTOR pSD = NULL;
@@ -618,8 +614,22 @@ void listenToClients(iguanaDev *idev,
                 sa.lpSecurityDescriptor = pSD;
                 sa.bInheritHandle = FALSE;
 
-                // Use the security attributes to set the security descriptor 
-                listeners[idev->usbDev->id][x] = CreateNamedPipe(names[x],
+                /* prepare the name/path variables */
+                switch(x)
+                {
+                default:
+                case 0:
+                    sprintf(name, "%d", idev->usbDev->id);
+                    socketName(name, path, PATH_MAX);
+                    break;
+
+                case 1:
+                    socketName(aliases[idev->usbDev->id], path, PATH_MAX);
+                    break;
+                }
+
+                // Use the security attributes to set the security descriptor
+                listeners[idev->usbDev->id][x] = CreateNamedPipe(path,
                                                        PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                                                        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                                                        PIPE_UNLIMITED_INSTANCES,
@@ -716,7 +726,7 @@ void setAlias(unsigned int id, const char *alias)
         CloseHandle(listeners[id][1]);
         listeners[id][1] = NULL;
     }
-    if (alias == NULL)
+    if (alias != NULL)
         strcpy(aliases[id], alias);
     LeaveCriticalSection(&aliasLock);
 }
