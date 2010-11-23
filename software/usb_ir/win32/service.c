@@ -728,5 +728,7 @@ void setAlias(unsigned int id, const char *alias)
     }
     if (alias != NULL)
         strcpy(aliases[id], alias);
+	else
+		aliases[id][0] = '\0';
     LeaveCriticalSection(&aliasLock);
 }
