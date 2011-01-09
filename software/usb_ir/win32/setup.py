@@ -60,7 +60,7 @@ Source: "%(dir)s/iguanaIR.py";       DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/library.zip";            DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/../../reflasher/hex/*.hex";    DestDir: "{app}/hex"; Flags: ignoreversion
+Source: "%(dir)s/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
 
 ; popt libraries
 Source: "popt/popt1.dll"; DestDir: "{app}"; Flags: ignoreversion
