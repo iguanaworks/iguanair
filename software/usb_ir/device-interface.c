@@ -387,7 +387,7 @@ static void* generateIDBlock(const char *label, uint16_t version)
 bool checkVersion(iguanaDev *idev)
 {
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
-    bool retval = false;
+    bool retval = false, getVersion = false;
 
     /* Seems necessary, but means that we lose the interface.....
 #ifdef WIN32
@@ -398,7 +398,15 @@ bool checkVersion(iguanaDev *idev)
         */
 
     request.code = IG_DEV_GETVERSION;
-    if (! deviceTransaction(idev, &request, &response))
+    /* Due to a firmware mistake related to repeater mode loader
+       version 0x300 ignores the first get packet seen after a cold
+       boot.  That first packet kicks the device out of repeater mode
+       and the second will be answered. */
+    if (deviceTransaction(idev, &request, &response))
+        getVersion = true;
+    /* try a second time to get the version */
+    if (! getVersion &&
+        ! deviceTransaction(idev, &request, &response))
         message(LOG_ERROR, "Failed to get version.\n");
     else
     {
@@ -694,7 +702,6 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                to recieve the ack */
             amount = notified(idev->responsePipe[READ],
                               idev->settings->sendTimeout);
-
             if (amount < 0)
                 message(LOG_ERROR, "Failed to read control ack: %s\n",
 			translateError(errno));

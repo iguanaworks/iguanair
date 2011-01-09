@@ -51,8 +51,16 @@ Source: "%(dir)s/igdaemon.exe";      DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/igclient.exe";      DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/iguanaIR.dll";      DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+; compiled python APIs
 Source: "%(dir)s/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/iguanaIR.py";       DestDir: "{app}"; Flags: ignoreversion
+
+; executable, zip file, python library, et al for py2exe applications
+Source: "%(dir)s/library.zip";            DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/../../reflasher/hex/*.hex";    DestDir: "{app}/hex"; Flags: ignoreversion
 
 ; popt libraries
 Source: "popt/popt1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -70,9 +78,6 @@ Source: "libusb-win32/amd64/libusb0.dll"; DestDir: "{app}/amd64"; Flags: ignorev
 Source: "libusb-win32/amd64/libusb0.sys"; DestDir: "{app}/amd64"; Flags: ignoreversion
 Source: "libusb-win32/ia64/libusb0.dll"; DestDir: "{app}/ia64"; Flags: ignoreversion
 Source: "libusb-win32/ia64/libusb0.sys"; DestDir: "{app}/ia64"; Flags: ignoreversion
-
-; python library
-Source: "%(sys32)s/python%(pyver)s.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; embed the sub installer we need
 Source: "vcredist_x86.exe"; DestDir: "{app}"; Flags: ignoreversion deleteafterinstall
