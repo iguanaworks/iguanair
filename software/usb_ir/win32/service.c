@@ -711,10 +711,15 @@ void listenToClients(iguanaDev *idev,
     }
     free(handles);
 
+	// "disconnect" and release the unconnected pipes
     EnterCriticalSection(&aliasLock);
     for(x = 0; x < 2; x++)
         if (listeners[idev->usbDev->id][x] != NULL)
+		{
+			// crashes without the disconnect call here
+			DisconnectNamedPipe(listeners[idev->usbDev->id][x]);
             CloseHandle(listeners[idev->usbDev->id][x]);
+		}
     LeaveCriticalSection(&aliasLock);
 }
 
