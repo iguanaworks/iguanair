@@ -549,6 +549,13 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
             result *= sizeof(uint32_t);
             break;
 
+        case IG_DEV_RESEND:
+            /* read pulse data from cmd->arg */
+            data = malloc(sizeof(uint32_t));
+            if (parseNumber(cmd->arg, ((uint32_t*)data)))
+                result = sizeof(uint32_t);
+            break;
+
         case IG_DEV_SETID:
             result = strlen(cmd->arg) + 1;
             if (result > 13)
@@ -777,6 +784,7 @@ int main(int argc, const char **argv)
         case IG_DEV_GETVERSION:
         case IG_DEV_GETFEATURES:
         case IG_DEV_SEND:
+        case IG_DEV_RESEND:
         case IG_DEV_RECVON:
         case IG_DEV_RECVOFF:
         case IG_DEV_GETPINS:
