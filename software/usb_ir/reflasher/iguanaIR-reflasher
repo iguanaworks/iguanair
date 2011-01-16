@@ -145,6 +145,10 @@ def parseOptions():
                       metavar = 'FILE',
                       help = 'Specify a file of old (monolithic) firmware.')
 
+    parser.add_option('--test-signal',
+                      metavar = 'NAME', default = 'bethTV0',
+                      help = optparse.SUPPRESS_HELP)
+#                      help = 'Specify which test signal to use.')
 
     parser.add_option('-l', '--log-file',
                       metavar = 'FILE', dest = 'logFile',
@@ -672,182 +676,78 @@ def checkReceiver():
 
     return False
 
-def sendPanasonicPower():
-    # send a signal on all active channels
-    panasonicPower = """pulse 3498
-space 1685
-pulse 448
-space 362
-pulse 448
-space 1237
-pulse 448
-space 384
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 362
-pulse 448
-space 1237
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 1237
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 362
-pulse 448
-space 362
-pulse 448
-space 1237
-pulse 448
-space 362
-pulse 448
-space 1237
-pulse 448
-space 1237
-pulse 448
-space 1237
-pulse 448
-space 1237
-pulse 448
-space 362
-pulse 448
-space 384
-pulse 448
-space 1237
-pulse 448
-space 362
-pulse 448
-space 1237
-pulse 448
-space 1237
-pulse 448
-space 1237
-pulse 448
-space 1237
-pulse 448
-space 362
-pulse 448
-space 1237
-pulse 448
-"""
-    tivoRightArrow = """pulse 9152
-space 4458
-pulse 554
-space 1600
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 490
-pulse 554
-space 512
-pulse 554
-space 490
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 554
-space 490
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 1600
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 490
-pulse 576
-space 1600
-pulse 576
-space 1600
-pulse 576
-space 1600
-pulse 576
-space 46080
-pulse 9066
-space 2176
-pulse 576
+def sendTestSignal():
+    global options
+
+    testSignals = {}
+
+    # pick the signal to send when doing testing
+    testSignals['bethTV0'] = """pulse     277
+space    1792
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space    1749
+pulse     256
+space     725
+pulse     256
+space    1792
+pulse     256
+space     746
+pulse     256
+space     725
+pulse     256
+space     746
+pulse     256
+space     746
+pulse     256
+space    1792
+pulse     256
+space     746
+pulse     256
+space   45696
+pulse     277
+space    1770
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space     725
+pulse     256
+space    1749
+pulse     277
+space     725
+pulse     256
+space    1770
+pulse     277
+space     725
+pulse     256
+space    1770
+pulse     256
+space    1770
+pulse     256
+space    1770
+pulse     277
+space    1770
+pulse     256
+space     746
+pulse     256
+space    1770
+pulse     256
 """
 
-    panasonic0 = """pulse 3519
+    testSignals['panasonic0'] = """pulse 3519
 space 1685
 pulse 469
 space 362
@@ -950,7 +850,7 @@ pulse 490
 
     # store the requested signal in a temporary file
     output = tempfile.NamedTemporaryFile(delete = False)
-    output.write(panasonic0)
+    output.write(testSignals[options.test_signal])
     output.close()
 
     # read that file using the readPulseFile API (kinda round-about, I know)
@@ -1131,7 +1031,7 @@ What kind of device is plugged in?
             for channels in plugs:
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
                                   chr(channels))
-                sendPanasonicPower()
+                sendTestSignal()
                 time.sleep(0.1)
 
         if leds:
@@ -1141,7 +1041,7 @@ What kind of device is plugged in?
                 line = sys.stdin.readline()
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
                                   chr(channels))
-                sendPanasonicPower()
+                sendTestSignal()
                 if len(leds) == 1:
                     message(LOG_NORMAL, "Press enter to send again.\n")
                 else:
@@ -1150,7 +1050,7 @@ What kind of device is plugged in?
                 line = sys.stdin.readline()
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
                                   chr(channels))
-                sendPanasonicPower()
+                sendTestSignal()
 
         if gpios:
             if type == 'p':
