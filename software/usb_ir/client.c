@@ -79,6 +79,7 @@ static commandSpec supportedCommands[] =
     {"receiver off",    false, IG_DEV_RECVOFF,         0,      false},
     {"send",            false, IG_DEV_SEND,            0,      false},
     {"resend",          false, IG_DEV_RESEND,          0,      false},
+    {"encoded size",    false, IG_DEV_SENDSIZE,        0,      false},
     {"get channels",    false, IG_DEV_GETCHANNELS,     0,      false},
     {"set channels",    false, IG_DEV_SETCHANNELS,     0,      true},
     {"get carrier",     false, IG_DEV_GETCARRIER,      0,      false},
@@ -381,6 +382,11 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     message(LOG_NORMAL, ": id=%s", buf);
                     break;
                 }
+
+                case IG_DEV_SENDSIZE:
+                {
+                    message(LOG_NORMAL, ": size=%d", *(uint16_t*)data);
+                }
                 }
 
                 /* success means stop */
@@ -544,6 +550,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
         }
 
         case IG_DEV_SEND:
+        case IG_DEV_SENDSIZE:
             /* read pulse data from cmd->arg */
             result = iguanaReadPulseFile(cmd->arg, &data);
             result *= sizeof(uint32_t);
@@ -704,6 +711,7 @@ static struct poptOption options[] =
     { "get-features", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETFEATURES, "Return the features associated w/ this device.", NULL },
     { "send", '\0', POPT_ARG_STRING, NULL, IG_DEV_SEND, "Send the pulses and spaces from a file.", "filename" },
     { "resend", '\0', POPT_ARG_INT, NULL, IG_DEV_RESEND, "Send the pulses and spaces already in the device buffer after a delay", "microsecond delay" },
+    { "encoded-size", '\0', POPT_ARG_STRING, NULL, IG_DEV_SENDSIZE, "Check the encodes size of the pulses and spaces from a file.", "filename" },
     { "receiver-on", '\0', POPT_ARG_NONE, NULL, IG_DEV_RECVON, "Enable the receiver on the usb device.", NULL },
     { "receiver-off", '\0', POPT_ARG_NONE, NULL, IG_DEV_RECVOFF, "Disable the receiver on the usb device.", NULL },
     { "get-pins", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETPINS, "Get the pin values.", NULL },
@@ -785,6 +793,7 @@ int main(int argc, const char **argv)
         case IG_DEV_GETFEATURES:
         case IG_DEV_SEND:
         case IG_DEV_RESEND:
+        case IG_DEV_SENDSIZE:
         case IG_DEV_RECVON:
         case IG_DEV_RECVOFF:
         case IG_DEV_GETPINS:

@@ -104,6 +104,7 @@ enum
     IG_DEV_REPEATER     = 0x25,
     IG_DEV_GETLOCATION  = 0x26, /* internal to client/daemon */
     IG_DEV_RESEND       = 0x27,
+    IG_DEV_SENDSIZE     = 0x28, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,

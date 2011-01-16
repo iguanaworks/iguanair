@@ -72,6 +72,7 @@ static versionedType types[] =
     {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV, NO_PAYLOAD, true,ANY_PAYLOAD}},
     {0, 0, {IG_DEV_SEND,           CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0x0307, 0, {IG_DEV_RESEND,    CTL_TODEV,           4, true, NO_PAYLOAD}},
+    {0, 0, {IG_DEV_SENDSIZE,       CTL_TODEV, ANY_PAYLOAD, true, 2}},
     {0, 0, {IG_DEV_RECVON,         CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
     {0x0101, 0, {IG_DEV_RAWRECVON, CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
     {0, 0, {IG_DEV_RECVOFF,        CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
@@ -894,6 +895,9 @@ void handleIncomingPackets(iguanaDev *idev)
  
                         message(LOG_DEBUG2,
                                 "Data without ctl header assuming IG_DEV_RECV.\n");
+/* TODO: DEBUG: sleep here to test overflow on the device
+                        sleep(3);
+*/
                     }
 
                     /* if the type demands more data then read it here */

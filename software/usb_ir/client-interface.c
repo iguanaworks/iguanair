@@ -51,14 +51,18 @@ bool readLabels = true;
 bool noThreads = false;
 #endif
 
-static unsigned char* pulsesToIguanaSend(int carrier,
-                                         uint32_t *sendCode, int *length)
+static int pulsesToIguanaSend(int carrier,
+                              uint32_t *sendCode, int length,
+                              unsigned char **results)
 {
     int x, codeLength = 0, inSpace = 0;
-    unsigned char *codes = NULL;
+
+    /* prepare/clear the output buffer */
+    if (results != NULL)
+        *results = NULL;
 
     /* convert each pulse */
-    for(x = 0; x < *length; x++)
+    for(x = 0; x < length; x++)
     {
         uint32_t cycles, numBytes;
 
@@ -84,26 +88,34 @@ static unsigned char* pulsesToIguanaSend(int carrier,
 
         if (numBytes)
         {
-            /* allocate space as we go */
-            codes = realloc(codes, sizeof(char) * (codeLength + numBytes));
-
-            /* populate the buffer with max bytes */
-            memset(codes + codeLength,
-                   LENGTH_MASK | (inSpace * STATE_MASK),
-                   numBytes - 1);
             if (inSpace)
                 cycles |= STATE_MASK;
 
-            /* store the last byte (cast is alright due to %= MAX_DATA_BYTE) */
-            codes[codeLength + numBytes - 1] = (unsigned char)cycles;
+            /* store the codes to return to the user if requested */
+            if (results != NULL)
+            {
+                /* allocate space as we go */
+                *results = realloc(*results,
+                                   sizeof(char) * (codeLength + numBytes));
+
+                /* populate the buffer with max bytes */
+                memset(*results + codeLength,
+                       LENGTH_MASK | (inSpace * STATE_MASK),
+                       numBytes - 1);
+
+                /* store the last byte
+                   (cast is alright due to %= MAX_DATA_BYTE) */
+                (*results)[codeLength + numBytes - 1] = (unsigned char)cycles;
+            }
+
+            /* sum up the total bytes */
             codeLength += numBytes;
         }
 
         inSpace ^= 1;
     }
 
-    *length = codeLength;
-    return codes;
+    return codeLength;
 }
 
 static bool handleClientRequest(dataPacket *request, client *target)
@@ -235,11 +247,32 @@ static bool handleClientRequest(dataPacket *request, client *target)
     {
         unsigned char *codes;
         request->dataLen /= sizeof(uint32_t);
-        codes = pulsesToIguanaSend(target->idev->carrier,
-                                   (uint32_t*)request->data,
-                                   &request->dataLen);
+        request->dataLen = pulsesToIguanaSend(target->idev->carrier,
+                                              (uint32_t*)request->data,
+                                              request->dataLen,
+                                              &codes);
         free(request->data);
         request->data = codes;
+        break;
+    }
+
+    case IG_DEV_SENDSIZE:
+    {
+        /* translate the passed signals into codes that the device
+           will understand, but just compute the length of the encoded
+           signal */
+        request->dataLen /= sizeof(uint32_t);
+        request->dataLen = pulsesToIguanaSend(target->idev->carrier,
+                                              (uint32_t*)request->data,
+                                              request->dataLen,
+                                              NULL);
+
+        /* return the computed size */
+        request->data = (unsigned char*)realloc(request->data,
+                                                sizeof(uint16_t));
+        ((uint16_t*)request->data)[0] = request->dataLen;
+        request->dataLen = sizeof(uint16_t);
+        retval = true;
         break;
     }
     }
