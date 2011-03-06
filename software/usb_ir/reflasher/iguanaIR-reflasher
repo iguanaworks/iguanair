@@ -961,9 +961,12 @@ What kind of device is plugged in?
             type = ''
             features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES,
                                          quiet = True)
-            if not features:
-                if not isinstance(features, bool):
-                    type = 'u'
+            if features == False:
+                message(LOG_NORMAL, 'Device type could not be determined.')
+                default = ''
+                continue
+            elif not features:
+                type = 'u'
             elif features == iguanaIR.IG_HAS_SOCKETS:
                 type = 's'
             elif features == iguanaIR.IG_HAS_BOTH:
@@ -1004,6 +1007,8 @@ What kind of device is plugged in?
             leds = (0x1, 0x4)
             gpios = ()
             features = iguanaIR.IG_HAS_LEDS
+        else:
+            raise Exception('Device type not specified.')
 
         # reflash the device with information about what kind it is
         message(LOG_NORMAL, 'Writing firmware to "%s" device.\n' % type)
