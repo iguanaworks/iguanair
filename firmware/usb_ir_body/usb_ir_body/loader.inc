@@ -1,1 +1,1 @@
-../../usb_ir_loader/usb_ir_loader/loader.inc
+../../usb_ir_loader-3/usb_ir_loader/loader.inc
