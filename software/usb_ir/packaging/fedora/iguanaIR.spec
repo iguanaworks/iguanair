@@ -94,7 +94,7 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog
+%doc AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog examples
 /usr/bin/igclient
 /usr/bin/igdaemon
 %{_libdir}/lib%{name}.so*
