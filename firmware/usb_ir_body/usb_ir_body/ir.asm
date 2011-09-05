@@ -391,6 +391,22 @@ transmit_code:
 
   tx_loop:
     mvi A, [buffer_ptr] ; move buffer data into A, increment pointer
+
+    mov [tmp4], A       ; save for later (across a call to send_loop)
+    and A, 0x80
+    jz tx_no_comp       ; next is pulse, no need to insert pulse
+    mov A, [tmp3]       ; last byte
+    and A, 0x7F         ; mask length
+    xor A, 0x7F         ; not length
+    jz tx_no_comp       ; last was 0x7F or 0xFF; it will be continued
+    mov A, [tx_state]
+    jnz tx_no_comp      ; last was pulse, no need to insert pulse
+                        ; last was space and next is space
+    mov A, [last_pulse] ; we need to transmit last pulse now
+    call send_loop
+
+  tx_no_comp:
+    mov A, [tmp4]
     call send_loop
 
   tx_end_pulse:
@@ -404,7 +420,7 @@ send_loop:
     and A, 0x7F         ; mask off the pulse length bits
     asl A               ; shift left to multiply by two due to carrier division
     mov [tmp2], A       ; store pulse length in tmp2
-	mov X, [tx_bank]
+    mov X, [tx_bank]
 
     ; do not modify tx_state in repeater mode
     mov A, [rx_flags]
@@ -419,6 +435,7 @@ send_loop:
 
   sl_on:
     mov [tx_state], [tx_pins] ; mask on tx bits
+    mov [last_pulse], [tmp3]  ; save the last pulse length
     jmp sl_pulse              ; start sending pulse--this jump seems redundant,
                         ; but is there to make timing the same on both branches
 

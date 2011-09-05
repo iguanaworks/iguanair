@@ -22,6 +22,8 @@ export loader_flags
 export tmp1
 export tmp2
 export tmp3
+export tmp4
+export last_pulse
 export control_pkt
 
 ; pin down all the global variables
@@ -40,6 +42,10 @@ tmp1:
 tmp2:
     BLK 1
 tmp3:
+    BLK 1
+tmp4:
+    BLK 1
+last_pulse:
     BLK 1
 
 ; intentionally overlap the control packet buffer with the
