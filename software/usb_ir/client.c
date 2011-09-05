@@ -476,7 +476,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
                     mask >>= 2;
                 else
                     mask >>= 4;
-                message(LOG_WARN, "Mask is now: 0x%x\n", mask);
+                message(LOG_INFO, "Mask is now: 0x%x\n", mask);
 
                 if (cmd->spec->code == IG_DEV_SETCHANNELS &&
                     value != (mask & value))

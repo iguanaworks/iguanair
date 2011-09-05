@@ -33,10 +33,17 @@
 #include "client-interface.h"
 #include "protocol-versions.h"
 
+#define DEBUG_TRANSMIT_BUFFER 0
+
 enum
 {
     /* highest value of a data byte in the IR code protocol */
-    MAX_DATA_BYTE = 127
+    MAX_DATA_BYTE = 127,
+
+    /* we support version 0 and 1, but ver 2 is not implemented */
+    COMPRESS_VER0 = 0,
+    COMPRESS_VER1,
+    COMPRESS_VER2
 };
 
 /* small structure passed through a void* for tellReceivers. */
@@ -53,9 +60,10 @@ bool noThreads = false;
 
 static int pulsesToIguanaSend(int carrier,
                               uint32_t *sendCode, int length,
-                              unsigned char **results)
+                              unsigned char **results, int compress)
 {
     int x, codeLength = 0, inSpace = 0;
+    uint32_t lastCycles = 0;
 
     /* prepare/clear the output buffer */
     if (results != NULL)
@@ -67,13 +75,13 @@ static int pulsesToIguanaSend(int carrier,
         uint32_t cycles, numBytes;
 
 /* occasionally useful for debugging transmission issues */
-#if 0
+#if DEBUG_TRANSMIT_BUFFER
         fprintf(stderr, "%3d ", x);
         if (x % 2)
             fprintf(stderr, "space ");
         else
             fprintf(stderr, "pulse ");
-        fprintf(stderr, "%d\n", sendCode[x] & IG_PULSE_MASK);
+        fprintf(stderr, "%5d ", sendCode[x] & IG_PULSE_MASK);
 #endif
 
         cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
@@ -85,6 +93,19 @@ static int pulsesToIguanaSend(int carrier,
             cycles = MAX_DATA_BYTE;
             numBytes -= 1;
         }
+
+        if (compress == COMPRESS_VER1 && inSpace == 0)
+        {
+            if (cycles != MAX_DATA_BYTE &&
+                cycles == lastCycles &&
+                x + 1 < length)
+                numBytes = 0;
+            lastCycles = cycles;
+        }
+
+#if DEBUG_TRANSMIT_BUFFER
+        fprintf(stderr, " cycles=%3d numBytes=%3d ", cycles, numBytes);
+#endif
 
         if (numBytes)
         {
@@ -108,10 +129,20 @@ static int pulsesToIguanaSend(int carrier,
                 (*results)[codeLength + numBytes - 1] = (unsigned char)cycles;
             }
 
+#if DEBUG_TRANSMIT_BUFFER
+            fprintf(stderr, " buf(");
+            for(k=0; k<numBytes; k++)
+                fprintf(stderr, "%3d ",codes[codeLength+k]);
+            fprintf(stderr, ")");
+#endif
+
             /* sum up the total bytes */
             codeLength += numBytes;
         }
 
+#if DEBUG_TRANSMIT_BUFFER
+        fprintf(stderr, "\n");
+#endif
         inSpace ^= 1;
     }
 
@@ -122,6 +153,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
 {
     bool retval = false;
     dataPacket *response = NULL;
+    int compressVersion;
 
     /* translate the newly read data packet code */
     if (! translateClient(&request->code, target->version, true))
@@ -130,6 +162,13 @@ static bool handleClientRequest(dataPacket *request, client *target)
     /* return false if the incoming packet does not match the protocol */
     if (checkIncomingProtocol(target->idev, request, false) == NULL)
         return false;
+
+    /* figure out what version of the compression we support */
+    compressVersion = COMPRESS_VER0;
+//*
+    if ((target->idev->version & 0xFF) >= 0x08)
+        compressVersion = COMPRESS_VER1;
+//*/
 
     switch(request->code)
     {
@@ -250,7 +289,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
         request->dataLen = pulsesToIguanaSend(target->idev->carrier,
                                               (uint32_t*)request->data,
                                               request->dataLen,
-                                              &codes);
+                                              &codes,
+                                              compressVersion);
         free(request->data);
         request->data = codes;
         break;
@@ -265,7 +305,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
         request->dataLen = pulsesToIguanaSend(target->idev->carrier,
                                               (uint32_t*)request->data,
                                               request->dataLen,
-                                              NULL);
+                                              NULL,
+                                              compressVersion);
 
         /* return the computed size */
         request->data = (unsigned char*)realloc(request->data,
