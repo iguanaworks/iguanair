@@ -86,6 +86,10 @@ def parseOptions():
     parser.add_option('-d', '--device',
                       metavar = 'ID', default = '0',
                       help = 'Only useful with the --live option to connect to a specific device.')
+    parser.add_option('--no-raw-signals',
+                      action = 'store_false',
+                      default = True, dest = 'raw_signals',
+                      help = 'Do not print the signals as they are collected.')
     parser.add_option('--keep-one',
                       action = 'store_true', dest = 'one',
                       help = 'Just print a single signal in --send format.')
@@ -138,13 +142,16 @@ def collectLiveSignals(device):
                 break
 
             data = iguanaIR.removeData(response)
-            message(LOG_NORMAL, 'received %d signal(s):\n' % (len(data) / 4))
+            if options.raw_signals:
+                message(LOG_NORMAL,
+                        'received %d signal(s):\n' % (len(data) / 4))
             for signal in struct.unpack('I' * (len(data) / 4), data):
                 kind = 'space'
                 if signal & iguanaIR.IG_PULSE_BIT:
                     kind = 'pulse'
                 result = '%s: %d\n' % (kind, signal & iguanaIR.IG_PULSE_MASK)
-                message(LOG_NORMAL, result)
+                if options.raw_signals:
+                    message(LOG_NORMAL, result)
                 results.append(result)
     except KeyboardInterrupt:
         message(LOG_NORMAL, 'Formatting collected signals....\n')
