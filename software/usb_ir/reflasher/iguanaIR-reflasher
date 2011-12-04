@@ -146,7 +146,7 @@ def parseOptions():
                       help = 'Specify a file of old (monolithic) firmware.')
 
     parser.add_option('--test-signal',
-                      metavar = 'NAME', default = 'bethTV0',
+                      metavar = 'NAME', default = 'vizioInfo',
                       help = optparse.SUPPRESS_HELP)
 #                      help = 'Specify which test signal to use.')
 
@@ -682,6 +682,75 @@ def sendTestSignal():
     testSignals = {}
 
     # pick the signal to send when doing testing
+    testSignals['vizioInfo'] = """pulse    8981
+space    4416
+pulse     554
+space     490
+pulse     576
+space     490
+pulse     576
+space    1621
+pulse     554
+space     512
+pulse     554
+space     512
+pulse     554
+space     512
+pulse     554
+space     512
+pulse     554
+space     512
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space     512
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     576
+space    1621
+pulse     576
+space     490
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space     512
+pulse     554
+space     490
+pulse     554
+space     490
+pulse     554
+space     490
+pulse     554
+space     490
+pulse     554
+space    1600
+pulse     554
+space     490
+pulse     554
+space     512
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+space    1621
+pulse     554
+"""
+
     testSignals['bethTV0'] = """pulse     277
 space    1792
 pulse     256
