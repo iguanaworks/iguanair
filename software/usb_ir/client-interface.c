@@ -32,6 +32,7 @@
 #include "device-interface.h"
 #include "client-interface.h"
 #include "protocol-versions.h"
+#include "server.h"
 
 #define DEBUG_TRANSMIT_BUFFER 0
 
@@ -52,11 +53,6 @@ typedef struct receiveInfo
     struct dataPacket *packet;
     bool translated;
 } receiveInfo;
-
-bool readLabels = true;
-#ifdef LIBUSB_NO_THREADS_OPTION
-bool noThreads = false;
-#endif
 
 static int pulsesToIguanaSend(int carrier,
                               uint32_t *sendCode, int length,
@@ -165,10 +161,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     /* figure out what version of the compression we support */
     compressVersion = COMPRESS_VER0;
-//*
     if ((target->idev->version & 0xFF) >= 0x08)
         compressVersion = COMPRESS_VER1;
-//*/
 
     switch(request->code)
     {
@@ -259,12 +253,12 @@ static bool handleClientRequest(dataPacket *request, client *target)
         break;
 
     case IG_DEV_IDSOFF:
-        readLabels = false;
+        srvSettings.readLabels = false;
         retval = true;
         break;
 
     case IG_DEV_IDSON:
-        readLabels = true;
+        srvSettings.readLabels = true;
         retval = true;
         break;
 
@@ -277,7 +271,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     case IG_DEV_IDSTATE:
         request->data = (unsigned char*)malloc(1);
-        request->data[0] = (unsigned char)readLabels;
+        request->data[0] = (unsigned char)srvSettings.readLabels;
         request->dataLen = 1;
         retval = true;
         break;
@@ -445,7 +439,7 @@ void getID(iguanaDev *idev)
 {
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
 
-    if (! readLabels ||
+    if (! srvSettings.readLabels ||
         /* reflasher and loader-only devices have no id */
         idev->version == 0x00FF || (idev->version & 0x00FF) == 0x0000)
         return;
@@ -682,7 +676,7 @@ void startWorker(deviceInfo *info)
         idev->carrier = 38000;
         InitializeCriticalSection(&idev->listLock);
 #ifdef LIBUSB_NO_THREADS_OPTION
-        idev->libusbNoThreads = noThreads;
+        idev->libusbNoThreads = srvSettings.noThreads;
 #endif
 #ifdef LIBUSB_NO_THREADS
         InitializeCriticalSection(&idev->devLock);

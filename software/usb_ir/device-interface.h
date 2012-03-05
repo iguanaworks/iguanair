@@ -78,8 +78,6 @@ typedef struct iguanaDev
     /* what carrier frequency should we transmit at?  default 38k */
     unsigned int carrier;
 
-    /*  */
-
     /* might as well keep the list of clients here */
     listHeader clientList;
 
@@ -89,6 +87,7 @@ typedef struct iguanaDev
 #ifdef LIBUSB_NO_THREADS_OPTION
     bool libusbNoThreads;
 #endif
+
 #ifdef LIBUSB_NO_THREADS
     /* if necessary lock access to the underlying usb device */
     LOCK_PTR devLock;

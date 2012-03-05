@@ -113,6 +113,10 @@ def parseOptions():
                       action = 'store_true',
                       help = 'Write the firmware no matter what.')
 
+    parser.add_option('--no-ids',
+                      action = 'store_true',
+                      help = 'Skip the step of checking the id.')
+
     parser.add_option('--flash-multiple',
                       action = 'store_true',
                       help = 'Loop through flashing multiple devices.')
@@ -578,7 +582,7 @@ def reflashDevice(features):
         keepLoader = not options.force
 
     # get the id so we can reset it at the end
-    if not options.force and (version & 0xFF) != 0x00:
+    if not options.no_ids and not options.force and (version & 0xFF) != 0x00:
         id = deviceTransaction(iguanaIR.IG_DEV_GETID, quiet = True)
         # Check if the ID fetch crashed the device.  The
         # deviceVersion() function should trigger a replug if

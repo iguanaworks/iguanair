@@ -39,7 +39,6 @@ extern int daemon_osx_support(const usbId *);
 static mode_t devMode = 0777;
 PIPE_PTR commPipe[2];
 static int logLevelTemp = 0;
-static serverSettings settings;
 
 static void quitHandler(int UNUSED(sig))
 {
@@ -60,9 +59,9 @@ static void workLoop()
     deviceList *list;
 
     /* initialize the driver and device list */
-    if ((list = initServer(&settings)) == NULL)
+    if ((list = initServer(&srvSettings)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
-    else if (! createPipePair(settings.devSettings.childPipe))
+    else if (! createPipePair(srvSettings.devSettings.childPipe))
         message(LOG_ERROR, "failed to open child pipe.\n");
     else if (signal(SIGINT, quitHandler) == SIG_ERR)
         message(LOG_ERROR, "failed to install SIGINT handler.\n");
@@ -122,7 +121,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
         }
 
         /* wait for all the workers to finish */
-        reapAllChildren(list, &settings.devSettings);
+        reapAllChildren(list, &srvSettings.devSettings);
     }
 }
 
@@ -138,6 +137,7 @@ enum
     ARG_FOREGROUND,
     ARG_PID_FILE,
     ARG_NO_IDS,
+    ARG_NO_RESCAN,
     ARG_NO_THREADS,
     ARG_DRIVER,
     ARG_ONLY_PREFER,
@@ -155,10 +155,11 @@ static struct poptOption options[] =
     /* iguanaworks specific options */
     { "no-daemon", 'n',  POPT_ARG_NONE,   NULL, ARG_FOREGROUND, "Do not fork into the background.", NULL },
     { "pid-file",  'p',  POPT_ARG_STRING, NULL, ARG_PID_FILE,   "Specify where to write the pid of the daemon process.", "filename" },
+    { "no-auto-rescan", '\0', POPT_ARG_NONE, NULL, ARG_NO_RESCAN, "Do not automatically rescan the USB bus after a device disconnect.", NULL },
     { "no-ids", '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
     { "no-labels",       '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "DEPRECATED: same as --no-ids", NULL },
-    { "receive-timeout", '\0', POPT_ARG_INT,  &settings.devSettings.recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
-    { "send-timeout",    '\0', POPT_ARG_INT,  &settings.devSettings.sendTimeout, 0, "Specify the device send timeout.", "timeout" },
+    { "receive-timeout", '\0', POPT_ARG_INT,  &srvSettings.devSettings.recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
+    { "send-timeout",    '\0', POPT_ARG_INT,  &srvSettings.devSettings.sendTimeout, 0, "Specify the device send timeout.", "timeout" },
 
 #ifdef LIBUSB_NO_THREADS_OPTION
     { "no-threads", '\0', POPT_ARG_NONE, NULL, ARG_NO_THREADS, "Do not allow two threads to both access libusb calls at the same time.  Try this if the device occasionally crashes.", NULL },
@@ -188,12 +189,8 @@ int main(int argc, const char **argv)
     const char *pidFile = NULL, **leftOvers;
     poptContext poptCon;
 
-    /* initialize the settings for the server process */
-    initServerSettings(&settings);
-    settings.devFunc = startWorker;
-
-    settings.preferred = (const char**)malloc(sizeof(char*));
-    settings.preferred[settings.preferredCount++] = NULL;
+    /* initialize the server-level settings */
+    initServerSettings(startWorker);
 
     poptCon = poptGetContext(NULL, argc, argv, options, 0);
     while(x != -1)
@@ -221,12 +218,16 @@ int main(int argc, const char **argv)
             break;
 
         case ARG_NO_IDS:
-            readLabels = false;
+            srvSettings.readLabels = false;
+            break;
+
+        case ARG_NO_RESCAN:
+            srvSettings.autoRescan = false;
             break;
 
 #ifdef LIBUSB_NO_THREADS_OPTION
         case ARG_NO_THREADS:
-            noThreads = true;
+            srvSettings.noThreads = true;
             break;
 #endif
 
@@ -236,17 +237,17 @@ int main(int argc, const char **argv)
 
         /* driver options */
         case ARG_DRIVER:
-            settings.preferred = (const char**)realloc(settings.preferred, sizeof(char*) * (settings.preferredCount + 1));
-            settings.preferred[settings.preferredCount - 1] = poptGetOptArg(poptCon);
-            settings.preferred[settings.preferredCount++] = NULL;
+            srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
+            srvSettings.preferred[srvSettings.preferredCount - 1] = poptGetOptArg(poptCon);
+            srvSettings.preferred[srvSettings.preferredCount++] = NULL;
             break;
 
         case ARG_ONLY_PREFER:
-            settings.onlyPreferred = true;
+            srvSettings.onlyPreferred = true;
             break;
 
         case ARG_DRIVER_DIR:
-            settings.driverDir = poptGetOptArg(poptCon);
+            srvSettings.driverDir = poptGetOptArg(poptCon);
             break;
 
         /* Error handling starts here */

@@ -35,7 +35,6 @@
 /* iguana local variables */
 static PIPE_PTR commPipe[2];
 static deviceList *list;
-static serverSettings settings;
 
 /* we keep a global list of aliases and  */
 #define MAX_DEVICES 64
@@ -178,6 +177,7 @@ enum
     ARG_FOREGROUND,
     ARG_PID_FILE,
     ARG_NO_IDS,
+    ARG_NO_RESCAN,
     ARG_NO_THREADS,
     ARG_DRIVER,
     ARG_ONLY_PREFER,
@@ -191,6 +191,7 @@ static struct poptOption options[] =
     { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
 
     /* iguanaworks specific stuff */
+    { "no-auto-rescan", '\0', POPT_ARG_NONE, NULL, 'n', "Do not automatically rescan the USB bus after a device disconnect.", NULL },
     { "no-ids", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
     { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "DEPRECATED: same as --no-ids", NULL },
 
@@ -224,11 +225,7 @@ int main(int argc, char **argv)
 
     /* initialize the settings for the server process */
     InitializeCriticalSection(&aliasLock);
-    initServerSettings(&settings);
-    settings.devFunc = startWorker;
-
-    settings.preferred = (const char**)malloc(sizeof(char*));
-    settings.preferred[settings.preferredCount++] = NULL;
+    initServerSettings(startWorker);
 
     temp = strrchr(argv[0], '\\');
     if (temp == NULL)
@@ -255,6 +252,10 @@ int main(int argc, char **argv)
 
         case 'b':
             readLabels = false;
+            break;
+
+        case 'n':
+            autoRescan = false;
             break;
 
         case 'r':
@@ -284,17 +285,17 @@ int main(int argc, char **argv)
 
         /* driver options */
         case ARG_DRIVER:
-            settings.preferred = (const char**)realloc((void*)settings.preferred, sizeof(char*) * (settings.preferredCount + 1));
-            settings.preferred[settings.preferredCount - 1] = poptGetOptArg(poptCon);
-            settings.preferred[settings.preferredCount++] = NULL;
+            srvSettings.preferred = (const char**)realloc((void*)srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
+            srvSettings.preferred[srvSettings.preferredCount - 1] = poptGetOptArg(poptCon);
+            srvSettings.preferred[srvSettings.preferredCount++] = NULL;
             break;
 
         case ARG_ONLY_PREFER:
-            settings.onlyPreferred = true;
+            srvSettings.onlyPreferred = true;
             break;
 
         case ARG_DRIVER_DIR:
-            settings.driverDir = poptGetOptArg(poptCon);
+            srvSettings.driverDir = poptGetOptArg(poptCon);
             break;
 
         /* Error handling starts here */
@@ -334,7 +335,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if ((list = initServer(&settings)) == NULL)
+    if ((list = initServer()) == NULL)
         message(LOG_ERROR, "failed to initialize device list.\n");
     else
     {

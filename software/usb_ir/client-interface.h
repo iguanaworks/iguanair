@@ -53,9 +53,4 @@ void startWorker(deviceInfo *info);
 /* terminate and join with each child thread */
 bool reapAllChildren(deviceList *list, deviceSettings *settings);
 
-extern bool readLabels;
-#ifdef LIBUSB_NO_THREADS_OPTION
-extern bool noThreads;
-#endif
-
 #endif
