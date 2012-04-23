@@ -266,17 +266,6 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
         fclose(input);
     }
 
-/*
-    {
-        int x;
-        for(x = 0; x < count; x++)
-            printf("%d:%d ",
-                   (((uint32_t*)(*pulses))[x] & IG_PULSE_BIT) >> 24,
-                   ((uint32_t*)(*pulses))[x] & IG_PULSE_MASK);
-        printf("\n");
-    }
-*/
-
     /* free the buffer on failure */
     if (! success)
     {
