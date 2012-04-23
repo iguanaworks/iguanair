@@ -30,7 +30,7 @@ igdaemon: daemon.o \
           list.o protocol-versions.o pipes.o dataPackets.o compat-unix.o \
           support.c $(OSSUPPORT)
 	$(CC) $(EXPORTARGS) $(CPPFLAGS) $(CFLAGS) -DSUPPORT_EXPORTS \
-              $(LDFLAGS) $^ -lpopt -lusb -lpthread -ldl $(LIBNAME) -o $@
+              $(LDFLAGS) $^ -lpopt -lpthread -ldl $(LIBNAME) -o $@
 
 igclient: client.o list.o support.o compat-unix.o
 	$(CC) $(LDFLAGS) $^ -lpopt $(LIBNAME) -o $@

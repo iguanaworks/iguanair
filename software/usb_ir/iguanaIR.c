@@ -174,41 +174,60 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
 {
     bool success = false;
     int count = 0;
-    char line[MAX_LINE], inSpace = 1;
+    char buffer[MAX_LINE], *line, inSpace = 1;
     FILE *input;
 
     /* start with no pulses, then realloc as needed */
     *pulses = NULL;
 
+    /* open the file and read it line by line */
     errno = EINVAL;
     input = fopen(filename, "r");
     if (input != NULL)
     {
-        while(fgets(line, MAX_LINE, input))
+        int lineNumber = 0;
+        while(fgets(buffer, MAX_LINE, input))
         {
+            char *temp;
             int value;
             bool discard = false;
-            success = false;
 
-            /* allocate space for one more */
+            line = buffer;
+            success = false;
+            lineNumber++;
+
+            /* allocate space for one more (not it's not efficient) */
             *pulses = realloc(*pulses, sizeof(uint32_t) * (count + 1));
             if (*pulses == NULL)
                 break;
 
+            /* ignore anything after a # in the line */
+            temp = strchr(line, '#');
+            if (temp != NULL)
+                temp[0] = '\0';
+
+            /* skip blank lines (or comments that got truncated) */
+            line += strspn(line, " \t\r\n");
+            if (line[0] == '\0')
+                continue;
+
             /* try to read the pulse or space (in a couple formats) */
-            if (sscanf(line, "pulse %d", &value) == 1)
+            if (sscanf(line, "pulse %d", &value) == 1 ||
+                sscanf(line, "pulse: %d", &value) == 1)
             {
                 if (! inSpace)
                 {
-                    message(LOG_ERROR,
-                            "Illegal pulse reading pulse file %s(%d): %s\n",
-                            filename, count + 1, line);
-                    break;
+                    ((uint32_t*)(*pulses))[count - 1] += value;
+                    message(LOG_WARN,
+                            "Combining pulses in pulse/space file %s(%d)\n",
+                            filename, lineNumber);
+                    discard = true;
                 }
             }
-            else if (sscanf(line, "space %d", &value) == 1)
+            else if (sscanf(line, "space %d", &value) == 1 ||
+                     sscanf(line, "space: %d", &value) == 1)
             {
-                /* never start with a space */
+                /* ignore any leading spaces */
                 if (count == 0)
                 {
                     message(LOG_INFO, "Discarding leading space.\n");
@@ -216,38 +235,57 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
                 }
                 else if (inSpace)
                 {
-                    message(LOG_ERROR,
-                            "Illegal space reading pulse file %s(%d): %s\n",
-                            filename, count + 1, line);
-                    break;
+                    ((uint32_t*)(*pulses))[count - 1] += value;
+                    message(LOG_WARN,
+                            "Combining spaces in pulse/space file %s(%d)\n",
+                            filename, lineNumber);
+                    discard = true;
                 }
             }
+            /* A simple list of numbers is also acceptable.  I believe
+               this was to support some sort of LIRC raw codes. */
             else if (sscanf(line, "%d", &value) != 1)
             {
-                message(LOG_ERROR,
-                        "Illegal line reading pulse file %s(%d): %s\n",
-                        filename, count + 1, line);
-                break;
+                message(LOG_WARN,
+                       "Skipping unparsable line in pulse/space file %s(%d)\n",
+                        filename, lineNumber);
+                discard = true;
             }
 
+            /* bump to the next code */
             if (! discard)
             {
                 if (inSpace)
                     value |= IG_PULSE_BIT;
                 ((uint32_t*)(*pulses))[count++] = value;
+                inSpace ^= 1;
             }
-            inSpace ^= 1;
             success = true;
         }
 
         fclose(input);
     }
 
+/*
+    {
+        int x;
+        for(x = 0; x < count; x++)
+            printf("%d:%d ",
+                   (((uint32_t*)(*pulses))[x] & IG_PULSE_BIT) >> 24,
+                   ((uint32_t*)(*pulses))[x] & IG_PULSE_MASK);
+        printf("\n");
+    }
+*/
+
+    /* free the buffer on failure */
     if (! success)
     {
         free(*pulses);
-        return -1;
+        count = -1;
     }
+    /* trim a trailing space */
+    else if (inSpace)
+        count--;
 
     return count;
 }
