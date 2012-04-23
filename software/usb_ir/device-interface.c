@@ -878,12 +878,17 @@ void handleIncomingPackets(iguanaDev *idev)
                         message(LOG_DEBUG,
                                 "Received ctl header: 0x%x\n", current->code);
 
-
                         /* translate the incoming packet code */
                         if (! translateDevice(&current->code,
                                               idev->version, true))
                             message(LOG_ERROR,
                                     "Failed to translate code for device.\n");
+
+                        /* log incoming errors to the igdaemon output */
+                        if (current->code == IG_DEV_OVERRECV)
+                            message(LOG_WARN, "Error received from device %d: Receive too long.\n", idev->usbDev->id);
+                        else if (current->code == IG_DEV_OVERSEND)
+                            message(LOG_WARN, "Error received from device %d: Transmit too long.\n", idev->usbDev->id);
                     }
                     else
                     {
