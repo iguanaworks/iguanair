@@ -617,6 +617,7 @@ static bool handleReader(iguanaDev *idev)
 static void* workLoop(void *instance)
 {
     iguanaDev *idev = (iguanaDev*)instance;
+    THREAD_PTR thread;
 
 #ifndef WIN32
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
@@ -644,9 +645,10 @@ printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
     joinWithReader(idev);
     releaseDevice(idev->usbDev);
 
+    thread = idev->worker;
     message(LOG_INFO, "Worker %d exiting\n", idev->usbDev->id);
     if (writePipe(idev->settings->childPipe[WRITE],
-                  &idev->worker, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+                  &thread, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
         message(LOG_ERROR, "Failed to write thread id to childPipe.\n");
 
     /* now actually free the malloc'd data */
@@ -655,7 +657,7 @@ printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
     /* go ahead and free the idev since the thread id has been written
        to the main application thread for reaping. */
     free(idev);
-    makeParentJoin();
+    makeParentJoin(thread);
 
     return NULL;
 }

@@ -65,6 +65,6 @@ SUPPORT_API void appendHex(int level, void *location, unsigned int length);
 
 /* used during shutdown to clean up threads */
 void setParentPipe(PIPE_PTR pp);
-void makeParentJoin();
+void makeParentJoin(THREAD_PTR thread);
 
 #endif

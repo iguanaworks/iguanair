@@ -173,9 +173,7 @@ void setParentPipe(PIPE_PTR pp)
     parentPipe = pp;
 }
 
-void makeParentJoin()
+void makeParentJoin(THREAD_PTR thread)
 {
-    THREAD_PTR thread;
-    thread = CURRENT_THREAD_PTR;
     writePipe(parentPipe, &thread, sizeof(THREAD_PTR));
 }
