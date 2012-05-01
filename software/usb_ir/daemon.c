@@ -37,7 +37,6 @@ extern int daemon_osx_support(const usbId *);
 
 /* local variables */
 static mode_t devMode = 0777;
-static PIPE_PTR commPipe[2];
 static int logLevelTemp = 0;
 
 /* possible commands that can be triggered by signals */
@@ -50,14 +49,14 @@ enum
 static void triggerCommand(THREAD_PTR cmd)
 {
     THREAD_PTR flg = INVALID_THREAD_PTR;
-    writePipe(commPipe[WRITE], &flg, sizeof(THREAD_PTR));
-    writePipe(commPipe[WRITE], &cmd, sizeof(THREAD_PTR));
+    writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR));
+    writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR));
 }
 
 static void quitHandler(int UNUSED(sig))
 {
 #if DEBUG
-printf("CLOSE %d %s(%d)\n", commPipe[WRITE], __FILE__, __LINE__);
+printf("CLOSE %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
 #endif
     triggerCommand(QUIT_TRIGGER);
 }
@@ -187,8 +186,6 @@ static void workLoop()
     /* initialize the driver and device list */
     if ((list = initServer(&srvSettings)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
-    else if (! createPipePair(srvSettings.devSettings.childPipe))
-        message(LOG_ERROR, "failed to open child pipe.\n");
     else if (signal(SIGINT, quitHandler) == SIG_ERR)
         message(LOG_ERROR, "failed to install SIGINT handler.\n");
     else if (signal(SIGTERM, quitHandler) == SIG_ERR)
@@ -197,18 +194,14 @@ static void workLoop()
         message(LOG_ERROR, "failed to install SIGHUP handler.\n");
     else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
-    else if (! createPipePair(commPipe))
-        message(LOG_ERROR, "failed to open communication pipe.\n");
     else
     {
         bool quit = false;
 
 #if DEBUG
-printf("OPEN %d %s(%d)\n", commPipe[0], __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", srvSettings.commPipe[0], __FILE__, __LINE__);
+printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 #endif
-
-        setParentPipe(commPipe[WRITE]);
 
         /* trigger the initial device scan */
         scanHandler(SIGHUP);
@@ -225,7 +218,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
             void *exitVal;
 
             /* read a command and check for error */
-            if (readPipe(commPipe[READ], &thread,
+            if (readPipe(srvSettings.commPipe[READ], &thread,
                          sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
             {
                 message(LOG_ERROR,
@@ -236,7 +229,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
             else if (thread != INVALID_THREAD_PTR)
                 joinThread(thread, &exitVal);
             /* read the actual command (came from a signal handler) */
-            else if (readPipe(commPipe[READ], &thread,
+            else if (readPipe(srvSettings.commPipe[READ], &thread,
                               sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
             {
                 message(LOG_ERROR,
@@ -256,7 +249,7 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
         }
 
         /* wait for all the workers to finish */
-        reapAllChildren(list, &srvSettings.devSettings);
+        reapAllChildren(list);
     }
 }
 

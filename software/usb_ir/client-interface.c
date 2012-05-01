@@ -641,22 +641,17 @@ printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
 #endif
     }
 
+    /* log the shutdown and grab a copy of the thread id for later */
+    message(LOG_INFO, "Worker %d exiting\n", idev->usbDev->id);
+    thread = idev->worker;
+
     /* release resources for reader and usb device */
     joinWithReader(idev);
     releaseDevice(idev->usbDev);
-
-    thread = idev->worker;
-    message(LOG_INFO, "Worker %d exiting\n", idev->usbDev->id);
-    if (writePipe(idev->settings->childPipe[WRITE],
-                  &thread, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
-        message(LOG_ERROR, "Failed to write thread id to childPipe.\n");
-
-    /* now actually free the malloc'd data */
     freeDevice(idev->usbDev);
-
-    /* go ahead and free the idev since the thread id has been written
-       to the main application thread for reaping. */
     free(idev);
+
+    /* tell the parent thread to go ahead and reclaim our resources */
     makeParentJoin(thread);
 
     return NULL;
@@ -728,7 +723,7 @@ printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
     releaseDevice(info);
 }
 
-bool reapAllChildren(deviceList *list, deviceSettings *settings)
+bool reapAllChildren(deviceList *list)
 {
     unsigned int x;
 
@@ -741,9 +736,9 @@ bool reapAllChildren(deviceList *list, deviceSettings *settings)
         THREAD_PTR child;
 
         /* NOTE: using 2*recv timeout to allow readers to exit. */
-        result = readPipeTimed(settings->childPipe[READ],
+        result = readPipeTimed(srvSettings.commPipe[READ],
                                (char*)&child, sizeof(THREAD_PTR),
-                               2 * settings->recvTimeout);
+                               2 * srvSettings.devSettings.recvTimeout);
         /* no one ready */
         if (result == 0)
             break;

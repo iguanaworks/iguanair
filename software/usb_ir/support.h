@@ -63,8 +63,4 @@ SUPPORT_API bool wouldOutput(int level);
 SUPPORT_API int message(int level, char *format, ...);
 SUPPORT_API void appendHex(int level, void *location, unsigned int length);
 
-/* used during shutdown to clean up threads */
-void setParentPipe(PIPE_PTR pp);
-void makeParentJoin(THREAD_PTR thread);
-
 #endif

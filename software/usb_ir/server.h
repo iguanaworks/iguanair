@@ -34,6 +34,9 @@ typedef struct
     /* should the server rescan the usb bus after a disconnect */ 
     bool autoRescan;
 
+    /* a method for children to communicate back to the list owner */
+    PIPE_PTR commPipe[2];
+
     /* libusb pre 1.0 had problems with threading and this was a
        mechanism to deal with those issues. */
 #ifdef LIBUSB_NO_THREADS_OPTION
@@ -46,5 +49,8 @@ deviceList* initServer();
 
 /* global settings object */
 extern serverSettings srvSettings;
+
+/* used during shutdown to clean up threads */
+void makeParentJoin(THREAD_PTR thread);
 
 #endif

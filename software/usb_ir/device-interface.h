@@ -31,9 +31,6 @@ struct dataPacket;
 
 typedef struct deviceSettings
 {
-    /* a method for children to communicate back to the list owner */
-    PIPE_PTR childPipe[2];
-
     /* time outs for send and receive */
     unsigned int recvTimeout;
     unsigned int sendTimeout;

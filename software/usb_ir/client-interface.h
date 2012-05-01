@@ -51,6 +51,6 @@ void getID(iguanaDev *idev);
 /* start a thread to handle a single device instance */
 void startWorker(deviceInfo *info);
 /* terminate and join with each child thread */
-bool reapAllChildren(deviceList *list, deviceSettings *settings);
+bool reapAllChildren(deviceList *list);
 
 #endif

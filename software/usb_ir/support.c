@@ -162,18 +162,3 @@ void appendHex(int level, void *location, unsigned int length)
             fflush(logFile);
     }
 }
-
-/* TODO: need to get this out of the library */
-#include "pipes.h"
-
-static PIPE_PTR parentPipe;
-
-void setParentPipe(PIPE_PTR pp)
-{
-    parentPipe = pp;
-}
-
-void makeParentJoin(THREAD_PTR thread)
-{
-    writePipe(parentPipe, &thread, sizeof(THREAD_PTR));
-}

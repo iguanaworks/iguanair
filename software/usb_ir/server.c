@@ -20,9 +20,11 @@
 #include "devicebase.h"
 #include "device-interface.h"
 #include "server.h"
+#include "pipes.h"
 
 /* global server settings are grouped togther */
 serverSettings srvSettings;
+PIPE_PTR commPipe[2];
 
 static usbId ids[] = {
     {0x1781, 0x0938, NULL}, /* iguanaworks USB transceiver */
@@ -95,12 +97,21 @@ deviceList* initServer()
 #endif
     }
 
-    /* initialize the driver and device list */
-    if (! findDriver(srvSettings.driverDir,
+    /* initialize the commPipe, driver, and device list */
+    if (! createPipePair(srvSettings.commPipe))
+        message(LOG_ERROR, "failed to open communication pipe.\n");
+    else if (! findDriver(srvSettings.driverDir,
                      srvSettings.preferred, srvSettings.onlyPreferred))
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");
     else if ((list = prepareDeviceList(ids, srvSettings.devFunc)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
 
     return list;
+}
+
+void makeParentJoin(THREAD_PTR thread)
+{
+    if (writePipe(srvSettings.commPipe[WRITE],
+                  &thread, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+        message(LOG_ERROR, "Failed to write thread id to parentPipe.\n");
 }
