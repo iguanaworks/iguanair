@@ -33,7 +33,6 @@
 #define SERVICE_NAME "igdaemon"
 
 /* iguana local variables */
-static PIPE_PTR commPipe[2];
 static deviceList *list;
 
 /* we keep a global list of aliases and  */
