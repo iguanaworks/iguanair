@@ -73,11 +73,7 @@ static bool mkdirs(char *path)
 
     slash = strrchr(path, '/');
     if (slash == NULL)
-    {
-        *((char*)NULL) = 5;
-        
         retval = true;
-    }
     else
     {
         slash[0] = '\0';
@@ -161,7 +157,7 @@ printf("CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
         close(sockfd);
     }
 
-    return -1;
+    return INVALID_PIPE;
 }
 
 static void stopListening(int fd, const char *name)
@@ -182,6 +178,7 @@ printf("CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
 static void workLoop()
 {
     deviceList *list;
+    int ctlSock;
 
     /* initialize the driver and device list */
     if ((list = initServer(&srvSettings)) == NULL)
@@ -194,6 +191,8 @@ static void workLoop()
         message(LOG_ERROR, "failed to install SIGHUP handler.\n");
     else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
+    else if ((ctlSock = startListening(NULL)) == INVALID_PIPE)
+        message(LOG_ERROR, "failed to open the control socket.\n");
     else
     {
         bool quit = false;
@@ -216,6 +215,10 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
         {
             THREAD_PTR thread = INVALID_THREAD_PTR;
             void *exitVal;
+
+            /* wait for a new ctl connection, a command from an
+               existing ctl connection, or a message from an exiting
+               child thread. */
 
             /* read a command and check for error */
             if (readPipe(srvSettings.commPipe[READ], &thread,
@@ -250,6 +253,9 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 
         /* wait for all the workers to finish */
         reapAllChildren(list);
+
+        /* close up the server socket */
+        stopListening(ctlSock, NULL);
     }
 }
 
