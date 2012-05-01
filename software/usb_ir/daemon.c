@@ -37,21 +37,34 @@ extern int daemon_osx_support(const usbId *);
 
 /* local variables */
 static mode_t devMode = 0777;
-PIPE_PTR commPipe[2];
+static PIPE_PTR commPipe[2];
 static int logLevelTemp = 0;
+
+/* possible commands that can be triggered by signals */
+enum
+{
+    SCAN_TRIGGER,
+    QUIT_TRIGGER
+};
+
+static void triggerCommand(THREAD_PTR cmd)
+{
+    THREAD_PTR flg = INVALID_THREAD_PTR;
+    writePipe(commPipe[WRITE], &flg, sizeof(THREAD_PTR));
+    writePipe(commPipe[WRITE], &cmd, sizeof(THREAD_PTR));
+}
 
 static void quitHandler(int UNUSED(sig))
 {
 #if DEBUG
 printf("CLOSE %d %s(%d)\n", commPipe[WRITE], __FILE__, __LINE__);
 #endif
-    closePipe(commPipe[WRITE]);
+    triggerCommand(QUIT_TRIGGER);
 }
 
 static void scanHandler(int UNUSED(sig))
 {
-    THREAD_PTR x = INVALID_THREAD_PTR;
-    writePipe(commPipe[WRITE], &x, sizeof(THREAD_PTR));
+    triggerCommand(SCAN_TRIGGER);
 }
 
 static void workLoop()
@@ -92,32 +105,41 @@ printf("OPEN %d %s(%d)\n", commPipe[1], __FILE__, __LINE__);
         daemon_osx_support(ids);
 #endif
 
-        /* now wait for commands */
+        /* loop, waiting for commands */
         while(! quit)
         {
             THREAD_PTR thread = INVALID_THREAD_PTR;
             void *exitVal;
 
-            switch(readPipe(commPipe[READ], &thread, sizeof(THREAD_PTR)))
+            /* read a command and check for error */
+            if (readPipe(commPipe[READ], &thread,
+                         sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
             {
-            /* error */
-            default:
+                message(LOG_ERROR,
+                        "CommPipe read failed: %s\n", translateError(errno));
+                quit = true;
+            }
+            /* threads trigger a join by telling the main thread their id */
+            else if (thread != INVALID_THREAD_PTR)
+                joinThread(thread, &exitVal);
+            /* read the actual command (came from a signal handler) */
+            else if (readPipe(commPipe[READ], &thread,
+                              sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+            {
                 message(LOG_ERROR,
                         "Command read failed: %s\n", translateError(errno));
-                /* fall through and quit */
-            /* close, signalling a shutdown */
-            case 0:
                 quit = true;
-                break;
-
-            /* command read (right now only support scan) */
-            case sizeof(THREAD_PTR):
-                if (thread != INVALID_THREAD_PTR)
-                    joinThread(thread, &exitVal);
-                else if (! updateDeviceList(list))
-                    message(LOG_ERROR, "scan failed.\n");
-                break;
             }
+            /* handle the shutdown command */
+            else if (thread == QUIT_TRIGGER)
+                quit = true;
+            /* complain about unknown commands */
+            else if (thread != SCAN_TRIGGER)
+                message(LOG_ERROR,
+                        "Unknown command from commPipe: %d\n", thread);
+            /* handle the scan/rescan command */
+            else if (! updateDeviceList(list))
+                message(LOG_ERROR, "scan failed.\n");
         }
 
         /* wait for all the workers to finish */
