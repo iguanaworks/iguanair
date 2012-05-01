@@ -750,6 +750,7 @@ bool reapAllChildren(deviceList *list)
         }
         else
         {
+            /* simpler to just join all here instead of in any worker loop */
             joinThread(child, &exitval);
             message(LOG_DEBUG, "Reaped child: %p\n", child);
         }
