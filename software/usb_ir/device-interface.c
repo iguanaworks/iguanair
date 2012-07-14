@@ -25,6 +25,7 @@
 #include "dataPackets.h"
 #include "device-interface.h"
 #include "protocol-versions.h"
+#include "server.h"
 
 /* internal protocol constants */
 enum
@@ -845,13 +846,16 @@ void handleIncomingPackets(iguanaDev *idev)
                     break;
                 }
                 else /* if (errno != EINVAL) */
+                {
                     /* log the usb error associated with the problem */
                     printError(LOG_ERROR,
                                "can't read from USB device", idev->usbDev);
+
                     /* Send SIGHUP to trigger rescan and see if we can find
-                    'new' device */
-                    kill(getpid(),SIGHUP);
-                     
+                    'new' device unless user has disabled that option */
+                    if (srvSettings.autoRescan)
+                        kill(getpid(),SIGHUP);
+                }
             }
             else if (length == 0)
                 message(LOG_DEBUG, "0 length recv on %d.\n", idev->usbDev->id);
