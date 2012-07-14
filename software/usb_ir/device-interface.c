@@ -847,6 +847,10 @@ void handleIncomingPackets(iguanaDev *idev)
                     /* log the usb error associated with the problem */
                     printError(LOG_ERROR,
                                "can't read from USB device", idev->usbDev);
+                    /* Send SIGHUP to trigger rescan and see if we can find
+                    'new' device */
+                    kill(getpid(),SIGHUP);
+                     
             }
             else if (length == 0)
                 message(LOG_DEBUG, "0 length recv on %d.\n", idev->usbDev->id);
