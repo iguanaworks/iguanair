@@ -226,6 +226,9 @@ _conn = None
 def connect(timeout = 2, willChange = False, quiet = False):
     global _conn
 
+    # sometimes the change is a removal and reappearance
+    changed = False
+
     # check every quarter second
     sleepTime = 0.25
     timeoutStart = timeout
@@ -238,13 +241,17 @@ def connect(timeout = 2, willChange = False, quiet = False):
 
         # no change, so lets just run on
         if len(devices) == 0:
-            pass
+            # note the change if there used to be a device
+            if start is not None:
+                changed = True
+        # if any devices are found record the first one
         elif start is None:
             start = devices[0]
             if not willChange:
                 break
+        # if the device is found and has not always been the same break out
         elif len(devices) == 1 and \
-             start and start != devices[0]:
+             start and (start != devices[0] or changed):
             break
 
         # delay and count down the timeout
@@ -438,6 +445,9 @@ def writePageToDevice(page):
             message(LOG_FATAL, "checksum does not match: 0x%x != 0x%x on page %s\n" % (chksum, page['chksum'], page['start'] / 64))
         else:
             return True
+    # old versions did not return the checksum, just an empty string
+    elif result == "":
+        return True
     return False
 
 def writePagesToDevice(pages):
