@@ -853,9 +853,10 @@ void handleIncomingPackets(iguanaDev *idev)
 
                     /* Send SIGHUP to trigger rescan and see if we can find
                     'new' device unless user has disabled that option */
-                    if (srvSettings.autoRescan)
-                        usleep(10000)
+                    if (srvSettings.autoRescan) {
+                        usleep(10000);
                         kill(getpid(),SIGHUP);
+                    }
                 }
             }
             else if (length == 0)
