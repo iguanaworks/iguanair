@@ -212,7 +212,8 @@ def listDevices(path = iguanaIR.IGSOCK_NAME):
             raise Exception('Listing devices is not supported in Windows')
 
         for device in os.listdir(path):
-            if not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
+            if device != 'ctl' and \
+               not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
                 devices.append(device)
     except Exception, inst:
         devices = ['0']
@@ -574,7 +575,8 @@ def findHexFile(type, target = None, mustFind = True):
     return latest
 
 def hexVersion(filename):
-    return int(re.search('.*?(\d+).*\.hex$', filename).group(1))
+    return int(re.search('.*?(\d+).*\.hex$',
+                         os.path.split(filename)[1]).group(1))
 
 def reflashDevice(features):
     global options
@@ -654,10 +656,10 @@ def reflashDevice(features):
 
     if id:
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
-        deviceTransaction(iguanaIR.IG_DEV_SETID, id)
     else:
         message(LOG_NORMAL, "Clearing device id.\n")
-        deviceTransaction(iguanaIR.IG_DEV_SETID, '')
+        id = ''
+    deviceTransaction(iguanaIR.IG_DEV_SETID, id)
 
     if wrote and (deviceVersion() < 0x0100 or \
                   (options.test and not wroteLoader)):
