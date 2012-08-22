@@ -1,4 +1,4 @@
-#!/usr/bin/python -tt
+#!/usr/bin/python2.6 -tt
 #
 # **************************************************************************
 # ** upgrade-usb ***********************************************************
@@ -657,8 +657,8 @@ def reflashDevice(features):
     if id:
         message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
     else:
-        message(LOG_NORMAL, "Clearing device id.\n")
-        id = ''
+        message(LOG_NORMAL, "Setting device id to default: iguana\n")
+        id = 'iguana'
     deviceTransaction(iguanaIR.IG_DEV_SETID, id)
 
     if wrote and (deviceVersion() < 0x0100 or \
