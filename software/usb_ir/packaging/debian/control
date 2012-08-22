@@ -18,7 +18,7 @@ Description: This is the IguanaWorks USB IR daemon/driver and
 Package: iguanair-python
 Section: utils
 Architecture: any
-Depends: iguanair (= ${binary:Version}), ${shlibs:Depends}
+Depends: iguanair (= ${binary:Version}), ${shlibs:Depends}, ${python:Depends}
 Essential: no
 Description: This is the Python client bindings IguanaWorks USB IR
 	     driver.
