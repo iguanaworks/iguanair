@@ -13,7 +13,7 @@ sys.path.append('Release')
 setup(console = ['../reflasher/iguanaIR-reflasher'],
       options = { 'py2exe' : { 'dist_dir' : 'Release' }})
 
-# copy the hex files we need (but not he devel ones)
+# copy the hex files we need (but not the devel ones)
 shutil.rmtree('Release/hex', True)
 shutil.copytree('../reflasher/hex', 'Release/hex')
 shutil.rmtree('Release/hex/.svn')

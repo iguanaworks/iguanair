@@ -250,11 +250,11 @@ int main(int argc, char **argv)
             break;
 
         case 'b':
-            readLabels = false;
+            srvSettings.readLabels = false;
             break;
 
         case 'n':
-            autoRescan = false;
+            srvSettings.autoRescan = false;
             break;
 
         case 'r':
