@@ -1,3 +1,11 @@
+iguanair (1.0.3-1ubuntu1) precise; urgency=low
+
+  * 1.0.3 Iguanaworks Release
+  * 0308 Firmware and driver support for 0308 firmware
+  * Restart on device disconnect fixes issues on some systems with usb power management problems.
+
+ -- Iguanaworks Support <support@iguanaworks.net>  Tue, 21 Aug 2012 20:01:44 -0600
+
 iguanair (1.0.1-1) maverick; urgency=low
 
   * 1.0.1 Iguanaworks Release
