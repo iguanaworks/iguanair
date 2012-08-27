@@ -10,12 +10,12 @@ endif
 all: $(DRIVERS)
 
 libusb.so: libusb.c $(LISTS) Makefile
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) -lusb-1.0 $< \
-		$(LISTS) -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) $< \
+		$(LISTS) -o $@ -lusb-1.0
 
 libusbpre1.so: libusbpre1.c $(LISTS) Makefile
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) -lusb $< \
-		$(LISTS) -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SHAREARG) $(LDFLAGS) $< \
+		$(LISTS) -o $@ -lusb
 
 .PHONY: clean
 clean:
