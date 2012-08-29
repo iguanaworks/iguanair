@@ -16,6 +16,6 @@ setup(console = ['../reflasher/iguanaIR-reflasher'],
 # copy the hex files we need (but not the devel ones)
 shutil.rmtree('Release/hex', True)
 shutil.copytree('../reflasher/hex', 'Release/hex')
-shutil.rmtree('Release/hex/.svn')
+#shutil.rmtree('Release/hex/.svn')
 for devel in glob.glob('Release/hex/*-0.hex'):
     os.unlink(devel)
