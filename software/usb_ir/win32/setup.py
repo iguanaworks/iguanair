@@ -287,14 +287,23 @@ end;
 
 function InitializeSetup(): boolean;
 begin
-	if IsServiceInstalled('igdaemon') and IsServiceRunning('igdaemon') then begin
-		  StopService('igdaemon')
+  if IsServiceInstalled('igdaemon') and 
+     IsServiceRunning('igdaemon') then begin
+    StopService('igdaemon')
   end
 
 //  if NeedVCRedistUpdate() then
 //    MsgBox('Need the redist update', mbError, MB_OK)
 
-	Result := true
+  Result := true
+end;
+
+procedure DeinitializeSetup();
+begin
+  if IsServiceInstalled('igdaemon') and
+     IsServiceRunning('igdaemon') = false then begin
+    StartService('igdaemon')
+  end
 end;
 
 """ % vars)
