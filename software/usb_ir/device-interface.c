@@ -857,6 +857,8 @@ void handleIncomingPackets(iguanaDev *idev)
                     if (srvSettings.autoRescan)
                     {
                         Sleep(10);
+                        message(LOG_INFO,
+                            "Rescaning for devices after recent disconnect.\n");
                         kill(getpid(), SIGHUP);
                     }
 #endif
