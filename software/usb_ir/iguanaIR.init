@@ -40,7 +40,7 @@ if [ "$DISTRO" = "" ]; then
 	fi
 fi
 
-if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" -o "$DISTRO" = "centos" -o "$DISTRO" = "rhel" ]; then
+if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" -o "$DISTRO" = "centos" -o "$DISTRO" = "rhel" -o "$DISTRO" = "scientific" ]; then
     # welcome to fedora land
     . /etc/init.d/functions
 
