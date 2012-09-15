@@ -34,7 +34,7 @@ clean:
 	dh_clean
 
 	# remove the build directories
-	rm -rf $(CURDIR)/debian/tmp $(CURDIR)/debian/iguana-python
+	rm -rf $(CURDIR)/debian/iguanair $(CURDIR)/debian/iguana-python
 
 install: build
 	dh_testdir
@@ -44,7 +44,7 @@ install: build
 	dh_makeshlibs
 
 	# main install
-	make install DESTDIR=$(CURDIR)/debian/tmp
+	make install DESTDIR=$(CURDIR)/debian/iguanair
 
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
@@ -52,13 +52,13 @@ install: build
 
 	# move the python stuff into it's sub package
 	mkdir -p $(CURDIR)/debian/iguanair-python/usr/lib
-	mv $(CURDIR)/debian/tmp/usr/lib/python* $(CURDIR)/debian/iguanair-python/usr/lib
+	mv $(CURDIR)/debian/iguanair/usr/lib/python* $(CURDIR)/debian/iguanair-python/usr/lib
 
 	#move the reflasher stuff into it's sub systm
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/bin
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/lib
-	mv $(CURDIR)/debian/tmp/usr/lib/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/lib/
-	mv $(CURDIR)/debian/tmp/usr/bin/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/bin/
+	mv $(CURDIR)/debian/iguanair/usr/lib/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/lib/
+	mv $(CURDIR)/debian/iguanair/usr/bin/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/bin/
 	dh_pysupport 
 
 
