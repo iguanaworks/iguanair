@@ -50,6 +50,7 @@ OutputBaseFilename=iguanaIR-%(version)s
 Source: "%(dir)s/igdaemon.exe";      DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/igclient.exe";      DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/iguanaIR.dll";      DestDir: "{app}"; Flags: ignoreversion
+Source: "%(dir)s/iguanaIR.lib";      DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; compiled python APIs
