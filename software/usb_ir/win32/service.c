@@ -103,7 +103,14 @@ static bool changeServiceState(unsigned int action)
         message(LOG_ERROR, "Failed to open the SCM: %s\n", translateError(GetLastError()));
     else
     {
-        svc = OpenService(scm, "igdaemon", action);
+		// translate the requested access as necessary
+		unsigned int access = action;
+		if (access == SERVICE_CONTROL_PAUSE ||
+			access == SERVICE_CONTROL_CONTINUE)
+			access = SERVICE_PAUSE_CONTINUE;
+
+		// open a handle to the specific service
+        svc = OpenService(scm, "igdaemon", access);
         if (svc == NULL)
             message(LOG_ERROR, "Failed to open the service: %s\n",
                     translateError(GetLastError()));
@@ -129,7 +136,23 @@ static bool changeServiceState(unsigned int action)
                     retval = true;
                 break;
 
-            case DELETE:
+			case SERVICE_CONTROL_PAUSE:
+                if (ControlService(svc, SERVICE_CONTROL_PAUSE, &status) == FALSE)
+                    message(LOG_ERROR, "Failed to pause the service: %s\n",
+                            translateError(GetLastError()));
+                else
+                    retval = true;
+                break;
+
+			case SERVICE_CONTROL_CONTINUE:
+                if (ControlService(svc, SERVICE_CONTROL_CONTINUE, &status) == FALSE)
+                    message(LOG_ERROR, "Failed to continue the service: %s\n",
+                            translateError(GetLastError()));
+                else
+                    retval = true;
+                break;
+
+			case DELETE:
                 if (DeleteService(svc) == FALSE)
                     message(LOG_ERROR, "Failed to delete the service: %s\n",
                             translateError(GetLastError()));
@@ -199,6 +222,7 @@ static struct poptOption options[] =
     { "unregsvc", 0, POPT_ARG_NONE, NULL, 'u', "Remove the system igdaemon service.", NULL },
     { "startsvc", 0, POPT_ARG_NONE, NULL, 's', "Start the system igdaemon service.", NULL },
     { "stopsvc", 0, POPT_ARG_NONE, NULL, 't', "Stop the system igdaemon service.", NULL },
+    { "rescan", 0, POPT_ARG_NONE, NULL, 'c', "Trigger a rescan by pausing and then resuming the service.", NULL },
     { "installinf", 0, POPT_ARG_NONE, NULL, 'i', "Manually install the INF for the device.", NULL },
 
     /* options specific to the drivers */
@@ -270,6 +294,12 @@ int main(int argc, char **argv)
         case 't':
             if (changeServiceState(SERVICE_STOP))
                 return 0;
+            return 1;
+
+        case 'c':
+            if (changeServiceState(SERVICE_CONTROL_PAUSE) &&
+                changeServiceState(SERVICE_CONTROL_CONTINUE))
+				return 0;
             return 1;
 
         case 'u':
@@ -446,6 +476,8 @@ static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
     case SERVICE_CONTROL_CONTINUE:
         setServiceStatus(SERVICE_CONTINUE_PENDING, NO_ERROR);
         registerNotifications();
+        if (! updateDeviceList(list))
+            message(LOG_ERROR, "scan failed.\n");
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
         break;
 
@@ -507,7 +539,7 @@ static HANDLE startOverlappedAction(PIPE_PTR fd, HANDLE event, bool connect)
     return event;
 }
 
-/* list to clients connecting to either name or alias, and the idev->reader */
+/* listen to clients connecting to either name or alias, and the idev->reader */
 void listenToClients(iguanaDev *idev,
                      handleReaderFunc handleReader,
                      clientConnectedFunc clientConnected,
