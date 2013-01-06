@@ -1,12 +1,14 @@
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:	iguanair
-# Required-Start:	udev
-# Required-Stop:
+# Required-Start:	$remote_fs
+# Required-Stop:	$remote_fs
 # Short-Description: IguanaWorks USB IR Device Daemon
 # Description: IguanaWorks USB IR Device Daemon
 # Should-Start:
 # Should-Stop:
+# X-Start-Before: lirc
+# X-Stop-After: lirc
 # Default-Start: 2 3 4 5 
 # Default-Stop: 0 1 6
 ### END INIT INFO

@@ -36,7 +36,7 @@ igclient: client.o list.o support.o compat-unix.o
 	$(CC) $(LDFLAGS) $^ -lpopt $(LIBNAME) -o $@
 
 %.o: %.c Makefile iguanaIR.h
-	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(PICFLAG) $< -o $@
 
 driver.o: driver.c Makefile iguanaIR.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) -Wno-strict-aliasing $< -o $@
@@ -72,8 +72,8 @@ iguanaIR_wrap.c iguanaIR.py: iguanaIR.i iguanaIR.h Makefile
 	swig $(CPPFLAGS) @PYTHON_CPPFLAGS@ -python -I$(srcdir) $(<F)
 
 iguanaIR_wrap.o: iguanaIR_wrap.c Makefile
-#	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@
-	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-missing-field-initializers -Wno-unused -Wno-long-long -Wno-strict-aliasing $< -o $@
+#	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) -Wno-strict-aliasing -Wno-unused -Wno-implicit-function-declaration -Wno-long-long $< -o $@	
+	$(CC) -c $(CPPFLAGS) @PYTHON_CPPFLAGS@ $(CFLAGS) $(PICFLAG) -I$(srcdir) -Wno-missing-field-initializers -Wno-unused -Wno-long-long -Wno-strict-aliasing $< -o $@
 
 _iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
 	$(CC) $(LDFLAGS) @PYTHON_LDFLAGS@ $(SHAREARG) $^ $(LIBNAME) -o $@
