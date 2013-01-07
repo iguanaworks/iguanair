@@ -112,8 +112,9 @@ install: all
 	install igdaemon $(DESTDIR)/$(BINDIR)/igdaemon
 	install -d $(DESTDIR)/$(LIBDIR)/iguanaIR
 	install $(LIBNAME) $(DESTDIR)/$(LIBDIR)/$(LIBNAME)
-	install drivers/libusbpre1.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusbpre1.$(SHAREEXT)
-	install drivers/libusb.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
+	#install drivers/libusbpre1.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusbpre1.$(SHAREEXT)
+	#install drivers/libusb.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
+	install drivers/*.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/
 	install -d $(DESTDIR)$(prefix)/include
 	install $(srcdir)/iguanaIR.h $(DESTDIR)$(prefix)/include/iguanaIR.h
 ifdef DARWIN

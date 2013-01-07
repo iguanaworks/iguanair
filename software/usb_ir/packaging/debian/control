@@ -2,13 +2,13 @@ Source: iguanair
 Section: utils
 Priority: optional
 Maintainer: IguanaWorks [support@iguanaworks.net]
-Build-Depends: debhelper (>=5), libpopt-dev (>=1.10), libusb-1.0-0-dev,  libusb-dev, python-dev (>=2.4), autoconf, automake, swig, fakeroot
+Build-Depends: debhelper (>=5), libpopt-dev (>=1.10), libusb-1.0-0-dev, python-dev (>=2.4), autoconf, automake, swig, fakeroot
 Standards-Version: 3.7.2.2
 
 Package: iguanair
 Architecture: any
 Section: utils
-Depends: libc6 (>=2.0), udev (>= 0.99), libpopt0 (>=1.10), libusb-1.0-0 | libusb-0.1-4 (>= 0.1.11)
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, udev (>= 0.99)
 Essential: no
 Recommends: lirc
 Description: This is the IguanaWorks USB IR daemon/driver and
@@ -31,5 +31,4 @@ Depends: iguanair-python (= ${binary:Version})
 Essential: no
 Description: The program will reflash the IguanaWorks USB IR Transceiver with the
 		the latest firmware.
-
 
