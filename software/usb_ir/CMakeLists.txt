@@ -109,6 +109,6 @@ configure_file(config.h.in.cmake ${CMAKE_SOURCE_DIR}/config.h)
 #        install -D --mode 644 $(srcdir)/udev/iguanaIR.rules \
 #                              $(DESTDIR)/lib/udev/rules.d/80-iguanaIR.rules
 #        install --mode 755 $(SETOWNER) -d $(DESTDIR)/lib/udev/devices/iguanaIR
-#        install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
+#        install --mode 755 $(SETOWNER) -d $(DESTDIR)/var/run/iguanaIR
 #endif
 ##########################################

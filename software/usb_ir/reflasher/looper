@@ -17,7 +17,7 @@ import iguanaIR
 if sys.platform == 'darwin':
     deviceDir = '/tmp/iguanaIR'
 else:
-    deviceDir = '/dev/iguanaIR'
+    deviceDir = '/var/run/iguanaIR'
 
 def listDevices(path = deviceDir):
     devices = []

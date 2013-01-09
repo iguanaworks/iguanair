@@ -11,15 +11,15 @@ Generally, once lircd is compiled with support for our driver you only need to p
 {{{
 lircd -H iguanaIR
 lircd -H iguanaIR -d 0
-lircd -H iguanaIR -d /dev/iguanaIR/0
+lircd -H iguanaIR -d /var/run/iguanaIR/0
 }}}
-Before version 0.25 the third version was not valid.  All of these calls will invoke lircd to communicate with the first iguanaIR device.  However, while developing this product I found that I often unplugged and replugged multiple iguanaIR devices, and sometimes plugged them into different USB ports on my desktop machine.  Since the indices listed in /dev/iguanaIR are based on the USB hierarchy this meant that the order of device indices would sometimes be differnt.  To fix this we added device labels, or ids.  The label can be set as follows:
+Before version 0.25 the third version was not valid.  All of these calls will invoke lircd to communicate with the first iguanaIR device.  However, while developing this product I found that I often unplugged and replugged multiple iguanaIR devices, and sometimes plugged them into different USB ports on my desktop machine.  Since the indices listed in /var/run/iguanaIR are based on the USB hierarchy this meant that the order of device indices would sometimes be differnt.  To fix this we added device labels, or ids.  The label can be set as follows:
 {{{
 igclient -d 0 --set-id downstairs
 }}}
-After an id is set a listing of /dev/iguanaIR shows a new symlink:
+After an id is set a listing of /var/run/iguanaIR shows a new symlink:
 {{{
-[jdunn@porkrind ~]$ ls -l /dev/iguanaIR/
+[jdunn@porkrind ~]$ ls -l /var/run/iguanaIR/
 total 0
 srwxrwxrwx 1 iguanair iguanair 0 Dec 10 11:57 0
 lrwxrwxrwx 1 iguanair iguanair 1 Dec 10 11:57 downstairs -> 0
@@ -28,9 +28,9 @@ Now the device can be refered to by its id as well as its index.  For example, o
 {{{
 lircd -H iguanaIR
 lircd -H iguanaIR -d 0
-lircd -H iguanaIR -d /dev/iguanaIR/0
+lircd -H iguanaIR -d /var/run/iguanaIR/0
 lircd -H iguanaIR -d downstairs
-lircd -H iguanaIR -d /dev/iguanaIR/downstairs
+lircd -H iguanaIR -d /var/run/iguanaIR/downstairs
 }}}
 
 == irrecord ==

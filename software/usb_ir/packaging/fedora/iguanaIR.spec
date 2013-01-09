@@ -76,14 +76,14 @@ rm -rf $RPM_BUILD_ROOT
 # must add the service after the files are placed
 %post
 /sbin/chkconfig --add %{name}
-/usr/bin/install --mode=755 --owner=iguanair --group=iguanair -d /dev/iguanaIR
+/usr/bin/install --mode=755 --owner=iguanair --group=iguanair -d /var/run/iguanaIR
 
 # before the files are removed stop the service
 %preun
 if [ $1 = 0 ]; then
         /sbin/service %{name} stop > /dev/null 2>&1 || true
         /sbin/chkconfig --del %{name}
-        /bin/rmdir /dev/iguanaIR 2>/dev/null || true
+        /bin/rmdir /var/run/iguanaIR 2>/dev/null || true
 fi
 
 # after the files are removed nuke the user and group

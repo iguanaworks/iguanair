@@ -127,7 +127,7 @@ else
 	install -D --mode 644 $(srcdir)/udev/iguanaIR.rules \
 	                      $(DESTDIR)/lib/udev/rules.d/80-iguanaIR.rules
 	install --mode 755 $(SETOWNER) -d $(DESTDIR)/lib/udev/devices/iguanaIR
-	install --mode 755 $(SETOWNER) -d $(DESTDIR)/dev/iguanaIR
+	install --mode 755 $(SETOWNER) -d $(DESTDIR)/var/run/iguanaIR
 endif
 
 .PHONY: uninstall
@@ -141,7 +141,7 @@ else
 	rm -f $(DESTDIR)/etc/default/iguanaIR
 	rm -f $(DESTDIR)/etc/udev/rules.d/iguanaIR.rules
 	rmdir $(DESTDIR)/lib/udev/devices/iguanaIR 2>/dev/null || true
-	rmdir $(DESTDIR)/dev/iguanaIR 2>/dev/null || true
+	rmdir $(DESTDIR)/var/run/iguanaIR 2>/dev/null || true
 endif
 	rm -f $(DESTDIR)$(BINDIR)/igclient
 	rm -f $(DESTDIR)$(BINDIR)/igdaemon

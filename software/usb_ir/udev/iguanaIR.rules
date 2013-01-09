@@ -10,8 +10,8 @@
 
 ATTR{manufacturer} == "IguanaWorks", ATTR{product} == "USB IR Transceiver", \
                OWNER = "iguanair", MODE = "0664", \
-               RUN  = "/bin/mkdir -p /dev/iguanaIR", \
-               RUN += "/bin/chown iguanair /dev/iguanaIR", \
+               RUN  = "/bin/mkdir -p /var/run/iguanaIR", \
+               RUN += "/bin/chown iguanair /var/run/iguanaIR", \
                RUN += "/etc/init.d/iguanaIR rescan"
 
 # FOR DEBUGGING TRY ADDING TO THE RUN LINES:

@@ -20,7 +20,7 @@ Output from igdaemon contains:
 ERROR: failed to bind server socket: No such file or directory
 INFO: Worker 0 exiting
 }}}
-'''Explanation:''' Most likely the directory /dev/iguanaIR does not exist.  It should be create by udev at start time by copying /etc/udev/devices/iguanaIR, however, I've seen problems for people using udev 071 and earlier.  If anyone can tell me when and what changed to make it work for later versions of udev, but not for earlier, let me know.  Depending on your log level (number of -v's passed to igdaemon) you may not see the INFO line.
+'''Explanation:''' Most likely the directory /var/run/iguanaIR does not exist.  It should be create by udev at start time by copying /etc/udev/devices/iguanaIR, however, I've seen problems for people using udev 071 and earlier.  If anyone can tell me when and what changed to make it work for later versions of udev, but not for earlier, let me know.  Depending on your log level (number of -v's passed to igdaemon) you may not see the INFO line.
 
 '''Solution:''' For now you can add a line to the init script (usually located at /etc/init.d/iguanaIR) to create the directory and set its permissions (rw for user and group, owned by iguanair).
 
@@ -31,9 +31,9 @@ ERROR: failed to bind server socket: Permission denied
 INFO: Worker 0 exiting
 }}}
 
-'''Explanation:''' The daemon is correctly running as iguanair, or at least a non-privileged user, and does not have permission to create sockets in /dev/iguanaIR.
+'''Explanation:''' The daemon is correctly running as iguanair, or at least a non-privileged user, and does not have permission to create sockets in /var/run/iguanaIR.
 
-'''Solution:''' Check the permissions on the /dev/iguanaIR directory, and see the previous solution.
+'''Solution:''' Check the permissions on the /var/run/iguanaIR directory, and see the previous solution.
 
 === Problem 4 ===
 Output from igdaemon contains:
@@ -101,7 +101,7 @@ lircd-0.8.1-CVS[24495]: couldn't open connection to iguanaIR daemon: No such fil
 lircd-0.8.1-CVS[24495]: caught signal
 }}}
 
-'''Explanation:''' The lircd daemon is failing to connect to the igdaemon through a client socket.  These sockets should be located in /dev/iguanaIR.
+'''Explanation:''' The lircd daemon is failing to connect to the igdaemon through a client socket.  These sockets should be located in /var/run/iguanaIR.
 
 '''Solution:''' Make sure the igdaemon is running.  If it's failing to start, run it on a terminal with -n -v -v -v and see what the output looks like.  This same error occurs when the iguanaIR device is '''not plugged in'''.
 
