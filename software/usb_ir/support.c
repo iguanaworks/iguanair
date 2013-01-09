@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <time.h>
+#include <assert.h>
 
 #include "support.h"
 
@@ -119,8 +120,8 @@ int message(int level, char *format, ...)
                                    strlen(format) + 1);
             if (buffer == NULL)
             {
-                perror("FATAL: message format malloc failedx");
-                exit(2);
+                perror("FATAL: message format malloc failed");
+                return -ENOMEM;
             }
             sprintf(buffer, "%s%s%s", when, msgPrefixes[level], format);
         }
@@ -137,8 +138,8 @@ int message(int level, char *format, ...)
     }
     va_end(list);
 
-    if (level <= LOG_FATAL)
-        exit(1);
+    /* die at callers request */
+    assert(level >  LOG_FATAL);
 
     return retval;
 }
