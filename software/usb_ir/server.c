@@ -93,8 +93,14 @@ deviceList* initServer()
 #ifdef _WIN32
             srvSettings.driverDir = ".";
 #else
-            srvSettings.driverDir = "/usr/lib/iguanaIR";
+  #if __LP64__
+        if (access("/usr/lib64", F_OK) == 0)
+            srvSettings.driverDir = "/usr/lib64/iguanaIR"; 
+        else 
+  #endif
+            srvSettings.driverDir = "/usr/lib/iguanaIR"; 
 #endif
+            message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir); 
     }
 
     /* initialize the commPipe, driver, and device list */

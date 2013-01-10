@@ -6,6 +6,7 @@ BINDIR=@bindir@
 
 
 CFLAGS += -I. -fvisibility=hidden -DIGUANAIR_EXPORTS
+CFLAGS += -Wl,-rpath,$(LIBDIR)/iguanaIR
 
 ifdef DARWIN
   LINKARGS   = -Wl,-dylib_current_version,1.0.0,-dylib_compatibility_version,1.0.0 -install_name $(DESTDIR)/$(LIBDIR)/$(LIBNAME)
