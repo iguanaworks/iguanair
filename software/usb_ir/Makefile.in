@@ -81,7 +81,7 @@ _iguanaIR.$(SHAREEXT): iguanaIR_wrap.o
 endif
 
 # change ownership unless we're building an rpm
-ifeq ($(RPM_OS)$(DARWIN),)
+ifneq ($(INSTALLPACKAGE),TRUE)
   SETOWNER=--owner iguanair --group iguanair
 install: adduser
 .PHONY: adduser

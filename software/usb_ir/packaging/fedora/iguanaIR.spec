@@ -62,7 +62,7 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install PREFIX=$RPM_BUILD_ROOT/usr DESTDIR=$RPM_BUILD_ROOT INLIBDIR=$RPM_BUILD_ROOT%{_libdir}
+make install INSTALLPACKAGE=TRUE PREFIX=$RPM_BUILD_ROOT/usr DESTDIR=$RPM_BUILD_ROOT INLIBDIR=$RPM_BUILD_ROOT%{_libdir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT

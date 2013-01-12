@@ -44,7 +44,7 @@ install: build
 	dh_makeshlibs
 
 	# main install
-	make install DESTDIR=$(CURDIR)/debian/iguanair
+	make INSTALLPACKAGE=TRUE install DESTDIR=$(CURDIR)/debian/iguanair
 
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
