@@ -1,16 +1,30 @@
 #!/bin/sh
 set -e
-/usr/sbin/groupadd -f -K GID_MIN=100 -K GID_MAX=500 iguanair
-USERS=`getent passwd|grep iguanair|sed -e 's/\([a-zA-Z]*:\)\(.*\)/\1/g'`
 update-rc.d iguanaIR defaults
 
-if [ "$USERS" != "iguanair:" ] ; then
-echo "Adding user iguananir"
-useradd -d / -g iguanair -K UID_MIN=100 -K UID_MAX=500 -K PASS_MAX_DAYS=-1 -s /bin/false iguanair
+if [ -z "`id -u iguanair 2> /dev/null`" ]; then
+    adduser --system --gecos "iguanair" --group \
+            --no-create-home --disabled-password \
+            --quiet iguanair --home /var/run/iguanaIR || true
 fi
 
-chown iguanair:iguanair /lib/udev/devices/iguanaIR
-mkdir /var/run/iguanaIR 2>/dev/null || true
-touch /lib/udev/rules.d/80-iguanaIR.rules
-chown iguanair:iguanair /var/run/iguanaIR
-#/etc/init.d/udev restart
+if [ -d /lib/udev/devices/iguanaIR ] ; then
+    chown iguanair:iguanair /lib/udev/devices/iguanaIR
+else
+     echo >&2 "Unable to set ownership of /lib/udev/devices/iguanaIR as directory does not exist."
+fi
+
+if [ ! -d /var/run/iguanaIR ]; then
+    mkdir /var/run/iguanaIR
+fi
+
+chown iguanair:iguanair /var/run/iguanaIR    
+
+
+if [ -f /lib/udev/rules.d/80-iguanaIR.rules ]; then
+    touch /lib/udev/rules.d/80-iguanaIR.rules
+else
+    echo >&2 "Unable to touch /lib/udev/rules.d/80-iguanaIR.rules (for udev rescan) because file does not exist."
+fi
+
+

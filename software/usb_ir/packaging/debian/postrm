@@ -1,5 +1,17 @@
 #!/bin/sh
 set -e
-update-rc.d iguanaIR remove ||true
-rmdir /var/run/iguanaIR 2>/dev/null||true
-userdel iguanair||true
+
+if [ purge = "$1" ]; then
+    update-rc.d iguanaIR remove > /dev/null
+
+    if [ -x "$(command -v deluser)" ]; then
+       deluser --quiet --system iguanair > /dev/null || true
+       delgroup --quiet --system iguanair > /dev/null|| true
+    else
+       echo >&2 "not removing iguanair system account because deluser command was not found"
+    fi
+  
+  rmdir /var/run/iguanaIR 2>/dev/null||true 
+ 
+fi
+
