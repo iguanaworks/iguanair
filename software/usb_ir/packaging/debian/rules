@@ -54,12 +54,12 @@ install: build
 	mkdir -p $(CURDIR)/debian/iguanair-python/usr/lib
 	mv $(CURDIR)/debian/iguanair/usr/lib/python* $(CURDIR)/debian/iguanair-python/usr/lib
 
-	#move the reflasher stuff into it's sub systm
+	#move the reflasher stuff into it's sub system
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/bin
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/share/
 	mv $(CURDIR)/debian/iguanair/usr/share/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/share/
 	mv $(CURDIR)/debian/iguanair/usr/bin/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/bin/
-	dh_pysupport 
+	dh_python2
 
 
 
