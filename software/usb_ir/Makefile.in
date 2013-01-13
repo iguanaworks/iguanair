@@ -86,7 +86,7 @@ ifneq ($(INSTALLPACKAGE),TRUE)
 install: adduser
 .PHONY: adduser
 adduser:
-	/usr/sbin/useradd -u 213 -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
+	/usr/sbin/useradd -r -M -c "Iguanaworks IR Daemon" -d / -s /bin/false iguanair 2>/dev/null || true
 
 uninstall: deluser
 .PHONY: deluser
