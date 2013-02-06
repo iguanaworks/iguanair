@@ -7,7 +7,7 @@
 ## 2 = log debug1
 ## 3 = log debug2 (excessive)
 ## 4 = log debug3 (excessively excessive)
-LOGLEVEL=0
+LOGLEVEL="0"
 
 ## Because of a bug in libusb, using threads when communicating with
 ## our device can cause the device to hang. As a work around, we have
@@ -30,22 +30,22 @@ LOGLEVEL=0
 ## particularly long send.
 
 ## With the --no-threads option used
-#RECEIVETIMEOUT=50
+#RECEIVETIMEOUT="50"
 
 ## When threads are used (and not --no-threads)
-RECEIVETIMEOUT=1000
+RECEIVETIMEOUT="1000"
 
 ## the igdaemon can use different backend USB drivers and should be
 ## told which to try first since we prefer the libusb driver to the
 ## libusbpre1.0
-DRIVERS=--driver=libusb
+DRIVERS="--driver=libusb"
 
 ## You can set the timeout value for sendings IR signals. This set how
 ## long to wait for send to successfully complete before assuming that
 ## the send failed and returning an error. Time is measured in ms and
 ## the default is 1000. Do not change this unless you have good
 ## reason.
-SENDTIMEOUT=1000
+SENDTIMEOUT="1000"
 
 ## The init.d script for igdaemon auto detects what distro you are
 ## using (fedora, debian, ubuntu, gentoo). You can overwrite this
@@ -55,7 +55,7 @@ SENDTIMEOUT=1000
 ## Including your distribution and the entire contents of /etc/issue.
 ## We will try to add support for your distro in the next release. In
 ## the meantime, maybe try some of the other distro overrides.
-#DISTRO=fedora
-#DISTRO=debian
-#DISTRO=ubuntu
-#DISTRO=gentoo
+#DISTRO="fedora"
+#DISTRO="debian"
+#DISTRO="ubuntu"
+#DISTRO="gentoo"
