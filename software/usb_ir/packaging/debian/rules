@@ -59,7 +59,8 @@ install: build
 	mkdir -p $(CURDIR)/debian/iguanair-reflasher/usr/share/
 	mv $(CURDIR)/debian/iguanair/usr/share/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/share/
 	mv $(CURDIR)/debian/iguanair/usr/bin/iguanaIR-reflasher $(CURDIR)/debian/iguanair-reflasher/usr/bin/
-	dh_python2
+	#dh_pysupport
+	dh_python2 --no-guessing-versions
 
 
 
