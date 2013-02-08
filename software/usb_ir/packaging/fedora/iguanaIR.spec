@@ -1,5 +1,5 @@
 %define pyver %(python -V 2>&1 | sed 's/Python \\(.\\..\\).*/\\1/')
-%define pydir /usr/lib/python%{pyver}/site-packages
+%define pydir %{_libdir}/python%{pyver}/site-packages
 %define uid   213
 
 # stop building the debug packages?
@@ -114,7 +114,7 @@ fi
 #%ghost %{pydir}/*.pyo
 
 %files reflasher
-%{_libdir}/%{name}-reflasher
+/usr/share/%{name}-reflasher
 /usr/bin/%{name}-reflasher
 
 %changelog
