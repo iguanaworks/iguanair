@@ -40,7 +40,7 @@ add_executable(igdaemon daemon.c
                list.c protocol-versions.c pipes.c dataPackets.c ${BASESRC})
 #target_link_libraries(igdaemon
 target_link_libraries(igdaemon iguanaIR
-                               pthread dl popt ${BASELIBS})
+                               pthread dl ${BASELIBS})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
 
