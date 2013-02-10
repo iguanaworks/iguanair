@@ -49,8 +49,8 @@ enum
     INTERNAL_SETHOLDPINS,
 
     /* defines for using argp */
-    GROUP0,
-    ARG_LG_LVL = 0xFF,
+    GROUP0 = 0,
+    ARG_LOG_LEVEL = 0xFF,
 
     /* substitutes to avoid odd characters in --help */
     ARGP_OFFSET = 0x200,
@@ -716,12 +716,12 @@ static igtask* enqueueTaskById(unsigned short code, const char *arg)
 
 static struct argp_option options[] = {
     /* general options */
-    { "device",      'd',        "DEVICE", 0, "Specify the target device index or id.",  GROUP0 },
-    { "interactive", 'i',        NULL,     0, "Use the client interactively.",           GROUP0 },
-    { "log-file",    'l',        "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
-    { "quiet",       'q',        NULL,     0, "Reduce the verbosity.",                   GROUP0 },
-    { "verbose",     'v',        NULL,     0, "Increase the verbosity.",                 GROUP0 },
-    { "log-level",   ARG_LG_LVL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
+    { "device",      'd',           "DEVICE", 0, "Specify the target device index or id.",  GROUP0 },
+    { "interactive", 'i',           NULL,     0, "Use the client interactively.",           GROUP0 },
+    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
+    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   GROUP0 },
+    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 GROUP0 },
+    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
 
     /* device commands */
     { "get-version",     IG_DEV_GETVERSION,  NULL,       0, "Return the version of the device firmware.",                    GROUP0 },
