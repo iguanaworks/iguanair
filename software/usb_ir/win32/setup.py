@@ -94,10 +94,12 @@ Filename: "{app}/vcredist_x86.exe"; Parameters: "/q"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--installinf"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--regsvc"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--startsvc"; Flags: runhidden
+Filename: "SCHTASKS"; Parameters: "/Create /TN ""Trigger Igdaemon Rescan"" /TR ""'c:\program files (x86)\iguanair\igdaemon.exe' --rescan"" /SC ONEVENT /EC System /MO ""*[System[Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and EventID=1]]"" /RU SYSTEM /F"; Flags: runhidden
 ;Filename: "{app}/README.TXT"; Description: "View the README file"; Flags: postinstall shellexec skipifsilent
 
 ; remove the daemon on uninstall
 [UninstallRun]
+Filename: "SCHTASKS"; Parameters: "/Delete /TN ""Trigger Igdaemon Rescan"" /F"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--stopsvc"; Flags: runhidden
 Filename: "{app}/igdaemon.exe"; Parameters: "--unregsvc"; Flags: runhidden
 
