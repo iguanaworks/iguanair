@@ -17,11 +17,9 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <popt.h>
-#ifdef WIN32
-    #include "popt-fix.h"
-#else
-    #include <arpa/inet.h>
+#include <argp.h>
+#ifndef WIN32
+  #include <arpa/inet.h>
 #endif
 
 /* not necessary for a client, just helpful for some supporting
@@ -34,6 +32,7 @@ enum
     /* use the upper buye of the short to not overlap with DEV_ commands */
     INTERNAL_SLEEP = 0x100,
 
+    /* getters grouped together */
     INTERNAL_GETCONFIG = 0x110,
     INTERNAL_GETOUTPINS,
     INTERNAL_GETPULLPINS,
@@ -41,6 +40,7 @@ enum
     INTERNAL_GETSINKPINS,
     INTERNAL_GETHOLDPINS,
 
+    /* setters grouped together */
     INTERNAL_SETCONFIG = 0x120,
     INTERNAL_SETOUTPINS,
     INTERNAL_SETPULLPINS,
@@ -48,10 +48,29 @@ enum
     INTERNAL_SETSINKPINS,
     INTERNAL_SETHOLDPINS,
 
+    /* defines for using argp */
+    GROUP0,
+    ARG_LG_LVL = 0xFF,
+
+    /* substitutes to avoid odd characters in --help */
+    ARGP_OFFSET = 0x200,
+    OFFSET_RESEND      = ARGP_OFFSET + IG_DEV_RESEND,
+    OFFSET_GETID       = ARGP_OFFSET + IG_DEV_GETID,
+    OFFSET_SETID       = ARGP_OFFSET + IG_DEV_SETID,
+    OFFSET_GETLOCATION = ARGP_OFFSET + IG_DEV_GETLOCATION,
+    OFFSET_REPEATER    = ARGP_OFFSET + IG_DEV_REPEATER,
+    OFFSET_SENDSIZE    = ARGP_OFFSET + IG_DEV_SENDSIZE,
+
+    /* TODO: still used? */
     FINAL_CHECK = 0xFFFF,
 
     /* valid because we use the last 8 bytes of RAM as packet scratch space */
     PACKET_BUFFER_BASE = 0xF8
+};
+
+struct parameters
+{
+    const char *device;
 };
 
 typedef struct commandSpec
@@ -136,7 +155,6 @@ typedef struct igtask
 static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
-static int logLevelTemp = 0;
 static int deviceFeatures = 0;
 
 static bool performTask(PIPE_PTR conn, igtask *cmd);
@@ -696,76 +714,203 @@ static igtask* enqueueTaskById(unsigned short code, const char *arg)
     return NULL;
 }
 
-static struct poptOption options[] =
-{
+static struct argp_option options[] = {
     /* general options */
-    { "device", 'd', POPT_ARG_STRING, NULL, 'd', "Specify the device to connect with (by index or id).", "number" },
-    { "interactive", '\0', POPT_ARG_NONE, NULL, 'i', "Use the client interactively.", NULL },
-    { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
-    { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
-    { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
-    { "log-level", '\0', POPT_ARG_INT, &logLevelTemp, 'e', "Set the verbosity.", NULL },
+    { "device",      'd',        "DEVICE", 0, "Specify the target device index or id.",  GROUP0 },
+    { "interactive", 'i',        NULL,     0, "Use the client interactively.",           GROUP0 },
+    { "log-file",    'l',        "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
+    { "quiet",       'q',        NULL,     0, "Reduce the verbosity.",                   GROUP0 },
+    { "verbose",     'v',        NULL,     0, "Increase the verbosity.",                 GROUP0 },
+    { "log-level",   ARG_LG_LVL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
 
     /* device commands */
-    { "get-version", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETVERSION, "Return the version of the device firmware.", NULL },
-    { "get-features", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETFEATURES, "Return the features associated w/ this device.", NULL },
-    { "send", '\0', POPT_ARG_STRING, NULL, IG_DEV_SEND, "Send the pulses and spaces from a file.", "filename" },
-    { "resend", '\0', POPT_ARG_INT, NULL, IG_DEV_RESEND, "Send the pulses and spaces already in the device buffer after a delay", "microsecond delay" },
-    { "encoded-size", '\0', POPT_ARG_STRING, NULL, IG_DEV_SENDSIZE, "Check the encodes size of the pulses and spaces from a file.", "filename" },
-    { "receiver-on", '\0', POPT_ARG_NONE, NULL, IG_DEV_RECVON, "Enable the receiver on the usb device.", NULL },
-    { "receiver-off", '\0', POPT_ARG_NONE, NULL, IG_DEV_RECVOFF, "Disable the receiver on the usb device.", NULL },
-    { "get-pins", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETPINS, "Get the pin values.", NULL },
-    { "set-pins", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETPINS, "Set the pin values.", "values" },
-    { "get-buffer-size", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETBUFSIZE, "Find out the size of the RAM buffer used for sends and receives.", NULL },
-    { "write-block", '\0', POPT_ARG_STRING, NULL, IG_DEV_WRITEBLOCK, "Write the block specified in the file.", "filename" },
-    { "execute", '\0', POPT_ARG_NONE, NULL, IG_DEV_EXECUTE, "Execute code starting at address 0x1fc0 on the device.", "address" },
-    { "lcd-text", '\0', POPT_ARG_STRING, NULL, IG_DEV_PINBURST, "Send a bulk transfer of pin settings to write the argument to an LCD.", "string" },
-    { "reset", '\0', POPT_ARG_NONE, NULL, IG_DEV_RESET, "Reset the USB device.", NULL },
-    { "get-channels", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCHANNELS, "Check which channels are used during transmits.", NULL },
-    { "set-channels", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCHANNELS, "Set which channels are used during transmits.", "channels" },
-    { "get-carrier", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETCARRIER, "Check the carrier frequency for transmits.", NULL },
-    { "set-carrier", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETCARRIER, "Set the carrier frequency for transmits.", "carrier (Hz)" },
+    { "get-version",     IG_DEV_GETVERSION,  NULL,       0, "Return the version of the device firmware.",                    GROUP0 },
+    { "get-features",    IG_DEV_GETFEATURES, NULL,       0, "Return the features associated w/ this device.",                GROUP0 },
+    { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       GROUP0 },
+    { "resend",          OFFSET_RESEND,      "MS_DELAY", 0, "Resend the contents of the onboard buffer after MS_DELAY.",     GROUP0 },
+    { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  GROUP0 },
+    { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        GROUP0 },
+    { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       GROUP0 },
+    { "get-pins",        IG_DEV_GETPINS,     NULL,       0, "Get the pin values.",                                           GROUP0 },
+    { "set-pins",        IG_DEV_SETPINS,     "PINS",     0, "Set the pin values.",                                           GROUP0 },
+    { "get-buffer-size", IG_DEV_GETBUFSIZE,  NULL,       0, "Check onboard RAM send/receive buffer size.",                   GROUP0 },
+    { "write-block",     IG_DEV_WRITEBLOCK,  "FILE",     0, "Write the block specified in the file.",                        GROUP0 },
+    { "execute",         IG_DEV_EXECUTE,     NULL,       0, "Execute code starting at address 0x1fc0 on the device.",        GROUP0 },
+    { "lcd-text",        IG_DEV_PINBURST,    "STR",      0, "Send bulk transfers of pin settings to display STR on an LCD.", GROUP0 },
+    { "reset",           IG_DEV_RESET,       NULL,       0, "Reset the USB device.",                                         GROUP0 },
+    { "get-channels",    IG_DEV_GETCHANNELS, NULL,       0, "Check which channels are used during transmits.",               GROUP0 },
+    { "set-channels",    IG_DEV_SETCHANNELS, "CHANNELS", 0, "Set which channels are used during transmits.",                 GROUP0 },
+    { "get-carrier",     IG_DEV_GETCARRIER,  NULL,       0, "Check the carrier frequency for transmits.",                    GROUP0 },
+    { "set-carrier",     IG_DEV_SETCARRIER, "HZ",        0, "Set the carrier frequency for transmits.",                      GROUP0 },
 
     /* commands that actually store and load the pin configuration */
-    { "get-pin-config", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETPINCONFIG, "Retrieve the internal pin state.", NULL },
-    { "set-pin-config", '\0', POPT_ARG_NONE, NULL, IG_DEV_SETPINCONFIG, "Store the internal pin state.", NULL },
+    { "get-pin-config", IG_DEV_GETPINCONFIG, NULL, 0, "Retrieve the internal pin state.", GROUP0 },
+    { "set-pin-config", IG_DEV_SETPINCONFIG, NULL, 0, "Store the internal pin state.",    GROUP0 },
 
-    /* internal commands */
-    { "get-output-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETOUTPINS, "Check which pins are set to be outputs.", NULL },
-    { "set-output-pins", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETOUTPINS, "Set which pins should be outputs.", "pins" },
-    { "get-pullup-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETPULLPINS, "Check which pins are set to be pullups.", NULL },
-    { "set-pullup-pins", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETPULLPINS, "Set which pins should be pullups.", "pins" },
-    { "get-open-drain-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETOPENPINS, "Check which pins are set to be open drains.", NULL },
-    { "set-open-drain-pins", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETOPENPINS, "Set which pins should be open drains.", "pins" },
-    { "get-high-sink-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETSINKPINS, "Check which pins are set to be high sinks.", NULL },
-    { "set-high-sink-pins", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETSINKPINS, "Set which pins should be high sinks.", "pins" },
-    { "get-threshold-pins", '\0', POPT_ARG_NONE, NULL, INTERNAL_GETHOLDPINS, "Check which pins are set to be thresholds.", NULL },
-    { "set-threshold-pins", '\0', POPT_ARG_STRING, NULL, INTERNAL_SETHOLDPINS, "Set which pins should be thresholds.", "pins" },
-    { "sleep", '\0', POPT_ARG_INT, NULL, INTERNAL_SLEEP, "Sleep for X seconds.", "seconds" },
-    { "get-id", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETID, "Fetch the unique id from the USB device.", NULL },
-    { "set-id", '\0', POPT_ARG_STRING, NULL, IG_DEV_SETID, "Set the unique id from the USB device.", NULL },
-    { "get-location", '\0', POPT_ARG_NONE, NULL, IG_DEV_GETLOCATION, "Fetch the bus and device indices for the USB device.", NULL },
-    { "repeater-on", '\0', POPT_ARG_NONE, NULL, IG_DEV_REPEATER, "Put the device into a mode that repeats signals.", NULL },
+    /* internal commands from here on down (i.e. handled within the app w/o communication w the device) */
+    /* pin configuration commands */
+    { "get-output-pins",     INTERNAL_GETOUTPINS,  NULL,   0, "Check which pins are set to be outputs.",     GROUP0 },
+    { "set-output-pins",     INTERNAL_SETOUTPINS,  "PINS", 0, "Set which pins should be outputs.",           GROUP0 },
+    { "get-pullup-pins",     INTERNAL_GETPULLPINS, NULL,   0, "Check which pins are set to be pullups.",     GROUP0 },
+    { "set-pullup-pins",     INTERNAL_SETPULLPINS, "PINS", 0, "Set which pins should be pullups.",           GROUP0 },
+    { "get-open-drain-pins", INTERNAL_GETOPENPINS, NULL,   0, "Check which pins are set to be open drains.", GROUP0 },
+    { "set-open-drain-pins", INTERNAL_SETOPENPINS, "PINS", 0, "Set which pins should be open drains.",       GROUP0 },
+    { "get-high-sink-pins",  INTERNAL_GETSINKPINS, NULL,   0, "Check which pins are set to be high sinks.",  GROUP0 },
+    { "set-high-sink-pins",  INTERNAL_SETSINKPINS, "PINS", 0, "Set which pins should be high sinks.",        GROUP0 },
+    { "get-threshold-pins",  INTERNAL_GETHOLDPINS, NULL,   0, "Check which pins are set to be thresholds.",  GROUP0 },
+    { "set-threshold-pins",  INTERNAL_SETHOLDPINS, "PINS", 0, "Set which pins should be thresholds.",        GROUP0 },
 
-#ifndef WIN32
-    POPT_AUTOHELP
-#endif
-    POPT_TABLEEND
+    /* other application internal commands */
+    { "sleep",               INTERNAL_SLEEP,       "NUM",  0, "Sleep for NUM seconds.",                               GROUP0 },
+    { "get-id",              OFFSET_GETID,         NULL,   0, "Fetch the unique id from the USB device.",             GROUP0 },
+    { "set-id",              OFFSET_SETID,         "STR",  0, "Set the unique id from the USB device.",               GROUP0 },
+    { "get-location",        OFFSET_GETLOCATION,   NULL,   0, "Fetch the bus and device indices for the USB device.", GROUP0 },
+    { "repeater-on",         OFFSET_REPEATER,      NULL,   0, "Put the device into a mode that repeats signals.",     GROUP0 },
+
+    /* end of table */
+    {0}
 };
 
+static error_t parseOption(int key, char *arg, struct argp_state *state)
+{
+    struct parameters *params = (struct parameters*)state->input;
+    switch(key)
+    {
+    /* device commands */
+    case IG_DEV_GETVERSION:
+    case IG_DEV_GETFEATURES:
+    case IG_DEV_SEND:
+    case IG_DEV_RECVON:
+    case IG_DEV_RECVOFF:
+    case IG_DEV_GETPINS:
+    case IG_DEV_SETPINS:
+    case IG_DEV_GETBUFSIZE:
+    case IG_DEV_WRITEBLOCK:
+    case IG_DEV_RESET:
+    case IG_DEV_GETCHANNELS:
+    case IG_DEV_SETCHANNELS:
+    case IG_DEV_GETCARRIER:
+    case IG_DEV_SETCARRIER:
+    case IG_DEV_PINBURST:
+    case IG_DEV_EXECUTE:
+
+    /* internal commands */
+    case INTERNAL_GETOUTPINS:
+    case INTERNAL_SETOUTPINS:
+    case INTERNAL_GETPULLPINS:
+    case INTERNAL_SETPULLPINS:
+    case INTERNAL_GETOPENPINS:
+    case INTERNAL_SETOPENPINS:
+    case INTERNAL_GETSINKPINS:
+    case INTERNAL_SETSINKPINS:
+    case INTERNAL_GETHOLDPINS:
+    case INTERNAL_SETHOLDPINS:
+    case INTERNAL_SLEEP: /* TODO: need to confirm that the argument is the int */
+        enqueueTaskById(key, arg);
+        break;
+
+    /* TODO: a few codes must be substituted since they are "printable" */
+    case OFFSET_RESEND:
+    case OFFSET_GETID:
+    case OFFSET_SETID:
+    case OFFSET_GETLOCATION:
+    case OFFSET_REPEATER:
+    case OFFSET_SENDSIZE:
+        enqueueTaskById(key - ARGP_OFFSET, arg);
+        break;
+
+    case IG_DEV_GETPINCONFIG:
+#if 0
+        enqueueTask("get config 0", NULL);
+        enqueueTask("get config 1", NULL);
+#else
+        enqueueTaskById(key, arg);
+#endif
+        break;
+
+    case IG_DEV_SETPINCONFIG:
+#if 0
+        enqueueTask("set config 0", NULL);
+        enqueueTask("set config 1", NULL);
+#else
+        enqueueTaskById(key, arg);
+#endif
+        break;
+
+    /* handling of the normal command arguments */
+    case 'd':
+        params->device = arg;
+        break;
+
+    case 'i':
+        interactive = true;
+        break;
+
+    case 'l':
+        openLog(arg);
+        break;
+
+    case 'q':
+        changeLogLevel(-1);
+        break;
+
+    case 'v':
+        changeLogLevel(+1);
+        break;
+
+    case 'e':
+        setLogLevel(atoi(arg));
+        break;
+
+    /* Error handling starts here
+    case POPT_ERROR_NOARG:
+        exitOnOptError(poptCon, "Missing argument for '%s'\n");
+        break;
+
+    case POPT_ERROR_BADNUMBER:
+        exitOnOptError(poptCon, "Need a number instead of '%s'\n");
+        break;
+
+    case POPT_ERROR_BADOPT:
+        if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
+        {
+            poptPrintHelp(poptCon, stdout, 0);
+            exit(0);
+        }
+        exitOnOptError(poptCon, "Unknown option '%s'\n");
+        break;
+ */
+
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+static struct argp parser = {
+    options,
+    parseOption,
+    NULL,
+    "This program is an interface to and example of the IguanaIR API\n",
+    NULL,
+    NULL,
+    NULL
+};
+
+/*
 static void exitOnOptError(poptContext poptCon, char *msg)
 {
     message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
     poptPrintHelp(poptCon, stderr, 0);
     exit(1);
 }
+*/
 
-int main(int argc, const char **argv)
+int main(int argc, char **argv)
 {
-    const char **leftOvers, *device = "0";
-    int x = 0, retval = 1;
     PIPE_PTR conn = INVALID_PIPE;
-    poptContext poptCon;
+    struct parameters params;
+    int retval = 1;
     igtask *junk;
 
 #ifdef WIN32
@@ -777,143 +922,16 @@ int main(int argc, const char **argv)
         programName = temp + 1;
 #endif
 
-    poptCon = poptGetContext(NULL, argc, argv, options, 0);
-    if (argc < 2)
-    {
-        poptPrintUsage(poptCon, stderr, 0);
-        exit(1);
-    }
-
-    while(x != -1)
-    {
-        switch(x = poptGetNextOpt(poptCon))
-        {
-        /* device commands */
-        case IG_DEV_GETVERSION:
-        case IG_DEV_GETFEATURES:
-        case IG_DEV_SEND:
-        case IG_DEV_RESEND:
-        case IG_DEV_SENDSIZE:
-        case IG_DEV_RECVON:
-        case IG_DEV_RECVOFF:
-        case IG_DEV_GETPINS:
-        case IG_DEV_SETPINS:
-        case IG_DEV_GETBUFSIZE:
-        case IG_DEV_WRITEBLOCK:
-        case IG_DEV_RESET:
-        case IG_DEV_GETCHANNELS:
-        case IG_DEV_SETCHANNELS:
-        case IG_DEV_GETCARRIER:
-        case IG_DEV_SETCARRIER:
-        case IG_DEV_PINBURST:
-        case IG_DEV_EXECUTE:
-        case IG_DEV_GETID:
-        case IG_DEV_SETID:
-        case IG_DEV_GETLOCATION:
-        case IG_DEV_REPEATER:
-
-        /* internal commands */
-        case INTERNAL_GETOUTPINS:
-        case INTERNAL_SETOUTPINS:
-        case INTERNAL_GETPULLPINS:
-        case INTERNAL_SETPULLPINS:
-        case INTERNAL_GETOPENPINS:
-        case INTERNAL_SETOPENPINS:
-        case INTERNAL_GETSINKPINS:
-        case INTERNAL_SETSINKPINS:
-        case INTERNAL_GETHOLDPINS:
-        case INTERNAL_SETHOLDPINS:
-        case INTERNAL_SLEEP:
-            enqueueTaskById(x, poptGetOptArg(poptCon));
-            break;
-
-        case IG_DEV_GETPINCONFIG:
-#if 0
-            enqueueTask("get config 0", NULL);
-            enqueueTask("get config 1", NULL);
-#else
-            enqueueTaskById(x, poptGetOptArg(poptCon));
-#endif
-            break;
-
-        case IG_DEV_SETPINCONFIG:
-#if 0
-            enqueueTask("set config 0", NULL);
-            enqueueTask("set config 1", NULL);
-#else
-            enqueueTaskById(x, poptGetOptArg(poptCon));
-#endif
-            break;
-
-        /* handling of the normal command arguments */
-        case 'd':
-            device = poptGetOptArg(poptCon);
-            break;
-
-        case 'i':
-            interactive = true;
-            break;
-
-        case 'l':
-            openLog(poptGetOptArg(poptCon));
-            break;
-
-        case 'q':
-            changeLogLevel(-1);
-            break;
-
-        case 'v':
-            changeLogLevel(+1);
-            break;
-
-        case 'e':
-            setLogLevel(logLevelTemp);
-            break;
-
-        /* Error handling starts here */
-        case POPT_ERROR_NOARG:
-            exitOnOptError(poptCon, "Missing argument for '%s'\n");
-            break;
-
-        case POPT_ERROR_BADNUMBER:
-            exitOnOptError(poptCon, "Need a number instead of '%s'\n");
-            break;
-
-        case POPT_ERROR_BADOPT:
-            if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
-            {
-                poptPrintHelp(poptCon, stdout, 0);
-                exit(0);
-            }
-            exitOnOptError(poptCon, "Unknown option '%s'\n");
-            break;
-
-        case -1:
-            break;
-        default:
-            message(LOG_FATAL,
-                    "Unexpected return value from popt: %d:%s\n",
-                    x, poptStrerror(x));
-            break;
-        }
-    }
-
-    /* what if we have extra parameters? */
-    leftOvers = poptGetArgs(poptCon);
-    if (leftOvers != NULL && leftOvers[0] != NULL)
-    {
-        message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
-        poptPrintHelp(poptCon, stderr, 0);
-        exit(1);
-    }
-    poptFreeContext(poptCon);
+    /* initialize the parameters structure and parse the cmd line args */
+    params.device = "0";
+    argp_parse(&parser, argc, argv, 0, NULL, &params);
 
     /* line buffer the output */
     setlinebuf(stdout);
     setlinebuf(stderr);
 
     /* connect first */
-    conn = iguanaConnect(device);
+    conn = iguanaConnect(params.device);
     if (conn == INVALID_PIPE)
     {
 #ifdef WIN32

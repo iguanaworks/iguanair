@@ -49,7 +49,7 @@ add_subdirectory(drivers)
 
 # build igclient to test our API
 add_executable(igclient client.c list.c ${BASESRC})
-target_link_libraries(igclient iguanaIR popt ${BASELIBS})
+target_link_libraries(igclient iguanaIR ${BASELIBS})
 install(TARGETS igclient DESTINATION /usr/bin)
 
 
