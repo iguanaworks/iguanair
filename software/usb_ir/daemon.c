@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <popt.h>
+#include <argp.h>
 
 #include "driver.h"
 #include "pipes.h"
@@ -44,6 +44,12 @@ enum
 {
     SCAN_TRIGGER,
     QUIT_TRIGGER
+};
+
+struct parameters
+{
+    bool runAsDaemon;
+    const char *pidFile;
 };
 
 static void triggerCommand(THREAD_PTR cmd)
@@ -262,168 +268,150 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 enum
 {
     /* generic actions */
-    ARG_LOG_FILE = 1, /* popt in MacPorts does not like starting w 0 */
-    ARG_QUIETER,
-    ARG_LOUDER,
-    ARG_LOG_LEVEL,
+    ARG_LOG_LEVEL = 0x100,
 
     /* igdaemon specific actions */
-    ARG_FOREGROUND,
-    ARG_PID_FILE,
-    ARG_NO_IDS,
+    ARG_NO_IDS = 0x200,
     ARG_NO_RESCAN,
     ARG_NO_THREADS,
-    ARG_DRIVER,
     ARG_ONLY_PREFER,
-    ARG_DRIVER_DIR
+    ARG_DRIVER_DIR,
+    ARG_RECV_TIMEOUT,
+    ARG_SEND_TIMEOUT,
+
+    /* defines for argp */
+    GROUP0 = 0
 };
 
-static struct poptOption options[] =
+static struct argp_option options[] =
 {
     /* general daemon options */
-    { "log-file",  'l',  POPT_ARG_STRING, NULL, ARG_LOG_FILE,   "Specify a log file (defaults to \"-\").", "filename" },
-    { "quiet",     'q',  POPT_ARG_NONE,   NULL, ARG_QUIETER,    "Reduce the verbosity.", NULL },
-    { "verbose",   'v',  POPT_ARG_NONE,   NULL, ARG_LOUDER,     "Increase the verbosity.", NULL },
-    { "log-level", '\0', POPT_ARG_INT,    &logLevelTemp, ARG_LOG_LEVEL, "Set the verbosity.", NULL },
+    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
+    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   GROUP0 },
+    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 GROUP0 },
+    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
 
     /* iguanaworks specific options */
-    { "no-daemon", 'n',  POPT_ARG_NONE,   NULL, ARG_FOREGROUND, "Do not fork into the background.", NULL },
-    { "pid-file",  'p',  POPT_ARG_STRING, NULL, ARG_PID_FILE,   "Specify where to write the pid of the daemon process.", "filename" },
-    { "no-auto-rescan", '\0', POPT_ARG_NONE, NULL, ARG_NO_RESCAN, "Do not automatically rescan the USB bus after a device disconnect.", NULL },
-    { "no-ids", '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
-    { "no-labels",       '\0', POPT_ARG_NONE, NULL, ARG_NO_IDS, "DEPRECATED: same as --no-ids", NULL },
-    { "receive-timeout", '\0', POPT_ARG_INT,  &srvSettings.devSettings.recvTimeout, 0, "Specify the device receive timeout.", "timeout" },
-    { "send-timeout",    '\0', POPT_ARG_INT,  &srvSettings.devSettings.sendTimeout, 0, "Specify the device send timeout.", "timeout" },
+    { "no-daemon",       'n',              NULL,     0, "Do not fork into the background.",                                 GROUP0 },
+    { "pid-file",        'p',              "FILE",   0, "Specify where to write the pid of the daemon process.",            GROUP0 },
+    { "no-auto-rescan",  ARG_NO_RESCAN,    NULL,     0, "Do not automatically rescan the USB bus after device disconnect.", GROUP0 },
+    { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                           GROUP0 },
+    { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                     GROUP0 },
+    { "receive-timeout", ARG_RECV_TIMEOUT, "MSTIME", 0, "Specify the device receive timeout.",                              GROUP0 },
+    { "send-timeout",    ARG_SEND_TIMEOUT, "MSTIME", 0, "Specify the device send timeout.",                                 GROUP0 },
 
 #ifdef LIBUSB_NO_THREADS_OPTION
-    { "no-threads", '\0', POPT_ARG_NONE, NULL, ARG_NO_THREADS, "Do not allow two threads to both access libusb calls at the same time.  Try this if the device occasionally crashes.", NULL },
+    { "no-threads", ARG_NO_THREADS, NULL, 0, "Do not allow two threads to both access libusb calls at the same time.  Only useful for versions of libusb < 1.0", GROUP0 },
 #endif
 
     /* options specific to the drivers */
-    { "driver", 'd', POPT_ARG_STRING, NULL, ARG_DRIVER, "Use this driver in preference to others.  This command can be used multiple times.", "preferred driver" },
-    { "only-preferred", '\0', POPT_ARG_NONE, NULL, ARG_ONLY_PREFER, "Use only drivers specified by the --driver option.", "only preferred drivers" },
-    { "driver-dir", '\0', POPT_ARG_STRING, NULL, ARG_DRIVER_DIR, "Specify the location of driver objects.", "driver directory" },
+    { "driver",         'd',             "DRIVER", 0, "Use this driver in preference to others.  This command can be used multiple times.", GROUP0 },
+    { "only-preferred", ARG_ONLY_PREFER, NULL,     0, "Use only drivers specified by the --driver option.",                                 GROUP0 },
+    { "driver-dir",     ARG_DRIVER_DIR,  "DIR",    0, "Specify the location of driver objects.",                                            GROUP0 },
 
-
-    POPT_AUTOHELP
-    POPT_TABLEEND
+    /* end of table */
+    {0}
 };
 
+static error_t parseOption(int key, char *arg, struct argp_state *state)
+{
+    struct parameters *params = (struct parameters*)state->input;
+    switch(key)
+    {
+    case 'l':
+        openLog(arg);
+        break;
+
+    case 'q':
+        changeLogLevel(-1);
+        break;
+
+    case 'v':
+        changeLogLevel(+1);
+        break;
+        
+    case ARG_LOG_LEVEL:
+        setLogLevel(atoi(arg));
+        break;
+
+    case 'n':
+        params->runAsDaemon = false;
+        break;
+
+    case ARG_NO_IDS:
+        srvSettings.readLabels = false;
+        break;
+
+    case ARG_NO_RESCAN:
+        srvSettings.autoRescan = false;
+        break;
+
+#ifdef LIBUSB_NO_THREADS_OPTION
+    case ARG_NO_THREADS:
+        srvSettings.noThreads = true;
+        break;
+#endif
+
+    case 'p':
+        params->pidFile = arg;
+        break;
+
+    /* driver options */
+    case 'd':
+        srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
+        srvSettings.preferred[srvSettings.preferredCount - 1] = arg;
+        srvSettings.preferred[srvSettings.preferredCount++] = NULL;
+        break;
+
+    case ARG_ONLY_PREFER:
+        srvSettings.onlyPreferred = true;
+        break;
+
+    case ARG_DRIVER_DIR:
+        srvSettings.driverDir = arg;
+        break;
+
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+static struct argp parser = {
+    options,
+    parseOption,
+    NULL,
+    "This daemon acts as a user-space driver controlling access to IguanaIR devices.\n",
+    NULL,
+    NULL,
+    NULL
+};
+
+
+/*
 static void exitOnOptError(poptContext poptCon, char *msg)
 {
     message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
     poptPrintHelp(poptCon, stderr, 0);
     exit(1);
 }
+*/
 
-int main(int argc, const char **argv)
+int main(int argc, char **argv)
 {
-    int exitval = 0, x = 0;
-    bool runAsDaemon = true;
-    const char *pidFile = NULL, **leftOvers;
-    poptContext poptCon;
+    int retval = 0;
+    struct parameters params;
 
     /* initialize the server-level settings */
     initServerSettings(startWorker);
 
-    poptCon = poptGetContext(NULL, argc, argv, options, 0);
-    while(x != -1)
-    {
-        switch(x = poptGetNextOpt(poptCon))
-        {
-        case ARG_LOG_FILE:
-            openLog(poptGetOptArg(poptCon));
-            break;
-
-        case ARG_QUIETER:
-            changeLogLevel(-1);
-            break;
-
-        case ARG_LOUDER:
-            changeLogLevel(+1);
-            break;
-
-        case ARG_LOG_LEVEL:
-            setLogLevel(logLevelTemp);
-            break;
-
-        case ARG_FOREGROUND:
-            runAsDaemon = false;
-            break;
-
-        case ARG_NO_IDS:
-            srvSettings.readLabels = false;
-            break;
-
-        case ARG_NO_RESCAN:
-            srvSettings.autoRescan = false;
-            break;
-
-#ifdef LIBUSB_NO_THREADS_OPTION
-        case ARG_NO_THREADS:
-            srvSettings.noThreads = true;
-            break;
-#endif
-
-        case ARG_PID_FILE:
-            pidFile = poptGetOptArg(poptCon);
-            break;
-
-        /* driver options */
-        case ARG_DRIVER:
-            srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
-            srvSettings.preferred[srvSettings.preferredCount - 1] = poptGetOptArg(poptCon);
-            srvSettings.preferred[srvSettings.preferredCount++] = NULL;
-            break;
-
-        case ARG_ONLY_PREFER:
-            srvSettings.onlyPreferred = true;
-            break;
-
-        case ARG_DRIVER_DIR:
-            srvSettings.driverDir = poptGetOptArg(poptCon);
-            break;
-
-        /* Error handling starts here */
-        case POPT_ERROR_NOARG:
-            exitOnOptError(poptCon, "Missing argument for '%s'\n");
-            break;
-
-        case POPT_ERROR_BADNUMBER:
-            exitOnOptError(poptCon, "Need a number instead of '%s'\n");
-            break;
-
-        case POPT_ERROR_BADOPT:
-            if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
-            {
-                poptPrintHelp(poptCon, stdout, 0);
-                exit(0);
-            }
-            exitOnOptError(poptCon, "Unknown option '%s'\n");
-            break;
-
-        case -1:
-            break;
-        default:
-            message(LOG_FATAL,
-                    "Unexpected return value from popt: %d:%s\n",
-                    x, poptStrerror(x));
-            break;
-        }
-    }
-
-    /* what if we have extra parameters? */
-    leftOvers = poptGetArgs(poptCon);
-    if (leftOvers != NULL && leftOvers[0] != NULL)
-    {
-        message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
-        poptPrintHelp(poptCon, stderr, 0);
-        exit(1);
-    }
-    poptFreeContext(poptCon);
+    /* initialize the parameters structure and parse the cmd line args */
+    params.runAsDaemon = true;
+    params.pidFile = NULL;
+    argp_parse(&parser, argc, argv, 0, NULL, &params);
 
     /* run as a daemon if requested and possible */
-    if (runAsDaemon)
+    if (params.runAsDaemon)
     {
         message(LOG_DEBUG, "Forking into the background.\n");
         if (daemon(0, 0) == 0)
@@ -431,19 +419,19 @@ int main(int argc, const char **argv)
         else
         {
             message(LOG_ERROR, "daemon() failed: %s\n", translateError(errno));
-            exitval = 1;
+            retval = 1;
         }
     }
 
     /* write the pid out if requested */
-    if (exitval == 0 && pidFile != NULL)
+    if (retval == 0 && params.pidFile != NULL)
     {
         FILE *pf;
-        pf = fopen(pidFile, "w");
+        pf = fopen(params.pidFile, "w");
         if (pf == NULL)
         {
             message(LOG_ERROR, "Failed to open pid file.\n");
-            exitval = 2;
+            retval = 2;
         }
         else
         {
@@ -453,10 +441,10 @@ int main(int argc, const char **argv)
     }
 
     /* if startup succeeded wait for user signals */
-    if (exitval == 0)
+    if (retval == 0)
         workLoop();
 
-    return exitval;
+    return retval;
 }
 
 void listenToClients(iguanaDev *idev,
