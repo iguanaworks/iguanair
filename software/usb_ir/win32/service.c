@@ -12,6 +12,7 @@
  */
 
 #include "iguanaIR.h"
+#include <argp.h>
 #include "compat.h"
 
 #include <windows.h>
@@ -20,8 +21,6 @@
 #include <setupapi.h>
 #include <dbt.h>
 #include <initguid.h>
-#include <popt.h>
-#include "popt-fix.h"
 
 #include "driver.h"
 #include "pipes.h"
@@ -189,11 +188,15 @@ static bool installINF()
 
 enum
 {
+    /* defines for using argp */
+    GROUP0 = 0,
+    ARG_LOG_LEVEL = 0xFF,
+
     /* generic actions */
     ARG_LOG_FILE,
     ARG_QUIETER,
     ARG_LOUDER,
-    ARG_LOG_LEVEL,
+//    ARG_LOG_LEVEL,
 
     /* igdaemon specific actions */
     ARG_FOREGROUND,
@@ -203,131 +206,116 @@ enum
     ARG_NO_THREADS,
     ARG_DRIVER,
     ARG_ONLY_PREFER,
-    ARG_DRIVER_DIR
+    ARG_DRIVER_DIR,
+	ARG_RESCAN
 };
 
-static struct poptOption options[] =
+static struct argp_option options[] =
 {
-    { "log-file", 'l', POPT_ARG_STRING, NULL, 'l', "Specify a log file (defaults to \"-\").", "filename" },
-    { "quiet", 'q', POPT_ARG_NONE, NULL, 'q', "Reduce the verbosity.", NULL },
-    { "verbose", 'v', POPT_ARG_NONE, NULL, 'v', "Increase the verbosity.", NULL },
+    /* general daemon options */
+    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
+    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   GROUP0 },
+    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 GROUP0 },
+    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
 
-    /* iguanaworks specific stuff */
-    { "no-auto-rescan", '\0', POPT_ARG_NONE, NULL, 'n', "Do not automatically rescan the USB bus after a device disconnect.", NULL },
-    { "no-ids", '\0', POPT_ARG_NONE, NULL, 'b', "Do not query the iguanaworks device for its label.  Try this if fetching the label hangs.", NULL },
-    { "no-labels", '\0', POPT_ARG_NONE, NULL, 'b', "DEPRECATED: same as --no-ids", NULL },
+    /* iguanaworks specific options */
+    { "no-auto-rescan",  ARG_NO_RESCAN,    NULL,     0, "Do not automatically rescan the USB bus after device disconnect.", GROUP0 },
+    { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                           GROUP0 },
+    { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                     GROUP0 },
 
     /* Windows specific stuff for controlling the service */
-    { "regsvc", 0, POPT_ARG_NONE, NULL, 'r', "Register this executable as the system igdaemon service.", NULL },
-    { "unregsvc", 0, POPT_ARG_NONE, NULL, 'u', "Remove the system igdaemon service.", NULL },
-    { "startsvc", 0, POPT_ARG_NONE, NULL, 's', "Start the system igdaemon service.", NULL },
-    { "stopsvc", 0, POPT_ARG_NONE, NULL, 't', "Stop the system igdaemon service.", NULL },
-    { "rescan", 0, POPT_ARG_NONE, NULL, 'c', "Trigger a rescan by pausing and then resuming the service.", NULL },
-    { "installinf", 0, POPT_ARG_NONE, NULL, 'i', "Manually install the INF for the device.", NULL },
+    { "regsvc",     'r',        NULL, 0, "Register this executable as the system igdaemon service.",   GROUP0 },
+    { "unregsvc",   'u',        NULL, 0, "Remove the system igdaemon service.",                        GROUP0 },
+    { "startsvc",   's',        NULL, 0, "Start the system igdaemon service.",                         GROUP0 },
+    { "stopsvc",    't',        NULL, 0, "Stop the system igdaemon service.",                          GROUP0 },
+    { "rescan",     ARG_RESCAN, NULL, 0, "Trigger a rescan by pausing and then resuming the service.", GROUP0 },
+    { "installinf", 'i',        NULL, 0, "Manually install the INF for the device.",                   GROUP0 },
 
     /* options specific to the drivers */
-    { "driver", 'd', POPT_ARG_STRING, NULL, ARG_DRIVER, "Use this driver in preference to others.  This command can be used multiple times.", "preferred driver" },
-    { "only-preferred", '\0', POPT_ARG_NONE, NULL, ARG_ONLY_PREFER, "Use only drivers specified by the --driver option.", "only preferred drivers" },
-    { "driver-dir", '\0', POPT_ARG_STRING, NULL, ARG_DRIVER_DIR, "Specify the location of driver objects.", "driver directory" },
+    { "driver",         'd',             "DRIVER", 0, "Use this driver in preference to others.  This command can be used multiple times.", GROUP0 },
+    { "only-preferred", ARG_ONLY_PREFER, NULL,     0, "Use only drivers specified by the --driver option.",                                 GROUP0 },
+    { "driver-dir",     ARG_DRIVER_DIR,  "DIR",    0, "Specify the location of driver objects.",                                            GROUP0 },
 
-    POPT_TABLEEND
+    /* end of table */
+    {0}
 };
 
-static void exitOnOptError(poptContext poptCon, char *msg)
+static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
-    message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
-    poptPrintHelp(poptCon, stderr, 0);
-    exit(1);
-}
-
-int main(int argc, char **argv)
-{
-    const char **leftOvers, *temp;
-    int x = 0;
-    poptContext poptCon;
-
-    /* initialize the settings for the server process */
-    InitializeCriticalSection(&aliasLock);
-    initServerSettings(startWorker);
-
-    temp = strrchr(argv[0], '\\');
-    if (temp == NULL)
-        programName = argv[0];
-    else
-        programName = temp + 1;
-
-    poptCon = poptGetContext(NULL, argc, argv, options, 0);
-    while(x != -1)
+	UNUSED(state);
+    switch(key)
     {
-        switch(x = poptGetNextOpt(poptCon))
-        {
-        case 'l':
-            openLog(poptGetOptArg(poptCon));
-            break;
+    case 'l':
+        openLog(arg);
+        break;
 
-        case 'q':
-            changeLogLevel(-1);
-            break;
+    case 'q':
+        changeLogLevel(-1);
+        break;
 
-        case 'v':
-            changeLogLevel(+1);
-            break;
+    case 'v':
+        changeLogLevel(+1);
+        break;
+        
+    case ARG_LOG_LEVEL:
+        setLogLevel(atoi(arg));
+        break;
 
-        case 'b':
-            srvSettings.readLabels = false;
-            break;
+    case ARG_NO_RESCAN:
+        srvSettings.autoRescan = false;
+        break;
 
-        case 'n':
-            srvSettings.autoRescan = false;
-            break;
+    case ARG_NO_IDS:
+        srvSettings.readLabels = false;
+        break;
 
-        case 'r':
-            if (registerWithSCM())
-                return 0;
-            return 1;
+    case 'r':
+        if (registerWithSCM())
+            return 0;
+        return 1;
 
-        case 's':
-            if (changeServiceState(SERVICE_START))
-                return 0;
-            return 1;
+    case 's':
+        if (changeServiceState(SERVICE_START))
+            return 0;
+        return 1;
 
-        case 't':
-            if (changeServiceState(SERVICE_STOP))
-                return 0;
-            return 1;
+    case 't':
+        if (changeServiceState(SERVICE_STOP))
+            return 0;
+        return 1;
 
-        case 'c':
-            if (changeServiceState(SERVICE_CONTROL_PAUSE) &&
-                changeServiceState(SERVICE_CONTROL_CONTINUE))
-				return 0;
-            return 1;
+    case ARG_RESCAN:
+        if (changeServiceState(SERVICE_CONTROL_PAUSE) &&
+            changeServiceState(SERVICE_CONTROL_CONTINUE))
+			return 0;
+        return 1;
 
-        case 'u':
-            if (changeServiceState(DELETE))
-                return 0;
-            return 1;
+    case 'u':
+        if (changeServiceState(DELETE))
+            return 0;
+        return 1;
 
-        case 'i':
-            if (installINF())
-                return 0;
-            return 1;
+    case 'i':
+        if (installINF())
+            return 0;
+        return 1;
 
-        /* driver options */
-        case ARG_DRIVER:
-            srvSettings.preferred = (const char**)realloc((void*)srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
-            srvSettings.preferred[srvSettings.preferredCount - 1] = poptGetOptArg(poptCon);
-            srvSettings.preferred[srvSettings.preferredCount++] = NULL;
-            break;
+    /* driver options */
+    case 'd':
+        srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
+        srvSettings.preferred[srvSettings.preferredCount - 1] = arg;
+        srvSettings.preferred[srvSettings.preferredCount++] = NULL;
+        break;
 
-        case ARG_ONLY_PREFER:
-            srvSettings.onlyPreferred = true;
-            break;
+    case ARG_ONLY_PREFER:
+        srvSettings.onlyPreferred = true;
+        break;
 
-        case ARG_DRIVER_DIR:
-            srvSettings.driverDir = poptGetOptArg(poptCon);
-            break;
+    case ARG_DRIVER_DIR:
+        srvSettings.driverDir = arg;
+        break;
 
-        /* Error handling starts here */
+        /* Error handling starts here
         case POPT_ERROR_NOARG:
             exitOnOptError(poptCon, "Missing argument for '%s'\n");
             break;
@@ -344,25 +332,42 @@ int main(int argc, char **argv)
             }
             exitOnOptError(poptCon, "Unknown option '%s'\n");
             break;
+*/
 
-        case -1:
-            break;
-        default:
-            message(LOG_FATAL,
-                    "Unexpected return value from popt: %d:%s\n",
-                    x, poptStrerror(x));
-            break;
-        }
+    default:
+        return ARGP_ERR_UNKNOWN;
     }
+    return 0;
+}
 
-    /* what if we have extra parameters? */
-    leftOvers = poptGetArgs(poptCon);
-    if (leftOvers != NULL && leftOvers[0] != NULL)
-    {
-        message(LOG_ERROR, "Unknown argument '%s'\n", leftOvers[0]);
-        poptPrintHelp(poptCon, stderr, 0);
-        exit(1);
-    }
+static struct argp parser = {
+    options,
+    parseOption,
+    NULL,
+    "This daemon acts as a user-space driver controlling access to IguanaIR devices.\n",
+    NULL,
+    NULL,
+    NULL
+};
+
+
+/*
+static void exitOnOptError(poptContext poptCon, char *msg)
+{
+    message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
+    poptPrintHelp(poptCon, stderr, 0);
+    exit(1);
+}
+*/
+
+int main(int argc, char **argv)
+{
+    /* initialize the settings for the server process */
+    InitializeCriticalSection(&aliasLock);
+    initServerSettings(startWorker);
+
+    /* parse the cmd line args */
+    argp_parse(&parser, argc, argv, 0, NULL, NULL);
 
     if ((list = initServer()) == NULL)
         message(LOG_ERROR, "failed to initialize device list.\n");

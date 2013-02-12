@@ -63,10 +63,8 @@ Source: "%(dir)s/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "%(dir)s/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
 
-; popt libraries
-Source: "popt/popt1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "popt/libiconv-2.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "popt/libintl-2.dll"; DestDir: "{app}"; Flags: ignoreversion
+; argp libraries
+Source: "%(dir)s/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; the rest are created by libusb's tools
 Source: "libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
