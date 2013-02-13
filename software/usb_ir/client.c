@@ -671,6 +671,7 @@ static igtask* enqueueTask(char *text, const char *arg)
     cmd = (igtask*)malloc(sizeof(igtask));
     if (cmd != NULL)
     {
+        memset(cmd, 0, sizeof(igtask));
         cmd->command = text;
         cmd->arg = arg;
         insertItem(&tasks, NULL, (itemHeader*)cmd);
