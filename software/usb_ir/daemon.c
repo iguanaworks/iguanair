@@ -342,6 +342,14 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         srvSettings.readLabels = false;
         break;
 
+    case ARG_RECV_TIMEOUT:
+        srvSettings.devSettings.recvTimeout = atoi(arg);
+        break;
+
+    case ARG_SEND_TIMEOUT:
+        srvSettings.devSettings.sendTimeout = atoi(arg);
+        break;
+
     case ARG_NO_RESCAN:
         srvSettings.autoRescan = false;
         break;

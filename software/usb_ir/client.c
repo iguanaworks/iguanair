@@ -645,10 +645,6 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
 
 static void freeTask(igtask *cmd)
 {
-    /* explicitly cast off the const qualifier */
-#ifndef WIN32
-    free((char*)cmd->arg);
-#endif
     free(cmd);
 }
 
@@ -912,15 +908,6 @@ int main(int argc, char **argv)
     struct parameters params;
     int retval = 1;
     igtask *junk;
-
-#ifdef WIN32
-    const char *temp;
-    temp = strrchr(argv[0], '\\');
-    if (temp == NULL)
-        programName = argv[0];
-    else
-        programName = temp + 1;
-#endif
 
     /* initialize the parameters structure and parse the cmd line args */
     params.device = "0";
