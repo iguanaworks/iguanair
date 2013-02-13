@@ -12,12 +12,12 @@
  * See LICENSE for license details.
  */
 #include "iguanaIR.h"
+#include <argp.h>
 #include "compat.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <argp.h>
 #ifndef WIN32
   #include <arpa/inet.h>
 #endif
@@ -803,7 +803,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case INTERNAL_GETHOLDPINS:
     case INTERNAL_SETHOLDPINS:
     case INTERNAL_SLEEP: /* TODO: need to confirm that the argument is the int */
-        enqueueTaskById(key, arg);
+        enqueueTaskById((unsigned short)key, arg);
         break;
 
     /* TODO: a few codes must be substituted since they are "printable" */
@@ -813,7 +813,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case OFFSET_GETLOCATION:
     case OFFSET_REPEATER:
     case OFFSET_SENDSIZE:
-        enqueueTaskById(key - ARGP_OFFSET, arg);
+        enqueueTaskById((unsigned short)(key - ARGP_OFFSET), arg);
         break;
 
     case IG_DEV_GETPINCONFIG:
@@ -821,7 +821,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         enqueueTask("get config 0", NULL);
         enqueueTask("get config 1", NULL);
 #else
-        enqueueTaskById(key, arg);
+        enqueueTaskById((unsigned short)key, arg);
 #endif
         break;
 
@@ -830,7 +830,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         enqueueTask("set config 0", NULL);
         enqueueTask("set config 1", NULL);
 #else
-        enqueueTaskById(key, arg);
+        enqueueTaskById((unsigned short)key, arg);
 #endif
         break;
 

@@ -52,7 +52,9 @@
     #define LOCK_PTR CRITICAL_SECTION
 
     /* windows has no way to flag specific variables as unused */
-    #define UNUSED(a) a
+    #ifndef UNUSED
+      #define UNUSED(a) a
+    #endif
 
     /* defines for dealing with the file system and libraries */
     #define PATH_MAX MAX_PATH
