@@ -15,12 +15,6 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
-AC_CHECK_LIB([popt], [poptGetContext],,
-  [
-    echo "ERROR: Could not find popt."
-    echo "       You probably need to install the popt development package.  In Ubuntu the package is libpopt-dev, in Fedora install popt-devel."
-  ]
-)
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime],
   [

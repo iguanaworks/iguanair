@@ -24,7 +24,7 @@ Requires(post):   /usr/bin/install /sbin/chkconfig
 Requires(pre):    /usr/sbin/useradd
 Requires(preun):  /sbin/chkconfig /sbin/service /bin/rmdir
 Requires(postun): /usr/sbin/userdel
-BuildRequires:  libusb-devel libusb1-devel popt-devel 
+BuildRequires:  libusb-devel libusb1-devel
 
 %description
 This package provides igdaemon and igclient, the programs necessary to

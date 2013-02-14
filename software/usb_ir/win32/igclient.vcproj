@@ -222,14 +222,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\popt\popt-fix.h"
-				>
-			</File>
-			<File
-				RelativePath=".\popt\popt.h"
-				>
-			</File>
-			<File
 				RelativePath="..\support.h"
 				>
 			</File>

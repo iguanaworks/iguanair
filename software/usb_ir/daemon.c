@@ -395,16 +395,6 @@ static struct argp parser = {
     NULL
 };
 
-
-/*
-static void exitOnOptError(poptContext poptCon, char *msg)
-{
-    message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
-    poptPrintHelp(poptCon, stderr, 0);
-    exit(1);
-}
-*/
-
 int main(int argc, char **argv)
 {
     int retval = 0;

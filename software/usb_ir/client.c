@@ -859,25 +859,6 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         setLogLevel(atoi(arg));
         break;
 
-    /* Error handling starts here
-    case POPT_ERROR_NOARG:
-        exitOnOptError(poptCon, "Missing argument for '%s'\n");
-        break;
-
-    case POPT_ERROR_BADNUMBER:
-        exitOnOptError(poptCon, "Need a number instead of '%s'\n");
-        break;
-
-    case POPT_ERROR_BADOPT:
-        if (strcmp(poptBadOption(poptCon, 0), "-h") == 0)
-        {
-            poptPrintHelp(poptCon, stdout, 0);
-            exit(0);
-        }
-        exitOnOptError(poptCon, "Unknown option '%s'\n");
-        break;
- */
-
     default:
         return ARGP_ERR_UNKNOWN;
     }
@@ -893,15 +874,6 @@ static struct argp parser = {
     NULL,
     NULL
 };
-
-/*
-static void exitOnOptError(poptContext poptCon, char *msg)
-{
-    message(LOG_ERROR, msg, poptBadOption(poptCon, 0));
-    poptPrintHelp(poptCon, stderr, 0);
-    exit(1);
-}
-*/
 
 int main(int argc, char **argv)
 {
