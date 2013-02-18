@@ -242,7 +242,7 @@ static struct argp_option options[] =
 
 static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
-	UNUSED(state);
+	int *retval = (int*)state->input;
     switch(key)
     {
     case 'l':
@@ -271,34 +271,46 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
 
     case 'r':
         if (registerWithSCM())
-            return 0;
-        return 1;
+            *retval = 0;
+		else
+	        *retval = 1;
+		break;
 
     case 's':
         if (changeServiceState(SERVICE_START))
-            return 0;
-        return 1;
+            *retval = 0;
+		else
+	        *retval = 1;
+		break;
 
     case 't':
         if (changeServiceState(SERVICE_STOP))
-            return 0;
-        return 1;
+            *retval = 0;
+		else
+	        *retval = 1;
+		break;
 
     case ARG_RESCAN:
         if (changeServiceState(SERVICE_CONTROL_PAUSE) &&
             changeServiceState(SERVICE_CONTROL_CONTINUE))
-			return 0;
-        return 1;
+            *retval = 0;
+		else
+	        *retval = 1;
+		break;
 
     case 'u':
         if (changeServiceState(DELETE))
-            return 0;
-        return 1;
+            *retval = 0;
+		else
+	        *retval = 1;
+		break;
 
     case 'i':
         if (installINF())
-            return 0;
-        return 1;
+            *retval = 0;
+		else
+	        *retval = 1;
+		break;
 
     /* driver options */
     case 'd':
@@ -333,12 +345,16 @@ static struct argp parser = {
 
 int main(int argc, char **argv)
 {
-    /* initialize the settings for the server process */
+	int retval = -1;
+
+	/* initialize the settings for the server process */
     InitializeCriticalSection(&aliasLock);
     initServerSettings(startWorker);
 
     /* parse the cmd line args */
-    argp_parse(&parser, argc, argv, 0, NULL, NULL);
+    argp_parse(&parser, argc, argv, 0, NULL, &retval);
+	if (retval != -1)
+		return retval;
 
     if ((list = initServer()) == NULL)
         message(LOG_ERROR, "failed to initialize device list.\n");
