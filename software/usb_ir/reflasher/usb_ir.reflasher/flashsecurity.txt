@@ -1,0 +1,1 @@
+../../../../firmware/usb_ir.loader/flashsecurity.txt

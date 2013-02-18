@@ -315,6 +315,7 @@ static struct argp_option options[] =
 
 static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
+/* TODO: replace atoi with something that complains on non-int args */
     struct parameters *params = (struct parameters*)state->input;
     switch(key)
     {

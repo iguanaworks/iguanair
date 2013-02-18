@@ -389,7 +389,7 @@ static bool updateDeviceList(deviceList *devList)
                         {
                             if (errno == EBUSY)
                                 message(LOG_ERROR,
-                                        "Is igdaemon already running?\n");
+                                        "Is kernel module loaded or the igdaemon already running?\n");
                             message(LOG_ERROR, "  trying to claim usb:%d:%d\n",
                                     busIndex, libusb_get_device_address(dev));
                             printError(LOG_ERROR, "  updateDeviceList failed",
