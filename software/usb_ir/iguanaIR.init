@@ -25,6 +25,7 @@
 [ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
 # combine some variables into a command line
 IGUANAIR_OPTIONS="$OPTIONS --log-level=$LOGLEVEL --send-timeout=$SENDTIMEOUT --receive-timeout=$RECEIVETIMEOUT $DRIVERS"
+SOCKDIR=/var/run/iguanaIR
 
 # We need to know what helper functions are legal, so detect the
 # distro.  Override this in /etc/defaults/iguanaIR
@@ -110,6 +111,10 @@ start()
         # make sure the log file exists/is writable
         touch $LOGFILE
         chown iguanair:iguanair $LOGFILE
+
+        # make sure the socket directory exists and is writable
+        mkdir -p $SOCKDIR
+        chown iguanair:iguanair $SOCKDIR
 
         # start the daemon
         log_begin_msg "Starting Iguanaworks USB IR daemon..."
