@@ -147,6 +147,9 @@ stop()
         [ $RETVAL = 0 ] && rm -f $LOCKFILE $PIDFILE
     fi
 
+    # remove any previous /var/run/iguanaIR if it's empty
+	rmdir /var/run/iguanaIR 2>/dev/null
+
     return $RETVAL
 }
 

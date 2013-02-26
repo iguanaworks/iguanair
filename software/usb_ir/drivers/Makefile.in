@@ -1,6 +1,5 @@
 include ../Make.settings
 
-#DRIVERS=libusbpre1.so libusb.so
 DRIVERS=libusb.so
 LISTS=../list.o
 
