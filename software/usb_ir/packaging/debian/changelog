@@ -1,3 +1,10 @@
+iguanair (1.0.5-1) stable; urgency=low
+
+  * 1.0.5 Iguanaworks Release
+  * Bug fix on 1.0.4 with new socket location /var/run.
+
+ -- Iguanaworks Support <support@iguanaworks.net>  Tue, 26 Jan 2013 11:00:14 -0700
+
 iguanair (1.0.4-1) stable; urgency=low
 
   * 1.0.4 Iguanaworks Release

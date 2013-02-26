@@ -10,8 +10,6 @@ if [ purge = "$1" ]; then
     else
        echo >&2 "not removing iguanair system account because deluser command was not found"
     fi
-  
-  rmdir /var/run/iguanaIR 2>/dev/null||true 
- 
+
 fi
 
