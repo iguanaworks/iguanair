@@ -31,7 +31,17 @@ PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
     else
     {
         conn = connectToPipe(name);
-        if (conn != INVALID_PIPE)
+        if (conn == INVALID_PIPE)
+        {
+            if (strncmp(name, "/dev/iguanaIR/", 14) == 0)
+            {
+                char buffer[PATH_MAX] = "/var/run/iguanaIR/";
+                strcat(buffer, name + 14);
+                message(LOG_WARN, "Client application failed to connect to a socket in /dev.  The proper location is now in /var/run.  Please update your paths accordingly.  Re-trying with corrected path: %s\n", buffer);
+                return iguanaConnect_real(buffer, protocol);
+            }
+        }
+        else
         {
             uint16_t clientVersion = IG_PROTOCOL_VERSION;
             dataPacket *request;
