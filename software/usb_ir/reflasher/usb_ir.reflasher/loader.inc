@@ -1,1 +1,1 @@
-../../../../firmware/usb_ir.loader/loader.inc
+../../../../firmware/usb_ir_loader/usb_ir_loader/loader.inc
