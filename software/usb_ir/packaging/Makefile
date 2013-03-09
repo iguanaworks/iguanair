@@ -68,8 +68,12 @@ gentoo-clean:
 
 # commands to create a tarball
 tarball:
-	ln -s .. $(NAMEVER); \
-	tar --dereference -cjf $(NAMEVER).tar.bz2 --exclude .svn --exclude packaging/$(NAMEVER)* --exclude win32 $(NAMEVER); \
+	ln -s .. $(NAMEVER);
+	tar --dereference -cjf $(NAMEVER).tar.bz2 \
+            --exclude build                   \
+            --exclude .svn                    \
+            --exclude packaging/$(NAMEVER)*   \
+            --exclude win32 $(NAMEVER);
 	rm $(NAMEVER);
 
 .PHONY: help fedora ubuntu tarball
