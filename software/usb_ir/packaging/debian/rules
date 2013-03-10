@@ -27,8 +27,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	-rm -f build-stamp configure-stamp
-	make distclean || exit 0
-	make -C packaging ../debian
+	rm -rf $(CURDIR)/build
 	dh_clean
 
 	# remove the build directories
@@ -43,7 +42,6 @@ install: build
 
 	# main install
 	make -C build install DESTDIR=$(CURDIR)/debian/iguanair
-
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
 	#mv libiguanaIR.so.0 $(CURDIR)/debian/tmp/usr/lib/
