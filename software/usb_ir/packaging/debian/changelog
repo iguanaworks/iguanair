@@ -1,3 +1,9 @@
+iguanair (1.1.0) stable; urgency=low
+
+  *  Switched from autoconf to cmake
+
+ -- Iguanaworks Support <support@iguanaworks.net>  Sun, 10 Mar 2013 13:28:28 -0600
+
 iguanair (1.0.5-1) stable; urgency=low
 
   * 1.0.5 Iguanaworks Release

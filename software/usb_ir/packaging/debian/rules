@@ -14,10 +14,7 @@ endif
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	mkdir -p build
-	cd build
-	cmake ..
-	cd ..
+	mkdir -p build;	cd build;cmake ..;cd ..
 	touch configure-stamp
 
 build: configure-stamp build-stamp
@@ -46,7 +43,7 @@ install: build
 
 	# main install
 	make -C build install DESTDIR=$(CURDIR)/debian/iguanair
-
+	find $(CURDIR)/debian/iguanair -type d -depth -name .svn -exec rm -rf \{\} \;
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
 	#mv libiguanaIR.so.0 $(CURDIR)/debian/tmp/usr/lib/
@@ -72,7 +69,7 @@ binary-indep:	build install
 binary-arch:	build install
 	dh_testdir
 	dh_testroot
-	dh_installdocs AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog
+	dh_installdocs AUTHORS LICENSE LICENSE-LGPL WHY README.txt ChangeLog
 #	dh_installmanpages
 #	dh_installinfo doc/gzip.info
 	dh_installchangelogs ChangeLog

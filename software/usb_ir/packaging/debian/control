@@ -2,7 +2,7 @@ Source: iguanair
 Section: utils
 Priority: optional
 Maintainer: IguanaWorks [support@iguanaworks.net]
-Build-Depends: debhelper (>=5), libusb-1.0-0-dev, python-dev (>=2.6.6-3~), autoconf, automake, swig, fakeroot
+Build-Depends: debhelper (>=5), libusb-1.0-0-dev, python-dev (>=2.6.6-3~), swig, fakeroot, cmake (>= 2.6)
 Standards-Version: 3.7.2.2
 
 Package: iguanair
