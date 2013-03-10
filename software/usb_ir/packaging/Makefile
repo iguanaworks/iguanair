@@ -72,9 +72,8 @@ tarball:
 	ln -s .. $(NAMEVER);
 	tar --dereference -cjf $(NAMEVER).tar.bz2 \
             --exclude build                   \
-            --exclude .svn                    \
             --exclude packaging/$(NAMEVER)*   \
-            --exclude win32 $(NAMEVER);
+            $(NAMEVER);
 	rm $(NAMEVER);
 
 .PHONY: help fedora ubuntu tarball
