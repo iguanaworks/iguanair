@@ -44,6 +44,9 @@ install(TARGETS iguanaIR
 
 
 # build the service/server that controls hardware
+#+LISTENER=unixlistener.o
+#+#LISTENER=tcplistener.o
+#+igdaemon: daemon.o $(LISTENER) \
 add_executable(igdaemon daemon.c
                server.c client-interface.c device-interface.c driver.c
                list.c protocol-versions.c pipes.c dataPackets.c ${BASESRC})
@@ -83,7 +86,8 @@ If (SWIG_FOUND AND PYTHONLIBS_FOUND)
     install(PROGRAMS reflasher/iguanaIR-reflasher
             DESTINATION /usr/bin)
     install(DIRECTORY reflasher/hex
-            DESTINATION /usr/share/iguanaIR-reflasher)
+            DESTINATION /usr/share/iguanaIR-reflasher
+            PATTERN ".svn" EXCLUDE)
 EndIf()
 
 # make the config.h based on what we found
@@ -91,30 +95,12 @@ configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
 # install all the other bits and pieces
 install(DIRECTORY linux/lib linux/etc
-        DESTINATION /)
+        DESTINATION /
+        PATTERN ".svn" EXCLUDE)
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
 
-
-###############################
-# install all the other bits and pieces
-#install(FILES udev/iguanaIR.rules
-#        DESTINATION /lib/udev/rules.d
-#        RENAME 80-iguanaIR.rules)
-#
-#install(FILES iguanaIR.options
-#        DESTINATION /etc/default
-#        RENAME iguanaIR)
-#
-#install(FILES iguanaIR.init
-#        DESTINATION /etc/init.d
-#        RENAME iguanaIR)
-################################
-
-#        install -D $(srcdir)/iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
-
 ##########################################
-#.PHONY: install
 #install: all
 #ifdef DARWIN
 #        install -D --mode 644 osx/com.iguana.igdaemon.plist \

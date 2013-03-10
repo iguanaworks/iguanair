@@ -43,7 +43,7 @@ install: build
 
 	# main install
 	make -C build install DESTDIR=$(CURDIR)/debian/iguanair
-	find $(CURDIR)/debian/iguanair -type d -depth -name .svn -exec rm -rf \{\} \;
+
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
 	#mv libiguanaIR.so.0 $(CURDIR)/debian/tmp/usr/lib/
