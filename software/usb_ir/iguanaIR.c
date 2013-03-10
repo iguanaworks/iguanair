@@ -33,7 +33,8 @@ PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
         conn = connectToPipe(name);
         if (conn == INVALID_PIPE)
         {
-            if (strncmp(name, "/dev/iguanaIR/", 14) == 0)
+            if (name != NULL &&
+                strncmp(name, "/dev/iguanaIR/", 14) == 0)
             {
                 char buffer[PATH_MAX] = "/var/run/iguanaIR/";
                 strcat(buffer, name + 14);
