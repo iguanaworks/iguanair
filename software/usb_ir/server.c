@@ -100,8 +100,8 @@ deviceList* initServer()
   #endif
             srvSettings.driverDir = "/usr/lib/iguanaIR"; 
 #endif
-            message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir); 
     }
+    message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir); 
 
     /* initialize the commPipe, driver, and device list */
     if (! createPipePair(srvSettings.commPipe))
