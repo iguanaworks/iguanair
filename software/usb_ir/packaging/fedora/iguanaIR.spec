@@ -1,8 +1,9 @@
 # determine the python version
 %define pyver %(python -V 2>&1 | sed 's/Python \\(.\\..\\).*/\\1/')
+%define version %(head -n 1 ../ChangeLog | sed 's/.*(\\(.*\\)).*/\\1/')
 
 Name:           iguanaIR
-Version:        1.0.5
+Version:        %{version}
 Release:        1
 Summary:        Driver for Iguanaworks USB IR transceiver.
 
@@ -11,12 +12,12 @@ License:        GPL
 URL:            http://iguanaworks.net/ir
 Source0:        http://iguanaworks.net/ir/releases/%{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires:         libusb >= 0.1.10 lirc >= 0.8.1 libusb1
+Requires:         lirc >= 0.8.1 libusb1
 Requires(post):   /usr/bin/install /sbin/chkconfig
 Requires(pre):    /usr/sbin/useradd
 Requires(preun):  /sbin/chkconfig /sbin/service /bin/rmdir
 Requires(postun): /usr/sbin/userdel
-BuildRequires:  libusb-devel libusb1-devel
+BuildRequires:    cmake libusb1-devel
 
 %description
 This package provides igdaemon and igclient, the programs necessary to

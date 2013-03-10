@@ -1,6 +1,7 @@
 NAME    = $(shell grep Name: fedora/*.spec | head -1 | sed 's/[^ ]*[ ]*//')
-VERSION = $(shell grep Version: fedora/$(NAME).spec | sed 's/[^ ]*[ ]*//')
-CURRENT = $(shell head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z')
+#NAME    = $(shell head -n 1 ../ChangeLog | sed 's/\([^ ]*\).*/\1/')
+VERSION = $(shell head -n 1 ../ChangeLog | sed 's/.*(\(.*\)).*/\1/')
+CURRENT = $(shell head -n 1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z')
 NAMEVER = $(NAME)-$(VERSION)
 
 all:
