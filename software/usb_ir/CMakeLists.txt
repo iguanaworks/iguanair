@@ -3,6 +3,13 @@ project(IguanaIR C)
 
 include(CheckFunctionExists)
 
+# default the LIBDIR if it was not set
+If("${LIBDIR}" STREQUAL "")
+  Set(LIBDIR "/usr/lib")
+EndIf()
+
+Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
+
 # set a couple variables early
 Set(BASESRC support.c)
 
@@ -13,6 +20,8 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     Unset(CMAKE_REQUIRED_LIBRARIES)
 
     # default all symbols to hidden under gcc
+# TODO: if we set the visibility correctly then the drivers cannot
+#  find symbols from the main library... need to fix that somehow
 #    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 
     List(APPEND BASESRC compat-unix.c)
@@ -31,7 +40,7 @@ add_library(iguanaIR SHARED
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
 install(TARGETS iguanaIR
-        DESTINATION /usr/lib)
+        DESTINATION ${LIBDIR})
 
 
 # build the service/server that controls hardware
@@ -68,47 +77,48 @@ If (SWIG_FOUND AND PYTHONLIBS_FOUND)
     # install the python support
     install(FILES ${CMAKE_BINARY_DIR}/_iguanaIR.so
                   ${CMAKE_BINARY_DIR}/iguanaIR.py
-            DESTINATION /usr/lib/python2.7/dist-packages)
+            DESTINATION ${LIBDIR}/python2.7/site-packages)
 
     # install the reflasher script and hex files
     install(PROGRAMS reflasher/iguanaIR-reflasher
             DESTINATION /usr/bin)
     install(DIRECTORY reflasher/hex
-            DESTINATION /usr/lib/iguanaIR-reflasher)
+            DESTINATION /usr/share/iguanaIR-reflasher)
 EndIf()
 
 # make the config.h based on what we found
-configure_file(config.h.in.cmake ${CMAKE_SOURCE_DIR}/config.h)
+configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
+
+# install all the other bits and pieces
+install(DIRECTORY linux/lib linux/etc
+        DESTINATION /)
+install(FILES iguanaIR.h
+        DESTINATION /usr/include)
 
 
+###############################
+# install all the other bits and pieces
+#install(FILES udev/iguanaIR.rules
+#        DESTINATION /lib/udev/rules.d
+#        RENAME 80-iguanaIR.rules)
+#
+#install(FILES iguanaIR.options
+#        DESTINATION /etc/default
+#        RENAME iguanaIR)
+#
+#install(FILES iguanaIR.init
+#        DESTINATION /etc/init.d
+#        RENAME iguanaIR)
+################################
 
-
-
-
+#        install -D $(srcdir)/iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
 
 ##########################################
-# install all the other bits and pieces
 #.PHONY: install
 #install: all
-#        install -d $(DESTDIR)/$(BINDIR)
-#        install igclient $(DESTDIR)/$(BINDIR)/igclient
-#        install igdaemon $(DESTDIR)/$(BINDIR)/igdaemon
-#        install -d $(DESTDIR)/$(LIBDIR)/iguanaIR
-#        install $(LIBNAME) $(DESTDIR)/$(LIBDIR)/$(LIBNAME)
-#        install drivers/libusbpre1.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusbpre1.$(SHAREEXT)
-#        install drivers/libusb.$(SHAREEXT) $(DESTDIR)/$(LIBDIR)/iguanaIR/libusb.$(SHAREEXT)
-#        install -d $(DESTDIR)$(prefix)/include
-#        install $(srcdir)/iguanaIR.h $(DESTDIR)$(prefix)/include/iguanaIR.h
 #ifdef DARWIN
 #        install -D --mode 644 osx/com.iguana.igdaemon.plist \
 #                              /Library/LaunchDaemons/com.iguana.igdaemon.plist
 #        launchctl load -w /Library/LaunchDaemons/com.iguana.igdaemon.plist
-#else
-#        install -D $(srcdir)/iguanaIR.init $(DESTDIR)/etc/init.d/iguanaIR
-#        install -D --mode 644 $(srcdir)/iguanaIR.options $(DESTDIR)/etc/default/iguanaIR
-#        install -D --mode 644 $(srcdir)/udev/iguanaIR.rules \
-#                              $(DESTDIR)/lib/udev/rules.d/80-iguanaIR.rules
-#        install --mode 755 $(SETOWNER) -d $(DESTDIR)/lib/udev/devices/iguanaIR
-#        install --mode 755 $(SETOWNER) -d $(DESTDIR)/var/run/iguanaIR
 #endif
 ##########################################

@@ -11,18 +11,19 @@ ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
 CONFARGS = --host=$(DEB_HOST_GNU_TYPE)
 endif
 
-CFLAGS="-g -O2 -Wall" 
-
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	CFLAGS=$(CFLAGS) ./configure
+	mkdir -p build
+	cd build
+	cmake ..
+	cd ..
 	touch configure-stamp
 
 build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
-	$(MAKE)
+	$(MAKE) -C build
 	touch build-stamp
 
 clean:
@@ -44,7 +45,7 @@ install: build
 	dh_makeshlibs
 
 	# main install
-	make INSTALLPACKAGE=TRUE install DESTDIR=$(CURDIR)/debian/iguanair
+	make -C build install DESTDIR=$(CURDIR)/debian/iguanair
 
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0

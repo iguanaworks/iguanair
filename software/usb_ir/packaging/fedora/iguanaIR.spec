@@ -1,14 +1,5 @@
+# determine the python version
 %define pyver %(python -V 2>&1 | sed 's/Python \\(.\\..\\).*/\\1/')
-# TODO: should be this path: %define pydir %{_libdir}/python%{pyver}/site-packages
-%define pydir %{_libdir}/python%{pyver}/site-packages
-%define uid   213
-
-# stop building the debug packages?
-#%define debug_package  %{nil}
-#%define debug_packages %{nil}
-
-# some features can be disabled during the rpm build
-%{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
 
 Name:           iguanaIR
 Version:        1.0.5
@@ -54,16 +45,16 @@ This package provides the reflasher/testing script and assorted firmware version
 %prep
 %setup -q
 
-
 %build
-echo %{?_disable_clock_gettime}
-%configure %{?_disable_clock_gettime}
-make %{?_smp_mflags}
-
+mkdir -p build
+cd build
+cmake -DLIBDIR=%{_libdir} ..
+cd ..
+make -C build %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install INSTALLPACKAGE=TRUE PREFIX=$RPM_BUILD_ROOT/usr DESTDIR=$RPM_BUILD_ROOT INLIBDIR=$RPM_BUILD_ROOT%{_libdir}
+make -C build install DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -71,7 +62,8 @@ rm -rf $RPM_BUILD_ROOT
 # must create the user and group before files are put down
 %pre
 #TODO: stupid to not support the long versions
-/usr/sbin/useradd -u %{uid} -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
+# TODO: do NOT specify the uid!
+/usr/sbin/useradd -u 213 -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
 #/usr/sbin/useradd --uid %{uid} --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
 
 # must add the service after the files are placed
@@ -81,19 +73,19 @@ rm -rf $RPM_BUILD_ROOT
 # before the files are removed stop the service
 %preun
 if [ $1 = 0 ]; then
-        /sbin/service %{name} stop > /dev/null 2>&1 || true
-        /sbin/chkconfig --del %{name}
+  /sbin/service %{name} stop > /dev/null 2>&1 || true
+  /sbin/chkconfig --del %{name}
 fi
 
 # after the files are removed nuke the user and group
 %postun
 if [ $1 = 0 ]; then
-        /usr/sbin/userdel iguanair
+  /usr/sbin/userdel iguanair
 fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS LICENSE LICENSE-LGPL WHY protocols.txt README.txt notes.txt ChangeLog examples
+%doc AUTHORS LICENSE LICENSE-LGPL WHY README.txt ChangeLog examples
 /usr/bin/igclient
 /usr/bin/igdaemon
 %{_libdir}/lib%{name}.so*
@@ -107,9 +99,7 @@ fi
 /usr/include/%{name}.h
 
 %files python
-%{pydir}/*
-# TODO: autoconf needed!
-#%ghost %{pydir}/*.pyo
+%{_libdir}/python%{pyver}/site-packages/*
 
 %files reflasher
 /usr/share/%{name}-reflasher
