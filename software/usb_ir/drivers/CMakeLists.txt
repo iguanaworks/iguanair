@@ -6,11 +6,11 @@ Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=default")
 add_library(usb SHARED libusb.c ../list.c)
 target_link_libraries(usb -lusb-1.0 iguanaIR)
 install(TARGETS usb
-        DESTINATION /usr/lib64/iguanaIR)
+        DESTINATION ${LIBDIR}/iguanaIR)
 
 # optionally build a driver that uses libusb pre version 1.0
 add_library(usbpre1 SHARED EXCLUDE_FROM_ALL libusbpre1.c ../list.c)
 target_link_libraries(usbpre1 -lusb)
 install(TARGETS usbpre1
-        DESTINATION /usr/lib64/iguanaIR
+        DESTINATION ${LIBDIR}/iguanaIR
         OPTIONAL)
