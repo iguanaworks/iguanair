@@ -538,8 +538,9 @@ def findHexFile(type, target = None, mustFind = True):
     latest = None
     latestVersion = None
 
-    testdir = os.path.split(sys.path[0])
     rootdir = sys.path[0]
+
+    testdir = os.path.split(sys.path[0])
     if len(testdir) == 2 and testdir[1] == 'library.zip':
         rootdir = testdir[0]
 
@@ -566,9 +567,9 @@ def findHexFile(type, target = None, mustFind = True):
 
     if latest is None and mustFind:
         if target is not None:
-            message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?" % (type, target))
+            message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?\n" % (type, target))
         else:
-            message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?" % (type))
+            message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?\n" % (type))
 
 
 

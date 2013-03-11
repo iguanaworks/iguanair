@@ -69,13 +69,17 @@ install(TARGETS igclient DESTINATION /usr/bin)
 find_package(SWIG)
 find_package(PythonLibs)
 If (SWIG_FOUND AND PYTHONLIBS_FOUND)
-    message("Python and SWIG; will build Python bindings")
+    message("Python and SWIG found; will build Python bindings")
 
-    INCLUDE(${SWIG_USE_FILE})
+    # pull in the swig macros
+    include(${SWIG_USE_FILE})
 
-    INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
-    SWIG_ADD_MODULE(iguanaIR python iguanaIR.i iguanaIR.c)
+    include_directories(${PYTHON_INCLUDE_PATH} ${CMAKE_SOURCE_DIR})
+    swig_add_module(iguanaIR python iguanaIR.i iguanaIR.c)
+    swig_link_libraries(iguanaIR iguanaIR ${BASELIBS})
+    set_source_files_properties(${swig_generated_file_fullname}
+        PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
+
 
     # install the python support
     install(FILES ${CMAKE_BINARY_DIR}/_iguanaIR.so
@@ -83,18 +87,29 @@ If (SWIG_FOUND AND PYTHONLIBS_FOUND)
             DESTINATION ${LIBDIR}/python2.7/site-packages)
 
     # install the reflasher script and hex files
-    install(DIRECTORY linux/usr
+    install(DIRECTORY files/python/usr
             DESTINATION /
             PATTERN ".svn" EXCLUDE
             PATTERN "body-0.hex" EXCLUDE
             PATTERN "loader-0.hex" EXCLUDE)
+    install(PROGRAMS files/python/usr/share/iguanaIR-reflasher/iguanaIR-reflasher
+            DESTINATION /usr/share/iguanaIR-reflasher)
+
+    # force creation of a symlink
+    install(CODE "
+      execute_process(COMMAND ln -sf
+                              ../share/iguanaIR-reflasher/iguanaIR-reflasher
+                              \$ENV{DESTDIR}/usr/bin/iguanaIR-reflasher)
+    ")
+
+
 EndIf()
 
 # make the config.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
 # install all the other bits and pieces
-install(DIRECTORY linux/lib linux/etc
+install(DIRECTORY files/base/lib files/base/etc
         DESTINATION /
         PATTERN ".svn" EXCLUDE)
 install(FILES iguanaIR.h
