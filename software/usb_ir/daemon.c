@@ -37,7 +37,6 @@ extern int daemon_osx_support(const usbId *);
 
 /* local variables */
 static mode_t devMode = 0777;
-static int logLevelTemp = 0;
 
 /* possible commands that can be triggered by signals */
 enum
