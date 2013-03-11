@@ -158,29 +158,12 @@ restart()
     stop && start
 }
 
-rescan()
-{
-    log_begin_msg "Signalling Iguanaworks USB IR daemon: "
-    if [ "$LOCKFILE" != "" ]; then
-        if [ -e $LOCKFILE ]; then
-            PID=$(pidofproc $IGPATH)
-            kill -s HUP $PID
-            echo_success
-        fi
-    else
-        start-stop-daemon --stop --signal HUP --exec $IGPATH
-    fi
-
-    RETVAL=$?
-    log_end_msg $RETVAL
-}
-
 usage()
 {
     if [ "$LOCKFILE" != "" ]; then
-        echo $"Usage: $0 {start|stop|status|restart|condrestart|force-restart|rescan}"
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|force-restart}"
     else
-        echo $"Usage: $0 {start|stop|status|restart|force-restart|rescan}"
+        echo $"Usage: $0 {start|stop|status|restart|force-restart}"
     fi
     RETVAL=1
 }
@@ -208,9 +191,6 @@ case "$1" in
         ;;
     restart)
         restart
-        ;;
-    rescan)
-        rescan
         ;;
     force-reload)
         forcereload

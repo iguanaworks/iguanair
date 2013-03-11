@@ -12,7 +12,7 @@ ATTR{manufacturer} == "IguanaWorks", ATTR{product} == "USB IR Transceiver", \
                OWNER = "iguanair", MODE = "0664", \
                RUN  = "/bin/mkdir -p /var/run/iguanaIR", \
                RUN += "/bin/chown iguanair /var/run/iguanaIR", \
-               RUN += "/etc/init.d/iguanaIR rescan"
+               RUN += "/usr/bin/iguanaIR-rescan"
 
 # FOR DEBUGGING TRY ADDING TO THE RUN LINES:
 #RUN += "/bin/bash -c 'echo $major $minor r=$result i=$id n=$number k=$kernel p=$parent r=$root >> /tmp/udev.txt'"

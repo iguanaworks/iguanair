@@ -109,9 +109,13 @@ EndIf()
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
 # install all the other bits and pieces
-install(DIRECTORY files/base/lib files/base/etc
+install(DIRECTORY files/base/etc files/base/lib files/base/usr
         DESTINATION /
         PATTERN ".svn" EXCLUDE)
+install(PROGRAMS files/base/etc/init.d/iguanaIR
+        DESTINATION /etc/init.d)
+install(PROGRAMS files/base/usr/bin/iguanaIR-rescan
+        DESTINATION /usr/bin)
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
 

@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# check arguments
+if [ "$#" == "0" ]; then
+  KILLALL=""
+elif [ "$#" == "1" -a "$1" == "--all" ]; then
+  KILLALL="1"
+else
+  echo "Usage: $0 [--all]"
+  exit 1
+fi
+
+# load the default settings / variables
+[ -f /etc/default/iguanaIR ] && . /etc/default/iguanaIR
+IGPATH=/usr/bin/igdaemon
+
+# TODO: just see if start-stop-daemon exists instead of checking distro?
+
+# We need to know what helper functions are legal, so detect the
+# distro.  Override this in /etc/defaults/iguanaIR
+# First try lsb, if it exists, if not then use our
+# /etc/issue hack.
+if [ "$DISTRO" = "" ]; then
+    LSBLOCATION=`which lsb_release 2>/dev/null`
+	if [ -x "$LSBLOCATION" ]; then
+		DISTRO=`lsb_release -s -i | tr 'A-Z' 'a-z'`
+	else
+		DISTRO=`head -1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z'`
+	fi
+fi
+
+# handle the redhat family of distros differently
+if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" -o "$DISTRO" = "centos" -o "$DISTRO" = "rhel" -o "$DISTRO" = "scientific" ]; then
+    # fedora and related need these variables
+    LOCKFILE=/var/lock/subsys/iguanaIR
+    PIDFILE=/var/run/igdaemon.pid
+
+    if [ -e $LOCKFILE ]; then
+        echo killing
+        PID=$(cat $PIDFILE)
+        kill -s HUP $PID
+    elif [ "$KILLALL" != "" ]; then
+        killall -s HUP $(basename $IGPATH)
+    fi
+else
+    start-stop-daemon --stop --signal HUP --exec $IGPATH
+fi

@@ -89,6 +89,7 @@ fi
 %doc AUTHORS LICENSE LICENSE-LGPL WHY README.txt ChangeLog examples
 /usr/bin/igclient
 /usr/bin/igdaemon
+/usr/bin/iguanaIR-rescan
 %{_libdir}/lib%{name}.so*
 %{_libdir}/%{name}
 /etc/init.d/%{name}
