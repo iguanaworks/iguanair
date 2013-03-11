@@ -83,20 +83,22 @@ If (SWIG_FOUND AND PYTHONLIBS_FOUND)
             DESTINATION ${LIBDIR}/python2.7/site-packages)
 
     # install the reflasher script and hex files
-    install(PROGRAMS reflasher/iguanaIR-reflasher
-            DESTINATION /usr/bin)
-    install(DIRECTORY reflasher/hex
-            DESTINATION /usr/share/iguanaIR-reflasher
-            PATTERN ".svn" EXCLUDE)
+#    install(PROGRAMS reflasher/iguanaIR-reflasher
+#            DESTINATION /usr/bin)
+#    install(DIRECTORY reflasher/hex
+#            DESTINATION /usr/share/iguanaIR-reflasher
+#            PATTERN ".svn" EXCLUDE)
 EndIf()
 
 # make the config.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
 # install all the other bits and pieces
-install(DIRECTORY linux/lib linux/etc
+install(DIRECTORY linux/lib linux/etc linux/usr
         DESTINATION /
-        PATTERN ".svn" EXCLUDE)
+        PATTERN ".svn" EXCLUDE
+        PATTERN "body-0.hex" EXCLUDE
+        PATTERN "loader-0.hex" EXCLUDE)
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
 
