@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# remember where we come from
+SOURCE="${BASH_SOURCE[0]}"
+MYPATH="$( dirname "$SOURCE" )"
+while [ -h "$SOURCE" ]
+do 
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$MYPATH/$SOURCE"
+  MYPATH="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+MYPATH="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+# check that we were run from a CMake-able directory
+if [ ! -e CMakeLists.txt ]; then
+  echo "No CMakeLists.txt found in local directory."  
+  exit 1
+fi
+
+# load up some defaults
+BUILDDIR=build
+PYPATH=/usr/bin
+QTPATH=/usr/bin
+CMAKE=/usr/bin/cmake
+
+# override the defaults w use settings
+if [ -e settings.txt ]; then
+  . settings.txt
+fi
+
+# on an ARM architecture we need to use a toolchain file
+if [ ! "$CSPATH" == "" ]; then
+  if [ ! -d "$CSPATH" ]; then
+    echo "CodeSourcery path is invalid: CSPATH=${CSPATH}"
+    exit 1
+  fi
+  CHAIN="-DCMAKE_TOOLCHAIN_FILE=$MYPATH/CS-gcc-cross.toolchain"
+fi
+
+# create the build path
+mkdir -p $BUILDDIR
+cd $BUILDDIR
+PATH=${QTPATH}:${PYPATH}:${PATH} ARCH=${ARCH} CSPATH=${CSPATH} ${CMAKE} ${CHAIN} ..
+cd ..

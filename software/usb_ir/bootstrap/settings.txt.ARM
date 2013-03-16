@@ -1,0 +1,4 @@
+BUILDDIR=build.arm
+ARCH=arm
+CSPATH=/opt/arm-2012.03/bin
+QTPATH=/opt/qt-4.8.2-arm/bin

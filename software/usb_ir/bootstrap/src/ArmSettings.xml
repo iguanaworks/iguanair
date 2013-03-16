@@ -1,0 +1,131 @@
+    <project name="__PROJECT_NAME__" configuration="__CONFIGURATION_NAME__" platform="Win32" >
+        <class name="ProjectCommon" >
+            <values>
+                <value name="strMakefileCompilerC" >
+                arm-none-linux-gnueabi-gcc.exe
+                </value>
+                <value name="strMakefileCompilerCXX" >
+                arm-none-linux-gnueabi-g++.exe
+                </value>
+                <value name="strMakefileRM" >
+                rm -f
+                </value>
+                <value name="strMakefileMKDIR" >
+                cmd.exe /c md
+                </value>
+                <value name="strMakefileIntDir" >
+                Debug\obj
+                </value>
+                <value name="strMakefileDestDir" >
+                Debug\bin
+                </value>
+                <value name="strMakefileCFLAGS" >
+                -g -IC:\Qt\4.8.2-arm\include
+                </value>
+                <value name="strMakefileCXXFLAGS" >
+                -g -IC:\Qt\4.8.2-arm\include
+                </value>
+                <value name="strMakefileLDFLAGS" >
+                -LC:\Qt\4.8.2-arm\lib -L..\libs -lQtCore -lQtGui -lQtNetwork
+                </value>
+                <value name="strRemoteBuildCommand" >
+                __JOM_PATH__ __PROJECT_NAME__
+                </value>
+                <value name="strRemoteRebuildCommand" >
+                __JOM_PATH__ clean __PROJECT_NAME__
+                </value>
+                <value name="strRemoteCleanCommand" >
+                __JOM_PATH__ clean
+                </value>
+                <value name="pathRemoteBuildDirectory" >
+                $(ProjectDir)
+                </value>
+                <value name="strRemoteBuildVariables" >
+                BUILD_CONFIGURATION="__CONFIGURATION_NAME__"
+                </value>
+                <value name="selBuildBeforeStartDebugging" >
+                0
+                </value>
+                <value name="bDeployBeforeStartDebugging" >
+                true
+                </value>
+                <value name="selDeployAction" >
+                1
+                </value>
+                <value name="bDeployOnlyIfFileChanged" >
+                true
+                </value>
+                <value name="pathDeployFile" >
+                $(ProjectDir)\__PROJECT_NAME__\__PROJECT_NAME__
+                </value>
+                <value name="pathDeployTargetDirectory" >
+                /root
+                </value>
+                <value name="pathWorkingDirectory" >
+                /root
+                </value>
+                <value name="strLaunchArguments" >
+                -qws
+                </value>
+                <value name="bStopInMain" >
+                true
+                </value>
+                <value name="selServerMode" >
+                0
+                </value>
+                <value name="pathExecutableOnTarget" >
+                /root/__PROJECT_NAME__
+                </value>
+                <value name="bServerAutoLaunch" >
+                true
+                </value>
+                <value name="bUseSysroot" >
+                false
+                </value>
+                <value name="pathServerPath" >
+                /usr/bin/gdbserver
+                </value>
+                <value name="uServerPort" >
+                2345
+                </value>
+                <value name="bServerPortIsForwarded" >
+                false
+                </value>
+                <value name="uForwardedServerPort" >
+                0
+                </value>
+                <value name="pathExecutable" >
+                $(ProjectDir)\__PROJECT_NAME__\__PROJECT_NAME__
+                </value>
+                <value name="selByteOrder" >
+                1
+                </value>
+                <value name="pathSysrootOnHost" >
+                __CS_PATH__\..\arm-none-linux-gnueabi\libc
+                </value>
+                <value name="bDisableHangReporter" >
+                false
+                </value>
+                <value name="bUseProtoCtl" >
+                false
+                </value>
+                <value name="pathDebugger" >
+                __CS_PATH__\arm-none-linux-gnueabi-gdb.exe
+                </value>
+                <value name="pathToolchain" >
+                __CS_PATH__
+                </value>
+                <value name="bReuseStandardBuildCommand" >
+                true
+                </value>
+                <value name="selTargetType" >
+                3
+                </value>
+                <value name="strDebugTargetLogin" >
+                root:root@__IP_ADDR__:22
+                </value>
+            </values>
+        </class>
+        <class name="ProjectState" >
+        </class>
+    </project>

@@ -1,0 +1,63 @@
+# sip stuff is kinda of a mess
+
+
+Macro(MakeSip target)
+  # TODO: push the SIP crap into cmake to remove the PLX_LITTLE_ENDIAN
+  set(Makefile Makefile.${target}.sip)
+
+  # grab the optional arguments into their respective variables
+  set(depends ${ARGV1})
+  set(args ${ARGV2})
+
+  If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    set(EXT so)
+    set(makeCMD make -f ${Makefile})
+    set(instDest /usr/bin/streamer)
+  ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    set(EXT pyd)
+    set(makeCMD nmake /f ${Makefile})
+    set(instDest ./streamer)
+  EndIf()
+
+  # append -lXXXXX and -LXXXXX for any other modules we depend on
+  ForEach(depend ${depends})
+    GET_TARGET_PROPERTY(depend_Dir ${depend} LOCATION)
+    Get_Filename_Component(ext ${depend_Dir} EXT)
+    If("${ext}" MATCHES ".a")
+      List(APPEND args ${depend_Dir})
+    Else()
+      If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+        STRING(REGEX REPLACE "^${CMAKE_SOURCE_DIR}([^\n]+).*$" "${CMAKE_BINARY_DIR}\\1/\$(Configuration)" depend_Dir ${CMAKE_CURRENT_SOURCE_DIR})
+      Else()
+        get_filename_component(depend_Dir ${depend_Dir} PATH)
+      EndIf()
+      List(APPEND args -l${depend} -L${depend_Dir})
+    EndIf()
+  EndForEach()
+
+  get_filename_component(absTarget ${target} ABSOLUTE)
+  add_custom_command(OUTPUT ${Makefile}
+                     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/configure.py
+                         ${absTarget} ${args} -I${CMAKE_SOURCE_DIR}
+                     MAIN_DEPENDENCY ${target}.sip
+                     DEPENDS ${CMAKE_SOURCE_DIR}/configure.py)
+
+# NOTE: instead of embedding any dependency information here we now
+#       just call the sip Makefile whenever we run.
+#
+#  add_custom_command(OUTPUT ${object} ${target}.sbf ${target}.exp
+#                            sipAPI${target}.h
+#                            sip${target}cmodule.cpp sip${target}cmodule.o
+#                            sip${target}${target}.cpp sip${target}${target}.o
+#                     COMMAND ${makeCMD}
+#                     MAIN_DEPENDENCY ${Makefile})
+
+  add_custom_target(${target}-module ALL
+                    COMMAND ${makeCMD}
+                    DEPENDS ${Makefile} ${depends})
+
+  # install the output file and link it into the mount directory
+  set(object ${CMAKE_CURRENT_BINARY_DIR}/${target}.${EXT})
+  install(FILES ${object} DESTINATION ${instDest})
+  list(APPEND SIPList "${object}")
+EndMacro()

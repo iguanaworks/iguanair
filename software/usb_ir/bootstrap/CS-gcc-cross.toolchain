@@ -1,0 +1,82 @@
+Macro(findExe var glob)
+  File(GLOB EXE "${glob}")
+  If (NOT EXISTS "${EXE}")
+    File(GLOB EXE "${glob}.exe")
+  EndIf()
+  Set(${var} "${EXE}")
+EndMacro()
+
+# make sure that we only need to pass the architecture once
+If("${CMAKE_ARCH}" STREQUAL "" AND DEFINED ENV{ARCH})
+  Set(CMAKE_ARCH "$ENV{ARCH}" CACHE STRING "Target architecture" FORCE)
+  Unset(ENV{ARCH})
+EndIf()
+
+# make sure that we only need to pass the code sourcery path once
+If("${CMAKE_CSPATH}" STREQUAL "" AND DEFINED ENV{CSPATH})
+  File(TO_CMAKE_PATH $ENV{CSPATH} CSPATH)
+  Set(CMAKE_CSPATH "${CSPATH}" CACHE STRING "CodeSourcery bin path" FORCE)
+  Unset(ENV{CSPATH})
+
+  # if we are cross compiling w code sourcery we can determine the arch that way
+  If("${CMAKE_ARCH}" STREQUAL "")
+    File(GLOB FILES "${CSPATH}/*-gcc.exe")
+    If("${FILES}" STREQUAL "")
+      File(GLOB FILES "${CSPATH}/*-gcc")
+    EndIf()
+    Get_Filename_Component(FILES "${FILES}" NAME)
+    String(REGEX MATCH "[^-]*" FILES ${FILES})
+    Set(CMAKE_ARCH "${FILES}" CACHE STRING "Target architecture" FORCE)
+  EndIf()
+EndIf()
+
+# make sure that we only need to pass the IP once as well
+If("${CMAKE_TARGET_IP}" STREQUAL "" AND DEFINED ENV{TARGET_IP})
+  File(TO_CMAKE_PATH $ENV{TARGET_IP} TARGET_IP)
+  Set(CMAKE_TARGET_IP "${TARGET_IP}" CACHE STRING "Default IP address of the target device" FORCE)
+  Unset(ENV{TARGET_IP})
+EndIf()
+
+# make sure that we only need to pass the FS root once as well
+If("${CMAKE_FS_ROOT}" STREQUAL "" AND DEFINED ENV{FS_ROOT})
+  File(TO_CMAKE_PATH $ENV{FS_ROOT} FS_ROOT)
+  Set(CMAKE_FIND_ROOT_PATH "${FS_ROOT}")
+  Set(CMAKE_FS_ROOT "${FS_ROOT}" CACHE STRING "Root FS of the cross-compiled system" FORCE)
+  Unset(ENV{FS_ROOT})
+EndIf()
+
+# specify the platform and processor
+Set(CMAKE_SYSTEM_NAME Linux)
+If("${CMAKE_ARCH}" STREQUAL "arm")
+  Message("Cross compilation architecture: ${CMAKE_ARCH}")
+  Set(CMAKE_SYSTEM_PROCESSOR "armv7")
+  Set(ARMTUNING "-march=armv7-a -mtune=cortex-a8 -mthumb -mfpu=neon -mfloat-abi=softfp -Wa,-mimplicit-it=thumb")
+  If(NOT "${CMAKE_C_FLAGS}" MATCHES "${ARMTUNING}")
+    Set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${ARMTUNING}" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+    Set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ARMTUNING}" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+  EndIf()
+
+ElseIf("${CMAKE_ARCH}" STREQUAL "x86" "OR" "${CMAKE_ARCH}" STREQUAL "i686")
+  Message("Cross compilation architecture: ${CMAKE_ARCH}")
+  Set(CMAKE_SYSTEM_PROCESSOR "x86")
+
+ElseIf("${CMAKE_ARCH}" STREQUAL "x86_64" "OR" "${CMAKE_ARCH}" STREQUAL "amd64")
+  Set(CMAKE_SYSTEM_PROCESSOR "x86_64")
+  If(NOT "${CMAKE_C_FLAGS}" MATCHES "-m64")
+    Set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -m64" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+    Set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+  EndIf()
+
+ElseIf("${CMAKE_ARCH}" STREQUAL "")
+  # TODO: spurious warnings with this turned on.... why?
+  #Message("WARNING: Undetermined cross compilation architecture.")
+Else()
+  Message("WARNING: Unrecognized cross compilation architecture: ${CMAKE_ARCH}")
+EndIf()
+
+# remember where this toolchain file came from
+Set(BOOTSTRAP_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
+# find the cross compiler
+findExe(CMAKE_C_COMPILER   ${CMAKE_CSPATH}/*gcc)
+findExe(CMAKE_CXX_COMPILER ${CMAKE_CSPATH}/*g++)
