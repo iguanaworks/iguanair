@@ -66,9 +66,12 @@ install(TARGETS igclient DESTINATION /usr/bin)
 
 
 # see if we have python and swig
-find_package(SWIG)
-find_package(PythonLibs)
-If (SWIG_FOUND AND PYTHONLIBS_FOUND)
+If("${CMAKE_ARCH}" STREQUAL "arm")
+  Message("Skipping Python bits on ARM.")
+ElseIf()
+  find_package(SWIG)
+  find_package(PythonLibs)
+  If(SWIG_FOUND AND PYTHONLIBS_FOUND)
     message("Python and SWIG found; will build Python bindings")
 
     # pull in the swig macros
@@ -101,8 +104,7 @@ If (SWIG_FOUND AND PYTHONLIBS_FOUND)
                               ../share/iguanaIR-reflasher/iguanaIR-reflasher
                               \$ENV{DESTDIR}/usr/bin/iguanaIR-reflasher)
     ")
-
-
+  EndIf()
 EndIf()
 
 # make the config.h based on what we found
