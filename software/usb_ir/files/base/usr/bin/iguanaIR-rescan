@@ -35,12 +35,12 @@ if [ "$DISTRO" = "fedora" -o "$DISTRO" = "mythdora" -o "$DISTRO" = "centos" -o "
     LOCKFILE=/var/lock/subsys/iguanaIR
     PIDFILE=/var/run/igdaemon.pid
 
-    if [ -e $LOCKFILE ]; then
+    if [ "$KILLALL" != "" ]; then
+        killall -s HUP $(basename $IGPATH)
+    elif [ -e $LOCKFILE ]; then
         echo killing
         PID=$(cat $PIDFILE)
         kill -s HUP $PID
-    elif [ "$KILLALL" != "" ]; then
-        killall -s HUP $(basename $IGPATH)
     fi
 else
     start-stop-daemon --stop --signal HUP --exec $IGPATH
