@@ -182,6 +182,12 @@ deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf)
     return implementation->prepareDeviceList(ids, ndf);
 }
 
+void claimDevices(deviceList *devList, bool claim, bool force)
+{
+    if (implementation->claimDevices != NULL)
+        implementation->claimDevices(devList, claim, force);
+}
+
 bool updateDeviceList(deviceList *devList)
 {
     return implementation->updateDeviceList(devList);

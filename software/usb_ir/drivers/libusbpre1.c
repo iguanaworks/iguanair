@@ -58,9 +58,6 @@ typedef struct usbDeviceList
     /* count makes life easier */
     unsigned int count;
 
-    /* id generator */
-    unsigned int nextId;
-
     /* ids that are in this list */
     usbId *ids;
 
@@ -468,6 +465,7 @@ driverImpl impl_libusbpre1 = {
     releaseDevice,
     freeDevice,
     prepareDeviceList,
+    NULL,
     updateDeviceList,
     stopDevices,
     releaseDevices,

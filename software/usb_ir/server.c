@@ -62,6 +62,12 @@ void initServerSettings(deviceFunc devFunc)
     /* default to rescaning when a device is lost */
     srvSettings.autoRescan = true;
 
+    /* default to claiming the hardware devices */
+    srvSettings.justDescribe = false;
+
+    /* default to playing nice with other drivers */
+    srvSettings.unbind = false;
+
     /* old flag to handle libusb pre 1.0 threading issues */
 #ifdef LIBUSB_NO_THREADS_OPTION
     srvSettings.noThreads = false;
@@ -111,6 +117,8 @@ deviceList* initServer()
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");
     else if ((list = prepareDeviceList(ids, srvSettings.devFunc)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
+    else
+        claimDevices(list, ! srvSettings.justDescribe, srvSettings.unbind);
 
     return list;
 }

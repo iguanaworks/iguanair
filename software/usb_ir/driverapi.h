@@ -37,6 +37,7 @@ typedef struct driverImpl
 
     /* methods of a device list */
     deviceList* (*prepareDeviceList)(usbId *ids, deviceFunc ndf);
+    void (*claimDevices)(deviceList *devList, bool claim, bool force);
     bool (*updateDeviceList)(deviceList *devList);
     unsigned int (*stopDevices)(deviceList *devList);
     unsigned int (*releaseDevices)(deviceList *devList);

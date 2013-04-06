@@ -34,6 +34,12 @@ typedef struct
     /* should the server rescan the usb bus after a disconnect */ 
     bool autoRescan;
 
+    /* user may request that we just print information about devices */
+    bool justDescribe;
+
+    /* we can tell the driver to try and unbind other drivers */
+    bool unbind;
+
     /* a method for children to communicate back to the list owner */
     PIPE_PTR commPipe[2];
 

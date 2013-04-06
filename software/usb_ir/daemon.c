@@ -35,6 +35,10 @@
 extern int daemon_osx_support(const usbId *);
 #endif
 
+/* we need to call connect without doing a version check when we're
+ * trying to detect another igdaemon */
+IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
+
 /* local variables */
 static mode_t devMode = 0777;
 
@@ -125,7 +129,7 @@ static int startListening(const char *name)
             {
                 /* check that the socket has something listening */
                 int testconn;
-                testconn = iguanaConnect(name);
+                testconn = iguanaConnect_internal(name, IG_PROTOCOL_VERSION, false);
                 if (testconn == -1 && errno == ECONNREFUSED && attempt == 1)
                 {
                     /* if not, try unlinking the pipe and trying again */
@@ -183,7 +187,7 @@ printf("CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
 static void workLoop()
 {
     deviceList *list;
-    int ctlSock;
+    int ctlSock = INVALID_PIPE;
 
     /* initialize the driver and device list */
     if ((list = initServer(&srvSettings)) == NULL)
@@ -196,7 +200,7 @@ static void workLoop()
         message(LOG_ERROR, "failed to install SIGHUP handler.\n");
     else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
         message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
-    else if ((ctlSock = startListening(NULL)) == INVALID_PIPE)
+    else if (! srvSettings.justDescribe && (ctlSock = startListening(NULL)) == INVALID_PIPE)
         message(LOG_ERROR, "failed to open the control socket.\n");
     else
     {
@@ -252,8 +256,15 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
                 message(LOG_ERROR,
                         "Unknown command from commPipe: %d\n", thread);
             /* handle the scan/rescan command */
-            else if (! updateDeviceList(list))
-                message(LOG_ERROR, "scan failed.\n");
+            else
+            {
+                if (srvSettings.justDescribe)
+                    message(LOG_NORMAL, "Detected Iguanaworks devices:\n");
+                if (! updateDeviceList(list))
+                    message(LOG_ERROR, "scan failed.\n");
+                if (srvSettings.justDescribe)
+                    break;
+            }
         }
 
         /* wait for all the workers to finish */
@@ -277,6 +288,8 @@ enum
     ARG_DRIVER_DIR,
     ARG_RECV_TIMEOUT,
     ARG_SEND_TIMEOUT,
+    ARG_UNBIND,
+    ARG_DEVICELIST,
 
     /* defines for argp */
     GROUP0 = 0
@@ -298,6 +311,8 @@ static struct argp_option options[] =
     { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                     GROUP0 },
     { "receive-timeout", ARG_RECV_TIMEOUT, "MSTIME", 0, "Specify the device receive timeout.",                              GROUP0 },
     { "send-timeout",    ARG_SEND_TIMEOUT, "MSTIME", 0, "Specify the device send timeout.",                                 GROUP0 },
+    { "auto-unbind",     ARG_UNBIND,       NULL,     0, "Attempt to unbind busy devices.  Use with caution.",               GROUP0 },
+    { "devices",         ARG_DEVICELIST,   NULL,     0, "Implies --no-daemon.  List information about connected devices.",  GROUP0 },
 
 #ifdef LIBUSB_NO_THREADS_OPTION
     { "no-threads", ARG_NO_THREADS, NULL, 0, "Do not allow two threads to both access libusb calls at the same time.  Only useful for versions of libusb < 1.0", GROUP0 },
@@ -348,6 +363,15 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
 
     case ARG_SEND_TIMEOUT:
         srvSettings.devSettings.sendTimeout = atoi(arg);
+        break;
+
+    case ARG_UNBIND:
+        srvSettings.unbind = true;
+        break;
+
+    case ARG_DEVICELIST:
+        params->runAsDaemon = false;
+        srvSettings.justDescribe = true;
         break;
 
     case ARG_NO_RESCAN:

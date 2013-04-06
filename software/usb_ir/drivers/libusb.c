@@ -58,14 +58,17 @@ typedef struct usbDeviceList
     /* count makes life easier */
     unsigned int count;
 
-    /* id generator */
-    unsigned int nextId;
-
     /* ids that are in this list */
     usbId *ids;
 
     /* callback when creating a device */
     deviceFunc newDev;
+
+    /* just describe the devices or claim them? */
+    bool describe;
+
+    /* if claiming attempt to unbind other drivers */
+    bool force;
 } usbDeviceList;
 
 #define handleFromInfoPtr(ptr) (usbDevice*)((char*)ptr - offsetof(usbDevice, info))
@@ -276,6 +279,12 @@ static deviceList* prepareDeviceList(usbId *ids, deviceFunc ndf)
     return list;
 }
 
+static void claimDevices(deviceList *devList, bool claim, bool force)
+{
+    ((usbDeviceList*)devList)->describe = ! claim;
+    ((usbDeviceList*)devList)->force = force;
+}
+
 /* increment the id for each item in the list */
 static bool findId(itemHeader *item, void *userData)
 {
@@ -287,6 +296,159 @@ static bool findId(itemHeader *item, void *userData)
     return true;
 }
 
+static bool checkInUse(struct libusb_device *dev, bool describe)
+{
+    bool retval = false;
+    char buffer[PATH_MAX];
+    struct dirent *dp;
+    DIR *dir;
+    int len, devIndex, busIndex;
+
+    devIndex = libusb_get_device_address(dev);
+    busIndex = libusb_get_bus_number(dev);
+    if (describe)
+        message(LOG_NORMAL, "  USB IR device number %d on bus %d:\n", devIndex, busIndex);
+
+    len = sprintf(buffer, "/sys/bus/usb/devices/usb%d", busIndex);
+    if ((dir = opendir(buffer)) != NULL)
+    {
+        while((dp = readdir(dir)) != NULL)
+        {
+            FILE *numfile;
+            int devnum;
+
+            sprintf(buffer + len, "/%s/devnum", dp->d_name);
+            numfile = fopen(buffer, "r");
+            if (numfile != NULL &&
+                fscanf(numfile, "%d", &devnum) == 1 &&
+                devnum == devIndex)
+            {
+                char link[PATH_MAX] = {0};
+                retval = true;
+
+                len += strlen(dp->d_name) + 1;
+                sprintf(buffer + len, "/%s:1.0/driver", dp->d_name);
+                if (readlink(buffer, link, PATH_MAX) != -1)
+                {
+                    if (describe)
+                    {
+                        char *slash;
+                        slash = strrchr(link, '/');
+                        if (slash == NULL)
+                            message(LOG_NORMAL, "    driver link: %s\n", link);
+                        else if (strcmp(slash, "/usbfs") == 0)
+                            message(LOG_NORMAL, "    claimed by usbfs (likely igdaemon via libusb)\n");
+                        else
+                        {
+                            message(LOG_NORMAL, "    claimed by kernel driver '%s'\n", slash + 1);
+                            message(LOG_INFO, "Release command:\n      echo '%s:1.0' > '/sys/bus/usb/devices/usb5/%s/%s:1.0/driver/unbind'\n", dp->d_name, dp->d_name, dp->d_name);
+                        }
+                    }
+                    else
+                    {
+                        /* attempt to force an unbind of the current driver */
+                        FILE *output;
+                        message(LOG_INFO, "Attempting to unbind current driver from %s\n", dp->d_name);
+                        strcat(buffer, "/unbind");
+                        if ((output = fopen(buffer, "w")) == NULL)
+                        {
+                            message(LOG_ERROR, "Failed to unbind %s: %d\n", dp->d_name, errno);
+                            retval = false;
+                        }
+                        else
+                        {
+                            fprintf(output, "%s:1.0\n", dp->d_name);
+                            fclose(output);
+                        }
+                    }
+                }
+                else if (errno == ENOENT)
+                    message(LOG_NORMAL, "    currently unclaimed\n");
+                else
+                    message(LOG_NORMAL, "    failed to detect current state: %d\n", errno);
+                break;
+            }
+        }
+        closedir(dir);
+    }
+
+    return retval;
+}
+
+static bool claimDevice(struct libusb_device *dev, usbId *id, usbDeviceList *list, usbDevice *devPos)
+{
+    int retval;
+    bool success = false;
+    usbDevice *newDev = NULL;
+
+    newDev = (usbDevice*)malloc(sizeof(usbDevice));
+    memset(newDev, 0, sizeof(usbDevice));
+
+    /* basic stuff */
+    newDev->info.type = *id;
+    newDev->busIndex = libusb_get_bus_number(dev);
+    newDev->devIndex = libusb_get_device_address(dev);
+
+    /* determine the id (reusing if possible) */
+    newDev->info.id = 0;
+    while(true)
+    {
+        unsigned int prev = newDev->info.id;
+        forEach(&list->deviceList,
+                findId, &newDev->info.id);
+        if (prev == newDev->info.id)
+            break;
+    }
+
+    /* open a handle to the usb device */
+    if ((retval = libusb_open(dev, &newDev->device)) != LIBUSB_SUCCESS)
+        setError(newDev, "Failed to open usb device", retval);
+    else
+    {
+        /* prime errno to control this loop */
+        errno = 0;
+        do
+        {
+            /* try to force an unbind but only once */
+            if (errno == EBUSY && (! list->force || ! checkInUse(dev, false)))
+                break;
+
+            /* try to configure device and claim the interface */
+            if ((retval = libusb_set_configuration(newDev->device, 1)) < 0)
+                setError(newDev, "Failed to set device configuration", retval);
+            else if ((retval = libusb_claim_interface(newDev->device, 0)) < 0)
+                setError(newDev, "libusb_claim_interface failed 0", retval);
+            else
+            {
+                insertItem(&list->deviceList,
+                           (itemHeader*)devPos,
+                           (itemHeader*)newDev);
+
+                if (list->newDev != NULL)
+                    list->newDev(&newDev->info);
+
+                success = true;
+                break;
+            }
+        }
+        while(errno == EBUSY);
+    }
+    
+    /* grab error if there was one */
+    if (!success)
+    {
+        printError(LOG_ERROR, "  updateDeviceList failed", &newDev->info);
+        if (errno == EBUSY)
+            message(LOG_ERROR,
+                    "Check device status with igdaemon --devices\n");
+
+        if (newDev->device != NULL)
+            libusb_close(newDev->device);
+        free(newDev);
+    }
+    return success;
+}
+
 static bool updateDeviceList(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
@@ -295,7 +457,7 @@ static bool updateDeviceList(deviceList *devList)
     usbDevice *devPos;
     ssize_t listSize, listPos;
 
-    /* initialize usb TODO: should call libusb_exit at the end*/
+    /* initialize usb TODO: should call libusb_exit at the end? */
     libusb_init(NULL);
 
     /* the next two return counts of busses and devices respectively */
@@ -309,107 +471,47 @@ static bool updateDeviceList(deviceList *devList)
         dev = usbList[listPos];
         libusb_get_device_descriptor(dev, &descriptor);
 
-/*
-    for(bus = usb_get_busses(); bus; bus = bus->next)
-        for(dev = bus->devices; dev; dev = dev->next)
-*/
-            for(pos = 0; list->ids[pos].idVendor != INVALID_VENDOR; pos++)
-                /* continue if we are not examining the correct device */
-                if (descriptor.idVendor  == list->ids[pos].idVendor &&
-                    descriptor.idProduct == list->ids[pos].idProduct)
+        for(pos = 0; list->ids[pos].idVendor != INVALID_VENDOR; pos++)
+            /* continue if we are not examining the correct device */
+            if (descriptor.idVendor  == list->ids[pos].idVendor &&
+                descriptor.idProduct == list->ids[pos].idProduct)
+            {
+                int busIndex;
+
+                /* couldn't find the bus index as a number anywhere */
+                busIndex = libusb_get_bus_number(dev);
+
+                /* found a device instance, now find position in
+                 * current list */
+                devPos = (usbDevice*)firstItem(&list->deviceList);
+                setError(devPos, NULL, LIBUSB_SUCCESS);
+                while(devPos != NULL &&
+                      (devPos->busIndex < busIndex ||
+                       (devPos->busIndex == busIndex &&
+                        devPos->devIndex < libusb_get_device_address(dev))))
+                    /* used to release devices here, since they
+                     * are no longer used, however, this races
+                     * with reinsertion of the device, and
+                     * therefore reuse of the ID.  Additionally,
+                     * unplugs are detected now, so it is no
+                     * longer necessary. */
+                    devPos = (usbDevice*)devPos->header.next;
+
+                /* append or insert a new device */
+                if (devPos == NULL ||
+                    devPos->busIndex != busIndex ||
+                    devPos->devIndex != libusb_get_device_address(dev))
                 {
-                    int busIndex;
-
-                    /* couldn't find the bus index as a number anywhere */
-                    busIndex = libusb_get_bus_number(dev);
-
-                    /* found a device instance, now find position in
-                     * current list */
-                    devPos = (usbDevice*)firstItem(&list->deviceList);
-                    setError(devPos, NULL, LIBUSB_SUCCESS);
-                    while(devPos != NULL &&
-                          (devPos->busIndex < busIndex ||
-                           (devPos->busIndex == busIndex &&
-                            devPos->devIndex < libusb_get_device_address(dev))))
-                        /* used to release devices here, since they
-                         * are no longer used, however, this races
-                         * with reinsertion of the device, and
-                         * therefore reuse of the ID.  Additionally,
-                         * unplugs are detected now, so it is no
-                         * longer necessary. */
-                        devPos = (usbDevice*)devPos->header.next;
-
-                    /* append or insert a new device */
-                    if (devPos == NULL ||
-                        devPos->busIndex != busIndex ||
-                        devPos->devIndex != libusb_get_device_address(dev))
-                    {
-                        int retval;
-                        bool success = false;
-                        usbDevice *newDev = NULL;
-                        newDev = (usbDevice*)malloc(sizeof(usbDevice));
-                        memset(newDev, 0, sizeof(usbDevice));
-
-                        /* basic stuff */
-                        newDev->info.type = list->ids[pos];
-                        newDev->busIndex = busIndex;
-                        newDev->devIndex = libusb_get_device_address(dev);
-
-                        /* determine the id (reusing if possible) */
-                        newDev->info.id = 0;
-                        while(true)
-                        {
-                            unsigned int prev = newDev->info.id;
-                            forEach(&list->deviceList,
-                                    findId, &newDev->info.id);
-                            if (prev == newDev->info.id)
-                                break;
-                        }
-
-                        /* open a handle to the usb device */
-                        if ((retval = libusb_open(dev, &newDev->device)) != LIBUSB_SUCCESS)
-                            setError(newDev, "Failed to open usb device", retval);
-                        else if ((retval = libusb_set_configuration(newDev->device, 1)) < 0)
-                            setError(newDev, "Failed to set device configuration", retval);
-/*                        else if (! dev->config)
-                          setError(newDev, "Failed to receive device descriptors");*/
-                        /* claim the interface */
-                        else if ((retval = libusb_claim_interface(newDev->device, 0)) < 0)
-                            setError(newDev, "libusb_claim_interface failed 0", retval);
-                        else
-                        {
-                            insertItem(&list->deviceList,
-                                       (itemHeader*)devPos,
-                                       (itemHeader*)newDev);
-                            success = true;
-                        }
-
-                        /* grab error if there was one */
-                        if (!success)
-                        {
-                            if (errno == EBUSY)
-                                message(LOG_ERROR,
-                                        "Is kernel module loaded or the igdaemon already running?\n");
-                            message(LOG_ERROR, "  trying to claim usb:%d:%d\n",
-                                    busIndex, libusb_get_device_address(dev));
-                            printError(LOG_ERROR, "  updateDeviceList failed",
-                                       &newDev->info);
-
-                            if (newDev->device != NULL)
-                                libusb_close(newDev->device);
-                            free(newDev);
-                            return false;
-                        }
-                        else if (list->newDev != NULL)
-                            list->newDev(&newDev->info);
-
+                    if (list->describe)
+                        checkInUse(dev, true);
+                    else if (claimDevice(dev, list->ids + pos, list, devPos))
                         /* count how many devices we added */
                         newCount++;
-                    }
 
                     /* keep a count of the number of devices */
                     count++;
                 }
+            }
     }
     libusb_free_device_list(usbList, 0); /* deref devices */
 
@@ -552,6 +654,7 @@ driverImpl impl_libusbpre1 = {
     releaseDevice,
     freeDevice,
     prepareDeviceList,
+    claimDevices,
     updateDeviceList,
     stopDevices,
     releaseDevices,

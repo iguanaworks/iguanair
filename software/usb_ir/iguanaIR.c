@@ -22,7 +22,7 @@
 #include "support.h"
 #include "dataPackets.h"
 
-PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
+IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion)
 {
     PIPE_PTR conn = INVALID_PIPE;
 
@@ -42,7 +42,7 @@ PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
                 return iguanaConnect_real(buffer, protocol);
             }
         }
-        else
+        else if (checkVersion)
         {
             uint16_t clientVersion = IG_PROTOCOL_VERSION;
             dataPacket *request;
@@ -69,6 +69,11 @@ PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
     }
 
     return conn;
+}
+
+PIPE_PTR iguanaConnect_real(const char *name, unsigned int protocol)
+{
+    return iguanaConnect_internal(name, protocol, true);
 }
 
 /* Interesting way to force old clients to connect and reveal a
