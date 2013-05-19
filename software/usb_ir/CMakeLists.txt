@@ -13,7 +13,8 @@ Set(BASESRC support.c)
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	add_subdirectory(win32/argp-standalone-1.3)
-
+	Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
+	
 	List(APPEND BASELIBS ws2_32)
     Set(PIPESRC win32/pipes.c)
 	Set(DAEMONSRC win32/service.c)
@@ -87,7 +88,7 @@ install(TARGETS igclient DESTINATION /usr/bin)
 # see if we have python and swig
 If("${CMAKE_ARCH}" STREQUAL "arm")
   Message("Skipping Python bits on ARM.")
-ElseIf()
+Else()
   find_package(SWIG)
   find_package(PythonLibs)
   If(SWIG_FOUND AND PYTHONLIBS_FOUND)
@@ -97,11 +98,12 @@ ElseIf()
     include(${SWIG_USE_FILE})
 
     include_directories(${PYTHON_INCLUDE_PATH} ${CMAKE_SOURCE_DIR})
-    swig_add_module(iguanaIR python iguanaIR.i iguanaIR.c)
-    swig_link_libraries(iguanaIR iguanaIR ${BASELIBS})
-    set_source_files_properties(${swig_generated_file_fullname}
-        PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
-
+    swig_add_module(iguanaIR python iguanaIR.i)
+    swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
+	If(CMAKE_COMPILER_IS_GNUCC)
+      set_source_files_properties(${swig_generated_file_fullname}
+                                  PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
+    EndIf()
 
     # install the python support
     install(FILES ${CMAKE_BINARY_DIR}/_iguanaIR.so
