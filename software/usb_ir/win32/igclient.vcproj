@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".;..;argp-standalone-1.3"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;SUPPORT_INCLUDE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;SUPPORT_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -193,10 +193,6 @@
 			</File>
 			<File
 				RelativePath="..\list.c"
-				>
-			</File>
-			<File
-				RelativePath=".\pipes.c"
 				>
 			</File>
 			<File
