@@ -16,25 +16,17 @@ import os
 
 import win32api
 
-exitval = 1
-if len(sys.argv) != 2:
-    sys.stderr.write('Need a source directory')
-else:
-    vars = {
-        'dir' : sys.argv[1],
-        'version' : 'UNKNOWN',
-        'pyver'   : '%d%d' % (sys.version_info[0], sys.version_info[1]),
-        'sys32'   : win32api.GetSystemDirectory()
-    }
-    ISSPath = 'iguanaIR.iss'
+vars = {
+	'version' : 'UNKNOWN',
+	'pyver'   : '%d%d' % (sys.version_info[0], sys.version_info[1]),
+	'sys32'   : win32api.GetSystemDirectory()
+}
+ISSPath = 'iguanaIR.iss'
 
-    input = open('../packaging/fedora/iguanaIR.spec', 'r')
-    for line in input:
-        if line.startswith('Version:'):
-            vars['version'] = line.split()[1]
+vars['version'] = open('../packaging/debian/changelog', 'r').readline().split()[1][1:-1]
 
-    out = open(ISSPath, 'w')
-    out.write("""
+out = open(ISSPath, 'w')
+out.write("""
 [Setup]
 AppName=IguanaIR
 AppVerName=IguanaIR %(version)s
@@ -42,44 +34,44 @@ DefaultDirName={pf}\IguanaIR
 DefaultGroupName=IguanaIR
 ;#Compression=bzip"
 
-OutputDir=%(dir)s
+OutputDir=Release
 OutputBaseFilename=iguanaIR-%(version)s
 
 [Files]
 ; compiled from C sources
-Source: "%(dir)s/igdaemon.exe";      DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/igclient.exe";      DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR.dll";      DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR.lib";      DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/igdaemon.exe";              DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/igclient.exe";              DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/iguanaIR.dll";              DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/iguanaIR.lib";              DestDir: "{app}"; Flags: ignoreversion
+Source: "drivers/Release/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; compiled python APIs
-Source: "%(dir)s/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR.py";       DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion
+Source: "iguanaIR.py";               DestDir: "{app}"; Flags: ignoreversion
 
 ; executable, zip file, python library, et al for py2exe applications
-Source: "%(dir)s/library.zip";            DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "%(dir)s/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
+Source: "Release/library.zip";            DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Release/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
 
 ; argp libraries
-Source: "%(dir)s/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "win32/argp-standalone-1.3/Release/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; the rest are created by libusb's tools
-Source: "libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "libusb-win32/iguanaIR.inf"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../win32/libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../win32/libusb-win32/iguanaIR.inf"; DestDir: "{app}"; Flags: ignoreversion
 
 ; libusb libraries for various archs
-Source: "libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}/x86"; Flags: ignoreversion
-Source: "libusb-win32/x86/libusb0.sys"; DestDir: "{app}/x86"; Flags: ignoreversion
-Source: "libusb-win32/amd64/libusb0.dll"; DestDir: "{app}/amd64"; Flags: ignoreversion
-Source: "libusb-win32/amd64/libusb0.sys"; DestDir: "{app}/amd64"; Flags: ignoreversion
-Source: "libusb-win32/ia64/libusb0.dll"; DestDir: "{app}/ia64"; Flags: ignoreversion
-Source: "libusb-win32/ia64/libusb0.sys"; DestDir: "{app}/ia64"; Flags: ignoreversion
+Source: "../win32/libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}/x86"; Flags: ignoreversion
+Source: "../win32/libusb-win32/x86/libusb0.sys"; DestDir: "{app}/x86"; Flags: ignoreversion
+Source: "../win32/libusb-win32/amd64/libusb0.dll"; DestDir: "{app}/amd64"; Flags: ignoreversion
+Source: "../win32/libusb-win32/amd64/libusb0.sys"; DestDir: "{app}/amd64"; Flags: ignoreversion
+Source: "../win32/libusb-win32/ia64/libusb0.dll"; DestDir: "{app}/ia64"; Flags: ignoreversion
+Source: "../win32/libusb-win32/ia64/libusb0.sys"; DestDir: "{app}/ia64"; Flags: ignoreversion
 
 ; embed the sub installer we need
-Source: "vcredist_x86.exe"; DestDir: "{app}"; Flags: ignoreversion deleteafterinstall
+Source: "../win32/vcredist_x86.exe"; DestDir: "{app}"; Flags: ignoreversion deleteafterinstall
 
 ; stuff for the menus
 [Icons]
@@ -308,32 +300,29 @@ begin
 end;
 
 """ % vars)
-    out.close()
+out.close()
 
-    try:
-        import ctypes
-    except ImportError:
-        try:
-            import win32api
-        except ImportError:
-            import os
-            os.startfile(self.pathname)
-        else:
-            print "Ok, using win32api."
-            win32api.ShellExecute(0, "compile",
-                                  ISSPath,
-                                  None,
-                                  None,
-                                  0)
-    else:
-        print "Cool, you have ctypes installed."
-        res = ctypes.windll.shell32.ShellExecuteA(0, "compile",
-                                                  ISSPath,
-                                                  None,
-                                                  None,
-                                                  0)
-        if res < 32:
-            raise RuntimeError, "ShellExecute failed, error %d" % res
-    exitval = 0
-
-sys.exit(exitval)
+try:
+	import ctypes
+except ImportError:
+	try:
+		import win32api
+	except ImportError:
+		import os
+		os.startfile(self.pathname)
+	else:
+		print "Ok, using win32api."
+		win32api.ShellExecute(0, "compile",
+							  ISSPath,
+							  None,
+							  None,
+							  0)
+else:
+	print "Cool, you have ctypes installed."
+	res = ctypes.windll.shell32.ShellExecuteA(0, "compile",
+											  ISSPath,
+											  None,
+											  None,
+											  0)
+	if res < 32:
+		raise RuntimeError, "ShellExecute failed, error %d" % res

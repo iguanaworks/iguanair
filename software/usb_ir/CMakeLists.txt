@@ -150,3 +150,11 @@ install(FILES iguanaIR.h
 #        launchctl load -w /Library/LaunchDaemons/com.iguana.igdaemon.plist
 #endif
 ##########################################
+
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+  find_package(PythonInterp)
+  add_custom_target(BuildReleasePackage
+                    COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/py2exe-setup.py py2exe
+                    COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
+					DEPENDS igdaemon igclient usbpre1 argp _iguanaIR)
+EndIf()

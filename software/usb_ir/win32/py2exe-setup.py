@@ -10,12 +10,12 @@ import py2exe
 sys.path.append('Release')
 
 # create the various executables (just iguanaIR-reflasher for now)
-setup(console = ['../reflasher/iguanaIR-reflasher'],
+setup(console = ['../files/python/usr/share/iguanaIR-reflasher/iguanaIR-reflasher'],
       options = { 'py2exe' : { 'dist_dir' : 'Release' }})
 
 # copy the hex files we need (but not the devel ones)
 shutil.rmtree('Release/hex', True)
-shutil.copytree('../reflasher/hex', 'Release/hex')
+shutil.copytree('../files/python/usr/share/iguanaIR-reflasher/hex', 'Release/hex')
 #shutil.rmtree('Release/hex/.svn')
 for devel in glob.glob('Release/hex/*-0.hex'):
     os.unlink(devel)

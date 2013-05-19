@@ -31,3 +31,7 @@ target_link_libraries(usbpre1 ${USBPRE1LIB})
 install(TARGETS usbpre1
         DESTINATION ${LIBDIR}/iguanaIR
         ${NEEDED})
+
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+  set_target_properties(usbpre1 PROPERTIES RELEASE_OUTPUT_NAME "driver-libusb")
+EndIf()

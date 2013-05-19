@@ -4,7 +4,7 @@ Set(ARGPDIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
 Set(ARGPLIB argp CACHE INTERNAL "")
 
 add_definitions(-DHAVE_MALLOC_H)
-add_library(argp
+add_library(argp SHARED argp.def
     argp-ba.c
     argp-eexst.c
     argp-fmtstream.c
