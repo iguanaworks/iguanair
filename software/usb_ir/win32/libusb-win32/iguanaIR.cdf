@@ -1,0 +1,12 @@
+[CatalogHeader]
+Name=iguanaIR.cat
+ResultDir=.
+PublicVersion=0x00000001
+[CatalogFiles]
+<HASH>iguanaIR.inf=iguanaIR.inf
+<HASH>libusb0_x86.dll=x86/libusb0_x86.dll
+<HASH>libusb0.sys=x86/libusb0.sys
+<HASH>libusb0.dll=amd64/libusb0.dll
+<HASH>libusb0.sys=amd64/libusb0.sys
+<HASH>libusb0.dll=ia64/libusb0.dll
+<HASH>libusb0.sys=ia64/libusb0.sys
