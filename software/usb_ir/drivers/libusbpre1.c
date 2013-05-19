@@ -26,6 +26,11 @@
 
 #include "../list.h"
 
+/* TODO: decide what DEVNUM means based on libusb version.
+prior to 0.1.9 we use dev->bus->location
+*/
+#define LIBUSB_DEVNUM(dev) (dev->devnum)
+
 typedef struct usbDevice
 {
     /* fields for the linked list of devices */

@@ -8,12 +8,26 @@ If("${LIBDIR}" STREQUAL "")
   Set(LIBDIR "/usr/lib")
 EndIf()
 
-Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
-
 # set a couple variables early
 Set(BASESRC support.c)
 
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+	add_subdirectory(win32/argp-standalone-1.3)
+
+	List(APPEND BASELIBS ws2_32)
+    Set(PIPESRC win32/pipes.c)
+	Set(DAEMONSRC win32/service.c)
+	Set(DAEMONLIBS setupapi)
+    List(APPEND BASESRC win32/compat-windows.c)
+	include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
+
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    Set(PIPESRC pipes.c)
+	Set(DAEMONSRC daemon.c)
+	Set(DAEMONLIBS pthread dl)
+
+    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
+
     # see if we have clock_gettime in time.h
     Set(CMAKE_REQUIRED_LIBRARIES rt)
     check_function_exists(clock_gettime USE_CLOCK_GETTIME)
@@ -26,6 +40,8 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 
     List(APPEND BASESRC compat-unix.c)
     List(APPEND BASELIBS rt)
+Else()
+	message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME")
 EndIf()
 
 # let the user know what platform was detected
@@ -35,7 +51,7 @@ message("Platform:  ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
 
 # build the user library
 add_library(iguanaIR SHARED
-                     iguanaIR.c dataPackets.c pipes.c
+                     iguanaIR.c dataPackets.c ${PIPESRC}
                      ${BASESRC})
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
@@ -46,13 +62,14 @@ install(TARGETS iguanaIR
 # build the service/server that controls hardware
 #+LISTENER=unixlistener.o
 #+#LISTENER=tcplistener.o
-#+igdaemon: daemon.o $(LISTENER) \
-add_executable(igdaemon daemon.c
+#+igdaemon: daemon.o $(LISTENER) 
+add_executable(igdaemon ${DAEMONSRC}
                server.c client-interface.c device-interface.c driver.c
-               list.c protocol-versions.c pipes.c dataPackets.c ${BASESRC})
-#target_link_libraries(igdaemon
+               list.c protocol-versions.c ${PIPESRC} dataPackets.c ${BASESRC})
+set_property(TARGET igdaemon
+             APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 target_link_libraries(igdaemon iguanaIR
-                               pthread dl ${BASELIBS})
+                               ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
 
@@ -61,7 +78,9 @@ add_subdirectory(drivers)
 
 # build igclient to test our API
 add_executable(igclient client.c list.c ${BASESRC})
-target_link_libraries(igclient iguanaIR ${BASELIBS})
+set_property(TARGET igclient
+             APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
+target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 
 

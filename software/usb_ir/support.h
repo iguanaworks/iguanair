@@ -13,9 +13,7 @@
 #ifndef _SUPPORT_H_
 #define _SUPPORT_H_
 
-#ifdef SUPPORT_INCLUDE
-    #define SUPPORT_API __declspec(dllexport)
-#elif WIN32
+#ifdef WIN32
     #ifdef SUPPORT_EXPORTS
         #define SUPPORT_API __declspec(dllexport)
     #else
