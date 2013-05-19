@@ -5,7 +5,7 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 Else()
   Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=default")
   If(NOT "${CMAKE_ARCH}" STREQUAL "arm")
-    Set(COMPILE_NEW)
+    Set(COMPILE_NEW true)
     Set(EXCLUDE EXCLUDE_FROM_ALL)
     Set(NEEDED OPTIONAL)
   EndIf()
@@ -14,7 +14,6 @@ EndIf()
 #Set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
 
 If(COMPILE_NEW)
-message(FATAL_ERROR "NONONONO")
   # build a driver that uses libusb version 1.0 or later
   add_library(usb SHARED libusb.c ../list.c)
   set_property(TARGET usb
