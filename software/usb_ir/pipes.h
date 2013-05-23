@@ -22,8 +22,8 @@
   PIPE_PTR acceptClient(PIPE_PTR *server);
 
 #else
-  #include <sys/un.h>
   #include <sys/socket.h>
+  #include <sys/un.h>
 
   #define createPipePair(a) (pipe(a) == 0)
   #define readPipe read
