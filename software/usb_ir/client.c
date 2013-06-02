@@ -887,8 +887,10 @@ int main(int argc, char **argv)
     argp_parse(&parser, argc, argv, 0, NULL, &params);
 
     /* line buffer the output */
+#ifndef ANDROID
     setlinebuf(stdout);
     setlinebuf(stderr);
+#endif
 
     /* connect first */
     conn = iguanaConnect(params.device);

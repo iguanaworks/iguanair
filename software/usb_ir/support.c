@@ -128,7 +128,11 @@ int message(int level, char *format, ...)
         else
             buffer = format;
 
+#ifdef ANDROID
+        retval = vprintf(buffer, list);
+#else
         retval = vfprintf(out, buffer, list);
+#endif
         /* flushing the log file after each write */
         if (out == logFile)
             fflush(logFile);
