@@ -1,3 +1,10 @@
+If(TARGET_ANDROID)
+  Message("Will build libusb for android")
+  add_subdirectory(libusb-android/libusb)
+  add_subdirectory(libusb-compat-android/libusb)
+  include_directories(libusb-compat-android/libusb)
+EndIf()
+
 # TODO: only expose the specific API!
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   Set(USBPRE1LIB ${CMAKE_SOURCE_DIR}/win32/libusb-win32/lib/msvc/libusb.lib)
@@ -31,6 +38,9 @@ target_link_libraries(usbpre1 ${USBPRE1LIB})
 install(TARGETS usbpre1
         DESTINATION ${LIBDIR}/iguanaIR
         ${NEEDED})
+If(TARGET_ANDROID)
+  target_link_libraries(usbpre1 usb-compat-android)
+EndIf()
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   set_target_properties(usbpre1 PROPERTIES RELEASE_OUTPUT_NAME "driver-libusb")

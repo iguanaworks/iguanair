@@ -16,7 +16,7 @@ If(TARGET_ANDROID)
   Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-long-long -Wno-variadic-macros")
 
   # drastically change the include paths
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdinc -DANDROID")
+  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdinc -fPIC -DANDROID")
   include_directories("/mnt/btrfs/android-ndk-r8e/platforms/android-3/arch-arm/usr/include")
   include_directories("/mnt/btrfs/android-ndk-r8e/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86_64/lib/gcc/arm-linux-androideabi/4.4.3/include")
 
@@ -31,9 +31,7 @@ If(TARGET_ANDROID)
 
   # override the actual build commands
   Set(CMAKE_C_LINK_EXECUTABLE "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS>  -o <TARGET> <LINK_LIBRARIES>")
-  Set(CMAKE_C_LINK_LIBRARY "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS>  -o <TARGET> <LINK_LIBRARIES>")
-  Set(CMAKE_C_CREATE_SHARED_LIBRARY "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_SHARED_LIBRARY_C_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> -soname <TARGET_SONAME> -o <TARGET> <OBJECTS> -lc")
-#  Set(CMAKE_C_CREATE_SHARED_LIBRARY "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_SHARED_LIBRARY_C_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> -soname <TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>")
+  Set(CMAKE_C_CREATE_SHARED_LIBRARY "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_SHARED_LIBRARY_C_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> -soname <TARGET_SONAME> -o <TARGET> <OBJECTS> -lc <LINK_LIBRARIES>")
 
   # we need our own argp
   add_subdirectory(win32/argp-standalone-1.3)

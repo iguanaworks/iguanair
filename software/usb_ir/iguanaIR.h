@@ -54,7 +54,11 @@
     #ifdef __APPLE__
         #define IGSOCK_NAME "/tmp/iguanaIR/"
     #else
-        #define IGSOCK_NAME "/var/run/iguanaIR/"
+        #ifdef ANDROID
+            #define IGSOCK_NAME "/cache/iguanaIR/"
+        #else
+            #define IGSOCK_NAME "/var/run/iguanaIR/"
+        #endif
     #endif
 #endif
 
