@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
-Set(TARGET_ANDROID true)
+#Set(TARGET_ANDROID true)
 
 If(TARGET_ANDROID)
   Message("(badly) Targeting the Android platform")
