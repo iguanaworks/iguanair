@@ -1,1 +1,0 @@
-"c:\Program Files\Microsoft SDKs\Windows\v6.0A\bin\signtool.exe" sign /v /f digicert-iguana.p12 /p %1 /n "Iguanaworks Inc" /t http://timestamp.digicert.com  /d "Iguanaworks libusb-based USB IR Driver" iguanaIR.cat
