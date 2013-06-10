@@ -52,6 +52,7 @@ Set(BASESRC support.c)
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	add_subdirectory(win32/argp-standalone-1.3)
 	Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
+    Set(PYTHON_INCLUDE_DIR "C:/Python27/include")
 	
 	List(APPEND BASELIBS ws2_32)
     Set(PIPESRC win32/pipes.c)
@@ -139,7 +140,7 @@ Else()
     # pull in the swig macros
     include(${SWIG_USE_FILE})
 
-    include_directories(${PYTHON_INCLUDE_PATH} ${CMAKE_SOURCE_DIR})
+    include_directories(${PYTHON_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
     swig_add_module(iguanaIR python iguanaIR.i)
     swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
 	If(CMAKE_COMPILER_IS_GNUCC)
@@ -167,6 +168,8 @@ Else()
                               ../share/iguanaIR-reflasher/iguanaIR-reflasher
                               \$ENV{DESTDIR}/usr/bin/iguanaIR-reflasher)
     ")
+  Else()
+    Message("    Skipping python build")
   EndIf()
 EndIf()
 
