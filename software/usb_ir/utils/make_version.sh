@@ -70,7 +70,7 @@ echo '#else' >> $OUTPUT
 if [ "$SVNPATH" == "REM" ]; then
   echo "#define IGUANAIR_VER_STR(a) \"  Built on $HOSTNAME\"" >> $OUTPUT
 else
-  echo "#define IGUANAIR_VER_STR(a) \"Release: \"a\"-\"IGUANAIR_RELEASE\"\-\"IGUANAIR_VERSION" >>   $OUTPUT
+  echo "#define IGUANAIR_VER_STR(a) \"Release: \"a\"-\"IGUANAIR_RELEASE\"-\"IGUANAIR_VERSION" >>   $OUTPUT
 fi
 
 echo "#endif" >> $OUTPUT
