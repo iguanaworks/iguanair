@@ -55,8 +55,9 @@ Source: "Release/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
 Source: "Release/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Release/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
 
-; argp libraries
+; argp and libusb libraries
 Source: "win32/argp-standalone-1.3/Release/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../win32/libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}"; Flags: ignoreversion; DestName: libusb0.dll
 
 ; the rest are created by libusb's tools
 Source: "../win32/libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion

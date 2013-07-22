@@ -16,7 +16,7 @@ SET SRCPATH=%BINPATH%\..
 
 REM if the SRCPATH is passed use it, otherwise generate a dummy
 IF "%SRCPATH%"=="" GOTO NO_SRC
-  SET SVNPATH=%BINPATH%\..\..\Version\svnversion.exe
+  SET SVNPATH=%BINPATH%\svnversion.exe
   date /T >  %BINPATH%/VERSION_H_GENERATED.txt
   time /T >> %BINPATH%/VERSION_H_GENERATED.txt
   GOTO CONFIG_DONE
@@ -79,7 +79,7 @@ echo. >> %OUTPUT%
 
 
 REM: IguanaIR base version level:
-echo #define IGUANAIR_SW_VERSION ^"\>> %OUTPUT%
+echo #define IGUANAIR_VERSION ^"\>> %OUTPUT%
 %SVNPATH% -n  %SRCPATH% >>        %OUTPUT%
 echo ^" >> %OUTPUT%
 

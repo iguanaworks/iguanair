@@ -113,7 +113,7 @@ add_executable(igdaemon ${DAEMONSRC}
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 target_link_libraries(igdaemon iguanaIR
-                               ${DAEMONLIBS} ${BASELIBS})# ${ARGPLIB})
+                               ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
 
@@ -124,7 +124,7 @@ add_subdirectory(drivers)
 add_executable(igclient client.c list.c ${BASESRC})
 set_property(TARGET igclient
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
-target_link_libraries(igclient iguanaIR ${BASELIBS})# ${ARGPLIB})
+target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 
 
