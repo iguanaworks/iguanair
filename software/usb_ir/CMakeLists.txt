@@ -113,7 +113,7 @@ add_executable(igdaemon ${DAEMONSRC}
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 target_link_libraries(igdaemon iguanaIR
-                               ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
+                               ${DAEMONLIBS} ${BASELIBS})# ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
 
@@ -124,7 +124,7 @@ add_subdirectory(drivers)
 add_executable(igclient client.c list.c ${BASESRC})
 set_property(TARGET igclient
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
-target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
+target_link_libraries(igclient iguanaIR ${BASELIBS})# ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 
 
@@ -195,6 +195,24 @@ install(FILES iguanaIR.h
 #        launchctl load -w /Library/LaunchDaemons/com.iguana.igdaemon.plist
 #endif
 ##########################################
+
+# bring svn version information into the library
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+  # what script to run to make version.h
+  Set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/utils/make_version.sh)
+
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+  # what script to run to make version.h
+  Set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/utils/make_version.bat)
+
+EndIf()
+
+# force a pre-build step to make the version.h
+add_custom_target(pre-build
+                  COMMAND ${VERSION_SCRIPT}
+                  DEPENDS ${VERSION_SCRIPT})
+add_dependencies(iguanaIR pre-build)
+
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   find_package(PythonInterp)

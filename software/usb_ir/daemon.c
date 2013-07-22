@@ -13,6 +13,7 @@
  */
 
 #include "iguanaIR.h"
+#include "version.h"
 #include "compat.h"
 
 #include <stdlib.h>
@@ -301,6 +302,7 @@ static struct argp_option options[] =
     { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
     { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   GROUP0 },
     { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 GROUP0 },
+    { "version",     'V',           NULL,     0, "Print the build and version numbers.",    GROUP0 },
     { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
 
     /* iguanaworks specific options */
@@ -345,6 +347,11 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         changeLogLevel(+1);
         break;
         
+    case 'V':
+        printf("Software version: %s\n", IGUANAIR_VER_STR("igdaemon"));
+        exit(0);
+        break;
+
     case ARG_LOG_LEVEL:
         setLogLevel(atoi(arg));
         break;
