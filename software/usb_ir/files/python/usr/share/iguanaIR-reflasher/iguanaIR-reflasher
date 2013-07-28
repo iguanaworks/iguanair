@@ -574,14 +574,14 @@ def findHexFile(type, target = None, mustFind = True):
                                           'hex', '%s-0.hex' % type))
             if len(best) == 1 and checkFileExists(best[0]):
                 latest = best[0]
+        elif type == 'reflasher':
+            latest = os.path.join(rootdir, 'hex', 'reflasher.hex')
 
     if latest is None and mustFind:
         if target is not None:
             message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?\n" % (type, target))
         else:
             message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?\n" % (type))
-
-
 
     return latest
 
@@ -624,7 +624,7 @@ def reflashDevice(features):
     if not keepLoader and deviceVersion() != FLASHER_VERSION:
         sys.stdout.write('  Writing reflasher to the device:\n')
         options.nextVersion = FLASHER_VERSION
-        writeHexFile(os.path.join(sys.path[0], 'hex', 'reflasher.hex'))
+        writeHexFile(findHexFile('reflasher'))
         deviceVersion(FLASHER_VERSION)
         wrote = True
 
