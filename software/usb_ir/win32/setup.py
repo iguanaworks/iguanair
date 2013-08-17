@@ -23,7 +23,12 @@ vars = {
 }
 ISSPath = 'iguanaIR.iss'
 
-vars['version'] = open('../packaging/debian/changelog', 'r').readline().split()[1][1:-1]
+# read the version from the release.h
+with open('../release.h') as input:
+	for line in input:
+		line = ' '.join(line.strip().split())
+		if line.startswith('#define IGUANAIR_RELEASE '):
+			vars['version'] = line.split(None, 2)[2][1:-1]
 
 out = open(ISSPath, 'w')
 out.write("""
