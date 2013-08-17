@@ -750,6 +750,7 @@ void listenToClients(iguanaDev *idev,
 			// crashes without the disconnect call here
 			DisconnectNamedPipe(listeners[idev->usbDev->id][x]);
             CloseHandle(listeners[idev->usbDev->id][x]);
+			listeners[idev->usbDev->id][x] = NULL;
 		}
     LeaveCriticalSection(&aliasLock);
 }
