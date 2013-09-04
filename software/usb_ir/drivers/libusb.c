@@ -457,6 +457,9 @@ static bool updateDeviceList(deviceList *devList)
     usbDevice *devPos;
     ssize_t listSize, listPos;
 
+    /* fedora 19 seems to process udev triggers before the device is ready */
+    usleep(1000);
+
     /* initialize usb TODO: should call libusb_exit at the end? */
     libusb_init(NULL);
 
