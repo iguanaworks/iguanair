@@ -137,9 +137,10 @@ If("${CMAKE_ARCH}" STREQUAL "arm")
   Message("Skipping Python bits on ARM.")
 Else()
   find_package(SWIG)
-  find_package(PythonLibs)
+  find_package(PythonLibs ${PYVER})
   If(SWIG_FOUND AND PYTHONLIBS_FOUND)
-    message("Python and SWIG found; will build Python bindings")
+    message(STATUS "Found Python version ${PYTHONLIBS_VERSION_STRING} (override with -DPYVER=2|3)")
+    message(STATUS "Python and SWIG found; will build Python bindings")
 
     # pull in the swig macros
     include(${SWIG_USE_FILE})

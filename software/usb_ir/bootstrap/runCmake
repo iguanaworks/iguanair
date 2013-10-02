@@ -40,5 +40,5 @@ fi
 # create the build path
 mkdir -p $BUILDDIR
 cd $BUILDDIR
-PATH=${QTPATH}:${PYPATH}:${PATH} ARCH=${ARCH} CSPATH=${CSPATH} ${CMAKE} ${CHAIN} ..
+PATH=${QTPATH}:${PYPATH}:${PATH} ARCH=${ARCH} CSPATH=${CSPATH} ${CMAKE} ${CHAIN} .. $*
 cd ..
