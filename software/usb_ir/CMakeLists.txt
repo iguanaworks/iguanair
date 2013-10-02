@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
+Set(SOVERSION 0)
+Set(FULLVER 0.3)
+
 #Set(TARGET_ANDROID true)
 
 If(TARGET_ANDROID)
@@ -97,11 +100,12 @@ message("Platform:  ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
 add_library(iguanaIR SHARED
                      iguanaIR.c dataPackets.c ${PIPESRC}
                      ${BASESRC})
+set_target_properties(iguanaIR PROPERTIES
+                      VERSION ${SOVERSION} SOVERSION ${FULLVER})
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
-
 
 # build the service/server that controls hardware
 #+LISTENER=unixlistener.o
