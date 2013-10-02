@@ -215,7 +215,7 @@ def listDevices(path = iguanaIR.IGSOCK_NAME):
             if device != 'ctl' and \
                not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
                 devices.append(device)
-    except Exception, inst:
+    except Exception as inst:
         devices = ['0']
         if MessageCannotlistdevice == False:
             message(LOG_WARN,"""Guessing device "0", failed to list devices:\n  %s\n""" % inst)
@@ -466,7 +466,7 @@ def writePagesToDevice(pages):
         count += 1
         if count == rebootPage:
             sys.stdout.write('\n      Rebooting device')
-            print deviceTransaction(iguanaIR.IG_DEV_RESET)
+            print(deviceTransaction(iguanaIR.IG_DEV_RESET))
             if deviceVersion() != version:
                 message(LOG_WARN, "Mid-write reboot unsuccessful.\n")
 
@@ -538,7 +538,7 @@ def writeHexFile(filename, blank_pages = False, setFeatures = False):
 def checkFileExists(path):
     try:
         os.stat(path)
-    except OSError, inst:
+    except OSError as inst:
         if inst[0] != errno.ENOENT:
             raise
         return False
