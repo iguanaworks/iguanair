@@ -225,7 +225,10 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
             /* skip blank lines (or comments that got truncated) */
             line += strspn(line, " \t\r\n");
             if (line[0] == '\0')
+            {
+                success = true;
                 continue;
+            }
 
             /* try to read the pulse or space (in a couple formats) */
             if (sscanf(line, "pulse %d", &value) == 1 ||
