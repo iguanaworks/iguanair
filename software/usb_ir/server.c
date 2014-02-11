@@ -53,6 +53,9 @@ void initServerSettings(deviceFunc devFunc)
 #endif
     srvSettings.devSettings.sendTimeout = 1000;
 
+    /* EPIPE usually means device disconnect, but not reliably */
+    srvSettings.devSettings.disconnectOnEPipe = false;
+
     /* an OS-specific function */
     srvSettings.devFunc = devFunc;
 

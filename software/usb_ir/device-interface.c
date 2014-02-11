@@ -796,7 +796,7 @@ dataPacket* removeNextPacket(iguanaDev *idev)
 void handleIncomingPackets(iguanaDev *idev)
 {
     unsigned char *buffer = NULL;
-    int length = 0;
+    int length = 0, prev = 0;
     dataPacket *current = NULL;
 
     /* allocate space for receiving */
@@ -831,6 +831,24 @@ void handleIncomingPackets(iguanaDev *idev)
                 /* loop on timeouts */
                 if (errno == EAGAIN || errno == USB_ETIMEDOUT)
                     length = 0;
+                /* loop on timeouts */
+                else if (errno == EPIPE)
+                {
+                    if (idev->settings->disconnectOnEPipe || prev < 0)
+                    {
+                        printError(LOG_ERROR,
+                                   "pipe error from USB device",
+                                   idev->usbDev);
+                        break;
+                    }
+                    else
+                    {
+                        message(LOG_INFO,
+                                "Ignoring a pipe error for %d\n",
+                                idev->usbDev->id);
+                        length = 0;
+                    }
+                }
                 /* (somewhat) quietly clean up on disconnect */
                 else if (errno == ENODEV)
                 {
@@ -977,6 +995,9 @@ void handleIncomingPackets(iguanaDev *idev)
                 /* unlock the device between reads */
                 LeaveCriticalSection(&idev->devLock);
 #endif
+
+            /* save the length to handle the double EPIPE */
+            prev = length;
         }
 
     /* release the buffer */

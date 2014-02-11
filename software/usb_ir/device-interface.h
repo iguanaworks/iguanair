@@ -34,6 +34,9 @@ typedef struct deviceSettings
     /* time outs for send and receive */
     unsigned int recvTimeout;
     unsigned int sendTimeout;
+
+    /* some hardware throws seemingly erroneous EPIPEs */
+    bool disconnectOnEPipe;
 } deviceSettings;
 
 typedef struct iguanaDev
