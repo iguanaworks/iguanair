@@ -100,6 +100,7 @@ message("Platform:  ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
 add_library(iguanaIR SHARED
                      iguanaIR.c dataPackets.c ${PIPESRC}
                      ${BASESRC})
+target_link_libraries(iguanaIR ${BASELIBS})
 set_target_properties(iguanaIR PROPERTIES
                       VERSION ${SOVERSION} SOVERSION ${FULLVER})
 set_property(TARGET iguanaIR
