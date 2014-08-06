@@ -30,7 +30,7 @@
 
 enum
 {
-    /* use the upper buye of the short to not overlap with DEV_ commands */
+    /* use the upper byte of the short to not overlap with DEV_ commands */
     INTERNAL_SLEEP = 0x100,
 
     /* getters grouped together */
