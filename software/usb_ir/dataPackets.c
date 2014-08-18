@@ -39,23 +39,13 @@ bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
         }
         else
         {
-            packet->data = malloc(packet->dataLen);
+            packet->data = (unsigned char*)malloc(packet->dataLen);
             if (packet->data != NULL)
             {
                 unsigned int timePassed;
 
                 now = microsSinceX();
                 timePassed = (unsigned int)(now - then) / 1000;
-#if 0
-                /* Leaving this for now, though it should not be
-                    * necessary ever again */
-                if (timePassed > timeout)
-                {
-                    fprintf(stderr, "TIMEOUT ON PAYLOAD!!! (%u > %u)\n",
-                            timePassed, timeout);
-                    timePassed = timeout;
-                }
-#endif
                 if (timePassed <= timeout)
                 {
                     result = readPipeTimed(fd, (char*)packet->data,
