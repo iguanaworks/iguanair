@@ -520,22 +520,17 @@ static void unregisterNotifications(void)
 }
 
 /* helper function for listenToClients */
-static HANDLE startOverlappedAction(PIPE_PTR fd, HANDLE event, bool connect)
+static void startOverlappedAction(PIPE_PTR fd, OVERLAPPED *over, bool connect)
 {
-    OVERLAPPED over = { (ULONG_PTR)NULL };
-
-    if (event == NULL)
-        event = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (over->hEvent == NULL)
+        over->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     else
-        ResetEvent(event);
-    over.hEvent = event;
+        ResetEvent(over->hEvent);
 
     if (connect)
-        ConnectNamedPipe(fd, &over);
+        ConnectNamedPipe(fd, over);
     else
-        ReadFile(fd, NULL, 0, NULL, &over);
-
-    return event;
+        ReadFile(fd, NULL, 0, NULL, over);
 }
 
 /* listen to clients connecting to either name or alias, and the idev->reader */
@@ -545,23 +540,27 @@ void listenToClients(iguanaDev *idev,
                      handleClientFunc handleClient)
 {
     HANDLE *handles = NULL;
-    OVERLAPPED over;
+    OVERLAPPED over[3];
     int x;
     bool firstPass = true;
 
     /* get any intial ID from the device */
     getID(idev);
 
-    memset(&over, 0, sizeof(OVERLAPPED));
+    /* clear the overlapped structures */
+    memset(over, 0, sizeof(OVERLAPPED) * 3);
     while(true)
     {
         int count = 1;
         client *john;
 
         /* allocate the handles and overlap objects that I need to populate */
-        handles = realloc(handles, sizeof(HANDLE) * (1 + 2 + idev->clientList.count));
+        handles = (HANDLE*)realloc(handles, sizeof(HANDLE) * (1 + 2 + idev->clientList.count));
         if (firstPass)
-            handles[0] = startOverlappedAction(idev->readerPipe[READ], NULL, false);
+		{
+            startOverlappedAction(idev->readerPipe[READ], over + 0, false);
+            handles[0] = over[0].hEvent;
+		}
 
         /* next add events for the named pipes */
         for(x = 0; x < 2; x++)
@@ -665,7 +664,8 @@ void listenToClients(iguanaDev *idev,
                                                        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                                                        PIPE_UNLIMITED_INSTANCES,
                                                        64, 64, NMPWAIT_USE_DEFAULT_WAIT, &sa);
-                handles[count] = startOverlappedAction(listeners[idev->usbDev->id][x], NULL, true);
+                startOverlappedAction(listeners[idev->usbDev->id][x], over + x + 1, true);
+                handles[x + 1] = over[x + 1].hEvent;
 
             Cleanup:
                 if (pEveryoneSID) 
@@ -686,8 +686,8 @@ void listenToClients(iguanaDev *idev,
         /* list the current clients last */
         for(john = (client*)idev->clientList.head; john != NULL; john = (client*)john->header.next)
         {
-            john->listenData = startOverlappedAction(john->fd, john->listenData, false);
-            handles[count++] = john->listenData;
+            startOverlappedAction(john->fd, &john->over, false);
+			handles[count++] = john->over.hEvent;
         }
 
         /* wait for something to happen */
@@ -700,8 +700,7 @@ void listenToClients(iguanaDev *idev,
                 break;
 
             /* Prepare for the next pass */
-            ResetEvent(handles[0]);
-            startOverlappedAction(idev->readerPipe[READ], handles[0], false);
+            startOverlappedAction(idev->readerPipe[READ], over + 0, false);
         }
 
         /* now accept new clients */
@@ -717,7 +716,8 @@ void listenToClients(iguanaDev *idev,
                 clientConnected(listeners[idev->usbDev->id][x], idev);
 
                 /* create a new pipe instance on the next pass */
-                CloseHandle(handles[x + 1]);
+                CloseHandle(over[x + 1].hEvent);
+                over[x + 1].hEvent = NULL;
                 listeners[idev->usbDev->id][x] = NULL;
             }
         }
@@ -730,7 +730,7 @@ void listenToClients(iguanaDev *idev,
             client *next;
 
             next = (client*)john->header.next;
-            event = john->listenData;
+            event = john->over.hEvent;
             if (event != NULL &&
                 WaitForSingleObject(event, 0) == WAIT_OBJECT_0 &&
                 ! handleClient(john))

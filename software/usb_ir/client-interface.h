@@ -32,7 +32,7 @@ typedef struct client
 
 #ifdef WIN32
     /* used in the win32 driver to keep track of overlapped actions */
-    HANDLE listenData;
+	OVERLAPPED over;
 #endif
 } client;
 
