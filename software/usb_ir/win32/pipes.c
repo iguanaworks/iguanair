@@ -82,17 +82,13 @@ int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
     else if (GetLastError() == ERROR_IO_PENDING)
         switch(WaitForSingleObject(over.hEvent, timeout))
         {
-        case WAIT_OBJECT_0:
-            GetOverlappedResult(fd, &over, &read, TRUE);
-            retval = read;
-            break;
-
         case WAIT_TIMEOUT:
             errno = ERROR_TIMEOUT;
             /* cancel the IO so it doesn't consume later messages */
             CancelIo(fd);
             /* see if it completed JUST now */
-            if (GetOverlappedResult(fd, &over, &read, TRUE) == S_OK)
+        case WAIT_OBJECT_0:
+            if (GetOverlappedResult(fd, &over, &read, TRUE))
                 retval = read;
             break;
 
