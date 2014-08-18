@@ -33,12 +33,12 @@ bool createPipePair(PIPE_PTR *pair)
                                  64, 64, NMPWAIT_USE_DEFAULT_WAIT, NULL);
     if (pair[READ] != INVALID_HANDLE_VALUE)
     {
-        OVERLAPPED server;
-        memset(&server, 0, sizeof(OVERLAPPED));
-        server.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        OVERLAPPED over;
+        memset(&over, 0, sizeof(OVERLAPPED));
+        over.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
         /* server starts waiting now */
-        ConnectNamedPipe(pair[READ], &server);
+        ConnectNamedPipe(pair[READ], &over);
 
         /* child connects to the server */
         pair[WRITE] = CreateFile(ANONYMOUS_NAME,
@@ -51,8 +51,7 @@ bool createPipePair(PIPE_PTR *pair)
         if (pair[WRITE] != INVALID_HANDLE_VALUE)
         {
             /* ensure server side also sees a connection */
-            WaitForSingleObject(server.hEvent, INFINITE);
-            CloseHandle(server.hEvent);
+            WaitForSingleObject(over.hEvent, INFINITE);
             retval = true;
         }
         else
@@ -60,6 +59,7 @@ bool createPipePair(PIPE_PTR *pair)
             CancelIo(pair[READ]);
             CloseHandle(pair[READ]);
         }
+        CloseHandle(over.hEvent);
     }
 
     return retval;
