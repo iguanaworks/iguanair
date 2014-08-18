@@ -118,12 +118,6 @@ int writePipe(PIPE_PTR fd, const void *buf, int count)
     return -1;
 }
 
-int readBytes(PIPE_PTR fd, int timeout,
-              char *buffer, int size)
-{
-    return readPipeTimed(fd, buffer, size, timeout);
-}
-
 int notified(PIPE_PTR fd, int timeout)
 {
     char byte;
