@@ -686,9 +686,29 @@ void listenToClients(iguanaDev *idev,
         /* list the current clients last */
         for(john = (client*)idev->clientList.head; john != NULL; john = (client*)john->header.next)
         {
-            startOverlappedAction(john->fd, &john->over, false);
-			handles[count++] = john->over.hEvent;
-        }
+			/* check if an existing overlapped action is still running */
+			bool pending = false;
+			DWORD bytes;
+			if (! GetOverlappedResult(john->fd, &john->over, &bytes, FALSE))
+				switch(GetLastError())
+				{
+				case ERROR_IO_INCOMPLETE:
+				/* docs say error should be ERROR_IO_INCOMPLETE, but results say otherwise */
+				case ERROR_IO_PENDING:
+					pending = true;
+					break;
+
+				default:
+					break;
+				}
+
+			/* Start a new one if need be */
+			if (! pending)
+			{
+				startOverlappedAction(john->fd, &john->over, false);
+				handles[count++] = john->over.hEvent;
+			}
+		}
 
         /* wait for something to happen */
         WaitForMultipleObjects(count, handles, FALSE, INFINITE); 
