@@ -143,6 +143,11 @@ Else()
     message(STATUS "Found Python version ${PYTHONLIBS_VERSION_STRING} (override with -DPYVER=2|3)")
     message(STATUS "Python and SWIG found; will build Python bindings")
 
+    # ensure we have PYTHON_INCLUDE_DIR even on older CMake
+    If("${PYTHON_INCLUDE_DIR}" STREQUAL "")
+      Set(PYTHON_INCLUDE_DIR "${PYTHON_INCLUDE_PATH}")
+    EndIf()
+
     # pull in the swig macros
     include(${SWIG_USE_FILE})
 
