@@ -15,7 +15,7 @@ include "m8c.inc"    ; part specific constants and macros
 include "loader.inc"
 include "body.inc"
 
-VERSION_ID_LOW:  equ 0x08 ; firmware version ID low byte (code body)
+VERSION_ID_LOW:  equ 0x09 ; firmware version ID low byte (code body)
 
 export get_feature_list
 
@@ -184,11 +184,13 @@ send_body:
     jz send_body_overflow ; error on overflow
     lcall transmit_code   ; transmit
     lcall rx_reset        ; turn rx on if necessary
+    mov [tmp3], [control_pkt + CDATA] ; save the length for resend
     jmp bm_ack_then_ret
 
   send_body_overflow:
     lcall transmit_code ; transmit anyway
     lcall rx_reset      ; turn rx on if necessary
+    mov [tmp3], [control_pkt + CDATA] ; save the length for resend
 
     ; send overflow instead of ack
     mov [control_pkt + CCODE], CTL_OVERSEND
@@ -200,9 +202,16 @@ send_body:
 
 ; send the data that is already in the buffer 
 resend_body:
+    lcall check_read
+    jz resend_body
+    lcall read_control    ; read the next packet to get most settings
+
+    mov [control_pkt + CCODE], CTL_RESEND
+    mov [control_pkt + CDATA], [tmp3] ; load the previous length
     lcall rx_disable      ; disable timer interrupt, clear rx state
     lcall transmit_code   ; transmit
     lcall rx_reset        ; turn rx on if necessary
+    mov [tmp3], [control_pkt + CDATA] ; save the length for resend
     jmp bm_ack_then_ret
 
 get_pin_config_body:

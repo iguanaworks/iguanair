@@ -623,14 +623,27 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         /* as of version 3 SEND and PINBURST require a length argument */
         else if (idev->version >= 3)
         {
-            msg[length++] = (unsigned char)request->dataLen;
+            int dataPos = MIN_CTL_LENGTH;
+            if (request->code == IG_DEV_RESEND)
+            {
+                /* prepare to append the channels and carrier */
+                request->data = realloc(request->data, MAX_PACKET_SIZE);
+                request->dataLen = MAX_PACKET_SIZE;
+
+                request->data[dataPos++] = 0xFF; /* TODO: determine this size in the device firmware */
+            }
+            else
+                msg[length++] = (unsigned char)request->dataLen;
 
             /* select which channels to transmit on */
             if (request->code == IG_DEV_SEND ||
                 request->code == IG_DEV_RESEND ||
                 request->code == IG_DEV_REPEATER)
             {
-                msg[length++] = idev->channels;
+                if (request->code == IG_DEV_RESEND)
+                    request->data[dataPos++] = idev->channels;
+                else
+                    msg[length++] = idev->channels;
 
                 /* is the carrier frequency finally adjustable? */
                 if ((idev->version & 0x00FF) &&
@@ -646,9 +659,15 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                         loopCycles = idev->cycles;
 
                     /* compute the delay length off the carrier */
-                    computeCarrierDelays(idev->carrier, msg + length,
-                                         loopCycles);
-                    length += 2;
+                    if (request->code == IG_DEV_RESEND)
+                        computeCarrierDelays(idev->carrier, request->data + dataPos,
+                                             loopCycles);
+                    else
+                    {
+                        computeCarrierDelays(idev->carrier, msg + length,
+                                             loopCycles);
+                        length += 2;
+                    }
                 }
             }
         }
