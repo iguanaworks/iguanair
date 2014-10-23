@@ -574,13 +574,6 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
             result *= sizeof(uint32_t);
             break;
 
-        case IG_DEV_RESEND:
-            /* read pulse data from cmd->arg */
-            data = malloc(sizeof(uint32_t));
-            if (parseNumber(cmd->arg, ((uint32_t*)data)))
-                result = sizeof(uint32_t);
-            break;
-
         case IG_DEV_SETID:
             result = strlen(cmd->arg) + 1;
             if (result > 13)
@@ -725,7 +718,7 @@ static struct argp_option options[] = {
     { "get-version",     IG_DEV_GETVERSION,  NULL,       0, "Return the version of the device firmware.",                    GROUP0 },
     { "get-features",    IG_DEV_GETFEATURES, NULL,       0, "Return the features associated w/ this device.",                GROUP0 },
     { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       GROUP0 },
-    { "resend",          OFFSET_RESEND,      "MS_DELAY", 0, "Resend the contents of the onboard buffer after MS_DELAY.",     GROUP0 },
+    { "resend",          OFFSET_RESEND,      NULL,       0, "Resend the contents of the onboard buffer after MS_DELAY.",     GROUP0 },
     { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  GROUP0 },
     { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        GROUP0 },
     { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       GROUP0 },
