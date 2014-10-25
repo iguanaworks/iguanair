@@ -274,7 +274,7 @@ def connect(timeout = 2, willChange = False, quiet = False):
         _conn = iguanaIR.connect(devices[0])
 
 # used detect the version before we try to write it
-def deviceTransaction(code, data = '', quiet = False):
+def deviceTransaction(code, data = b'', quiet = False):
     global _conn
 
     # connect on demand
@@ -294,14 +294,23 @@ def deviceTransaction(code, data = '', quiet = False):
         elif code == iguanaIR.IG_DEV_GETVERSION:
             if not iguanaIR.responseIsError(resp):
                 data = iguanaIR.removeData(resp)
-                retval = ord(data[0]) + (ord(data[1]) << 8)
+                major = data[1]
+                minor = data[0]
+                # in python2 we need to call ord
+                if isinstance(major, str):
+                    major = ord(major)
+                    minor = ord(minor)
+                retval = minor + (major << 8)
         elif iguanaIR.responseIsError(resp):
             if not quiet:
                 # it is alright to get 0x0 on a reset (TODO: why get anything?)
                 if code != iguanaIR.IG_DEV_RESET or iguanaIR.code(resp) != 0:
                     message(LOG_ERROR, 'Error response code: 0x%s\n' % iguanaIR.code(resp))
         elif code == iguanaIR.IG_DEV_GETFEATURES:
-            retval = ord(iguanaIR.removeData(resp)[0])
+             retval = iguanaIR.removeData(resp)[0]
+             # in python2 we need to call ord
+             if isinstance(retval, str):
+                 retval = ord(retval)
         elif code == iguanaIR.IG_DEV_IDSOFF or \
              code == iguanaIR.IG_DEV_IDSON or \
              code == iguanaIR.IG_DEV_SETID:
@@ -377,7 +386,7 @@ def readPages(input):
                     break
 
                 bytes = []
-                for x in range(len(body) / 2):
+                for x in range(len(body) // 2):
                     bytes.append(body[x * 2:x * 2 + 2])
                 appendPage(address, bytes[0:64], pages)
                 appendPage(address + 64, bytes[64:], pages)
@@ -419,15 +428,18 @@ def preparePages(pages):
         page['chksum'] = chksum
 
         # construct 68 data bytes we need
-        page['data'] = chr(page['start'] / 64)
+        page['data'] = bytearray([page['start'] // 64])
         if options.UNSAFE:
-            page['data'] += chr(0x42)
+            page['data'] += bytearray([0x42])
         else:
-            page['data'] += chr(0)
-        page['data'] += chr(page['chksum'] / 0x100) + \
-                        chr(page['chksum'] % 0x100)
+            page['data'] += bytearray([0])
+        page['data'] += bytearray([page['chksum'] // 0x100]) + \
+                        bytearray([page['chksum'] % 0x100])
         for byte in page['bytes']:
-            page['data'] += chr(int(byte, 16))
+            page['data'] += bytearray([int(byte, 16)])
+
+        # translate the data into what is expected by the API
+        page['data'] = bytes(page['data'])
 
     # we have to write the pages in reverse to avoid messing up the jump
     # table before we're ready, so reverse the page order.
@@ -465,8 +477,8 @@ def writePagesToDevice(pages):
     for page in pages:
         count += 1
         if count == rebootPage:
-            sys.stdout.write('\n      Rebooting device')
-            print(deviceTransaction(iguanaIR.IG_DEV_RESET))
+            sys.stdout.write('\n      Rebooting device\n')
+            deviceTransaction(iguanaIR.IG_DEV_RESET)
             if deviceVersion() != version:
                 message(LOG_WARN, "Mid-write reboot unsuccessful.\n")
 
@@ -477,7 +489,7 @@ def writePagesToDevice(pages):
         # note that we're writing a page
         if os.isatty(sys.stdout.fileno()):
             sys.stdout.write('\r')
-        sys.stdout.write("    Writing page %d/%d (offset %d)" % (count, len(pages), page['start'] / 64))
+        sys.stdout.write("    Writing page %d/%d (offset %d)" % (count, len(pages), page['start'] // 64))
 
         if os.isatty(sys.stdout.fileno()):
             sys.stdout.write('  ')
@@ -508,7 +520,7 @@ def writeHexFile(filename, blank_pages = False, setFeatures = False):
     if blank_pages:
         blanks = range(128)
         for page in pages:
-            blanks.remove(page['start'] / 64)
+            blanks.remove(page['start'] // 64)
 
     # place the features if necessary (and possible)
     if setFeatures and \
@@ -670,10 +682,10 @@ def reflashDevice(features):
             wrote = True
 
     if id:
-        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
+        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id.decode("utf-8"))
     else:
         message(LOG_NORMAL, "Setting device id to default: iguana\n")
-        id = 'iguana'
+        id = b'iguana\0'
     deviceTransaction(iguanaIR.IG_DEV_SETID, id)
 
     if wrote and (deviceVersion() < 0x0100 or \
@@ -691,7 +703,7 @@ def checkReceiver():
             break
 
         data = iguanaIR.removeData(packet)
-        format = 'I' * (len(data) / 4)
+        format = 'I' * (len(data) // 4)
         for signal in struct.unpack(format, data):
             if signal != 0x25555:
                 count += 1

@@ -36,8 +36,8 @@
 
 %typemap(in) (unsigned int dataLength, void *data)
 {
-    if (!PyString_Check($input)) {
-        PyErr_SetString(PyExc_ValueError, "Expecting a string");
+    if (!PyBytes_Check($input)) {
+        PyErr_SetString(PyExc_ValueError, "Expecting byte string");
         return NULL;
     }
     $1 = PyString_Size($input);
@@ -57,7 +57,7 @@
 
 %typemap(argout) unsigned int *dataLength
 {
-    $result = PyString_FromStringAndSize((char*)$result, *$1);
+    $result = PyBytes_FromStringAndSize((char*)$result, *$1);
 }
 
 %typemap(in, numinputs=0) void **pulses (void *pulses)
@@ -70,7 +70,7 @@
 
     list = PyList_New(0);
     PyList_Append(list, $result);
-    PyList_Append(list, PyString_FromStringAndSize(*$1, PyInt_AsLong($result) * 4));
+    PyList_Append(list, PyBytes_FromStringAndSize(*$1, PyInt_AsLong($result) * 4));
 
     $result = list;
 }
