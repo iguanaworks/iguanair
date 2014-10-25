@@ -62,7 +62,7 @@ enum
     OFFSET_REPEATER    = ARGP_OFFSET + IG_DEV_REPEATER,
     OFFSET_SENDSIZE    = ARGP_OFFSET + IG_DEV_SENDSIZE,
 
-    /* TODO: still used? */
+    /* used to check the receive buffer is empty in the end */
     FINAL_CHECK = 0xFFFF,
 
     /* valid because we use the last 8 bytes of RAM as packet scratch space */
