@@ -295,8 +295,8 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
         response = iguanaReadResponse(conn, timeout);
         if (iguanaResponseIsError(response))
         {
-            if (errno != 110 || (cmd->spec->code != FINAL_CHECK &&
-                                 cmd->spec->code != INTERNAL_SLEEP))
+            if ((errno != 110 || (cmd->spec->code != INTERNAL_SLEEP && cmd->spec->code != FINAL_CHECK)) &&
+                (errno != 5   ||  cmd->spec->code != INTERNAL_SLEEP))
                 message(LOG_NORMAL, "%s: failed: %d: %s\n", cmd->spec->text,
                         errno, translateError(errno));
             /* failure means stop */
@@ -718,7 +718,7 @@ static struct argp_option options[] = {
     { "get-version",     IG_DEV_GETVERSION,  NULL,       0, "Return the version of the device firmware.",                    GROUP0 },
     { "get-features",    IG_DEV_GETFEATURES, NULL,       0, "Return the features associated w/ this device.",                GROUP0 },
     { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       GROUP0 },
-    { "resend",          OFFSET_RESEND,      NULL,       0, "Resend the contents of the onboard buffer after MS_DELAY.",     GROUP0 },
+    { "resend",          OFFSET_RESEND,      "DELAY",    0, "Resend the contents of the device buffer after DELAY seconds.", GROUP0 },
     { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  GROUP0 },
     { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        GROUP0 },
     { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       GROUP0 },
@@ -800,8 +800,9 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         enqueueTaskById((unsigned short)key, arg);
         break;
 
-    /* TODO: a few codes must be substituted since they are "printable" */
+    /* a few codes must be offset since they are printable characters otherwise */
     case OFFSET_RESEND:
+        enqueueTaskById(INTERNAL_SLEEP, arg);
     case OFFSET_GETID:
     case OFFSET_SETID:
     case OFFSET_GETLOCATION:

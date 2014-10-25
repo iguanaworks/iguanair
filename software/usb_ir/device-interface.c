@@ -71,13 +71,13 @@ static versionedType types[] =
     {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
 
     /* device functionality */
-    {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV, NO_PAYLOAD, true,ANY_PAYLOAD}},
-    {0, 0, {IG_DEV_SEND,           CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
-    {0x0307, 0, {IG_DEV_RESEND,    CTL_TODEV,   NO_PAYLOAD, true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_SENDSIZE,       CTL_TODEV, ANY_PAYLOAD, true, 2}},
-    {0, 0, {IG_DEV_RECVON,         CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
-    {0x0101, 0, {IG_DEV_RAWRECVON, CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
-    {0, 0, {IG_DEV_RECVOFF,        CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV,  NO_PAYLOAD, true, ANY_PAYLOAD}},
+    {0,      0, {IG_DEV_SEND,        CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
+    {0x0309, 0, {IG_DEV_RESEND,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0,      0, {IG_DEV_SENDSIZE,    CTL_TODEV, ANY_PAYLOAD, true, 2}},
+    {0,      0, {IG_DEV_RECVON,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0x0101, 0, {IG_DEV_RAWRECVON,   CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0,      0, {IG_DEV_RECVOFF,     CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
 
     /* 1 bit per pin of state */
     {0,     3, {IG_DEV_GETPINS,    CTL_TODEV,   NO_PAYLOAD, true, 2}},
@@ -630,7 +630,8 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 request->data = realloc(request->data, MAX_PACKET_SIZE);
                 request->dataLen = MAX_PACKET_SIZE;
 
-                request->data[dataPos++] = 0xFF; /* TODO: determine this size in the device firmware */
+                 /* the size will be overwritten in the device firmware */
+                request->data[dataPos++] = 0xFF;
             }
             else
                 msg[length++] = (unsigned char)request->dataLen;
@@ -649,6 +650,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                 if ((idev->version & 0x00FF) &&
                     (idev->version & 0xFF00))
                 {
+                    unsigned char *delays;
                     /* for a long time the cycle count has remained stable: */
                     uint8_t loopCycles = 5 + 5 + 7 + 6 + 6 + 7 + \
                                          (5 + 7) + (5 + 7) + 5;
@@ -660,14 +662,13 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
 
                     /* compute the delay length off the carrier */
                     if (request->code == IG_DEV_RESEND)
-                        computeCarrierDelays(idev->carrier, request->data + dataPos,
-                                             loopCycles);
+                        delays = request->data + dataPos;
                     else
                     {
-                        computeCarrierDelays(idev->carrier, msg + length,
-                                             loopCycles);
+                        delays = msg + length;
                         length += 2;
                     }
+                    computeCarrierDelays(idev->carrier, delays, loopCycles);
                 }
             }
         }
