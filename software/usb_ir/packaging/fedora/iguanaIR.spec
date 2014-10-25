@@ -5,29 +5,42 @@
 Name:           iguanaIR
 Version:        %{version}
 Release:        1
-Summary:        Driver for Iguanaworks USB IR transceiver.
+Summary:        Driver for Iguanaworks USB IR transceiver
 
 Group:          System Environment/Daemons
-License:        GPL
+License:        GPLv2 and LGPLv2
 URL:            http://iguanaworks.net/ir
-Source0:        http://iguanaworks.net/ir/releases/%{name}-%{version}.tar.bz2
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires:         lirc >= 0.8.1 libusb1
+Source0:        http://iguanaworks.net/downloads/%{name}-%{version}.tar.bz2
+Requires:         libusb1
+BuildRequires:    cmake libusb1-devel
 Requires(post):   /usr/bin/install /sbin/chkconfig
 Requires(pre):    /usr/sbin/useradd
 Requires(preun):  /sbin/chkconfig /sbin/service /bin/rmdir
 Requires(postun): /usr/sbin/userdel
-BuildRequires:    cmake libusb1-devel
+
+# some features can be disabled during the rpm build
+%{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
+
+# Don't add provides for python .so files
+%define __provides_exclude_from %{python_sitearch}/.*\.so$
 
 %description
 This package provides igdaemon and igclient, the programs necessary to
-control the Iguanaworks USB IR transceiver.  The header files needed
-to interact with igdaemon are also included.
+control the Iguanaworks USB IR transceiver.
+
+%package devel
+Summary: Library and header files for iguanaIR
+Group: Development/Libraries
+Requires: %{name} = %{version}-%{release}
+
+%description devel
+The development files needed to interact with the iguanaIR igdaemon are
+included in this package.
 
 %package python
 Group: System Environment/Daemons
-Summary: Python module for Iguanaworks USB IR transceiver.
-Requires: python >= 2.4 iguanaIR = %{version}
+Summary: Python module for Iguanaworks USB IR transceiver
+Requires: %{name} = %{version}-%{release}, python >= 2.4
 BuildRequires: python-devel swig
 
 %description python
@@ -36,29 +49,28 @@ with the Iguanaworks USB IR transceiver.
 
 %package reflasher
 Group: System Environment/Daemons
-Summary: Reflasher for Iguanaworks USB IR transceiver.
+Summary: Reflasher for Iguanaworks USB IR transceiver
 Requires: iguanaIR-python = %{version}
 BuildArch: noarch
 
 %description reflasher
-This package provides the reflasher/testing script and assorted firmware versions for the Iguanaworks USB IR transceiver.  If you have no idea what this means, you don't need it.
+This package provides the reflasher/testing script and assorted firmware
+versions for the Iguanaworks USB IR transceiver.  If you have no idea
+what this means, you do not need it.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}
 
 %build
 mkdir -p build
 cd build
-cmake -DLIBDIR=%{_libdir} ..
+cmake -DPYVER=%{pyver} -DLIBDIR=%{_libdir} ..
 cd ..
 make -C build %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 make -C build install DESTDIR=$RPM_BUILD_ROOT
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 # must create the user and group before files are put down
 %pre
@@ -86,35 +98,40 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS LICENSE LICENSE-LGPL WHY README.txt ChangeLog examples
-/usr/bin/igclient
-/usr/bin/igdaemon
-/usr/bin/iguanaIR-rescan
-%{_libdir}/lib%{name}.so*
-%{_libdir}/%{name}
+%doc AUTHORS LICENSE LICENSE-LGPL WHY
+%doc README.txt ChangeLog examples
+%{_bindir}/igdaemon
+%{_bindir}/igclient
+%{_bindir}/iguanaIR-rescan
+%{_libdir}/lib%{name}.so.*
+%{_libdir}/%{name}/*.so
 /etc/init.d/%{name}
 # makes .rpmsave
 %config /etc/default/%{name}
 # makes .rpmnew
 #%config(noreplace) /etc/default/%{name}
 /lib/udev/rules.d/80-%{name}.rules
-/usr/include/%{name}.h
+
+%files devel
+%{_includedir}/%{name}.h
+%{_libdir}/lib%{name}.so
 
 %files python
-%{_libdir}/python%{pyver}/site-packages/*
+#%{python3_sitearch}/*
+%{_libdir}/python*/site-packages/*
 
 %files reflasher
-/usr/share/%{name}-reflasher
-/usr/bin/%{name}-reflasher
+%{_datadir}/%{name}-reflasher/
+%{_bindir}/%{name}-reflasher
 
 %changelog
 * Sat Nov 20 2010 Joseph Dunn <jdunn@iguanaworks.net> 1.0-1
 - Significant release to try and get back on track.
 
-* Sat Jun 27 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.96-1
+* Fri Jun 27 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.96-1
 - Bug fix release.
 
-* Fri Mar 27 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.95-1
+* Thu Mar 27 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.95-1
 - Decided to do another release to fix a udev problem.
 
 * Sun Mar 23 2008 Joseph Dunn <jdunn@iguanaworks.net> 0.94-1
@@ -147,13 +164,13 @@ fi
   work for fedora and debian now.
 
 * Wed Oct 18 2006 Joseph Dunn <jdunn@iguanaworks.net> 0.19-1
-- A real release has been made, and we'll try to keep track of version
+- A real release has been made, and we will try to keep track of version
   numbers a bit better now.
 
 * Sat Sep 23 2006 Joseph Dunn <jdunn@iguanaworks.net> 0.10-1
 - Preparing for a real release.
 
-* Wed Jul 11 2006 Joseph Dunn <jdunn@iguanaworks.net> 0.9-1
+* Tue Jul 11 2006 Joseph Dunn <jdunn@iguanaworks.net> 0.9-1
 - Switch to using udev instead of hotplug.
 
 * Mon Jul 10 2006 Joseph Dunn <jdunn@iguanaworks.net> 0.8-1
