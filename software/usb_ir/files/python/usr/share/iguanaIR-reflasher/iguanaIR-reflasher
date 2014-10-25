@@ -274,7 +274,7 @@ def connect(timeout = 2, willChange = False, quiet = False):
         _conn = iguanaIR.connect(devices[0])
 
 # used detect the version before we try to write it
-def deviceTransaction(type, data = '', quiet = False):
+def deviceTransaction(code, data = '', quiet = False):
     global _conn
 
     # connect on demand
@@ -282,7 +282,7 @@ def deviceTransaction(type, data = '', quiet = False):
         connect()
 
     retval = False
-    req = iguanaIR.createRequest(type, data)
+    req = iguanaIR.createRequest(code, data)
     if not iguanaIR.writeRequest(req, _conn):
         if not quiet:
             message(LOG_ERROR, 'Failed to write packet. %s\n' % _conn)
@@ -291,20 +291,20 @@ def deviceTransaction(type, data = '', quiet = False):
         if resp is None:
             if not quiet:
                 message(LOG_ERROR, "No response received.\n")
-        elif type == iguanaIR.IG_DEV_GETVERSION:
+        elif code == iguanaIR.IG_DEV_GETVERSION:
             if not iguanaIR.responseIsError(resp):
                 data = iguanaIR.removeData(resp)
                 retval = ord(data[0]) + (ord(data[1]) << 8)
         elif iguanaIR.responseIsError(resp):
             if not quiet:
                 # it is alright to get 0x0 on a reset (TODO: why get anything?)
-                if type != iguanaIR.IG_DEV_RESET or iguanaIR.code(resp) != 0:
+                if code != iguanaIR.IG_DEV_RESET or iguanaIR.code(resp) != 0:
                     message(LOG_ERROR, 'Error response code: 0x%s\n' % iguanaIR.code(resp))
-        elif type == iguanaIR.IG_DEV_GETFEATURES:
+        elif code == iguanaIR.IG_DEV_GETFEATURES:
             retval = ord(iguanaIR.removeData(resp)[0])
-        elif type == iguanaIR.IG_DEV_IDSOFF or \
-             type == iguanaIR.IG_DEV_IDSON or \
-             type == iguanaIR.IG_DEV_SETID:
+        elif code == iguanaIR.IG_DEV_IDSOFF or \
+             code == iguanaIR.IG_DEV_IDSON or \
+             code == iguanaIR.IG_DEV_SETID:
             retval = True
         else:
             retval = iguanaIR.removeData(resp)
@@ -544,7 +544,7 @@ def checkFileExists(path):
         return False
     return True
 
-def findHexFile(type, target = None, mustFind = True):
+def findHexFile(hexType, target = None, mustFind = True):
     latest = None
     latestVersion = None
 
@@ -554,7 +554,7 @@ def findHexFile(type, target = None, mustFind = True):
     if len(testdir) == 2 and testdir[1] == 'library.zip':
         rootdir = testdir[0]
 
-    for hex in glob.glob(os.path.join(rootdir, 'hex', '%s-*.hex' % type)):
+    for hex in glob.glob(os.path.join(rootdir, 'hex', '%s-*.hex' % hexType)):
         # ensure the file really exists
         if checkFileExists(hex):
             version = int(hex.rsplit('-',1)[-1].split('.', 1)[0])
@@ -571,17 +571,17 @@ def findHexFile(type, target = None, mustFind = True):
     else:
         if target is None and options.devel_ok:
             best = glob.glob(os.path.join(rootdir,
-                                          'hex', '%s-0.hex' % type))
+                                          'hex', '%s-0.hex' % hexType))
             if len(best) == 1 and checkFileExists(best[0]):
                 latest = best[0]
-        elif type == 'reflasher':
+        elif hexType == 'reflasher':
             latest = os.path.join(rootdir, 'hex', 'reflasher.hex')
 
     if latest is None and mustFind:
         if target is not None:
-            message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?\n" % (type, target))
+            message(LOG_FATAL, "Failed to find %s version %d\nFailed to find hex files, is the hex directory missing?\n" % (hexType, target))
         else:
-            message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?\n" % (type))
+            message(LOG_FATAL, "Failed to find any %s version\nFailed to find hex files, is the hex directory missing?\n" % (hexType))
 
     return latest
 
@@ -696,11 +696,11 @@ def checkReceiver():
             if signal != 0x25555:
                 count += 1
 
-            type = 'space: '
+            sigType = 'space: '
             if signal & iguanaIR.IG_PULSE_BIT:
-                type = 'pulse: '
+                sigType = 'pulse: '
             message(LOG_INFO,
-                    type + "%d\n" % (signal & iguanaIR.IG_PULSE_MASK))
+                    sigType + "%d\n" % (signal & iguanaIR.IG_PULSE_MASK))
     else:
         deviceTransaction(iguanaIR.IG_DEV_RECVOFF)
         return True
@@ -1032,11 +1032,11 @@ line = options.type
 while True:
     try:
         # check user input
-        type = None
+        devType = None
         while True:
             if line and line[0].lower() in 'ushlpc':
-                type = line[0].lower()
-                default = type.upper()
+                devType = line[0].lower()
+                default = devType.upper()
                 line = ' '
                 break
 
@@ -1057,8 +1057,8 @@ What kind of device is plugged in?
             iguanaIR.close(_conn)
             _conn = None
 
-        if type == 'c':
-            type = ''
+        if devType == 'c':
+            devType = ''
             features = deviceTransaction(iguanaIR.IG_DEV_GETFEATURES,
                                          quiet = True)
             if features == False:
@@ -1066,43 +1066,43 @@ What kind of device is plugged in?
                 default = ''
                 continue
             elif not features:
-                type = 'u'
+                devType = 'u'
             elif features == iguanaIR.IG_HAS_SOCKETS:
-                type = 's'
+                devType = 's'
             elif features == iguanaIR.IG_HAS_BOTH:
-                type = 'h'
+                devType = 'h'
             elif features == iguanaIR.IG_HAS_LEDS:
-                type = 'l'
+                devType = 'l'
             elif features == iguanaIR.IG_SLOT_DEV:
-                type = 'p'
+                devType = 'p'
 
-        if type == 'u':
-            type = 'unenclosed'
+        if devType == 'u':
+            devType = 'unenclosed'
             plugs = ()
             leds = (0x0,)
             gpios = ()
             features = 0
-        elif type == 'p':
-            type = 'pci slot device'
+        elif devType == 'p':
+            devType = 'pci slot device'
             plugs = (0x3F, 0x1, 0x2, 0x4, 0x8, 0x10, 0x20,
                      0x10, 0x8, 0x4, 0x2, 0x1, 0x3F)
             leds = ()
             gpios = (0x80, 0x00, 0x80)
             features = iguanaIR.IG_SLOT_DEV
-        elif type == 's':
-            type = '2 socket'
+        elif devType == 's':
+            devType = '2 socket'
             plugs = (0xF, 0x1, 0x2, 0x4, 0x8, 0x4, 0x2, 0x1, 0xF)
             leds = ()
             gpios = ()
             features = iguanaIR.IG_HAS_SOCKETS
-        elif type == 'h':
-            type = 'hybrid'
+        elif devType == 'h':
+            devType = 'hybrid'
             plugs = (0xC, 0x4, 0x8, 0x4, 0xC)
             leds = (0x1,)
             gpios = ()
             features = iguanaIR.IG_HAS_BOTH
-        elif type == 'l':
-            type = '2 LED'
+        elif devType == 'l':
+            devType = '2 LED'
             plugs = ()
             leds = (0x1, 0x4)
             gpios = ()
@@ -1111,7 +1111,7 @@ What kind of device is plugged in?
             raise Exception('Device type not specified.')
 
         # reflash the device with information about what kind it is
-        message(LOG_NORMAL, 'Writing firmware to "%s" device.\n' % type)
+        message(LOG_NORMAL, 'Writing firmware to "%s" device.\n' % devType)
         if (not options.keep_all and not reflashDevice(features)) or \
            not options.test:
             continue
@@ -1158,7 +1158,7 @@ What kind of device is plugged in?
                 sendTestSignal()
 
         if gpios:
-            if type == 'p':
+            if devType == 'p':
                 message(LOG_NORMAL, "Testing the indicator LED.\n")
             else:
                 message(LOG_NORMAL, "Press ENTER to start gpio tests.\n")
@@ -1169,5 +1169,5 @@ What kind of device is plugged in?
                 time.sleep(0.1)
 
     except KeyboardInterrupt:
-        if type is None or not options.flash_multiple:
+        if devType is None or not options.flash_multiple:
             break
