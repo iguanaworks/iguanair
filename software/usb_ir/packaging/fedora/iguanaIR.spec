@@ -76,8 +76,8 @@ make -C build install DESTDIR=$RPM_BUILD_ROOT
 %pre
 #TODO: stupid to not support the long versions
 # TODO: do NOT specify the uid!
-/usr/sbin/useradd -u 213 -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
-#/usr/sbin/useradd --uid %{uid} --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
+/usr/sbin/useradd -r -M -c "Iguanaworks IR Daemon" -d / -s /sbin/nologin iguanair 2>/dev/null || true
+#/usr/sbin/useradd --system -M --comment "Iguanaworks IR Daemon" --home / --shell /sbin/nologin iguanair 2>/dev/null || true
 
 # must add the service after the files are placed
 %post
