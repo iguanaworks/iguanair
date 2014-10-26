@@ -71,7 +71,8 @@ static versionedType types[] =
     {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
 
     /* device functionality */
-    {0x0101, 0, {IG_DEV_GETFEATURES, CTL_TODEV,  NO_PAYLOAD, true, ANY_PAYLOAD}},
+    {0x0101, 0x203, {IG_DEV_GETFEATURES, CTL_TODEV,  NO_PAYLOAD, true, 1}},
+    {0x0204, 0, {IG_DEV_GETFEATURES, CTL_TODEV,  NO_PAYLOAD, true, 2}},
     {0,      0, {IG_DEV_SEND,        CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0x0309, 0, {IG_DEV_RESEND,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
     {0,      0, {IG_DEV_SENDSIZE,    CTL_TODEV, ANY_PAYLOAD, true, 2}},
