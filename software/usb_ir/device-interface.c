@@ -596,6 +596,10 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             break;
         }
 
+        /* clear the features if any page is written since this could
+           change the returned timings */
+        case IG_DEV_WRITEBLOCK:
+            idev->features = UNKNOWN_FEATURES;
         default:
             msg[CODE_OFFSET] = request->code;
             break;
@@ -651,7 +655,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                     (idev->version & 0xFF00))
                 {
                     unsigned char *delays;
-                    /* for a long time the cycle count has remained stable: */
+                    /* the cycle count WAS stable so default to that count: */
                     uint8_t loopCycles = 5 + 5 + 7 + 6 + 6 + 7 + \
                                          (5 + 7) + (5 + 7) + 5;
                     /* we can use the cycle count provided by the
@@ -727,7 +731,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
                               idev->settings->sendTimeout);
             if (amount < 0)
                 message(LOG_ERROR, "Failed to read control ack: %s\n",
-			translateError(errno));
+                        translateError(errno));
             else if (amount > 0)
             {
                 dataPacket *pos;
