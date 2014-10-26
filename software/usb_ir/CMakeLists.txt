@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
-Set(SOVERSION 0)
-Set(FULLVER 0.3)
+# Make sure to change the value in Changelog as well
+Set(FULLVER 1.1.2)
+string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" SOVERSION ${FULLVER})
 
 #Set(TARGET_ANDROID true)
 
@@ -102,7 +103,7 @@ add_library(iguanaIR SHARED
                      ${BASESRC})
 target_link_libraries(iguanaIR ${BASELIBS})
 set_target_properties(iguanaIR PROPERTIES
-                      VERSION ${SOVERSION} SOVERSION ${FULLVER})
+                      VERSION ${FULLVER} SOVERSION ${SOVERSION})
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
 install(TARGETS iguanaIR
@@ -148,6 +149,13 @@ Else()
       Set(PYTHON_INCLUDE_DIR "${PYTHON_INCLUDE_PATH}")
     EndIf()
 
+    # compute the version info we need to find site-packages
+    # for cmake < 2.8.8 (without PYTHONLIBS_VERSION_STRING) default to 2.7
+    Set(PYMAJMINVER "2.7")
+    If(NOT "${PYTHONLIBS_VERSION_STRING}" STREQUAL "")
+      string(SUBSTRING ${PYTHONLIBS_VERSION_STRING} 0 3 PYMAJMINVER)
+    EndIf()
+
     # pull in the swig macros
     include(${SWIG_USE_FILE})
 
@@ -162,7 +170,7 @@ Else()
     # install the python support
     install(FILES ${CMAKE_BINARY_DIR}/_iguanaIR.so
                   ${CMAKE_BINARY_DIR}/iguanaIR.py
-            DESTINATION ${LIBDIR}/python2.7/site-packages)
+            DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
 
     # install the reflasher script and hex files
     install(DIRECTORY files/python/usr
@@ -184,8 +192,9 @@ Else()
   EndIf()
 EndIf()
 
-# make the config.h based on what we found
+# make the config.h and release.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
+configure_file(release.h.in ${CMAKE_SOURCE_DIR}/release.h)
 
 # install all the other bits and pieces
 install(DIRECTORY files/base/etc files/base/lib files/base/usr
