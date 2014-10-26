@@ -168,8 +168,9 @@ Else()
     EndIf()
 
     # install the python support
-    install(FILES ${CMAKE_BINARY_DIR}/_iguanaIR.so
-                  ${CMAKE_BINARY_DIR}/iguanaIR.py
+    install(TARGETS _iguanaIR
+            DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
+    install(FILES ${CMAKE_BINARY_DIR}/iguanaIR.py
             DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
 
     # install the reflasher script and hex files
