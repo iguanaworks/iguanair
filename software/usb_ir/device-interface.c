@@ -608,6 +608,18 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         if (! translateDevice(msg + CODE_OFFSET, idev->version, false))
             message(LOG_ERROR, "Failed to translate code for device.\n");
 
+        /* compute the outgoing checksum for IG_DEV_WRITEBLOCK */
+        if (msg[CODE_OFFSET] == IG_DEV_WRITEBLOCK &&
+            request->dataLen == 68)
+        {
+            int x;
+            uint32_t chksum = 0;
+            for(x = 4; x < 68; x++)
+                chksum += request->data[x];
+            request->data[2] = (chksum & 0xFF00) >> 8;
+            request->data[3] = chksum & 0xFF;
+        }
+
         /* SEND and PINBURST do not get their data packed into the
            request packet, unlike everything else. */
         if (request->code != IG_DEV_SEND &&
