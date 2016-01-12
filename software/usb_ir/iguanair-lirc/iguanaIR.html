@@ -1,0 +1,18 @@
+<P>
+  This driver supports both receiving and sending (blasting) using
+  the IguanaIR devices from
+  <a href="http://iguanaworks.net/ir">http://iguanaworks.net/ir.</a></p>
+<p>
+  The LIRC driver works on top of the IguanaIR low-level userspace
+  driver which provides a socket interface. It is available from
+  the same source, and also packaged for many distributions
+  including Debian, Fedora and Arch Linux.
+<p>
+  The --device argument to the driver is a socket designator created
+  by the low-level driveri. It defaults to '0' which implies
+  <em>/run/iguanair/0</em>.
+<p>
+  The kernel has built-in support for these devices in the
+  iguanair module. This can be used instead of this driver in
+  many cases. If the userspace driver should be used, the
+  kernel driver must be blacklisted.</p>
