@@ -26,11 +26,12 @@ $(driver).so: $(driver).o
 	gcc --shared -fpic $(LDFLAGS) -o $@ $<
 
 install: $(driver).so
-	install $< $(PLUGINDIR)
-	install $(driver).conf $(CONFIGDIR)
-	install $(driver).html $(PLUGINDOCS)
-	install -m 644 60-blacklist-kernel-iguanair.conf /etc/modprobe.d
-	$(MAKE) update
+	install -D $< $(DESTDIR)$(PLUGINDIR)/$<
+	install -D $(driver).conf $(DESTDIR)$(CONFIGDIR)/$(driver).conf
+	install -D $(driver).html $(DESTDIR)$(PLUGINDOCS)/$(driver).html
+	install -Dm 644 60-blacklist-kernel-iguanair.conf \
+           $(DESTDIR)/etc/modprobe.d/60-blacklist-kernel-iguanair.conf
+##	$(MAKE) update
 
 clean:
 	rm -f *.o *.so
