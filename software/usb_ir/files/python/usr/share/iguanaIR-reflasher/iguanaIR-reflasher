@@ -682,7 +682,14 @@ def reflashDevice(features):
             wrote = True
 
     if id:
-        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id.decode("utf-8"))
+        try:
+            id.decode('utf-8')
+        except UnicodeDecodeError:
+            message(LOG_WARN, "Resetting bad device id\n")
+            id = None
+
+    if id:
+        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
     else:
         message(LOG_NORMAL, "Setting device id to default: iguana\n")
         id = b'iguana\0'
