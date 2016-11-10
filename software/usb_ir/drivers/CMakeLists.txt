@@ -25,7 +25,12 @@ If(COMPILE_NEW)
   add_library(usb SHARED libusb.c ../list.c)
   set_property(TARGET usb
                APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
-  target_link_libraries(usb -lusb-1.0 iguanaIR)
+  if("${HAVE_USB_10_LIBUSB_H}" EQUAL 1)
+      target_link_libraries(usb -lusb-1.0 iguanaIR)
+  else()
+      target_link_libraries(usb -lusb iguanaIR)
+  endif()
+
   install(TARGETS usb
           DESTINATION ${LIBDIR}/iguanaIR)
 EndIf()
