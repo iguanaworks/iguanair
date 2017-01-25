@@ -1,0 +1,15 @@
+#ifndef _VERSION_H_
+#define _VERSION_H_
+
+/*-----------------------------------------------------------------------------------
+Version strings as defined by git and release.h. The version.h file is created
+from version.h.in. To update the release, update version.h.in. BEWARE: all changes
+to version.h are discarded by runCmake.
+-----------------------------------------------------------------------------------*/
+#ifdef _DEBUG
+#define IGUANAIR_VER_STR(a) "DEBUG!: mk@snorken"
+#else
+#define IGUANAIR_VER_STR(a) "Release: IGUANAIR_RELEASE - IGUANAIR_VERSION"
+#endif
+
+#endif
