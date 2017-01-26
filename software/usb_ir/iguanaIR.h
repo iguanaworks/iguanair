@@ -174,7 +174,7 @@ IGUANAIR_API unsigned char iguanaDataToPinSpec(const void *data,
  * below (all default to 0):
  *
  * bit: name:          notes
- *  0   output enable 
+ *  0   output enable
  *  1   pullup enable
  *  2   open drain
  *  3   high sink      only pins 0 and 1, ignored elsewhere

@@ -181,7 +181,7 @@ bool parseNumber(const char *text, unsigned int *value)
                 retval = false;
                 break;
             }
-            else 
+            else
                 *value = (*value << 1) + text[x] - '0';
     }
     else
@@ -450,7 +450,7 @@ static bool handleInternalTask(igtask *cmd, PIPE_PTR conn)
     else if ((cmd->spec->code & INTERNAL_SETCONFIG) == INTERNAL_SETCONFIG)
     {
         setSetting(cmd->spec->bit, cmd->arg, pinState);
-        message(LOG_NORMAL, "%s: success\n", cmd->command);        
+        message(LOG_NORMAL, "%s: success\n", cmd->command);
         retval = true;
     }
     else
@@ -469,7 +469,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
     {
         int result = 0;
         void *data = NULL;
-                
+
         switch(cmd->spec->code)
         {
         case IG_DEV_RECVON:
@@ -604,7 +604,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
                 b[3] = (c & 0x0F) << 4 | 0x0C;
             }
             ((unsigned char*)data)[0] = (unsigned char)(x * 4);
-            
+
             break;
         }
         }

@@ -80,7 +80,7 @@ static int pulsesToIguanaSend(int carrier,
         fprintf(stderr, "%5d ", sendCode[x] & IG_PULSE_MASK);
 #endif
 
-        cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) / 
+        cycles = (uint32_t)((sendCode[x] & IG_PULSE_MASK) /
                             1000000.0 * carrier + 0.5);
         numBytes = (cycles / MAX_DATA_BYTE) + 1;
         cycles %= MAX_DATA_BYTE;

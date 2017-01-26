@@ -57,7 +57,7 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	add_subdirectory(win32/argp-standalone-1.3)
 	Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
     Set(PYTHON_INCLUDE_DIR "C:/Python27/include")
-	
+
 	List(APPEND BASELIBS ws2_32)
     Set(PIPESRC win32/pipes.c)
 	Set(DAEMONSRC win32/service.c)
@@ -112,7 +112,7 @@ install(TARGETS iguanaIR
 # build the service/server that controls hardware
 #+LISTENER=unixlistener.o
 #+#LISTENER=tcplistener.o
-#+igdaemon: daemon.o $(LISTENER) 
+#+igdaemon: daemon.o $(LISTENER)
 add_executable(igdaemon ${DAEMONSRC}
                server.c client-interface.c device-interface.c driver.c
                list.c protocol-versions.c ${PIPESRC} dataPackets.c ${BASESRC})

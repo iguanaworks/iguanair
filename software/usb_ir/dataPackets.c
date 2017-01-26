@@ -65,7 +65,7 @@ bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
 
     if (result == 0)
         errno = ETIMEDOUT;
-    
+
     return retval;
 }
 

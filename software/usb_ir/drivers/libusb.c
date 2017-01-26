@@ -2,7 +2,7 @@
  ** libusb.c ****************************************************************
  ****************************************************************************
  *
- * Lowest level interface to the USB devices.  
+ * Lowest level interface to the USB devices.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -433,7 +433,7 @@ static bool claimDevice(struct libusb_device *dev, usbId *id, usbDeviceList *lis
         }
         while(errno == EBUSY);
     }
-    
+
     /* grab error if there was one */
     if (!success)
     {
@@ -624,11 +624,11 @@ static int clearHalt(deviceInfo *info, unsigned int ep)
     switch (ep)
     {
     case EP_IN:
-        return libusb_clear_halt(handle->device, 
+        return libusb_clear_halt(handle->device,
                                  handle->epIn->bEndpointAddress);
 
     case EP_OUT:
-        return libusb_clear_halt(handle->device, 
+        return libusb_clear_halt(handle->device,
                                  handle->epOut->bEndpointAddress);
     }
     return -1;
