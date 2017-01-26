@@ -3,7 +3,15 @@ project(IguanaIR C)
 
 # Make sure to change the value in Changelog as well
 Set(FULLVER 1.1.2)
-string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" SOVERSION ${FULLVER})
+
+#
+#  SONAME links,  not related to the package version.
+#
+Set(SO_REV 0)
+SET(SO_CURRENT 0)
+Set(SO_AGE 3)
+
+Set(SOVERSION 0)
 
 #Set(TARGET_ANDROID true)
 
@@ -106,6 +114,10 @@ set_target_properties(iguanaIR PROPERTIES
                       VERSION ${FULLVER} SOVERSION ${SOVERSION})
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
+set_property(TARGET iguanaIR
+             PROPERTY VERSION "${SO_CURRENT}.${SO_AGE}.${SO_REV}")
+set_property(TARGET iguanaIR
+             PROPERTY SOVERSION ${SOVERSION})
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
 
