@@ -9,7 +9,7 @@ to version.h are discarded by runCmake.
 #ifdef _DEBUG
 #define IGUANAIR_VER_STR(a) "DEBUG!: mk@snorken"
 #else
-#define IGUANAIR_VER_STR(a) "Release: IGUANAIR_RELEASE - IGUANAIR_VERSION"
+#define IGUANAIR_VER_STR(a) "Release: ${FULLVER} - ${GIT_VERSION}"
 #endif
 
 #endif

@@ -205,9 +205,27 @@ Else()
   EndIf()
 EndIf()
 
-# make the config.h and release.h based on what we found
+
+# Create a version string based on git info: hash, modififed
+# (adds :M if uncommited stuff) and a timestamp.
+execute_process(COMMAND git log -1 --format=format:%h
+    OUTPUT_VARIABLE GIT_HASH)
+execute_process(COMMAND  git diff-index --quiet HEAD --
+    RESULT_VARIABLE GIT_STATUS)
+execute_process(COMMAND git log -1 --format=format:%ci
+    OUTPUT_VARIABLE GIT_WHEN)
+string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
+if (${GIT_STATUS} EQUAL 0)
+    Set(GIT_MOD "")
+else()
+    set(GIT_MOD ":M")
+endif()
+set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
+
+# Make config.h, release.h and version.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 configure_file(release.h.in ${CMAKE_SOURCE_DIR}/release.h)
+configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
 
 # install all the other bits and pieces
 install(DIRECTORY files/base/etc files/base/lib files/base/usr
@@ -228,23 +246,6 @@ install(FILES iguanaIR.h
 #        launchctl load -w /Library/LaunchDaemons/com.iguana.igdaemon.plist
 #endif
 ##########################################
-
-# bring svn version information into the library
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  # what script to run to make version.h
-  Set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/utils/make_version.sh)
-
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-  # what script to run to make version.h
-  Set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/utils/make_version.bat)
-
-EndIf()
-
-# force a pre-build step to make the version.h
-add_custom_target(pre-build
-                  COMMAND ${VERSION_SCRIPT}
-                  DEPENDS ${VERSION_SCRIPT})
-add_dependencies(iguanaIR pre-build)
 
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
