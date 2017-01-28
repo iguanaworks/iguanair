@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# If iguanaIR runs, signal HUP to start a rescan. If not started, or
+# signal fails, restart daemon.
+
+if systemctl --quiet is-active iguanaIR.service; then
+    pid=$( systemctl --property=MainPID show iguanaIR.service ) || \
+        pid=''
+    pid=${pid##*=}
+    [ -n "$pid" ] && kill -HUP $pid &>/dev/null && exit 0
+fi
+systemctl show --property=UnitFileState iguanaIR.service |
+    grep -q enabled && \
+        systemctl restart iguanaIR.service

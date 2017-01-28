@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
+find_package(PkgConfig REQUIRED)
+
 # Make sure to change the value in Changelog as well
 Set(FULLVER 1.1.2)
 
@@ -74,6 +76,10 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+
+    # Checking if systemd is around...
+    pkg_check_modules(SYSTEMD systemd)
+
     Set(PIPESRC pipes.c)
 	Set(DAEMONSRC daemon.c)
     If(NOT TARGET_ANDROID)
@@ -228,15 +234,18 @@ configure_file(release.h.in ${CMAKE_SOURCE_DIR}/release.h)
 configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
 
 # install all the other bits and pieces
-install(DIRECTORY files/base/etc files/base/lib files/base/usr
-        DESTINATION /
-        PATTERN ".svn" EXCLUDE)
-install(PROGRAMS files/base/etc/init.d/iguanaIR
-        DESTINATION /etc/init.d)
-install(PROGRAMS files/base/usr/bin/iguanaIR-rescan
-        DESTINATION /usr/bin)
+install(DIRECTORY files/base/etc
+        DESTINATION /)
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
+if (${SYSTEMD_FOUND} EQUAL 1)
+    install(DIRECTORY files/systemd/usr
+	    DESTINATION /)
+else()
+    install(DIRECTORY files/sysV/usr files/sysV/etc
+	    DESTINATION /)
+endif()
+
 
 ##########################################
 #install: all
