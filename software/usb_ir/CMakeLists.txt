@@ -15,6 +15,18 @@ Set(SO_AGE 3)
 
 Set(SOVERSION 0)
 
+# Source dist setup
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${FULLVER}")
+set(CPACK_SOURCE_IGNORE_FILES
+    "/build/;/.git/;~$;${CPACK_SOURCE_IGNORE_FILES}")
+set(CPACK_SOURCE_GENERATOR TGZ)
+include(CPack)
+add_custom_target(check_git
+                  COMMAND  echo "Checking git status:"
+                  COMMAND git status -s)
+add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source
+                  DEPENDS check_git)
+
 #Set(TARGET_ANDROID true)
 
 If(TARGET_ANDROID)
@@ -220,18 +232,23 @@ execute_process(COMMAND  git diff-index --quiet HEAD --
     RESULT_VARIABLE GIT_STATUS)
 execute_process(COMMAND git log -1 --format=format:%ci
     OUTPUT_VARIABLE GIT_WHEN)
-string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
 if (${GIT_STATUS} EQUAL 0)
     Set(GIT_MOD "")
 else()
     set(GIT_MOD ":M")
 endif()
-set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
 
 # Make config.h, release.h and version.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 configure_file(release.h.in ${CMAKE_SOURCE_DIR}/release.h)
-configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+if (NOT "x_${GIT_HASH}" STREQUAL "x_")
+    set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
+    string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
+    configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+elseif (NOT EXISTS ${CMAKE_SOURCE_DIR}/version.h)
+    set(GIT_VERSION "(no git data available)")
+    configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+endif()
 
 # install all the other bits and pieces
 install(DIRECTORY files/base/etc
