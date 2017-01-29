@@ -21,9 +21,9 @@ set(CPACK_SOURCE_IGNORE_FILES
     "/build/;/.git/;~$;${CPACK_SOURCE_IGNORE_FILES}")
 set(CPACK_SOURCE_GENERATOR TGZ)
 include(CPack)
-add_custom_target(check_git
-                  COMMAND  echo "Checking git status:"
-                  COMMAND git status -s)
+
+add_custom_target(check_git ${CMAKE_COMMAND}
+                  -P ${CMAKE_SOURCE_DIR}/check_git_status.cmake)
 add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source
                   DEPENDS check_git)
 
