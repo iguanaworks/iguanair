@@ -17,7 +17,7 @@ driver          = iguanair
 
 all:  $(driver).so
 
-LDFLAGS         += -liguanaIR -L../usb_ir/build
+LDFLAGS         += -lusb -liguanaIR -L../usb_ir/build
 CFLAGS          += -I../usb_ir
 MODPROBE_CONF   = 60-blacklist-kernel-iguanair.conf
 
