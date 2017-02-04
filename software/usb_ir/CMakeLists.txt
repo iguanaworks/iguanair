@@ -245,9 +245,11 @@ install(FILES iguanaIR.h
         DESTINATION /usr/include)
 if (${SYSTEMD_FOUND} EQUAL 1)
     install(DIRECTORY files/systemd/usr
+	    USE_SOURCE_PERMISSIONS
 	    DESTINATION /)
 else()
     install(DIRECTORY files/sysV/usr files/sysV/etc
+	    USE_SOURCE_PERMISSIONS
 	    DESTINATION /)
 endif()
 
