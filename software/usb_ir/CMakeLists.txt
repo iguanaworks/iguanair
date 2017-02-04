@@ -239,7 +239,7 @@ elseif (NOT EXISTS ${CMAKE_SOURCE_DIR}/version.h)
 endif()
 
 # install all the other bits and pieces
-install(DIRECTORY files/base/etc
+install(DIRECTORY files/base/etc files/base/usr
         DESTINATION /)
 install(FILES iguanaIR.h
         DESTINATION /usr/include)

@@ -1,0 +1,83 @@
+.TH IGDAEMON "8" "February 2017" "igdaemon" "System Menager's Manual"
+.SH NAME
+igdaemon \- low-level userspace driver for iguanaIR devices
+.SH SYNOPSIS
+.B igdaemon
+[\fI\,OPTION\/\fR...]
+.SH DESCRIPTION
+This daemon acts as a user\-space driver controlling access to IguanaIR
+devices. On Linux, it's an alternative to the kernel built-in iguanaIR
+support.
+.SH OPTIONS
+.TP
+\fB\-\-auto\-unbind\fR
+Attempt to unbind busy devices.  Use with
+caution.
+.TP
+\fB\-\-devices\fR
+Implies \fB\-\-no\-daemon\fR.  List information about
+connected devices.
+.TP
+\fB\-d\fR, \fB\-\-driver\fR=\fI\,DRIVER\/\fR
+Use this driver in preference to others.  This
+command can be used multiple times.
+.TP
+\fB\-\-driver\-dir\fR=\fI\,DIR\/\fR
+Specify the location of driver objects.
+.TP
+\fB\-l\fR, \fB\-\-log\-file\fR=\fI\,FILE\/\fR
+Specify a log file (defaults to "\-").
+.TP
+\fB\-\-log\-level\fR=\fI\,NUM\/\fR
+Set the verbosity directly.
+.TP
+\fB\-n\fR, \fB\-\-no\-daemon\fR
+Do not fork into the background.
+.TP
+\fB\-\-no\-auto\-rescan\fR
+Do not automatically rescan the USB bus after
+device disconnect.
+.TP
+\fB\-\-no\-ids\fR
+Do not query the device for its label.
+.TP
+\fB\-\-no\-labels\fR
+DEPRECATED: same as \fB\-\-no\-ids\fR
+.TP
+\fB\-\-only\-preferred\fR
+Use only drivers specified by the \fB\-\-driver\fR option.
+.TP
+\fB\-p\fR, \fB\-\-pid\-file\fR=\fI\,FILE\/\fR
+Specify where to write the pid of the daemon
+process.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Reduce the verbosity.
+.TP
+\fB\-\-receive\-timeout\fR=\fI\,MSTIME\/\fR
+Specify the device receive timeout.
+.TP
+\fB\-\-send\-timeout\fR=\fI\,MSTIME\/\fR
+Specify the device send timeout.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Increase the verbosity.
+.TP
+\-?, \fB\-\-help\fR
+Give this help list
+.TP
+\fB\-\-usage\fR
+Give a short usage message
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print the build and version numbers.
+.PP
+Mandatory or optional arguments to long options are also mandatory or optional
+for any corresponding short options.
+.SH NOTES
+On linux, \fBigdaemon\fR conflicts with the kernel \fIiguanair\fR module. Thus,
+this kernel module must be blacklisted when using \fBigdaemon\fR.
+.SH "SEE ALSO"
+.B igclient(1)
+.br
+.B lircd(8)

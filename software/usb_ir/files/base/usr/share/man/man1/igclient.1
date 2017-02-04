@@ -1,0 +1,149 @@
+.TH IGCLIENT "1" "February 2017" "igclient" "User Commands"
+.SH NAME
+igclient \- manipulate igdaemon-controlled iguanaIR devices
+.SH SYNOPSIS
+.B igclient
+[\fI\,OPTION\/\fR...]
+.SH DESCRIPTION
+This program is an interface to and example of the IguanaIR API
+.SH OPTIONS
+.TP
+\fB\-d\fR, \fB\-\-device\fR=\fI\,DEVICE\/\fR
+Specify the target device index or id.
+.TP
+\fB\-\-encoded\-size\fR=\fI\,FILE\/\fR
+Check the encodes size of the pulses and spaces
+from a file.
+.TP
+\fB\-\-execute\fR
+Execute code starting at address 0x1fc0 on the
+device.
+.TP
+\fB\-\-get\-buffer\-size\fR
+Check onboard RAM send/receive buffer size.
+.TP
+\fB\-\-get\-carrier\fR
+Check the carrier frequency for transmits.
+.TP
+\fB\-\-get\-channels\fR
+Check which channels are used during transmits.
+.TP
+\fB\-\-get\-features\fR
+Return the features associated w/ this device.
+.TP
+\fB\-\-get\-high\-sink\-pins\fR
+Check which pins are set to be high sinks.
+.TP
+\fB\-\-get\-id\fR
+Fetch the unique id from the USB device.
+.TP
+\fB\-\-get\-location\fR
+Fetch the bus and device indices for the USB
+device.
+.TP
+\fB\-\-get\-open\-drain\-pins\fR
+Check which pins are set to be open drains.
+.TP
+\fB\-\-get\-output\-pins\fR
+Check which pins are set to be outputs.
+.TP
+\fB\-\-get\-pin\-config\fR
+Retrieve the internal pin state.
+.TP
+\fB\-\-get\-pins\fR
+Get the pin values.
+.TP
+\fB\-\-get\-pullup\-pins\fR
+Check which pins are set to be pullups.
+.TP
+\fB\-\-get\-threshold\-pins\fR
+Check which pins are set to be thresholds.
+.TP
+\fB\-\-get\-version\fR
+Return the version of the device firmware.
+.TP
+\fB\-i\fR, \fB\-\-interactive\fR
+Use the client interactively.
+.TP
+\fB\-l\fR, \fB\-\-log\-file\fR=\fI\,FILE\/\fR
+Specify a log file (defaults to "\-").
+.TP
+\fB\-\-lcd\-text\fR=\fI\,STR\/\fR
+Send bulk transfers of pin settings to display STR
+on an LCD.
+.TP
+\fB\-\-log\-level\fR=\fI\,NUM\/\fR
+Set the verbosity directly.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Reduce the verbosity.
+.TP
+\fB\-\-receiver\-off\fR
+Disable the receiver on the usb device.
+.TP
+\fB\-\-receiver\-on\fR
+Enable the receiver on the usb device.
+.TP
+\fB\-\-repeater\-on\fR
+Put the device into a mode that repeats signals.
+.TP
+\fB\-\-resend\fR=\fI\,MS_DELAY\/\fR
+Resend the contents of the onboard buffer after
+MS_DELAY.
+.TP
+\fB\-\-reset\fR
+Reset the USB device.
+.TP
+\fB\-\-send\fR=\fI\,FILE\/\fR
+Send the pulses and spaces from a file.
+.TP
+\fB\-\-set\-carrier\fR=\fI\,HZ\/\fR
+Set the carrier frequency for transmits.
+.TP
+\fB\-\-set\-channels\fR=\fI\,CHANNELS\/\fR
+Set which channels are used during transmits.
+.TP
+\fB\-\-set\-high\-sink\-pins\fR=\fI\,PINS\/\fR
+Set which pins should be high sinks.
+.TP
+\fB\-\-set\-id\fR=\fI\,STR\/\fR
+Set the unique id from the USB device.
+.TP
+\fB\-\-set\-open\-drain\-pins\fR=\fI\,PINS\/\fR
+Set which pins should be open drains.
+.HP
+\fB\-\-set\-output\-pins\fR=\fI\,PINS\/\fR Set which pins should be outputs.
+.TP
+\fB\-\-set\-pin\-config\fR
+Store the internal pin state.
+.TP
+\fB\-\-set\-pins\fR=\fI\,PINS\/\fR
+Set the pin values.
+.HP
+\fB\-\-set\-pullup\-pins\fR=\fI\,PINS\/\fR Set which pins should be pullups.
+.TP
+\fB\-\-set\-threshold\-pins\fR=\fI\,PINS\/\fR
+Set which pins should be thresholds.
+.TP
+\fB\-\-sleep\fR=\fI\,NUM\/\fR
+Sleep for NUM seconds.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Increase the verbosity.
+.TP
+\fB\-\-write\-block\fR=\fI\,FILE\/\fR
+Write the block specified in the file.
+.TP
+\-?, \fB\-\-help\fR
+Give this help list
+.TP
+\fB\-\-usage\fR
+Give a short usage message
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print the build and version numbers.
+.PP
+Mandatory or optional arguments to long options are also mandatory or optional
+for any corresponding short options.
+.SH "SEE ALSO"
+.B igdaemon(8)
