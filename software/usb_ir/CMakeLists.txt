@@ -77,11 +77,30 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 
-    # Checking if systemd is around...
+    # Checking if systemd/udev is around...
+    pkg_check_modules(UDEV udev)
+    if ("${UDEV_FOUND}" EQUAL 1)
+        execute_process(COMMAND pkg-config --variable udevdir udev
+            OUTPUT_VARIABLE UDEVDIR)
+        string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
+        string(STRIP UDEVDIR ${UDEVDIR})
+    else()
+        set(UDEVDIR "/lib/udev")
+    endif()
     pkg_check_modules(SYSTEMD systemd)
+    if ("${SYSTEMD_FOUND}" EQUAL 1)
+        execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
+        OUTPUT_VARIABLE SYSTEMD_UNITDIR)
+        string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+        string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+        execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
+        OUTPUT_VARIABLE TMPFILESDIR)
+        string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
+        string(STRIP TMPFILESDIR ${TMPFILESDIR})
+    endif()
 
     Set(PIPESRC pipes.c)
-	Set(DAEMONSRC daemon.c)
+        Set(DAEMONSRC daemon.c)
     If(NOT TARGET_ANDROID)
       Set(DAEMONLIBS pthread dl)
     EndIf()
@@ -215,11 +234,14 @@ EndIf()
 # Create a version string based on git info: hash, modififed
 # (adds :M if uncommited stuff) and a timestamp.
 execute_process(COMMAND git log -1 --format=format:%h
-    OUTPUT_VARIABLE GIT_HASH)
+    OUTPUT_VARIABLE GIT_HASH
+    ERROR_QUIET)
 execute_process(COMMAND  git diff-index --quiet HEAD --
-    RESULT_VARIABLE GIT_STATUS)
+    RESULT_VARIABLE GIT_STATUS
+    ERROR_QUIET)
 execute_process(COMMAND git log -1 --format=format:%ci
-    OUTPUT_VARIABLE GIT_WHEN)
+    OUTPUT_VARIABLE GIT_WHEN
+    ERROR_QUIET)
 if (${GIT_STATUS} EQUAL 0)
     Set(GIT_MOD "")
 else()
@@ -240,17 +262,26 @@ endif()
 
 # install all the other bits and pieces
 install(DIRECTORY files/base/etc files/base/usr
+        USE_SOURCE_PERMISSIONS
         DESTINATION /)
+install(DIRECTORY files/base/lib/udev/rules.d
+        DESTINATION ${UDEVDIR})
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
-if (${SYSTEMD_FOUND} EQUAL 1)
+if ("${SYSTEMD_FOUND}" EQUAL 1)
+    install(FILES files/systemd/lib/systemd/system/iguanaIR.service
+            DESTINATION ${SYSTEMD_UNITDIR})
+    install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
+            DESTINATION ${UDEVDIR}/rules.d)
+    install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
+            DESTINATION ${TMPFILESDIR})
     install(DIRECTORY files/systemd/usr
-	    USE_SOURCE_PERMISSIONS
-	    DESTINATION /)
+            USE_SOURCE_PERMISSIONS
+            DESTINATION /)
 else()
     install(DIRECTORY files/sysV/usr files/sysV/etc
-	    USE_SOURCE_PERMISSIONS
-	    DESTINATION /)
+            USE_SOURCE_PERMISSIONS
+            DESTINATION /)
 endif()
 
 
@@ -269,5 +300,5 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   add_custom_target(BuildReleasePackage
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/py2exe-setup.py py2exe
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
-					DEPENDS igdaemon igclient usbpre1 argp _iguanaIR)
+                    DEPENDS igdaemon igclient usbpre1 argp _iguanaIR)
 EndIf()
