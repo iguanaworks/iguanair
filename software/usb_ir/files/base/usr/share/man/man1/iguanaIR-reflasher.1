@@ -1,0 +1,59 @@
+.TH IGUANAIR-REFLASHER "1" "February 2017" "iguanaIR-reflasher" "User Commands"
+.SH NAME
+iguanaIR-reflasher \- update firmware in IguanaWorks IR devices.
+.SH SYNOPSIS
+.B iguanaIR-reflasher
+[\fI\,options\/\fR]
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-blank\-pages\fR
+Write blank pages around the code pages.
+.TP
+\fB\-\-dry\-run\fR
+Do not write any "dangerous" pages.
+.TP
+\fB\-\-force\fR
+Write the firmware no matter what.
+.TP
+\fB\-\-no\-ids\fR
+Skip the step of checking the id.
+.TP
+\fB\-\-flash\-multiple\fR
+Loop through flashing multiple devices.
+.TP
+\fB\-\-go\fR
+Do not wait for the user to read the warnings.
+.TP
+\fB\-t\fR TYPE, \fB\-\-type\fR=\fI\,TYPE\/\fR
+Specify the device type: u,l,h,s,p.
+.TP
+\fB\-\-version\fR=\fI\,0xVERSION\/\fR
+Specify a hexadecimal target version.
+.TP
+\fB\-\-body\fR=\fI\,FILE\/\fR
+Specify the file to read the body from.
+.TP
+\fB\-\-keep\-loader\fR
+Keep the loader currently flashed loader.
+.TP
+\fB\-\-loader\fR=\fI\,FILE\/\fR
+Specify the file to read the loader from.
+.TP
+\fB\-\-old\-firmware\fR=\fI\,FILE\/\fR
+Specify a file of old (monolithic) firmware.
+.TP
+\fB\-l\fR FILE, \fB\-\-log\-file\fR=\fI\,FILE\/\fR
+Specify a log to receive all messages.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Decrease verbosity.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Increase verbosity.
+.SH "SEE ALSO"
+.B igdaemon(8)
+.br
+.B igclient(1)
