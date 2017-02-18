@@ -1,7 +1,4 @@
-build
-dist
-release.h
-version.h
-config.h
-*.gz
-
+/build
+/release.h
+/version.h
+/config.h
