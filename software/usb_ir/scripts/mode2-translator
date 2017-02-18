@@ -85,11 +85,19 @@ def parseOptions():
                       help = 'Connect to a device and listen for signals.')
     parser.add_option('-d', '--device',
                       metavar = 'ID', default = '0',
-                      help = 'Only useful with the --live option to connect to a specific device.')
+                      help = 'Only useful with the --connect option to connect to a specific device.')
     parser.add_option('--no-raw-signals',
                       action = 'store_false',
                       default = True, dest = 'raw_signals',
                       help = 'Do not print the signals as they are collected.')
+    parser.add_option('--clean',
+                      action = 'store_true',
+                      default = False,
+                      help = 'Attempt to clean up the signal before printing for better compression.  Mainly useful for long space encoded signals from air conditioners.')
+    parser.add_option('--cleaner',
+                      action = 'store_true',
+                      default = False,
+                      help = 'Clean up the spaces as well as the pulses even though that does not actually help compression.')
     parser.add_option('--keep-one',
                       action = 'store_true', dest = 'one',
                       help = 'Just print a single signal in --send format.')
@@ -165,7 +173,8 @@ def parseSignals(input):
     for line in input:
         line = line.strip()
         if re.match('received \d+ signal\(s\):', line) or \
-           line == 'receiver on: success':
+           line == 'receiver on: success' or \
+           not line:
             continue
 
         (stype, length) = line.split(': ')
@@ -190,6 +199,87 @@ def parseSignals(input):
 
     return signals
 
+def closeEnough(a, b):
+    if float(abs(a - b)) / (a + b) < 0.1:
+        return True
+    return False
+
+def cleanSignals(lengths):
+    # count the occurances of each length
+    bins = {}
+    for length in lengths:
+        if length not in bins:
+            bins[length] = 0
+        bins[length] += 1
+
+    # find peaks in the histogram
+    peaks = []
+    prevLen = None
+    rising = True
+    for length in sorted(bins):
+        if prevLen is not None:
+            if rising:
+                if bins[length] < bins[prevLen]:
+                    peaks.append(prevLen)
+                    rising = False
+            elif bins[length] > bins[prevLen]:
+                rising = True
+        prevLen = length
+#        print length, bins[length]
+
+#    print peaks
+
+    # see if any peaks are too close together
+    while True:
+        for pos in range(1, len(peaks)):
+            # check for a difference of < 20%
+            if closeEnough(peaks[pos] , peaks[pos - 1]):
+                # pick the more common peak and discard the other
+                if bins[peaks[pos]] < bins[peaks[pos - 1]]:
+                    peaks.remove(peaks[pos])
+                else:
+                    peaks.remove(peaks[pos - 1])
+                break
+        else:
+            # once we stop merging break out
+            break
+
+    # see what lengths will end up replaced by what peaks
+    map = {}
+    for length in sorted(bins):
+        closest = None
+        for peak in peaks:
+            if closest is None or abs(peak - length) < abs(closest - length):
+                closest = peak
+
+        if closeEnough(length, closest):
+            if closest not in map:
+                map[closest] = []
+            map[closest].append(length)
+
+    # find the median value length being merged to use as the replacement
+    finalMap = {}
+    for peak in map:
+        medianList = []
+        for length in map[peak]:
+            medianList += [length] * bins[length]
+        median = medianList[len(medianList) / 2]
+#        print peak, map[peak], medianList, median
+
+        # create the final replacement map
+        for length in map[peak]:
+            finalMap[length] = median
+
+    # create a new series of cleaned lengths
+    final = []
+    for length in lengths:
+        if length in finalMap:
+            final.append(finalMap[length])
+        else:
+            final.append(length)
+            
+    return final
+
 parseOptions()
 # open the log file if specified
 if options.logFile != None:
@@ -207,10 +297,22 @@ else:
 
 signals = parseSignals(input)
 
-# some people just want the first signal in --send format
+# some people just want the first signal in --send format, others get 10
 if options.one:
     signals[1:] = []
 signals[10:] = []
+
+# clean the signal if requested
+if options.clean or options.cleaner:
+    # split the pulses from the spaces and clean each if requested
+    for pos in range(len(signals)):
+        signal = signals[pos]
+
+        signal[::2] = cleanSignals(signal[::2])
+        if options.cleaner:
+            signal[1::2] = cleanSignals(signal[1::2])
+
+        signals[pos] = signal
 
 # find the max length signal
 length = 0
