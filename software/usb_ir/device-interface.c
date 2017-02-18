@@ -140,7 +140,7 @@ static void queueDataPacket(iguanaDev *idev, dataPacket *current, bool fromDev)
     {
         insertItem(&idev->recvList, NULL, (itemHeader*)current);
         if (! notify(idev->readerPipe[WRITE]))
-            message(LOG_ERROR, "Failed to signal primary thread.\n");        
+            message(LOG_ERROR, "Failed to signal primary thread.\n");
     }
     else
     {
@@ -544,7 +544,7 @@ bool oldPinConfig(iguanaDev *idev,       /* required */
             }
         }
     }
-    
+
     if (code == IG_DEV_SETPINCONFIG)
         request->data = data;
     if (x == 2)
@@ -562,7 +562,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
     /* For old devices setting pin configs actually becomes 2
        requests, awkward, but the way it has to be to support old
        firmware. */
-    if (idev->version <= 3 && 
+    if (idev->version <= 3 &&
         (request->code == IG_DEV_SETPINCONFIG ||
          request->code == IG_DEV_GETPINCONFIG))
         return oldPinConfig(idev, request, response);
@@ -584,7 +584,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         case IG_DEV_GETID:
             msg[CODE_OFFSET] = IG_DEV_EXECUTE;
             break;
-            
+
         case IG_DEV_SETID:
         {
             unsigned char *block;
@@ -968,7 +968,7 @@ void handleIncomingPackets(iguanaDev *idev)
                         /* NOTE: last byte is the fill level */
                         current->dataLen = length - 1;
                         dataStart = buffer;
- 
+
                         message(LOG_DEBUG2,
                                 "Data without ctl header assuming IG_DEV_RECV.\n");
 /* TODO: DEBUG: sleep here to test overflow on the device

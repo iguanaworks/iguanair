@@ -6,7 +6,7 @@
       Mac OS X.  It spawns a thread and waits for notification that an
       iguanaIR device has been plugged in at which point it raises a SIGHUP
       so that the standard igdaemon hot plug in processing will take place.
-      
+
     @note
       Without this support the reflasher will not work as the reset operation
       during programming results in a disconnect and a reconnect on Mac OS X.
@@ -66,7 +66,7 @@ int daemon_osx_support(const usbId *ids)
 static void arm_notification(io_iterator_t iterator)
 {
   io_object_t object;
-  
+
   while ((object = IOIteratorNext(iterator)) != 0) {
     IOObjectRelease(object);
   }

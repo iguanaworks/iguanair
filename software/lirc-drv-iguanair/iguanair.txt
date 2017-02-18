@@ -1,0 +1,33 @@
+IguanaIR LIRC driver README
+===========================
+
+This driver used to be part of the LIRC sources. In order to improve
+the maintenance it has been moved to Iguanaworks, Inc which is the
+primary hardware and software vendor.
+
+From 0.9.4 the driver is available at: https://github.com/iguanaworks/iguanair-lirc
+
+As a transition step the same files are available here during the 0.9.4
+cycle. These files are a complete lirc driver for iguanair. Building requires
+lirc >= 0.9.4. If you are using a packaged version you probably need to
+have the -devel and -doc packages installed. Note that the downstream
+sources at https://github.com/iguanaworks/iguanair-lirc  are preferred and
+will be the only option in next release.
+
+To build and install the driver together with the support files:
+
+    $ make
+    $ sudo make install
+
+Verifying the driver after make install:
+
+     $ lirc-lsplugins -q iguanair
+     iguanair            -as-  /usr/lib64/lirc/plugins/iguanair.so
+
+Finishing the docs installation is typically done as root:
+
+     $ cd $(pkg-config --variable=plugindocs lirc-driver); sudo make
+
+This completes some files under /var/lib/lirc which are included
+in the main manual docs which can be viewed off-line. The path varies, but
+in a packaged version typically /usr/share/doc/lirc/lirc.org/html/index.html.

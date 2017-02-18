@@ -1,0 +1,7 @@
+build
+dist
+release.h
+version.h
+config.h
+*.gz
+

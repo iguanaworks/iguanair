@@ -104,13 +104,13 @@ deviceList* initServer()
 #else
   #if __LP64__
         if (access("/usr/lib64", F_OK) == 0)
-            srvSettings.driverDir = "/usr/lib64/iguanaIR"; 
-        else 
+            srvSettings.driverDir = "/usr/lib64/iguanaIR";
+        else
   #endif
-            srvSettings.driverDir = "/usr/lib/iguanaIR"; 
+            srvSettings.driverDir = "/usr/lib/iguanaIR";
 #endif
     }
-    message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir); 
+    message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir);
 
     /* initialize the commPipe, driver, and device list */
     if (! createPipePair(srvSettings.commPipe))

@@ -1,9 +1,19 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
+find_package(PkgConfig REQUIRED)
+
 # Make sure to change the value in Changelog as well
 Set(FULLVER 1.1.2)
-string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" SOVERSION ${FULLVER})
+
+#
+#  SONAME links,  not related to the package version.
+#
+Set(SO_REV 0)
+SET(SO_CURRENT 0)
+Set(SO_AGE 3)
+
+Set(SOVERSION 0)
 
 #Set(TARGET_ANDROID true)
 
@@ -57,7 +67,7 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	add_subdirectory(win32/argp-standalone-1.3)
 	Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
     Set(PYTHON_INCLUDE_DIR "C:/Python27/include")
-	
+
 	List(APPEND BASELIBS ws2_32)
     Set(PIPESRC win32/pipes.c)
 	Set(DAEMONSRC win32/service.c)
@@ -66,8 +76,31 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+
+    # Checking if systemd/udev is around...
+    pkg_check_modules(UDEV udev)
+    if ("${UDEV_FOUND}" EQUAL 1)
+        execute_process(COMMAND pkg-config --variable udevdir udev
+            OUTPUT_VARIABLE UDEVDIR)
+        string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
+        string(STRIP UDEVDIR ${UDEVDIR})
+    else()
+        set(UDEVDIR "/lib/udev")
+    endif()
+    pkg_check_modules(SYSTEMD systemd)
+    if ("${SYSTEMD_FOUND}" EQUAL 1)
+        execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
+        OUTPUT_VARIABLE SYSTEMD_UNITDIR)
+        string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+        string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+        execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
+        OUTPUT_VARIABLE TMPFILESDIR)
+        string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
+        string(STRIP TMPFILESDIR ${TMPFILESDIR})
+    endif()
+
     Set(PIPESRC pipes.c)
-	Set(DAEMONSRC daemon.c)
+        Set(DAEMONSRC daemon.c)
     If(NOT TARGET_ANDROID)
       Set(DAEMONLIBS pthread dl)
     EndIf()
@@ -106,13 +139,17 @@ set_target_properties(iguanaIR PROPERTIES
                       VERSION ${FULLVER} SOVERSION ${SOVERSION})
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
+set_property(TARGET iguanaIR
+             PROPERTY VERSION "${SO_CURRENT}.${SO_AGE}.${SO_REV}")
+set_property(TARGET iguanaIR
+             PROPERTY SOVERSION ${SOVERSION})
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
 
 # build the service/server that controls hardware
 #+LISTENER=unixlistener.o
 #+#LISTENER=tcplistener.o
-#+igdaemon: daemon.o $(LISTENER) 
+#+igdaemon: daemon.o $(LISTENER)
 add_executable(igdaemon ${DAEMONSRC}
                server.c client-interface.c device-interface.c driver.c
                list.c protocol-versions.c ${PIPESRC} dataPackets.c ${BASESRC})
@@ -193,20 +230,60 @@ Else()
   EndIf()
 EndIf()
 
-# make the config.h and release.h based on what we found
+
+# Create a version string based on git info: hash, modififed
+# (adds :M if uncommited stuff) and a timestamp.
+execute_process(COMMAND git log -1 --format=format:%h
+    OUTPUT_VARIABLE GIT_HASH
+    ERROR_QUIET)
+execute_process(COMMAND  git diff-index --quiet HEAD --
+    RESULT_VARIABLE GIT_STATUS
+    ERROR_QUIET)
+execute_process(COMMAND git log -1 --format=format:%ci
+    OUTPUT_VARIABLE GIT_WHEN
+    ERROR_QUIET)
+if (${GIT_STATUS} EQUAL 0)
+    Set(GIT_MOD "")
+else()
+    set(GIT_MOD ":M")
+endif()
+
+# Make config.h, release.h and version.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 configure_file(release.h.in ${CMAKE_SOURCE_DIR}/release.h)
+if (NOT "x_${GIT_HASH}" STREQUAL "x_")
+    set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
+    string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
+    configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+elseif (NOT EXISTS ${CMAKE_SOURCE_DIR}/version.h)
+    set(GIT_VERSION "(no git data available)")
+    configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+endif()
 
 # install all the other bits and pieces
-install(DIRECTORY files/base/etc files/base/lib files/base/usr
-        DESTINATION /
-        PATTERN ".svn" EXCLUDE)
-install(PROGRAMS files/base/etc/init.d/iguanaIR
-        DESTINATION /etc/init.d)
-install(PROGRAMS files/base/usr/bin/iguanaIR-rescan
-        DESTINATION /usr/bin)
+install(DIRECTORY files/base/etc files/base/usr
+        USE_SOURCE_PERMISSIONS
+        DESTINATION /)
+install(DIRECTORY files/base/lib/udev/rules.d
+        DESTINATION ${UDEVDIR})
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
+if ("${SYSTEMD_FOUND}" EQUAL 1)
+    install(FILES files/systemd/lib/systemd/system/iguanaIR.service
+            DESTINATION ${SYSTEMD_UNITDIR})
+    install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
+            DESTINATION ${UDEVDIR}/rules.d)
+    install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
+            DESTINATION ${TMPFILESDIR})
+    install(DIRECTORY files/systemd/usr
+            USE_SOURCE_PERMISSIONS
+            DESTINATION /)
+else()
+    install(DIRECTORY files/sysV/usr files/sysV/etc
+            USE_SOURCE_PERMISSIONS
+            DESTINATION /)
+endif()
+
 
 ##########################################
 #install: all
@@ -217,28 +294,11 @@ install(FILES iguanaIR.h
 #endif
 ##########################################
 
-# bring svn version information into the library
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  # what script to run to make version.h
-  Set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/utils/make_version.sh)
-
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-  # what script to run to make version.h
-  Set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/utils/make_version.bat)
-
-EndIf()
-
-# force a pre-build step to make the version.h
-add_custom_target(pre-build
-                  COMMAND ${VERSION_SCRIPT}
-                  DEPENDS ${VERSION_SCRIPT})
-add_dependencies(iguanaIR pre-build)
-
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   find_package(PythonInterp)
   add_custom_target(BuildReleasePackage
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/py2exe-setup.py py2exe
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
-					DEPENDS igdaemon igclient usbpre1 argp _iguanaIR)
+                    DEPENDS igdaemon igclient usbpre1 argp _iguanaIR)
 EndIf()

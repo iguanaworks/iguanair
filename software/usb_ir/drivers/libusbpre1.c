@@ -2,7 +2,7 @@
  ** usbclient.c *************************************************************
  ****************************************************************************
  *
- * Lowest level interface to the USB devices.  
+ * Lowest level interface to the USB devices.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -437,11 +437,11 @@ static int clearHalt(deviceInfo *info, unsigned int ep)
     switch (ep)
     {
     case EP_IN:
-        return usb_clear_halt(handle->device, 
+        return usb_clear_halt(handle->device,
                               handle->epIn->bEndpointAddress);
 
     case EP_OUT:
-        return usb_clear_halt(handle->device, 
+        return usb_clear_halt(handle->device,
                               handle->epOut->bEndpointAddress);
     }
     return -1;

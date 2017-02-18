@@ -14,7 +14,7 @@
 #ifndef _DAEMON_BASE_H_
 #define _DAEMON_BASE_H_
 
-typedef struct 
+typedef struct
 {
     /* driver location and prefered driver information */
     bool onlyPreferred;
@@ -31,7 +31,7 @@ typedef struct
     /* whether the server should ask devices for their labels */
     bool readLabels;
 
-    /* should the server rescan the usb bus after a disconnect */ 
+    /* should the server rescan the usb bus after a disconnect */
     bool autoRescan;
 
     /* user may request that we just print information about devices */

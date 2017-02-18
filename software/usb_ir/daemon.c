@@ -348,7 +348,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case 'v':
         changeLogLevel(+1);
         break;
-        
+
     case 'V':
         printf("Software version: %s\n", IGUANAIR_VER_STR("igdaemon"));
         exit(0);

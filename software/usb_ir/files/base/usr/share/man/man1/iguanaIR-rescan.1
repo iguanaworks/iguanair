@@ -1,0 +1,13 @@
+.TH IGUANAIR-RESCAN "1" "February 2017" "iguanaIR-rescan" "User Commands"
+.SH NAME
+iguanaIR-rescan \- make igdaemon(8) rescan available deveices
+.SH DESCRIPTION
+A simple script which forces  \fBigdameon\fR  to
+rescan it's internal list of available devices.
+This could involve sending a SIGHUP signal or restarting the daemon.
+.P
+On systemd platforms, \fBigdaemon\fR must be enabled for this script
+to work.
+
+.SH "SEE ALSO"
+.B igdaemon(8)
