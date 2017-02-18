@@ -248,9 +248,8 @@ else()
     set(GIT_MOD ":M")
 endif()
 
-# Make config.h, release.h and version.h based on what we found
+# Make config.h and version.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
-configure_file(release.h.in ${CMAKE_SOURCE_DIR}/release.h)
 if (NOT "x_${GIT_HASH}" STREQUAL "x_")
     set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
     string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})

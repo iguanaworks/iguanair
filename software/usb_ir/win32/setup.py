@@ -14,21 +14,25 @@
 import sys
 import os
 
-import win32api
-
 vars = {
 	'version' : 'UNKNOWN',
 	'pyver'   : '%d%d' % (sys.version_info[0], sys.version_info[1]),
-	'sys32'   : win32api.GetSystemDirectory()
 }
 ISSPath = 'iguanaIR.iss'
 
-# read the version from the release.h
-with open('../release.h') as input:
+try:
+        import win32api
+except:
+        pass
+else:
+        vars['sys32'] = win32api.GetSystemDirectory()
+
+# read the version from the CMakeLists.txt
+with open('../CMakeLists.txt') as input:
 	for line in input:
 		line = ' '.join(line.strip().split())
-		if line.startswith('#define IGUANAIR_RELEASE '):
-			vars['version'] = line.split(None, 2)[2][1:-1]
+		if line.startswith('Set(FULLVER '):
+			vars['version'] = line.split(None, 1)[1][:-1]
 
 out = open(ISSPath, 'w')
 out.write("""
@@ -319,16 +323,19 @@ except ImportError:
 	else:
 		print "Ok, using win32api."
 		win32api.ShellExecute(0, "compile",
+				      ISSPath,
+				      None,
+				      None,
+				      0)
+else:
+        try:
+	        res = ctypes.windll.shell32.ShellExecuteA(0, "compile",
 							  ISSPath,
 							  None,
 							  None,
 							  0)
-else:
-	print "Cool, you have ctypes installed."
-	res = ctypes.windll.shell32.ShellExecuteA(0, "compile",
-											  ISSPath,
-											  None,
-											  None,
-											  0)
-	if res < 32:
-		raise RuntimeError, "ShellExecute failed, error %d" % res
+        except:
+                pass
+        else:
+	        if res < 32:
+		        raise RuntimeError, "ShellExecute failed, error %d" % res

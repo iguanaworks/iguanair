@@ -2,9 +2,9 @@
 #define _VERSION_H_
 
 /*-----------------------------------------------------------------------------------
-Version strings as defined by git and release.h. The version.h file is created
-from version.h.in. To update the release, update version.h.in. BEWARE: all changes
-to version.h are discarded by runCmake.
+Version strings as defined by git and the FULLVER from CMakeLists.txt. The version.h
+file is created from version.h.in. To update the release, update version.h.in.
+BEWARE: all changes to version.h are discarded by runCmake.
 -----------------------------------------------------------------------------------*/
 #ifdef _DEBUG
 #define IGUANAIR_VER_STR(a) "DEBUG!: mk@snorken"

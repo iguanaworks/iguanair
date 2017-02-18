@@ -1,6 +1,0 @@
-#ifndef _RELEASE_H_
-#define _RELEASE_H_
-
-#define IGUANAIR_RELEASE "${FULLVER}"
-
-#endif
