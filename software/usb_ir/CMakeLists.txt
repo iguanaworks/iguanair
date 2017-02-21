@@ -53,6 +53,10 @@ If(TARGET_ANDROID)
 
 EndIf()
 
+include(CheckIncludeFile)
+set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
+CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
+CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 include(CheckFunctionExists)
 
 # default the LIBDIR if it was not set
@@ -85,16 +89,16 @@ ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
         string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
         string(STRIP UDEVDIR ${UDEVDIR})
     else()
-        set(UDEVDIR "/lib/udev")
+        set(UDEVDIR "")
     endif()
     pkg_check_modules(SYSTEMD systemd)
     if ("${SYSTEMD_FOUND}" EQUAL 1)
         execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
-        OUTPUT_VARIABLE SYSTEMD_UNITDIR)
+                        OUTPUT_VARIABLE SYSTEMD_UNITDIR)
         string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
         string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
         execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
-        OUTPUT_VARIABLE TMPFILESDIR)
+                        OUTPUT_VARIABLE TMPFILESDIR)
         string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
         string(STRIP TMPFILESDIR ${TMPFILESDIR})
     endif()
@@ -121,8 +125,20 @@ ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     If(NOT TARGET_ANDROID)
       List(APPEND BASELIBS rt)
     EndIf()
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "BSD")
+    # see if we have clock_gettime in time.h
+    Set(CMAKE_REQUIRED_LIBRARIES rt)
+    check_function_exists(clock_gettime USE_CLOCK_GETTIME)
+    Unset(CMAKE_REQUIRED_LIBRARIES)
+    List(APPEND BASESRC compat-unix.c)
+    Set(PIPESRC pipes.c)
+    Set(DAEMONSRC daemon.c)
+    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/usr/local/include")
+    Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
+    Set(ARGPLIB "-largp")
+    Set(PTHREADLIB "-lpthread")
 Else()
-	message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME")
+    message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
 
 # let the user know what platform was detected
@@ -155,6 +171,8 @@ add_executable(igdaemon ${DAEMONSRC}
                list.c protocol-versions.c ${PIPESRC} dataPackets.c ${BASESRC})
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
+set_property(TARGET igdaemon
+             PROPERTY LINK_FLAGS  "${PTHREADLIB}")
 target_link_libraries(igdaemon iguanaIR
                                ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
@@ -167,6 +185,7 @@ add_subdirectory(drivers)
 add_executable(igclient client.c list.c ${BASESRC})
 set_property(TARGET igclient
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
+     set_property(TARGET igclient PROPERTY LINK_FLAGS "${ARGPLIB}")
 target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 
@@ -199,9 +218,9 @@ Else()
     include_directories(${PYTHON_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
     swig_add_module(iguanaIR python iguanaIR.i)
     swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
-	If(CMAKE_COMPILER_IS_GNUCC)
-      set_source_files_properties(${swig_generated_file_fullname}
-                                  PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
+    If(CMAKE_COMPILER_IS_GNUCC)
+        set_source_files_properties(${swig_generated_file_fullname}
+        PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
     EndIf()
 
     # install the python support
@@ -263,8 +282,10 @@ endif()
 install(DIRECTORY files/base/etc files/base/usr
         USE_SOURCE_PERMISSIONS
         DESTINATION /)
-install(DIRECTORY files/base/lib/udev/rules.d
+if ("${UDEV_FOUND}" EQUAL 1)
+    install(DIRECTORY files/base/lib/udev/rules.d
         DESTINATION ${UDEVDIR})
+endif()
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
 if ("${SYSTEMD_FOUND}" EQUAL 1)
