@@ -265,6 +265,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
 
     case ARG_LOG_LEVEL:
+/* TODO: replace atoi with something that complains on non-int args */
         setLogLevel(atoi(arg));
         break;
 

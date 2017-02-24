@@ -333,7 +333,6 @@ static struct argp_option options[] =
 
 static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
-/* TODO: replace atoi with something that complains on non-int args */
     struct parameters *params = (struct parameters*)state->input;
     switch(key)
     {
@@ -355,8 +354,19 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
 
     case ARG_LOG_LEVEL:
-        setLogLevel(atoi(arg));
+    {
+        char *end;
+        long int res = strtol(arg, &end, 0);
+        if (arg[0] == '\0' || end[0] != '\0' || res < LOG_FATAL || res > LOG_DEBUG3 )
+        {
+            argp_error(state, "Log level requires a numeric argument between %d and %d\n",
+                       LOG_FATAL, LOG_DEBUG3);
+            return ARGP_HELP_STD_ERR;
+        }
+        else
+            setLogLevel(res);
         break;
+    }
 
     case 'n':
         params->runAsDaemon = false;
@@ -367,12 +377,32 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
 
     case ARG_RECV_TIMEOUT:
-        srvSettings.devSettings.recvTimeout = atoi(arg);
+    {
+        char *end;
+        long int res = strtol(arg, &end, 0);
+        if (arg[0] == '\0' || end[0] != '\0' || res < 0 || res > 10000 )
+        {
+            argp_error(state, "Receive timeout requires a numeric argument between 0 and 10000\n");
+            return ARGP_HELP_STD_ERR;
+        }
+        else
+            srvSettings.devSettings.recvTimeout = res;
         break;
+    }
 
     case ARG_SEND_TIMEOUT:
-        srvSettings.devSettings.sendTimeout = atoi(arg);
+    {
+        char *end;
+        long int res = strtol(arg, &end, 0);
+        if (arg[0] == '\0' || end[0] != '\0' || res < 0 || res > 10000 )
+        {
+            argp_error(state, "Send timeout requires a numeric argument between 0 and 10000\n");
+            return ARGP_HELP_STD_ERR;
+        }
+        else
+            srvSettings.devSettings.sendTimeout = res;
         break;
+    }
 
     case ARG_UNBIND:
         srvSettings.unbind = true;
@@ -443,10 +473,11 @@ int main(int argc, char **argv)
     /* initialize the parameters structure and parse the cmd line args */
     params.runAsDaemon = true;
     params.pidFile = NULL;
-    argp_parse(&parser, argc, argv, 0, NULL, &params);
+    if (argp_parse(&parser, argc, argv, 0, NULL, &params) != 0)
+        retval = 3;
 
     /* run as a daemon if requested and possible */
-    if (params.runAsDaemon)
+    if (retval == 0 && params.runAsDaemon)
     {
         message(LOG_DEBUG, "Forking into the background.\n");
         if (daemon(0, 0) == 0)
