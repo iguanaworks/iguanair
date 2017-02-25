@@ -17,14 +17,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "pipes.h"
 #include "support.h"
 #include "dataPackets.h"
-
-#ifndef PATH_MAX
-#define PATH_MAX 1024
-#endif
 
 IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion)
 {

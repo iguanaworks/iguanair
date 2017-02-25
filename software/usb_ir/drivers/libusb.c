@@ -18,15 +18,12 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifdef HAVE_USB_10_LIBUSB_H
-#include <libusb-1.0/libusb.h>
+  #include <libusb-1.0/libusb.h>
 #else
-#include <libusb.h>
-#endif
-
-#ifndef PATH_MAX
-#define PATH_MAX 1024
+  #include <libusb.h>
 #endif
 
 #include "../pipes.h"

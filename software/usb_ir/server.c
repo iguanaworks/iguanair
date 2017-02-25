@@ -12,9 +12,7 @@
  */
 
 #include <stdlib.h>
-#ifndef PATH_MAX
-#define PATH_MAX 1024
-#endif
+#include <limits.h>
 
 #include "iguanaIR.h"
 #include "compat.h"
