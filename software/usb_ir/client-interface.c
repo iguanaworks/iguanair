@@ -361,11 +361,11 @@ static bool handleClientRequest(dataPacket *request, client *target)
     return retval;
 }
 
-static void releaseClient(client *target)
+void releaseClient(client *target)
 {
     closePipe(target->fd);
 #if DEBUG
-printf("CLOSE %d %s(%d)\n", target->fd, __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", target->fd, __FILE__, __LINE__);
 #endif
 
     if (target->receiving)
@@ -478,7 +478,7 @@ static void joinWithReader(iguanaDev *idev)
 static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
 {
 #if DEBUG
-printf("OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
 #endif
 
     if (clientFd == INVALID_PIPE)
@@ -635,9 +635,9 @@ static void* workLoop(void *instance)
         closePipe(idev->responsePipe[READ]);
         closePipe(idev->responsePipe[WRITE]);
 #if DEBUG
-printf("CLOSE %d %s(%d)\n", idev->readerPipe[READ], __FILE__, __LINE__);
-printf("CLOSE %d %s(%d)\n", idev->responsePipe[READ], __FILE__, __LINE__);
-printf("CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->readerPipe[READ], __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->responsePipe[READ], __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
 #endif
     }
 
@@ -689,10 +689,10 @@ void startWorker(deviceInfo *info)
         else
         {
 #if DEBUG
-printf("OPEN %d %s(%d)\n", idev->readerPipe[0],   __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", idev->readerPipe[1],   __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", idev->responsePipe[0], __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->readerPipe[0],   __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->readerPipe[1],   __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->responsePipe[0], __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
 #endif
 
             /* this must be set before the call to findDeviceEndpoints */
