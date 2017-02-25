@@ -1042,7 +1042,7 @@ void handleIncomingPackets(iguanaDev *idev)
 
     /* signal worker thread that the reader is exiting */
 #if DEBUG
-printf("CLOSE %d %s(%d)\n", idev->readerPipe[WRITE], __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->readerPipe[WRITE], __FILE__, __LINE__);
 #endif
     closePipe(idev->readerPipe[WRITE]);
 }

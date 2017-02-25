@@ -91,7 +91,7 @@ PIPE_PTR iguanaConnect(const char *name)
 void iguanaClose(PIPE_PTR connection)
 {
 #if DEBUG
-printf("CLOSE %d %s(%d)\n", connection, __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", connection, __FILE__, __LINE__);
 #endif
     closePipe(connection);
 }
