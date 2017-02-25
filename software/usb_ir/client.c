@@ -796,7 +796,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case INTERNAL_SETSINKPINS:
     case INTERNAL_GETHOLDPINS:
     case INTERNAL_SETHOLDPINS:
-    case INTERNAL_SLEEP: /* TODO: need to confirm that the argument is the int */
+    case INTERNAL_SLEEP: /* TODO: need to confirm that the argument is a float or int */
         enqueueTaskById((unsigned short)key, arg);
         break;
 
