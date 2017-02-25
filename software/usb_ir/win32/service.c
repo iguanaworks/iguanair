@@ -557,6 +557,7 @@ void listenToClients(iguanaDev *idev,
     HANDLE *handles = NULL;
     OVERLAPPED over[3];
     int x;
+    client *john;
     bool firstPass = true;
 
     /* get any intial ID from the device */
@@ -567,7 +568,6 @@ void listenToClients(iguanaDev *idev,
     while(true)
     {
         int count = 1;
-        client *john;
 
         /* allocate the handles and overlap objects that I need to populate */
         handles = (HANDLE*)realloc(handles, sizeof(HANDLE) * (1 + 2 + idev->clientList.count));
@@ -779,11 +779,20 @@ void listenToClients(iguanaDev *idev,
         firstPass = false;
     }
 
-    /* make sure to close any handles that may still be open */
-    for(x = 0; x < 1 + 2 + (int)idev->clientList.count; x++)
+    /* make sure to close the system level handles (reader and 1 or 2 named pipes) */
+    for(x = 0; x < 1 + 2; x++)
         if (handles[x] != NULL)
             CloseHandle(handles[x]);
     free(handles);
+
+    /* and release any connected clients */
+    while(idev->clientList.count > 0)
+    {
+        client *john = (client*)idev->clientList.head;
+        if (john->over.hEvent != NULL)
+            CloseHandle(john->over.hEvent);
+        releaseClient(john);
+    }
 
 	/* "disconnect" and release the unconnected pipes */
     EnterCriticalSection(&aliasLock);
