@@ -350,6 +350,21 @@ static struct argp parser = {
     NULL
 };
 
+static void waitCommPipe(HANDLE stopEvent)
+{
+    while(stopEvent == NULL || WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
+    {
+        THREAD_PTR child = INVALID_THREAD_PTR;
+        if (readPipeTimed(srvSettings.commPipe[READ], (char*)&child, sizeof(THREAD_PTR), 250) == sizeof(THREAD_PTR))
+        {
+            void *exitVal;
+            joinThread(child, &exitVal);
+        }
+        else if (errno != ERROR_TIMEOUT)
+            message(LOG_ERROR, "Failure reading from commPipe in service\n");
+    }
+}
+
 int main(int argc, char **argv)
 {
 	int retval = -1;
@@ -385,8 +400,8 @@ int main(int argc, char **argv)
                 if (! updateDeviceList(list))
                     message(LOG_ERROR, "scan failed.\n");
 
-                /* just block indefinitely */
-                fscanf(stdin, "\n");
+                /* block waiting for commPipe commands */
+                waitCommPipe(NULL);
             }
             else
                 return error;
@@ -435,7 +450,7 @@ static void WINAPI serviceMain(int argc, char **argv)
 
         /* tell SCM about our progress and wait for death */
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
-        while(WaitForSingleObject(service_stop_event, INFINITE));
+        waitCommPipe(service_stop_event);
         CloseHandle(service_stop_event);
     }
 
@@ -567,7 +582,10 @@ void listenToClients(iguanaDev *idev,
         {
             /* handle the case there there is no alias */
             if (x == 1 && aliases[idev->usbDev->id][0] == '\0')
+            {
+                handles[x + 1] = NULL;
                 break;
+            }
 
             EnterCriticalSection(&aliasLock);
             if (firstPass || listeners[idev->usbDev->id][x] == NULL)
@@ -582,10 +600,10 @@ void listenToClients(iguanaDev *idev,
                 HKEY hkSub = NULL;
 
                 // Create a well-known SID for the Everyone group.
-                if(!AllocateAndInitializeSid(&SIDAuthWorld, 1,
-                                 SECURITY_WORLD_RID,
-                                 0, 0, 0, 0, 0, 0, 0,
-                                 &pEveryoneSID))
+                if (!AllocateAndInitializeSid(&SIDAuthWorld, 1,
+                                              SECURITY_WORLD_RID,
+                                              0, 0, 0, 0, 0, 0, 0,
+                                              &pEveryoneSID))
                 {
                     message(LOG_ERROR, "AllocateAndInitializeSid Error %s\n",
                             translateError(GetLastError()));
@@ -611,8 +629,8 @@ void listenToClients(iguanaDev *idev,
                 }
 
                 // Initialize a security descriptor.  
-                pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, 
-                             SECURITY_DESCRIPTOR_MIN_LENGTH); 
+                pSD = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, 
+                                                       SECURITY_DESCRIPTOR_MIN_LENGTH);
                 if (NULL == pSD) 
                 { 
                     message(LOG_ERROR, "LocalAlloc Error %s\n",
@@ -620,8 +638,8 @@ void listenToClients(iguanaDev *idev,
                     goto Cleanup; 
                 } 
              
-                if (!InitializeSecurityDescriptor(pSD,
-                        SECURITY_DESCRIPTOR_REVISION)) 
+                if (! InitializeSecurityDescriptor(pSD,
+                                                   SECURITY_DESCRIPTOR_REVISION)) 
                 {  
                     message(LOG_ERROR, "InitializeSecurityDescriptor Error %s\n",
                             translateError(GetLastError()));
@@ -640,7 +658,7 @@ void listenToClients(iguanaDev *idev,
                 } 
 
                 // Initialize a security attributes structure.
-                sa.nLength = sizeof (SECURITY_ATTRIBUTES);
+                sa.nLength = sizeof(SECURITY_ATTRIBUTES);
                 sa.lpSecurityDescriptor = pSD;
                 sa.bInheritHandle = FALSE;
 
@@ -760,9 +778,14 @@ void listenToClients(iguanaDev *idev,
         }
         firstPass = false;
     }
+
+    /* make sure to close any handles that may still be open */
+    for(x = 0; x < 1 + 2 + (int)idev->clientList.count; x++)
+        if (handles[x] != NULL)
+            CloseHandle(handles[x]);
     free(handles);
 
-	// "disconnect" and release the unconnected pipes
+	/* "disconnect" and release the unconnected pipes */
     EnterCriticalSection(&aliasLock);
     for(x = 0; x < 2; x++)
         if (listeners[idev->usbDev->id][x] != NULL)

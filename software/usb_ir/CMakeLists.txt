@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
-find_package(PkgConfig REQUIRED)
-
 # Make sure to change the value in Changelog as well
 Set(FULLVER 1.1.2)
 
@@ -80,6 +78,7 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    find_package(PkgConfig REQUIRED)
 
     # Checking if systemd/udev is around...
     pkg_check_modules(UDEV udev)
@@ -185,7 +184,7 @@ add_subdirectory(drivers)
 add_executable(igclient client.c list.c ${BASESRC})
 set_property(TARGET igclient
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
-     set_property(TARGET igclient PROPERTY LINK_FLAGS "${ARGPLIB}")
+#     set_property(TARGET igclient PROPERTY LINK_FLAGS "${ARGPLIB}")
 target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 
