@@ -68,12 +68,12 @@ static void quitHandler(int UNUSED(sig))
 #if DEBUG
 printf("CLOSE %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
 #endif
-    triggerCommand(QUIT_TRIGGER);
+    triggerCommand((THREAD_PTR)QUIT_TRIGGER);
 }
 
 static void scanHandler(int UNUSED(sig))
 {
-    triggerCommand(SCAN_TRIGGER);
+    triggerCommand((THREAD_PTR)SCAN_TRIGGER);
 }
 
 static bool mkdirs(char *path)
@@ -250,10 +250,10 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
                 quit = true;
             }
             /* handle the shutdown command */
-            else if (thread == QUIT_TRIGGER)
+            else if (thread == (THREAD_PTR)QUIT_TRIGGER)
                 quit = true;
             /* complain about unknown commands */
-            else if (thread != SCAN_TRIGGER)
+            else if (thread != (THREAD_PTR)SCAN_TRIGGER)
                 message(LOG_ERROR,
                         "Unknown command from commPipe: %d\n", thread);
             /* handle the scan/rescan command */
