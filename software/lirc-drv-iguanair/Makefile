@@ -31,7 +31,7 @@ PLUGINDOCS      ?= $(shell pkg-config --variable=plugindocs lirc-driver)
 $(driver).o: $(driver).c
 
 $(driver).so: $(driver).o
-	gcc --shared -fpic $(LDFLAGS) -o $@ $<
+	gcc --shared -fpic -o $@ $< $(LDFLAGS)
 
 install: $(driver).so
 	install -D $< $(DESTDIR)$(PLUGINDIR)/$<
