@@ -25,19 +25,42 @@ bool findDriverDir(char *path)
     return false;
 }
 
+#elif __APPLE__
+
+#include <mach-o/dyld.h>
+
+bool findDriverDir(char *path)
+{
+    uint32_t size = PATH_MAX;
+    /* TODO: because this call does not give an absolute path it could
+       be longer than PATH_MAX so we should call again on failure w a
+       dynamically allocated buffer */
+    if (_NSGetExecutablePath(path, &size) == 0)
+    {
+        char *slash = strrchr(path, '/');
+	if (slash != NULL)
+	{
+	    slash[0] = '\0';
+	    strcat(path, "/drivers");
+	    return true;
+	}
+    }
+    return false;
+}
+
 #else
 bool findDriverDir(char *path)
 {
     void *library;
     unsigned long start, target, end;
     FILE *maps;
-    char buffer[256], *object;
+    char buffer[80 + PATH_MAX], *object;
 
-    library = loadLibrary("libiguanaIR.so");
+    library = loadLibrary("libiguanaIR" DYNLIB_EXT);
     target = (unsigned long)dlsym(library, "iguanaClose");
 
     maps = fopen("/proc/self/maps", "r");
-    while(fgets(buffer, 256, maps) != NULL)
+    while(fgets(buffer, 80 + PATH_MAX, maps) != NULL)
         if (sscanf(buffer, "%lx-%lx", &start, &end) == 2 &&
             start < target && target < end)
         {

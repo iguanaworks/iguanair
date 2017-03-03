@@ -217,7 +217,8 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 
 #ifdef __APPLE__
         /* Support hot plug in on Mac OS X -- returns non-zero for error */
-        daemon_osx_support(ids);
+	/* TODO: figure out what this used to be so we can make it work again*/
+	/*        daemon_osx_support(ids);*/
 #endif
 
         /* loop, waiting for commands */
@@ -307,7 +308,9 @@ static struct argp_option options[] =
     { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
 
     /* iguanaworks specific options */
+#ifndef __APPLE__
     { "no-daemon",       'n',              NULL,     0, "Do not fork into the background.",                                 GROUP0 },
+#endif
     { "pid-file",        'p',              "FILE",   0, "Specify where to write the pid of the daemon process.",            GROUP0 },
     { "no-auto-rescan",  ARG_NO_RESCAN,    NULL,     0, "Do not automatically rescan the USB bus after device disconnect.", GROUP0 },
     { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                           GROUP0 },
@@ -368,9 +371,11 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
     }
 
+#ifndef __APPLE__
     case 'n':
         params->runAsDaemon = false;
         break;
+#endif
 
     case ARG_NO_IDS:
         srvSettings.readLabels = false;
@@ -476,6 +481,7 @@ int main(int argc, char **argv)
     if (argp_parse(&parser, argc, argv, 0, NULL, &params) != 0)
         retval = 3;
 
+#ifndef __APPLE__
     /* run as a daemon if requested and possible */
     if (retval == 0 && params.runAsDaemon)
     {
@@ -488,6 +494,7 @@ int main(int argc, char **argv)
             retval = 1;
         }
     }
+#endif
 
     /* write the pid out if requested */
     if (retval == 0 && params.pidFile != NULL)

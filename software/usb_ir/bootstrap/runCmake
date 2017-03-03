@@ -25,6 +25,8 @@ if test -x /usr/bin/cmake; then
     CMAKE=/usr/bin/cmake
 elif test -x /usr/local/bin/cmake; then
     CMAKE=/usr/local/bin/cmake
+elif test -x /opt/local/bin/cmake; then
+    CMAKE=/opt/local/bin/cmake
 else
     echo "Cannot find cmake" >&2
     exit 2

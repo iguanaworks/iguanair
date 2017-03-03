@@ -51,10 +51,6 @@ If(TARGET_ANDROID)
 
 EndIf()
 
-include(CheckIncludeFile)
-set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
-CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
-CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 include(CheckFunctionExists)
 
 # default the LIBDIR if it was not set
@@ -136,9 +132,30 @@ ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "BSD")
     Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
     Set(ARGPLIB "-largp")
     Set(PTHREADLIB "-lpthread")
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+    # see if we have mach_absolute_time
+    check_function_exists(mach_absolute_time USE_MACH_ABSOLUTE_TIME)
+
+    Set(PIPESRC pipes.c)
+    Set(DAEMONSRC daemon.c)
+    List(APPEND BASESRC compat-unix.c)
+
+# TODO: why does macports need the -I at the end of this cflags?
+    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/opt/local/include")
+    Set(ARGPLIB "-largp")
+
+#    include_directories(/opt/local/include)
+    include_directories(/opt/local/include/libusb-1.0)
+    link_directories(/opt/local/lib)
+
 Else()
     message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
+
+include(CheckIncludeFile)
+set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
+CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
+CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 
 # let the user know what platform was detected
 message("Generator: ${CMAKE_GENERATOR}")
