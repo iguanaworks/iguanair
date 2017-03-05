@@ -73,7 +73,12 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     List(APPEND BASESRC win32/compat-windows.c)
 	include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES Linux OR "${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
+    If("${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
+        # this makes it build on GNU Mach, but there's not USB support....
+        add_definitions(-DPATH_MAX=1024)
+    EndIf()
+
     find_package(PkgConfig REQUIRED)
 
     # Checking if systemd/udev is around...
