@@ -62,99 +62,100 @@ EndIf()
 Set(BASESRC support.c)
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-	add_subdirectory(win32/argp-standalone-1.3)
-	Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
-    Set(PYTHON_INCLUDE_DIR "C:/Python27/include")
+  add_subdirectory(win32/argp-standalone-1.3)
+  Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
+  Set(PYTHON_INCLUDE_DIR "C:/Python27/include")
 
-	List(APPEND BASELIBS ws2_32)
-    Set(PIPESRC win32/pipes.c)
-	Set(DAEMONSRC win32/service.c)
-	Set(DAEMONLIBS setupapi)
-    List(APPEND BASESRC win32/compat-windows.c)
-	include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
+  List(APPEND BASELIBS ws2_32)
+  Set(PIPESRC win32/pipes.c)
+  Set(DAEMONSRC win32/service.c)
+  Set(DAEMONLIBS setupapi)
+  List(APPEND BASESRC win32/compat-windows.c)
+  include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES Linux OR "${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
-    If("${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
-        # this makes it build on GNU Mach, but there's not USB support....
-        add_definitions(-DPATH_MAX=1024)
-    EndIf()
+  If("${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
+    # this makes it build on GNU Mach, but there's not USB support....
+    add_definitions(-DPATH_MAX=1024)
+  EndIf()
 
-    find_package(PkgConfig REQUIRED)
+  find_package(PkgConfig REQUIRED)
 
-    # Checking if systemd/udev is around...
-    pkg_check_modules(UDEV udev)
-    if ("${UDEV_FOUND}" EQUAL 1)
-        execute_process(COMMAND pkg-config --variable udevdir udev
-            OUTPUT_VARIABLE UDEVDIR)
-        string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
-        string(STRIP UDEVDIR ${UDEVDIR})
-    else()
-        set(UDEVDIR "")
-    endif()
-    pkg_check_modules(SYSTEMD systemd)
-    if ("${SYSTEMD_FOUND}" EQUAL 1)
-        execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
-                        OUTPUT_VARIABLE SYSTEMD_UNITDIR)
-        string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
-        string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
-        execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
-                        OUTPUT_VARIABLE TMPFILESDIR)
-        string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
-        string(STRIP TMPFILESDIR ${TMPFILESDIR})
-    endif()
+  # Checking if systemd/udev is around...
+  pkg_check_modules(UDEV udev)
+  if ("${UDEV_FOUND}" EQUAL 1)
+    execute_process(COMMAND pkg-config --variable udevdir udev
+                    OUTPUT_VARIABLE UDEVDIR)
+    string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
+    string(STRIP UDEVDIR ${UDEVDIR})
+  else()
+    set(UDEVDIR "")
+  endif()
 
-    Set(PIPESRC pipes.c)
-        Set(DAEMONSRC daemon.c)
-    If(NOT TARGET_ANDROID)
-      Set(DAEMONLIBS pthread dl)
-    EndIf()
+  pkg_check_modules(SYSTEMD systemd)
+  if ("${SYSTEMD_FOUND}" EQUAL 1)
+    execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
+                    OUTPUT_VARIABLE SYSTEMD_UNITDIR)
+    string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+    string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+    execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
+                    OUTPUT_VARIABLE TMPFILESDIR)
+    string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
+    string(STRIP TMPFILESDIR ${TMPFILESDIR})
+  endif()
 
-    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
+  Set(PIPESRC pipes.c)
+  Set(DAEMONSRC daemon.c)
+  If(NOT TARGET_ANDROID)
+    Set(DAEMONLIBS pthread dl)
+  EndIf()
 
-    # see if we have clock_gettime in time.h
-    Set(CMAKE_REQUIRED_LIBRARIES rt)
-    check_function_exists(clock_gettime USE_CLOCK_GETTIME)
-    Unset(CMAKE_REQUIRED_LIBRARIES)
+  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
 
-    # default all symbols to hidden under gcc
-# TODO: if we set the visibility correctly then the drivers cannot
-#  find symbols from the main library... need to fix that somehow
-#    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+  # see if we have clock_gettime in time.h
+  Set(CMAKE_REQUIRED_LIBRARIES rt)
+  check_function_exists(clock_gettime USE_CLOCK_GETTIME)
+  Unset(CMAKE_REQUIRED_LIBRARIES)
 
-    List(APPEND BASESRC compat-unix.c)
-    If(NOT TARGET_ANDROID)
-      List(APPEND BASELIBS rt)
-    EndIf()
+  # default all symbols to hidden under gcc
+  # TODO: if we set the visibility correctly then the drivers cannot
+  #  find symbols from the main library... need to fix that somehow
+  #    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+
+  List(APPEND BASESRC compat-unix.c)
+  If(NOT TARGET_ANDROID)
+    List(APPEND BASELIBS rt)
+  EndIf()
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "BSD")
-    # see if we have clock_gettime in time.h
-    Set(CMAKE_REQUIRED_LIBRARIES rt)
-    check_function_exists(clock_gettime USE_CLOCK_GETTIME)
-    Unset(CMAKE_REQUIRED_LIBRARIES)
-    List(APPEND BASESRC compat-unix.c)
-    Set(PIPESRC pipes.c)
-    Set(DAEMONSRC daemon.c)
-    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/usr/local/include")
-    Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
-    Set(ARGPLIB "-largp")
-    Set(PTHREADLIB "-lpthread")
+  # see if we have clock_gettime in time.h
+  Set(CMAKE_REQUIRED_LIBRARIES rt)
+  check_function_exists(clock_gettime USE_CLOCK_GETTIME)
+  Unset(CMAKE_REQUIRED_LIBRARIES)
+  List(APPEND BASESRC compat-unix.c)
+  Set(PIPESRC pipes.c)
+  Set(DAEMONSRC daemon.c)
+  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/usr/local/include")
+  Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
+  Set(ARGPLIB "-largp")
+  Set(PTHREADLIB "-lpthread")
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-    # see if we have mach_absolute_time
-    check_function_exists(mach_absolute_time USE_MACH_ABSOLUTE_TIME)
+  # see if we have mach_absolute_time
+  check_function_exists(mach_absolute_time USE_MACH_ABSOLUTE_TIME)
 
-    Set(PIPESRC pipes.c)
-    Set(DAEMONSRC daemon.c)
-    List(APPEND BASESRC compat-unix.c)
+  Set(PIPESRC pipes.c)
+  Set(DAEMONSRC daemon.c)
+  List(APPEND BASESRC compat-unix.c)
 
-# TODO: why does macports need the -I at the end of this cflags?
-    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/opt/local/include")
-    Set(ARGPLIB "-largp")
+  # TODO: why does macports need the -I at the end of this cflags?
+  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/opt/local/include")
+  Set(ARGPLIB "-largp")
 
-#    include_directories(/opt/local/include)
-    include_directories(/opt/local/include/libusb-1.0)
-    link_directories(/opt/local/lib)
+  #    include_directories(/opt/local/include)
+  include_directories(/opt/local/include/libusb-1.0)
+  link_directories(/opt/local/lib)
 
 Else()
-    message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+  message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
 
 include(CheckIncludeFile)
@@ -169,8 +170,8 @@ message("Platform:  ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
 
 # build the user library
 add_library(iguanaIR SHARED
-                     iguanaIR.c dataPackets.c ${PIPESRC}
-                     ${BASESRC})
+            iguanaIR.c dataPackets.c ${PIPESRC}
+            ${BASESRC})
 target_link_libraries(iguanaIR ${BASELIBS})
 set_target_properties(iguanaIR PROPERTIES
                       VERSION ${FULLVER} SOVERSION ${SOVERSION})
@@ -195,7 +196,7 @@ set_property(TARGET igdaemon
 set_property(TARGET igdaemon
              PROPERTY LINK_FLAGS  "${PTHREADLIB}")
 target_link_libraries(igdaemon iguanaIR
-                               ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
+                      ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
 
@@ -240,8 +241,8 @@ Else()
     swig_add_module(iguanaIR python iguanaIR.i)
     swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
     If(CMAKE_COMPILER_IS_GNUCC)
-        set_source_files_properties(${swig_generated_file_fullname}
-        PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
+      set_source_files_properties(${swig_generated_file_fullname}
+                                  PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
     EndIf()
 
     # install the python support
@@ -274,29 +275,29 @@ EndIf()
 # Create a version string based on git info: hash, modififed
 # (adds :M if uncommited stuff) and a timestamp.
 execute_process(COMMAND git log -1 --format=format:%h
-    OUTPUT_VARIABLE GIT_HASH
-    ERROR_QUIET)
+                OUTPUT_VARIABLE GIT_HASH
+                ERROR_QUIET)
 execute_process(COMMAND  git diff-index --quiet HEAD --
-    RESULT_VARIABLE GIT_STATUS
-    ERROR_QUIET)
+                RESULT_VARIABLE GIT_STATUS
+                ERROR_QUIET)
 execute_process(COMMAND git log -1 --format=format:%ci
-    OUTPUT_VARIABLE GIT_WHEN
-    ERROR_QUIET)
+                OUTPUT_VARIABLE GIT_WHEN
+                ERROR_QUIET)
 if (${GIT_STATUS} EQUAL 0)
-    Set(GIT_MOD "")
+  Set(GIT_MOD "")
 else()
-    set(GIT_MOD ":M")
+  set(GIT_MOD ":M")
 endif()
 
 # Make config.h and version.h based on what we found
 configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 if (NOT "x_${GIT_HASH}" STREQUAL "x_")
-    set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
-    string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
-    configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+  set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
+  string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
+  configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
 elseif (NOT EXISTS ${CMAKE_SOURCE_DIR}/version.h)
-    set(GIT_VERSION "(no git data available)")
-    configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
+  set(GIT_VERSION "(no git data available)")
+  configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
 endif()
 
 # install all the other bits and pieces
@@ -304,25 +305,25 @@ install(DIRECTORY files/base/etc files/base/usr
         USE_SOURCE_PERMISSIONS
         DESTINATION /)
 if ("${UDEV_FOUND}" EQUAL 1)
-    install(DIRECTORY files/base/lib/udev/rules.d
-        DESTINATION ${UDEVDIR})
+  install(DIRECTORY files/base/lib/udev/rules.d
+          DESTINATION ${UDEVDIR})
 endif()
 install(FILES iguanaIR.h
         DESTINATION /usr/include)
 if ("${SYSTEMD_FOUND}" EQUAL 1)
-    install(FILES files/systemd/lib/systemd/system/iguanaIR.service
-            DESTINATION ${SYSTEMD_UNITDIR})
-    install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
-            DESTINATION ${UDEVDIR}/rules.d)
-    install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
-            DESTINATION ${TMPFILESDIR})
-    install(DIRECTORY files/systemd/usr
-            USE_SOURCE_PERMISSIONS
-            DESTINATION /)
+  install(FILES files/systemd/lib/systemd/system/iguanaIR.service
+          DESTINATION ${SYSTEMD_UNITDIR})
+  install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
+          DESTINATION ${UDEVDIR}/rules.d)
+  install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
+          DESTINATION ${TMPFILESDIR})
+  install(DIRECTORY files/systemd/usr
+          USE_SOURCE_PERMISSIONS
+          DESTINATION /)
 else()
-    install(DIRECTORY files/sysV/usr files/sysV/etc
-            USE_SOURCE_PERMISSIONS
-            DESTINATION /)
+  install(DIRECTORY files/sysV/usr files/sysV/etc
+          USE_SOURCE_PERMISSIONS
+          DESTINATION /)
 endif()
 
 
