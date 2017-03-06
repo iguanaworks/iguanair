@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7 -tt
+#!/usr/bin/env python
 #
 # **************************************************************************
 # ** upgrade-usb ***********************************************************
@@ -518,7 +518,7 @@ def writeHexFile(filename, blank_pages = False, setFeatures = False):
     pages = readPages(open(filename, 'r'))
 
     if blank_pages:
-        blanks = range(128)
+        blanks = list(range(128))
         for page in pages:
             blanks.remove(page['start'] // 64)
 
