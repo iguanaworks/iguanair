@@ -731,7 +731,7 @@ bool reapAllChildren(deviceList *list)
     x = stopDevices(list);
     for(; x > 0; x--)
     {
-        void *exitval;
+        void *exitVal;
         int result;
         THREAD_PTR child;
 
@@ -739,21 +739,25 @@ bool reapAllChildren(deviceList *list)
         result = readPipeTimed(srvSettings.commPipe[READ],
                                (char*)&child, sizeof(THREAD_PTR),
                                2 * srvSettings.devSettings.recvTimeout);
-        /* no one ready */
+        /* no one ready in time, break out */
         if (result == 0)
             break;
-        /* try to join with the worker thread */
+        /* confirm that we read a full THREAD_PTR */
         else if (result != sizeof(THREAD_PTR))
         {
             message(LOG_ERROR, "failed while reaping worker thread.\n");
             return false;
         }
-        else
+        /* try to join with the requested worker thread */
+        else if (child != INVALID_THREAD_PTR)
         {
-            /* simpler to just join all here instead of in any worker loop */
-            joinThread(child, &exitval);
+            joinThread(child, &exitVal);
             message(LOG_DEBUG, "Reaped child: %p\n", child);
         }
+        /* read and discard the actual command (came from a signal handler) */
+        else if (readPipe(srvSettings.commPipe[READ], &child,
+                          sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+            message(LOG_WARN, "discarding command: %p\n", child);
     }
     releaseDevices(list);
 

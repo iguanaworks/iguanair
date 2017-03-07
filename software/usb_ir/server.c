@@ -96,7 +96,7 @@ static void* scanTrigger(void *junk)
 {
     while(true)
     {
-        Sleep(srvSettings.scanSeconds);
+        Sleep(srvSettings.scanSeconds * 1000);
         triggerCommand((THREAD_PTR)SCAN_TRIGGER);
     }
     return NULL;
