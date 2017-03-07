@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "iguanaIR.h"
 #include "compat.h"
@@ -31,6 +32,15 @@ static usbId ids[] = {
     {0x1781, 0x0938, NULL}, /* iguanaworks USB transceiver */
     END_OF_USB_ID_LIST
 };
+
+void triggerCommand(THREAD_PTR cmd)
+{
+    THREAD_PTR flg = INVALID_THREAD_PTR;
+    if (writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR) ||
+        writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+        message(LOG_ERROR, "failed to write flag and command over commPipe: %s\n",
+                translateError(errno));
+}
 
 void initServerSettings(deviceFunc devFunc)
 {
@@ -72,10 +82,24 @@ void initServerSettings(deviceFunc devFunc)
     /* default to playing nice with other drivers */
     srvSettings.unbind = false;
 
+    /* default to just waiting for hotplug events from an external source */
+    srvSettings.scanSeconds = 0;
+    srvSettings.scanTimerThread = INVALID_THREAD_PTR;
+
     /* old flag to handle libusb pre 1.0 threading issues */
 #ifdef LIBUSB_NO_THREADS_OPTION
     srvSettings.noThreads = false;
 #endif
+}
+
+static void* scanTrigger(void *junk)
+{
+    while(true)
+    {
+        Sleep(srvSettings.scanSeconds);
+        triggerCommand((THREAD_PTR)SCAN_TRIGGER);
+    }
+    return NULL;
 }
 
 deviceList* initServer()
@@ -113,8 +137,11 @@ deviceList* initServer()
     }
     message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir);
 
-    /* initialize the commPipe, driver, and device list */
-    if (! createPipePair(srvSettings.commPipe))
+    /* start up a thread to trigger periodic rescans if requested */
+    if (srvSettings.scanSeconds > 0 && ! startThread(&srvSettings.scanTimerThread, scanTrigger, NULL))
+        message(LOG_ERROR, "failed to start a scanning timer.\n");
+/* initialize the commPipe, driver, and device list */
+    else if (! createPipePair(srvSettings.commPipe))
 	{
 #ifdef _WIN32
         message(LOG_ERROR, "failed to open communication pipe, is another igdaemon running?\n");

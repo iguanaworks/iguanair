@@ -43,27 +43,11 @@ IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int prot
 /* local variables */
 static mode_t devMode = 0777;
 
-/* possible commands that can be triggered by signals */
-enum
-{
-    SCAN_TRIGGER,
-    QUIT_TRIGGER
-};
-
 struct parameters
 {
     bool runAsDaemon;
     const char *pidFile;
 };
-
-static void triggerCommand(THREAD_PTR cmd)
-{
-    THREAD_PTR flg = INVALID_THREAD_PTR;
-    if (writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR) ||
-        writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
-        message(LOG_ERROR, "failed to write flag and command over commPipe: %s\n",
-                translateError(errno));
-}
 
 static void quitHandler(int UNUSED(sig))
 {
@@ -287,6 +271,7 @@ enum
     /* igdaemon specific actions */
     ARG_NO_IDS = 0x200,
     ARG_NO_RESCAN,
+    ARG_NO_SCANWHEN,
     ARG_NO_THREADS,
     ARG_ONLY_PREFER,
     ARG_DRIVER_DIR,
@@ -315,6 +300,7 @@ static struct argp_option options[] =
 #endif
     { "pid-file",        'p',              "FILE",   0, "Specify where to write the pid of the daemon process.",            GROUP0 },
     { "no-auto-rescan",  ARG_NO_RESCAN,    NULL,     0, "Do not automatically rescan the USB bus after device disconnect.", GROUP0 },
+    { "scan-timer",      ARG_NO_SCANWHEN,  "SECS",   0, "Periodically rescan the USB bus for new devices instead of waiting for hotplug events.", GROUP0 },
     { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                           GROUP0 },
     { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                     GROUP0 },
     { "receive-timeout", ARG_RECV_TIMEOUT, "MSTIME", 0, "Specify the device receive timeout.",                              GROUP0 },
@@ -427,6 +413,20 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case ARG_NO_RESCAN:
         srvSettings.autoRescan = false;
         break;
+
+    case ARG_NO_SCANWHEN:
+    {
+        char *end;
+        long int res = strtol(arg, &end, 0);
+        if (arg[0] == '\0' || end[0] != '\0' || res < 0 || res > 3600 )
+        {
+            argp_error(state, "Scan timeer requires a numeric argument between 0 and 3600\n");
+            return ARGP_HELP_STD_ERR;
+        }
+        else
+            srvSettings.scanSeconds = res;
+        break;
+    }
 
 #ifdef LIBUSB_NO_THREADS_OPTION
     case ARG_NO_THREADS:
