@@ -115,6 +115,7 @@ Else()
     # flag that this was a recognized system
     Set(PIPESRC pipes.c)
 
+    # TODO: we might be able to move the clock_gettime check out if Darwin is ok w it
     # see if we have mach_absolute_time
     check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
 
