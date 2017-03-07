@@ -38,6 +38,7 @@ typedef struct client
 
 /* API used by the daemon/service code */
 void listenToClients(iguanaDev *idev);
+void releaseClient(client *target);
 bool handleReader(iguanaDev *idev);
 void clientConnected(PIPE_PTR clientFd, iguanaDev *idev);
 bool handleClient(client *me);

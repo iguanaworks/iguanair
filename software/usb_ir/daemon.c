@@ -598,6 +598,10 @@ void listenToClients(iguanaDev *idev)
 
         setAlias(idev->usbDev->id, NULL);
         stopListening(listener, name);
+
+        /* and release any connected clients */
+        while(idev->clientList.count > 0)
+            releaseClient((client*)idev->clientList.head);
     }
 }
 

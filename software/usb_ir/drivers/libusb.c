@@ -251,11 +251,8 @@ static void releaseDevice(deviceInfo *info)
         retval = libusb_release_interface(handle->device, 0);
         if (retval < 0)
             setError(handle, "Failed to release interface", retval);
-        else
-        {
-            libusb_close(handle->device);
-            handle->device = NULL;
-        }
+        libusb_close(handle->device);
+        handle->device = NULL;
 
         /* print errors from the usb closes */
         if (handle->error != NULL)
@@ -653,7 +650,7 @@ static void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
     loc[1] = handle->devIndex;
 }
 
-driverImpl impl_libusbpre1 = {
+driverImpl impl_libusb = {
     findDeviceEndpoints,
     interruptRecv,
     interruptSend,
@@ -672,5 +669,5 @@ driverImpl impl_libusbpre1 = {
 
 driverImpl* getImplementation()
 {
-    return &impl_libusbpre1;
+    return &impl_libusb;
 }
