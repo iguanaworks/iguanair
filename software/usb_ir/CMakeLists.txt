@@ -48,7 +48,7 @@ Else()
   List(APPEND BASESRC compat-unix.c)
   Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
   
-  If("${CMAKE_SYSTEM_NAME}" STREQUAL Linux OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
+  If("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
     If("${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
       # this makes it build on GNU Mach, but there's not USB support....
       add_definitions(-DPATH_MAX=1024)
@@ -265,12 +265,12 @@ endif()
 install(DIRECTORY files/base/etc files/base/usr
         USE_SOURCE_PERMISSIONS
         DESTINATION /)
+install(FILES iguanaIR.h
+        DESTINATION /usr/include)
 if ("${UDEV_FOUND}" EQUAL 1)
   install(DIRECTORY files/base/lib/udev/rules.d
           DESTINATION ${UDEVDIR})
 endif()
-install(FILES iguanaIR.h
-        DESTINATION /usr/include)
 if ("${SYSTEMD_FOUND}" EQUAL 1)
   install(FILES files/systemd/lib/systemd/system/iguanaIR.service
           DESTINATION ${SYSTEMD_UNITDIR})
@@ -286,17 +286,6 @@ else()
           USE_SOURCE_PERMISSIONS
           DESTINATION /)
 endif()
-
-
-##########################################
-#install: all
-#ifdef DARWIN
-#        install -D --mode 644 osx/com.iguana.igdaemon.plist \
-#                              /Library/LaunchDaemons/com.iguana.igdaemon.plist
-#        launchctl load -w /Library/LaunchDaemons/com.iguana.igdaemon.plist
-#endif
-##########################################
-
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   find_package(PythonInterp)
