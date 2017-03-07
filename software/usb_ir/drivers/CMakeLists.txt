@@ -40,11 +40,11 @@ add_library(usbpre1 SHARED ${EXCLUDE} libusbpre1.c ../list.c ${SUPPORTSRCS})
 set_property(TARGET usbpre1
              APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
 target_link_libraries(usbpre1 ${USBPRE1LIB})
-install(TARGETS usbpre1
-        DESTINATION ${LIBDIR}/iguanaIR
-        ${NEEDED})
 If(TARGET_ANDROID)
   target_link_libraries(usbpre1 usb-compat-android)
+  install(TARGETS usbpre1
+          DESTINATION ${LIBDIR}/iguanaIR
+          ${NEEDED})
 EndIf()
 
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
