@@ -522,10 +522,7 @@ int main(int argc, char **argv)
     return retval;
 }
 
-void listenToClients(iguanaDev *idev,
-                     handleReaderFunc handleReader,
-                     clientConnectedFunc clientConnected,
-                     handleClientFunc handleClient)
+void listenToClients(iguanaDev *idev)
 {
     PIPE_PTR listener;
     char name[4];

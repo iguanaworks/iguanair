@@ -36,14 +36,11 @@ typedef struct client
 #endif
 } client;
 
-typedef bool (*handleReaderFunc)(iguanaDev *idev);
-typedef void (*clientConnectedFunc)(PIPE_PTR who, iguanaDev *idev);
-typedef bool (*handleClientFunc)(client *me);
-
-void listenToClients(iguanaDev *idev,
-                     handleReaderFunc handleReader,
-                     clientConnectedFunc clientConnected,
-                     handleClientFunc handleClient);
+/* API used by the daemon/service code */
+void listenToClients(iguanaDev *idev);
+bool handleReader(iguanaDev *idev);
+void clientConnected(PIPE_PTR clientFd, iguanaDev *idev);
+bool handleClient(client *me);
 void setAlias(unsigned int id, const char *alias);
 
 /* the worker thread has to check the id at startup */

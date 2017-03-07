@@ -386,7 +386,7 @@ message(LOG_WARN, "CLOSE %d %s(%d)\n", target->fd, __FILE__, __LINE__);
     free(removeItem((itemHeader*)target));
 }
 
-static bool handleClient(client *me)
+bool handleClient(client *me)
 {
     bool retval = true;
     dataPacket request;
@@ -475,7 +475,7 @@ static void joinWithReader(iguanaDev *idev)
     joinThread(idev->reader, &exitVal);
 }
 
-static void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
+void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
 {
 #if DEBUG
 message(LOG_WARN, "OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
@@ -543,7 +543,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
     return true;
 }
 
-static bool handleReader(iguanaDev *idev)
+bool handleReader(iguanaDev *idev)
 {
     bool retval = false;
     char byte;
@@ -627,7 +627,7 @@ static void* workLoop(void *instance)
     message(LOG_INFO, "Worker %d starting\n", idev->usbDev->id);
     if (checkVersion(idev))
     {
-        listenToClients(idev, handleReader, clientConnected, handleClient);
+        listenToClients(idev);
 
         /* Close some of the pipes.  Leave one to note when the device
            reader exits. */
