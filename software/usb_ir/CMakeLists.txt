@@ -43,12 +43,14 @@ Else()
   include(CheckFunctionExists)
 
   # set variables common to all Unix-like systems
-  Set(PIPESRC pipes.c)
   Set(DAEMONSRC daemon.c)
   List(APPEND BASESRC compat-unix.c)
   Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
   
   If("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
+    # flag that this was a recognized system
+    Set(PIPESRC pipes.c)
+
     If("${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
       # this makes it build on GNU Mach, but there's not USB support....
       add_definitions(-DPATH_MAX=1024)
@@ -96,7 +98,10 @@ Else()
     # default all symbols to hidden
     Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 
-  ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "BSD")
+  ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+    # flag that this was a recognized system
+    Set(PIPESRC pipes.c)
+
     # try to find clock_gettime for subsecond timing
     check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
 
@@ -107,6 +112,9 @@ Else()
     Set(ARGPLIB argp)
 
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    # flag that this was a recognized system
+    Set(PIPESRC pipes.c)
+
     # see if we have mach_absolute_time
     check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
 
