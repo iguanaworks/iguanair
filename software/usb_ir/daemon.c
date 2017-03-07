@@ -59,8 +59,10 @@ struct parameters
 static void triggerCommand(THREAD_PTR cmd)
 {
     THREAD_PTR flg = INVALID_THREAD_PTR;
-    writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR));
-    writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR));
+    if (writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR) ||
+        writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+        message(LOG_ERROR, "failed to write flag and command over commPipe: %s\n",
+                translateError(errno));
 }
 
 static void quitHandler(int UNUSED(sig))
@@ -647,7 +649,13 @@ void setAlias(unsigned int id, const char *alias)
         free(aliasCopy);
 
         if (lstat(path, &st) == 0 && S_ISLNK(st.st_mode))
-            unlink(path);
-        symlink(name, path);
+        {
+            if (unlink(path) != 0)
+                message(LOG_ERROR, "failed to unlink old alias: %s\n",
+                        translateError(errno));
+        }
+        if (symlink(name, path) != 0)
+                message(LOG_ERROR, "failed to symlink alias: %s\n",
+                        translateError(errno));
     }
 }
