@@ -18,7 +18,7 @@
 
 #include "support.h"
 
-#if USE_CLOCK_GETTIME
+#if HAVE_CLOCK_GETTIME
 #include <time.h>
 
 #ifdef CLOCK_MONOTONIC
@@ -37,7 +37,7 @@ uint64_t microsSinceX()
     return tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
 }
 
-#elif USE_MACH_ABSOLUTE_TIME
+#elif HAVE_MACH_ABSOLUTE_TIME
 /*
   Only seen this on OS X, but I suppose other systems are possible.
  */

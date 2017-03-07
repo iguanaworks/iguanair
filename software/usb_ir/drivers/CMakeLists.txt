@@ -50,7 +50,3 @@ EndIf()
 If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   set_target_properties(usbpre1 PROPERTIES RELEASE_OUTPUT_NAME "driver-libusb")
 EndIf()
-
-
-#add_executable(tester main.c ../support.c)
-#target_link_libraries(tester usbpre1)

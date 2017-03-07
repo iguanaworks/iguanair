@@ -4,67 +4,32 @@ project(IguanaIR C)
 # Make sure to change the value in Changelog as well
 Set(FULLVER 1.1.2)
 
-#
-#  SONAME links,  not related to the package version.
-#
-Set(SO_REV 0)
+# SONAME links, unrelated to the package version.
 SET(SO_CURRENT 0)
 Set(SO_AGE 3)
+Set(SO_REV 0)
+Set(SOVERSION 0) # TODO: duplicative?
 
-Set(SOVERSION 0)
-
+# Our Android support is probably junk at this point, but keeping it
+# in another file for reference
 #Set(TARGET_ANDROID true)
-
 If(TARGET_ANDROID)
-  Message("(badly) Targeting the Android platform")
-
-  # define the entry point for the android executables
-  Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --entry=_start")
-
-  # skip the full RPATH for the build tree since it confuses the link command
-  SET(CMAKE_SKIP_BUILD_RPATH TRUE)
-
-  # shut up some warnings
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-long-long -Wno-variadic-macros")
-
-  # drastically change the include paths
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdinc -fPIC -DANDROID")
-  include_directories("/mnt/btrfs/android-ndk-r8e/platforms/android-3/arch-arm/usr/include")
-  include_directories("/mnt/btrfs/android-ndk-r8e/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86_64/lib/gcc/arm-linux-androideabi/4.4.3/include")
-
-  # drastically mess with the linking as well
-  Set(ANDROID_LINKER_FLAGS "--dynamic-linker /system/bin/linker -nostdlib -rpath /system/lib -L/mnt/btrfs/too-big/droid-system/system/lib")
-
-  Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${ANDROID_LINKER_FLAGS} /mnt/btrfs/android-ndk-r8e/platforms/android-3/arch-arm/usr/lib/crtbegin_dynamic.o /mnt/btrfs/android-ndk-r8e/platforms/android-3/arch-arm/usr/lib/crtend_android.o")
-  Set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ANDROID_LINKER_FLAGS}")
-
-  # drop -rdynamic AND always link to libc and libdl
-  Set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-lc -ldl")
-
-  # override the actual build commands
-  Set(CMAKE_C_LINK_EXECUTABLE "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS>  -o <TARGET> <LINK_LIBRARIES>")
-  Set(CMAKE_C_CREATE_SHARED_LIBRARY "/opt/arm-2012.03/bin/arm-none-linux-gnueabi-ld <CMAKE_SHARED_LIBRARY_C_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> -soname <TARGET_SONAME> -o <TARGET> <OBJECTS> -lc <LINK_LIBRARIES>")
-
-  # we need our own argp
-  add_subdirectory(win32/argp-standalone-1.3)
-  include_directories(${ARGPDIR})
-
+  include(Android.cmake)  
 EndIf()
-
-include(CheckFunctionExists)
 
 # default the LIBDIR if it was not set
 If("${LIBDIR}" STREQUAL "")
   Set(LIBDIR "/usr/lib")
 EndIf()
+# TODO: installation should go to lib64 on some platforms, but not sure this handles it now
 
 # set a couple variables early
 Set(BASESRC support.c)
 
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   add_subdirectory(win32/argp-standalone-1.3)
-  Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe)
-  Set(PYTHON_INCLUDE_DIR "C:/Python27/include")
+  Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe) # TODO: we should find instead of hard coding this
+  Set(PYTHON_INCLUDE_DIR "C:/Python27/include") # TODO: we should find instead of hard coding this
 
   List(APPEND BASELIBS ws2_32)
   Set(PIPESRC win32/pipes.c)
@@ -73,88 +38,90 @@ If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   List(APPEND BASESRC win32/compat-windows.c)
   include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES Linux OR "${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
-  If("${CMAKE_SYSTEM_NAME}" MATCHES "GNU")
-    # this makes it build on GNU Mach, but there's not USB support....
-    add_definitions(-DPATH_MAX=1024)
-  EndIf()
-
-  find_package(PkgConfig REQUIRED)
-
-  # Checking if systemd/udev is around...
-  pkg_check_modules(UDEV udev)
-  if ("${UDEV_FOUND}" EQUAL 1)
-    execute_process(COMMAND pkg-config --variable udevdir udev
-                    OUTPUT_VARIABLE UDEVDIR)
-    string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
-    string(STRIP UDEVDIR ${UDEVDIR})
-  else()
-    set(UDEVDIR "")
-  endif()
-
-  pkg_check_modules(SYSTEMD systemd)
-  if ("${SYSTEMD_FOUND}" EQUAL 1)
-    execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
-                    OUTPUT_VARIABLE SYSTEMD_UNITDIR)
-    string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
-    string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
-    execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
-                    OUTPUT_VARIABLE TMPFILESDIR)
-    string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
-    string(STRIP TMPFILESDIR ${TMPFILESDIR})
-  endif()
-
-  Set(PIPESRC pipes.c)
-  Set(DAEMONSRC daemon.c)
-  If(NOT TARGET_ANDROID)
-    Set(DAEMONLIBS pthread dl)
-  EndIf()
-
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
-
-  # see if we have clock_gettime in time.h
-  Set(CMAKE_REQUIRED_LIBRARIES rt)
-  check_function_exists(clock_gettime USE_CLOCK_GETTIME)
-  Unset(CMAKE_REQUIRED_LIBRARIES)
-
-  # default all symbols to hidden under gcc
-  # TODO: if we set the visibility correctly then the drivers cannot
-  #  find symbols from the main library... need to fix that somehow
-  #    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
-
-  List(APPEND BASESRC compat-unix.c)
-  If(NOT TARGET_ANDROID)
-    List(APPEND BASELIBS rt)
-  EndIf()
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "BSD")
-  # see if we have clock_gettime in time.h
-  Set(CMAKE_REQUIRED_LIBRARIES rt)
-  check_function_exists(clock_gettime USE_CLOCK_GETTIME)
-  Unset(CMAKE_REQUIRED_LIBRARIES)
-  List(APPEND BASESRC compat-unix.c)
-  Set(PIPESRC pipes.c)
-  Set(DAEMONSRC daemon.c)
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/usr/local/include")
-  Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
-  Set(ARGPLIB "-largp")
-  Set(PTHREADLIB "-lpthread")
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-  # see if we have mach_absolute_time
-  check_function_exists(mach_absolute_time USE_MACH_ABSOLUTE_TIME)
-
-  Set(PIPESRC pipes.c)
-  Set(DAEMONSRC daemon.c)
-  List(APPEND BASESRC compat-unix.c)
-
-  # TODO: why does macports need the -I at the end of this cflags?
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic -I/opt/local/include")
-  Set(ARGPLIB "-largp")
-
-  #    include_directories(/opt/local/include)
-  include_directories(/opt/local/include/libusb-1.0)
-  link_directories(/opt/local/lib)
-
 Else()
+  include(CheckLibraryExists)
+  include(CheckFunctionExists)
+
+  # set variables common to all Unix-like systems
+  Set(PIPESRC pipes.c)
+  Set(DAEMONSRC daemon.c)
+  List(APPEND BASESRC compat-unix.c)
+  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
+  
+  If("${CMAKE_SYSTEM_NAME}" STREQUAL Linux OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
+    If("${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
+      # this makes it build on GNU Mach, but there's not USB support....
+      add_definitions(-DPATH_MAX=1024)
+    EndIf()
+
+    find_package(PkgConfig REQUIRED)
+
+    # non-Android Linux systems need to link to dl and pthread
+    If(NOT TARGET_ANDROID)
+      Set(DAEMONLIBS pthread dl)
+    EndIf()
+
+    # Use pkg-config to find udev
+    pkg_check_modules(UDEV udev)
+    if ("${UDEV_FOUND}" EQUAL 1)
+      execute_process(COMMAND pkg-config --variable udevdir udev
+                      OUTPUT_VARIABLE UDEVDIR)
+      string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
+      string(STRIP UDEVDIR ${UDEVDIR})
+    else()
+      set(UDEVDIR "")
+    endif()
+
+    # Use pkg-config to find systemd
+    pkg_check_modules(SYSTEMD systemd)
+    if ("${SYSTEMD_FOUND}" EQUAL 1)
+      execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
+                      OUTPUT_VARIABLE SYSTEMD_UNITDIR)
+      string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+      string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+      execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
+                      OUTPUT_VARIABLE TMPFILESDIR)
+      string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
+      string(STRIP TMPFILESDIR ${TMPFILESDIR})
+    endif()
+
+    # see if we have clock_gettime possibly in rt
+    check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+    If(NOT HAVE_CLOCK_GETTIME)
+      check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+    Else()
+      List(APPEND BASELIBS rt)
+    EndIf()
+    
+    # default all symbols to hidden
+    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+
+  ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "BSD")
+    # try to find clock_gettime for subsecond timing
+    check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+
+    # argp and pthread must be explicitly linked and argp defaults to /usr/local
+    include_directories(/usr/local/include)
+    link_directories(/usr/local/lib)
+    Set(DAEMONLIBS pthread)
+    Set(ARGPLIB argp)
+
+  ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    # see if we have mach_absolute_time
+    check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
+
+    # TODO: why does macports need the -I at the end of this cflags?
+    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/opt/local/include")
+    Set(ARGPLIB argp)
+#    Set(DAEMONLIBS pthread) ok or no?
+
+    #    include_directories(/opt/local/include)
+    include_directories(/opt/local/include/libusb-1.0)
+    link_directories(/opt/local/lib)
+  EndIf()
+EndIf()
+
+If("${PIPESRC}" STREQUAL "")
   message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
 
@@ -185,16 +152,11 @@ install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
 
 # build the service/server that controls hardware
-#+LISTENER=unixlistener.o
-#+#LISTENER=tcplistener.o
-#+igdaemon: daemon.o $(LISTENER)
 add_executable(igdaemon ${DAEMONSRC}
                server.c client-interface.c device-interface.c driver.c
                list.c protocol-versions.c ${PIPESRC} dataPackets.c ${BASESRC})
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
-set_property(TARGET igdaemon
-             PROPERTY LINK_FLAGS  "${PTHREADLIB}")
 target_link_libraries(igdaemon iguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
@@ -207,7 +169,6 @@ add_subdirectory(drivers)
 add_executable(igclient client.c list.c ${BASESRC})
 set_property(TARGET igclient
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
-#     set_property(TARGET igclient PROPERTY LINK_FLAGS "${ARGPLIB}")
 target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 
@@ -337,7 +298,7 @@ endif()
 ##########################################
 
 
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   find_package(PythonInterp)
   add_custom_target(BuildReleasePackage
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/py2exe-setup.py py2exe
