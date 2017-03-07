@@ -1,0 +1,59 @@
+This project uses the cmake build tools for simplified cross
+compatibility.  In order to build the project by hand please make sure
+that you have installed the following prerequisites:
+ - gcc or clang or xcode command line tools
+ - cmake
+ - git
+ - libusb (v1.0 or later preferred)
+ - swig
+ - python-dev
+
+Specifically swig and python-dev are required for building the Python
+interface, but that is only necessary for updating device firmware or
+if you wish to write your own Python scripts that interact with the
+device.
+
+The source code provided here compiles into:
+
+ - igdaemon - A daemon on *nix or a service on Windows that
+       coordinates access between multiple clients to one or more
+       IguanaWorks USB infrared devices.  On Linux a kernel driver
+       also exists.
+
+ - igclient - A command line application for interacting with the
+       igdaemon in relatively simple ways.  This can be used to
+       receive raw pulse/space signals or send similar among other
+       tasks.
+
+ - libiguanaIR.so - A C library, used by igclient, to interact with
+       igdaemon.  For more complex tasks developers may want to
+       interface with this library.  The API is described in
+       iguanaIR.h.
+
+ - iguanaIR.py / _iguanaIR.so - An optional Python (2 or 3) wrapper
+       for the libiguanaIR.so library for writing Python scripts that
+       interact with IguanaWorks infrared hardware via the API and
+       igdaemon.  This wrapper is required by the iguanaIR-reflasher
+       for updating device firmware.
+
+ - lirc-drv-iguanair - An optional LIRC plugin to allow a user to
+       connect LIRC to the IguanaWorks infrared hardware via the
+       igdaemon.  On Linux this can also be done via a kernel module.
+
+The command line steps to build these tools are as follows:
+ 1) cd software/usb_ir
+ 2) ./runCmake
+ 3) make -C build
+ 4) make -C build install
+ 5) cd ../lirc-drv-iguanair
+ 6) make
+ 7) make install
+
+Step 2) should print missing prerequisites and note what can be built
+based on what prerequisites were found.  If swig or Python development
+libraries are not found then the iguanaIR.py Python module will not be
+built.
+
+Please take a look at the IguanaWorks support page if you have further
+questions:
+  https://www.iguanaworks.net/support/
