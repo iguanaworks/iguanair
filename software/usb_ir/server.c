@@ -121,13 +121,13 @@ deviceList* initServer()
         message(LOG_ERROR, "failed to start a scanning timer.\n");
 /* initialize the commPipe, driver, and device list */
     else if (! createPipePair(srvSettings.commPipe))
-	{
+    {
 #ifdef _WIN32
         message(LOG_ERROR, "failed to open communication pipe, is another igdaemon running?\n");
 #else
         message(LOG_ERROR, "failed to open communication pipe.\n");
 #endif
-	}
+    }
     else if (! findDriver(srvSettings.driverDir,
                           srvSettings.preferred, srvSettings.onlyPreferred))
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");

@@ -38,12 +38,12 @@ static bool findDriverDir(char *path)
     if (_NSGetExecutablePath(path, &size) == 0)
     {
         char *slash = strrchr(path, '/');
-	if (slash != NULL)
-	{
-	    slash[0] = '\0';
-	    strcat(path, "/drivers");
-	    return true;
-	}
+        if (slash != NULL)
+        {
+            slash[0] = '\0';
+            strcat(path, "/drivers");
+            return true;
+        }
     }
     return false;
 }

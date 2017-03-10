@@ -205,8 +205,8 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 
 #ifdef __APPLE__
         /* Support hot plug in on Mac OS X -- returns non-zero for error */
-	/* TODO: figure out what this used to be so we can make it work again*/
-	/*        daemon_osx_support(ids);*/
+    /* TODO: figure out what this used to be so we can make it work again*/
+    /*        daemon_osx_support(ids);*/
 #endif
 
             /* loop, waiting for commands */
