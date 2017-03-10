@@ -15,11 +15,12 @@
 
 #include "devicebase.h"
 
-/* locate the expected location of the driver directory */
-bool findDriverDir(char *path);
-
 /* remaining function calls are illegal until this returns true */
 bool findDriver(const char *path, const char **preferred, bool onlyPreferred);
+
+/* initialization and cleanup */
+bool initializeDriver();
+void cleanupDriver();
 
 /* wrapped usb methods */
 bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize);

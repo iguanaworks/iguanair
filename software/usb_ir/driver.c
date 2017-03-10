@@ -13,7 +13,7 @@
 static driverImpl *implementation = NULL;
 
 #ifdef _WIN32
-bool findDriverDir(char *path)
+static bool findDriverDir(char *path)
 {
     HMODULE hModule = GetModuleHandle("iguanaIR.dll");
     if (hModule != NULL &&
@@ -29,7 +29,7 @@ bool findDriverDir(char *path)
 
 #include <mach-o/dyld.h>
 
-bool findDriverDir(char *path)
+static bool findDriverDir(char *path)
 {
     uint32_t size = PATH_MAX;
     /* TODO: because this call does not give an absolute path it could
@@ -49,7 +49,7 @@ bool findDriverDir(char *path)
 }
 
 #else
-bool findDriverDir(char *path)
+static bool findDriverDir(char *path)
 {
     void *library;
     unsigned long start, target, end;
@@ -104,7 +104,7 @@ bool checkDriver(const char *root, const char *name)
     if (name[0] == '/')
 #endif
         strcpy(driver, name);
-    else
+    else if (root != NULL)
     {
         strcpy(driver, root);
         /* make sure we append a / (or \) if need be */
@@ -115,6 +115,8 @@ bool checkDriver(const char *root, const char *name)
         }
         strcat(driver, name);
     }
+    else
+        strcpy(driver, name);
 
     /* attempt to load the driver */
     if (loadDriver(driver))
@@ -133,26 +135,61 @@ bool checkDriver(const char *root, const char *name)
 
 /* search for shared objects in the drivers directory and use the
    first that will load. */
-bool findDriver(const char *path, const char **preferred, bool onlyPreferred)
+bool findDriver(const char *driverDir, const char **preferred, bool onlyPreferred)
 {
-    DIR_HANDLE dir = NULL;
-    char buffer[PATH_MAX];
     int x;
+
+    /* try to find the driver directory if none was provided */
+    if (driverDir == NULL)
+    {
+        char expectedDir[PATH_MAX];
+        if (findDriverDir(expectedDir))
+            driverDir = expectedDir;
+        else
+            /* fall back on something reasonable per OS */
+#ifdef _WIN32
+            driverDir = ".";
+#else
+  #if __LP64__
+        if (access("/usr/lib64", F_OK) == 0)
+            driverDir = "/usr/lib64/iguanaIR";
+        else
+  #endif
+            driverDir = "/usr/lib/iguanaIR";
+#endif
+    }
+    message(LOG_DEBUG, "  drvDir: %s\n", driverDir);
 
     /* check through the preferred list */
     if (preferred != NULL)
         for(x = 0; preferred[x] != NULL; x++)
-            if (checkDriver(path, preferred[x]))
+            if (checkDriver(driverDir, preferred[x]) || checkDriver(NULL, preferred[x]))
                 return true;
 
-    /* check through all files in the path if allowed */
-    strcpy(buffer, path);
-    while(! onlyPreferred &&
-          (dir = findNextFile(dir, buffer)) != NULL)
-        if (checkDriver(path, buffer))
-            return true;
+    /* if allowed check through files in the driverDir */
+    if (! onlyPreferred)
+    {
+        DIR_HANDLE dir = NULL;
+        char buffer[PATH_MAX];
+
+        strcpy(buffer, driverDir);
+        while((dir = findNextFile(dir, buffer)) != NULL)
+            if (checkDriver(driverDir, buffer))
+                return true;
+    }
 
     return false;
+}
+
+bool initializeDriver()
+{
+    return implementation->initializeDriver();
+}
+
+void cleanupDriver()
+{
+    if (implementation != NULL && implementation->cleanupDriver != NULL)
+        implementation->cleanupDriver();
 }
 
 void printError(int level, char *msg, deviceInfo *info)

@@ -176,30 +176,32 @@ static void workLoop()
     deviceList *list;
     int ctlSock = INVALID_PIPE;
 
-    /* initialize the driver and device list */
+    /* initialize the driver, signals, and device list */
     if ((list = initServer(&srvSettings)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
-    else if (signal(SIGINT, quitHandler) == SIG_ERR)
-        message(LOG_ERROR, "failed to install SIGINT handler.\n");
-    else if (signal(SIGTERM, quitHandler) == SIG_ERR)
-        message(LOG_ERROR, "failed to install SIGTERM handler.\n");
-    else if (signal(SIGHUP, scanHandler) == SIG_ERR)
-        message(LOG_ERROR, "failed to install SIGHUP handler.\n");
-    else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-        message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
-    else if (! srvSettings.justDescribe && (ctlSock = startListening(NULL)) == INVALID_PIPE)
-        message(LOG_ERROR, "failed to open the control socket.\n");
     else
     {
-        bool quit = false;
+        if (signal(SIGINT, quitHandler) == SIG_ERR)
+            message(LOG_ERROR, "failed to install SIGINT handler.\n");
+        else if (signal(SIGTERM, quitHandler) == SIG_ERR)
+            message(LOG_ERROR, "failed to install SIGTERM handler.\n");
+        else if (signal(SIGHUP, scanHandler) == SIG_ERR)
+            message(LOG_ERROR, "failed to install SIGHUP handler.\n");
+        else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+            message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
+        else if (! srvSettings.justDescribe && (ctlSock = startListening(NULL)) == INVALID_PIPE)
+            message(LOG_ERROR, "failed to open the control socket.\n");
+        else
+        {
+            bool quit = false;
 
 #if DEBUG
 printf("OPEN %d %s(%d)\n", srvSettings.commPipe[0], __FILE__, __LINE__);
 printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 #endif
 
-        /* trigger the initial device scan */
-        scanHandler(SIGHUP);
+            /* trigger the initial device scan */
+            scanHandler(SIGHUP);
 
 #ifdef __APPLE__
         /* Support hot plug in on Mac OS X -- returns non-zero for error */
@@ -207,59 +209,63 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 	/*        daemon_osx_support(ids);*/
 #endif
 
-        /* loop, waiting for commands */
-        while(! quit)
-        {
-            THREAD_PTR thread = INVALID_THREAD_PTR;
-            void *exitVal;
+            /* loop, waiting for commands */
+            while(! quit)
+            {
+                THREAD_PTR thread = INVALID_THREAD_PTR;
+                void *exitVal;
 
-            /* wait for a new ctl connection, a command from an
-               existing ctl connection, or a message from an exiting
-               child thread. */
+                /* wait for a new ctl connection, a command from an
+                   existing ctl connection, or a message from an exiting
+                   child thread. */
 
-            /* read a command and check for error */
-            if (readPipe(srvSettings.commPipe[READ], &thread,
-                         sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
-            {
-                message(LOG_ERROR,
-                        "CommPipe read failed: %s\n", translateError(errno));
-                quit = true;
+                /* read a command and check for error */
+                if (readPipe(srvSettings.commPipe[READ], &thread,
+                             sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+                {
+                    message(LOG_ERROR,
+                            "CommPipe read failed: %s\n", translateError(errno));
+                    quit = true;
+                }
+                /* threads trigger a join by telling the main thread their id */
+                else if (thread != INVALID_THREAD_PTR)
+                    joinThread(thread, &exitVal);
+                /* read the actual command (came from a signal handler) */
+                else if (readPipe(srvSettings.commPipe[READ], &thread,
+                                  sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+                {
+                    message(LOG_ERROR,
+                            "Command read failed: %s\n", translateError(errno));
+                    quit = true;
+                }
+                /* handle the shutdown command */
+                else if (thread == (THREAD_PTR)QUIT_TRIGGER)
+                    quit = true;
+                /* complain about unknown commands */
+                else if (thread != (THREAD_PTR)SCAN_TRIGGER)
+                    message(LOG_ERROR,
+                            "Unknown command from commPipe: %d\n", thread);
+                /* handle the scan/rescan command */
+                else
+                {
+                    if (srvSettings.justDescribe)
+                        message(LOG_NORMAL, "Detected Iguanaworks devices:\n");
+                    if (! updateDeviceList(list))
+                        message(LOG_ERROR, "scan failed.\n");
+                    if (srvSettings.justDescribe)
+                        break;
+                }
             }
-            /* threads trigger a join by telling the main thread their id */
-            else if (thread != INVALID_THREAD_PTR)
-                joinThread(thread, &exitVal);
-            /* read the actual command (came from a signal handler) */
-            else if (readPipe(srvSettings.commPipe[READ], &thread,
-                              sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
-            {
-                message(LOG_ERROR,
-                        "Command read failed: %s\n", translateError(errno));
-                quit = true;
-            }
-            /* handle the shutdown command */
-            else if (thread == (THREAD_PTR)QUIT_TRIGGER)
-                quit = true;
-            /* complain about unknown commands */
-            else if (thread != (THREAD_PTR)SCAN_TRIGGER)
-                message(LOG_ERROR,
-                        "Unknown command from commPipe: %d\n", thread);
-            /* handle the scan/rescan command */
-            else
-            {
-                if (srvSettings.justDescribe)
-                    message(LOG_NORMAL, "Detected Iguanaworks devices:\n");
-                if (! updateDeviceList(list))
-                    message(LOG_ERROR, "scan failed.\n");
-                if (srvSettings.justDescribe)
-                    break;
-            }
+
+            /* wait for all the workers to finish */
+            reapAllChildren(list);
+
+            /* close up the server socket */
+            stopListening(ctlSock, NULL);
         }
 
-        /* wait for all the workers to finish */
-        reapAllChildren(list);
-
-        /* close up the server socket */
-        stopListening(ctlSock, NULL);
+        /* release any server-side resources on the way out */
+        cleanupServer();
     }
 }
 

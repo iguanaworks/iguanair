@@ -218,6 +218,12 @@ static bool findId(itemHeader *item, void *userData)
     return true;
 }
 
+static bool initializeDriver()
+{
+    usb_init();
+    return true;
+}
+
 static bool updateDeviceList(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
@@ -225,9 +231,6 @@ static bool updateDeviceList(deviceList *devList)
     struct usb_device *dev;
     unsigned int pos, count = 0, newCount = 0;
     usbDevice *devPos;
-
-    /* initialize usb */
-    usb_init();
 
     /* the next two return counts of busses and devices respectively */
     usb_find_busses();
@@ -461,6 +464,8 @@ static void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
 }
 
 driverImpl impl_libusbpre1 = {
+    initializeDriver,
+    NULL,
     findDeviceEndpoints,
     interruptRecv,
     interruptSend,

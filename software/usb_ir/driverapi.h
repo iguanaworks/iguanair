@@ -22,6 +22,10 @@
 
 typedef struct driverImpl
 {
+    /* initialization and cleanup */
+    bool (*initializeDriver)();
+    void (*cleanupDriver)();
+
     /* wrapped usb methods */
     bool (*findDeviceEndpoints)(deviceInfo *info, int *maxPacketSize);
     int (*interruptRecv)(deviceInfo *info,

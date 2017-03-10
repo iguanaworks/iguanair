@@ -452,6 +452,19 @@ static bool claimDevice(struct libusb_device *dev, usbId *id, usbDeviceList *lis
     return success;
 }
 
+static bool initializeDriver()
+{
+    return libusb_init(NULL) == 0;
+}
+
+static void cleanupDriver()
+{
+    /* We should be calling libusb_exit but that introduces crashes. */
+#if 0
+    libusb_exit(NULL);
+#endif
+}
+
 static bool updateDeviceList(deviceList *devList)
 {
     usbDeviceList *list = (usbDeviceList*)devList;
@@ -462,9 +475,6 @@ static bool updateDeviceList(deviceList *devList)
 
     /* fedora 19 seems to process udev triggers before the device is ready */
     usleep(1000);
-
-    /* initialize usb TODO: should call libusb_exit at the end? */
-    libusb_init(NULL);
 
     /* the next two return counts of busses and devices respectively */
     listSize = libusb_get_device_list(NULL, &usbList);
@@ -651,6 +661,8 @@ static void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
 }
 
 driverImpl impl_libusb = {
+    initializeDriver,
+    cleanupDriver,
     findDeviceEndpoints,
     interruptRecv,
     interruptSend,

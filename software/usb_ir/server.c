@@ -104,7 +104,6 @@ static void* scanTrigger(void *junk)
 
 deviceList* initServer()
 {
-    char expectedDir[PATH_MAX];
     deviceList *list = NULL;
     int x;
     for(x = 0; ids[x].idVendor != INVALID_VENDOR; x++)
@@ -116,26 +115,6 @@ deviceList* initServer()
             "  recvTimeout: %d\n", srvSettings.devSettings.recvTimeout);
     message(LOG_DEBUG,
             "  sendTimeout: %d\n", srvSettings.devSettings.sendTimeout);
-
-    /* if we are expected to find the driver directory.... attempt it */
-    if (srvSettings.driverDir == NULL)
-    {
-        if (findDriverDir(expectedDir))
-            srvSettings.driverDir = expectedDir;
-        else
-            /* fall back on something reasonable? */
-#ifdef _WIN32
-            srvSettings.driverDir = ".";
-#else
-  #if __LP64__
-        if (access("/usr/lib64", F_OK) == 0)
-            srvSettings.driverDir = "/usr/lib64/iguanaIR";
-        else
-  #endif
-            srvSettings.driverDir = "/usr/lib/iguanaIR";
-#endif
-    }
-    message(LOG_DEBUG, "  driverDir: %s\n", srvSettings.driverDir);
 
     /* start up a thread to trigger periodic rescans if requested */
     if (srvSettings.scanSeconds > 0 && ! startThread(&srvSettings.scanTimerThread, scanTrigger, NULL))
@@ -150,8 +129,10 @@ deviceList* initServer()
 #endif
 	}
     else if (! findDriver(srvSettings.driverDir,
-                     srvSettings.preferred, srvSettings.onlyPreferred))
+                          srvSettings.preferred, srvSettings.onlyPreferred))
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");
+    else if (! initializeDriver())
+        message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
     else if ((list = prepareDeviceList(ids, srvSettings.devFunc)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
     else
@@ -162,6 +143,11 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[0],   __FILE__, __LIN
 message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[1],   __FILE__, __LINE__);
 #endif
     return list;
+}
+
+void cleanupServer()
+{
+    cleanupDriver();
 }
 
 void makeParentJoin(THREAD_PTR thread)
