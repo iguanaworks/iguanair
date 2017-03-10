@@ -97,7 +97,7 @@ DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer)
     if (hFind == NULL)
         hFind = opendir(buffer);
 
-    if (hFind != NULL)
+    while(hFind != NULL)
     {
         struct dirent *dent;
 
@@ -106,8 +106,11 @@ DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer)
             closedir(hFind);
             hFind = NULL;
         }
-        else
+        else if ((dent->d_type & DT_DIR) == 0)
+        {
             strcpy(buffer, dent->d_name);
+            break;
+        }
     }
 
     return hFind;
