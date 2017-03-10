@@ -44,6 +44,7 @@ The command line steps to build these tools are as follows:
  1) cd software/usb_ir
  2) ./runCmake
  3) make -C build
+ 3.1) make -C build usbpre1drv
  4) make -C build install
  5) cd ../lirc-drv-iguanair
  6) make
@@ -52,7 +53,8 @@ The command line steps to build these tools are as follows:
 Step 2) should print missing prerequisites and note what can be built
 based on what prerequisites were found.  If swig or Python development
 libraries are not found then the iguanaIR.py Python module will not be
-built.
+built.  Step 3.1) is optional and should only be done by people who
+for some reason need to build a driver for libusb 0.1.
 
 Please take a look at the IguanaWorks support page if you have further
 questions:
