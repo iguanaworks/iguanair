@@ -380,7 +380,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
 
 static bool claimDevice(struct libusb_device *dev, usbId *id, usbDeviceList *list, usbDevice *devPos)
 {
-    int retval;
+    int retval, configNum;
     bool success = false;
     usbDevice *newDev = NULL;
 
@@ -417,7 +417,8 @@ static bool claimDevice(struct libusb_device *dev, usbId *id, usbDeviceList *lis
                 break;
 
             /* try to configure device and claim the interface */
-            if ((retval = libusb_set_configuration(newDev->device, 1)) < 0)
+            if ((retval = libusb_get_configuration(newDev->device, &configNum) < 0) ||
+                (configNum != 1 && (retval = libusb_set_configuration(newDev->device, 1)) < 0))
                 setError(newDev, "Failed to set device configuration", retval);
             else if ((retval = libusb_claim_interface(newDev->device, 0)) < 0)
                 setError(newDev, "libusb_claim_interface failed 0", retval);
