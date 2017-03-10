@@ -33,7 +33,7 @@
 #include "server.h"
 
 #ifdef __APPLE__
-extern int daemon_osx_support(const usbId *);
+extern int darwin_hotplug(const usbId *);
 #endif
 
 /* we need to call connect without doing a version check when we're
@@ -204,9 +204,8 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
             scanHandler(SIGHUP);
 
 #ifdef __APPLE__
-        /* Support hot plug in on Mac OS X -- returns non-zero for error */
-    /* TODO: figure out what this used to be so we can make it work again*/
-    /*        daemon_osx_support(ids);*/
+            /* Support hot plug in on Mac OS X -- TODO: returns non-zero for error */
+            darwin_hotplug(ids);
 #endif
 
             /* loop, waiting for commands */

@@ -1,4 +1,4 @@
-/*! @file       daemonosx.c
+/*! @file       hotplug.c
     @author     Kyle J. McKay
     @brief      Mac OS X iguanaIR daemon hot plug in support
     @details
@@ -31,7 +31,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 */
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <signal.h>
@@ -45,67 +44,65 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "iguanaIR.h"
 #include "driver.h"
 
-extern int daemon_osx_support(const usbId *);
-
-static void *osx_thread(const usbId *);
-
-int daemon_osx_support(const usbId *ids)
-{
-  int err;
-  pthread_t osx_thread_id;
-  pthread_attr_t attrs;
-
-  pthread_attr_init(&attrs);
-  pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-  err = pthread_create(
-    &osx_thread_id, &attrs, (void *(*)(void *))osx_thread, (void *)ids);
-  pthread_attr_destroy(&attrs);
-  return err;
-}
-
 static void arm_notification(io_iterator_t iterator)
 {
   io_object_t object;
 
-  while ((object = IOIteratorNext(iterator)) != 0) {
-    IOObjectRelease(object);
-  }
+  while ((object = IOIteratorNext(iterator)) != 0)
+      IOObjectRelease(object);
 }
 
-static void osx_match_device(void *refcon __attribute__((unused)),
+static void darwin_match_device(void *refcon __attribute__((unused)),
                              io_iterator_t iterator)
 {
   /* notify iguanaIR daemon so that it rescans for new devices */
   raise(SIGHUP);
+
   /* re-arm the notification */
   arm_notification(iterator);
 }
 
-static void *osx_thread(const usbId *ids)
+static void *darwin_thread(const usbId *ids)
 {
-  IONotificationPortRef ioport = IONotificationPortCreate(kIOMasterPortDefault);
-  CFRunLoopSourceRef rlsource = IONotificationPortGetRunLoopSource(ioport);
-  CFMutableDictionaryRef matchDict = IOServiceMatching(kIOUSBDeviceClassName);
+    IONotificationPortRef ioport = IONotificationPortCreate(kIOMasterPortDefault);
+    CFRunLoopSourceRef rlsource = IONotificationPortGetRunLoopSource(ioport);
+    CFMutableDictionaryRef matchDict = IOServiceMatching(kIOUSBDeviceClassName);
 
-  if (ids && matchDict) {
-    for (; ids->idVendor != INVALID_VENDOR; ++ids) {
-      SInt32 vendor = (SInt32) ids->idVendor;
-      SInt32 product = (SInt32) ids->idProduct;
-      io_iterator_t iter;
+    if (ids && matchDict)
+    {
+        for (; ids->idVendor != INVALID_VENDOR; ++ids)
+        {
+            SInt32 vendor = (SInt32) ids->idVendor;
+            SInt32 product = (SInt32) ids->idProduct;
+            io_iterator_t iter;
 
-      CFDictionarySetValue(matchDict, CFSTR(kUSBVendorName),
-        CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &vendor));
-      CFDictionarySetValue(matchDict, CFSTR(kUSBProductName),
-        CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &product));
-      CFRetain(matchDict);
-      IOServiceAddMatchingNotification(ioport, kIOMatchedNotification,
-        matchDict, osx_match_device, NULL, &iter);
-      arm_notification(iter);
+            CFDictionarySetValue(matchDict, CFSTR(kUSBVendorName),
+                                 CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &vendor));
+            CFDictionarySetValue(matchDict, CFSTR(kUSBProductName),
+                                 CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &product));
+            CFRetain(matchDict);
+            IOServiceAddMatchingNotification(ioport, kIOMatchedNotification,
+                                             matchDict, darwin_match_device, NULL, &iter);
+            arm_notification(iter);
+        }
+        CFRelease(matchDict);
     }
-    CFRelease(matchDict);
-  }
 
-  CFRunLoopAddSource(CFRunLoopGetCurrent(), rlsource, kCFRunLoopDefaultMode);
-  CFRunLoopRun();
-  return NULL;
+    CFRunLoopAddSource(CFRunLoopGetCurrent(), rlsource, kCFRunLoopDefaultMode);
+    CFRunLoopRun();
+    return NULL;
+}
+
+int darwin_hotplug(const usbId *ids)
+{
+    int err;
+    pthread_t darwin_thread_id;
+    pthread_attr_t attrs;
+
+    pthread_attr_init(&attrs);
+    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+    err = pthread_create(&darwin_thread_id, &attrs, (void *(*)(void *))darwin_thread, (void *)ids);
+    pthread_attr_destroy(&attrs);
+
+    return err;
 }

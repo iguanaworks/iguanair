@@ -112,8 +112,9 @@ Else()
     Set(ARGPLIB argp)
 
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-    # flag that this was a recognized system
+    # flag that this was a recognized system, and add os specific code
     Set(PIPESRC pipes.c)
+    List(APPEND DAEMONSRC darwin/hotplug.c)
 
     # TODO: we might be able to move the clock_gettime check out if Darwin is ok w it
     # see if we have mach_absolute_time

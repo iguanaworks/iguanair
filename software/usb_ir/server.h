@@ -66,6 +66,9 @@ void initServerSettings(deviceFunc devFunc);
 deviceList* initServer();
 void cleanupServer();
 
+/* usb ids that we support */
+extern usbId usbIds[];
+
 /* global settings object */
 extern serverSettings srvSettings;
 

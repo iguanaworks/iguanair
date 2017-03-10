@@ -24,11 +24,9 @@
 #include "server.h"
 #include "pipes.h"
 
-/* global server settings are grouped togther */
+/* global variables, internal and shared */
 serverSettings srvSettings;
-PIPE_PTR commPipe[2];
-
-static usbId ids[] = {
+usbId usbIds[] = {
     {0x1781, 0x0938, NULL}, /* iguanaworks USB transceiver */
     END_OF_USB_ID_LIST
 };
@@ -106,8 +104,8 @@ deviceList* initServer()
 {
     deviceList *list = NULL;
     int x;
-    for(x = 0; ids[x].idVendor != INVALID_VENDOR; x++)
-        ids[x].data = &srvSettings.devSettings;
+    for(x = 0; usbIds[x].idVendor != INVALID_VENDOR; x++)
+        usbIds[x].data = &srvSettings.devSettings;
 
     /* print a few parameters for the user */
     message(LOG_DEBUG, "Parameters:\n");
@@ -133,7 +131,7 @@ deviceList* initServer()
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");
     else if (! initializeDriver())
         message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
-    else if ((list = prepareDeviceList(ids, srvSettings.devFunc)) == NULL)
+    else if ((list = prepareDeviceList(usbIds, srvSettings.devFunc)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
     else
         claimDevices(list, ! srvSettings.justDescribe, srvSettings.unbind);
