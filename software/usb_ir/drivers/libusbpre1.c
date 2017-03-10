@@ -26,11 +26,6 @@
 
 #include "../list.h"
 
-/* TODO: decide what DEVNUM means based on libusb version.
-prior to 0.1.9 we use dev->bus->location
-*/
-#define LIBUSB_DEVNUM(dev) (dev->devnum)
-
 typedef struct usbDevice
 {
     /* fields for the linked list of devices */
@@ -256,7 +251,7 @@ static bool updateDeviceList(deviceList *devList)
                     while(devPos != NULL &&
                           (devPos->busIndex < busIndex ||
                            (devPos->busIndex == busIndex &&
-                            devPos->devIndex < LIBUSB_DEVNUM(dev))))
+                            devPos->devIndex < dev->devnum)))
                         /* used to release devices here, since they
                          * are no longer used, however, this races
                          * with reinsertion of the device, and
@@ -268,7 +263,7 @@ static bool updateDeviceList(deviceList *devList)
                     /* append or insert a new device */
                     if (devPos == NULL ||
                         devPos->busIndex != busIndex ||
-                        devPos->devIndex != LIBUSB_DEVNUM(dev))
+                        devPos->devIndex != dev->devnum)
                     {
                         bool success = false;
                         usbDevice *newDev = NULL;
@@ -278,7 +273,7 @@ static bool updateDeviceList(deviceList *devList)
                         /* basic stuff */
                         newDev->info.type = list->ids[pos];
                         newDev->busIndex = (uint8_t)busIndex;
-                        newDev->devIndex = LIBUSB_DEVNUM(dev);
+                        newDev->devIndex = dev->devnum;
 
                         /* determine the id (reusing if possible) */
                         newDev->info.id = 0;
@@ -316,7 +311,7 @@ static bool updateDeviceList(deviceList *devList)
                                 message(LOG_ERROR,
                                         "Is kernel module loaded or the igdaemon already running?\n");
                             message(LOG_ERROR, "  trying to claim usb:%d:%d\n",
-                                    busIndex, LIBUSB_DEVNUM(dev));
+                                    busIndex, dev->devnum);
                             printError(LOG_ERROR, "  updateDeviceList failed",
                                        &newDev->info);
 
@@ -460,6 +455,8 @@ static void getDeviceLocation(deviceInfo *info, uint8_t loc[2])
 {
     usbDevice *handle = handleFromInfoPtr(info);
     loc[0] = handle->busIndex;
+    /* On Linux devIndex points at a counter instead of a physical
+       location */
     loc[1] = handle->devIndex;
 }
 

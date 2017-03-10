@@ -307,7 +307,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
     DIR *dir;
     int len, devIndex, busIndex;
 
-    devIndex = libusb_get_device_address(dev);
+    devIndex = libusb_get_port_number(dev);
     busIndex = libusb_get_bus_number(dev);
     if (describe)
         message(LOG_NORMAL, "  USB IR device number %d on bus %d:\n", devIndex, busIndex);
@@ -390,7 +390,7 @@ static bool claimDevice(struct libusb_device *dev, usbId *id, usbDeviceList *lis
     /* basic stuff */
     newDev->info.type = *id;
     newDev->busIndex = libusb_get_bus_number(dev);
-    newDev->devIndex = libusb_get_device_address(dev);
+    newDev->devIndex = libusb_get_port_number(dev);
 
     /* determine the id (reusing if possible) */
     newDev->info.id = 0;
@@ -505,7 +505,7 @@ static bool updateDeviceList(deviceList *devList)
                 while(devPos != NULL &&
                       (devPos->busIndex < busIndex ||
                        (devPos->busIndex == busIndex &&
-                        devPos->devIndex < libusb_get_device_address(dev))))
+                        devPos->devIndex < libusb_get_port_number(dev))))
                     /* used to release devices here, since they
                      * are no longer used, however, this races
                      * with reinsertion of the device, and
@@ -517,7 +517,7 @@ static bool updateDeviceList(deviceList *devList)
                 /* append or insert a new device */
                 if (devPos == NULL ||
                     devPos->busIndex != busIndex ||
-                    devPos->devIndex != libusb_get_device_address(dev))
+                    devPos->devIndex != libusb_get_port_number(dev))
                 {
                     if (list->describe)
                         checkInUse(dev, true);
