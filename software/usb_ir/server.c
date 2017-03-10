@@ -117,7 +117,7 @@ deviceList* initServer()
     /* start up a thread to trigger periodic rescans if requested */
     if (srvSettings.scanSeconds > 0 && ! startThread(&srvSettings.scanTimerThread, scanTrigger, NULL))
         message(LOG_ERROR, "failed to start a scanning timer.\n");
-/* initialize the commPipe, driver, and device list */
+    /* initialize the commPipe, driver, and device list */
     else if (! createPipePair(srvSettings.commPipe))
     {
 #ifdef _WIN32

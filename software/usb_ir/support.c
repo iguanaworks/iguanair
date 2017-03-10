@@ -49,8 +49,7 @@ void changeLogLevel(int difference)
 
 void setLogLevel(int value)
 {
-    currentLevel = LOG_NORMAL;
-    changeLogLevel(value);
+    changeLogLevel(value - currentLevel);
 }
 
 void openLog(const char *filename)
