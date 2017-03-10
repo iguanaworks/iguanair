@@ -550,10 +550,7 @@ static void startOverlappedAction(PIPE_PTR fd, OVERLAPPED *over, bool connect)
 }
 
 /* listen to clients connecting to either name or alias, and the idev->reader */
-void listenToClients(iguanaDev *idev,
-                     handleReaderFunc handleReader,
-                     clientConnectedFunc clientConnected,
-                     handleClientFunc handleClient)
+void listenToClients(iguanaDev *idev)
 {
     HANDLE *handles = NULL;
     OVERLAPPED over[3];
