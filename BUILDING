@@ -7,6 +7,7 @@ that you have installed the following prerequisites:
  - libusb (v1.0 or later preferred)
  - swig
  - python-dev
+ - argp
 
 Specifically swig and python-dev are required for building the Python
 interface, but that is only necessary for updating device firmware or
