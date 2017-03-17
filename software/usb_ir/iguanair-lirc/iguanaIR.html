@@ -1,0 +1,54 @@
+<h2>IguanaIR LIRC driver README</h2>
+
+<h3>Status</h3>
+
+<p>This driver used to be part of the LIRC sources. In order to improve
+the maintenance it has been moved to Iguanaworks, Inc which is the
+primary hardware and software vendor.</p>
+
+<p>From 0.9.4 the driver is available at: https://github.com/iguanaworks/iguanair</p>
+
+<p>As a transition step the same files are available here during the 0.9.4
+cycle. These files are a complete lirc driver for iguanair.</p>
+
+<h3>Build and install</h3>
+
+<p>Building requires lirc &gt;= 0.9.4. If you are using a packaged version you
+probably need to have the -devel and -doc packages installed. Note that
+the downstream sources at https://github.com/iguanaworks/iguanair-lirc
+are preferred and will be the only option in next release.</p>
+
+<p>To build and install the driver together with the support files:</p>
+
+<pre><code>$ make
+$ sudo make install
+</code></pre>
+
+<p>Verifying the driver after make install:</p>
+
+<pre><code> $ lirc-lsplugins -q iguanair
+ ---   /usr/lib64/lirc/plugins/iguanair.so
+</code></pre>
+
+<p>You could also find the driver docs in the manual. The path varies, but
+in a packaged version typically /usr/share/doc/lirc/lirc.org/html/index.html.</p>
+
+<h3>Driver info</h3>
+
+<p>This driver supports both receiving and sending (blasting) using
+the IguanaIR devices from http://iguanaworks.net/ir</p>
+
+<p>The LIRC driver works on top of the IguanaIR low-level userspace
+driver which provides a socket interface. It is available from
+the same source, and also packaged for many distributions
+including Debian, Fedora and Arch Linux.</p>
+
+<p>The --device argument to the driver is a socket designator created
+by the low-level driveri. It defaults to '0' which implies
+<em>/run/iguanair/0</em>.</p>
+
+<p>The kernel has built-in support for these devices in the
+iguanair module. This can be used instead of this driver in
+many cases. If the userspace driver should be used, the
+kernel driver must be blacklisted. A sample blacklist file
+is shipped with this driver.</p>
