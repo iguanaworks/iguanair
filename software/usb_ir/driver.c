@@ -26,7 +26,6 @@ static bool findDriverDir(char *path)
 }
 
 #elif __APPLE__
-
 #include <mach-o/dyld.h>
 
 static bool findDriverDir(char *path)
@@ -48,7 +47,48 @@ static bool findDriverDir(char *path)
     return false;
 }
 
-#else
+#elif __FreeBSD__
+#include <sys/user.h>
+#include <stdlib.h>
+#include <libutil.h>
+
+static bool findDriverDir(char *path)
+{
+    bool retval = false;
+    void *library;
+    uintmax_t target;
+    struct kinfo_vmentry *freep, *kve;
+    int i, cnt;
+
+    library = loadLibrary("libiguanaIR" DYNLIB_EXT);
+    target = (uintmax_t)dlsym(library, "iguanaClose");
+
+    freep = kinfo_getvmmap(getpid(), &cnt);
+    if (freep != NULL)
+    {
+        for (i = 0; i < cnt; i++)
+        {
+            kve = &freep[i];
+            if (kve->kve_path[0] != '\0' &&
+                kve->kve_start <= target && target < kve->kve_end)
+            {
+                char *slash;
+                slash = strrchr(kve->kve_path, '/');
+                if (slash != NULL)
+                {
+                    strcpy(slash + 1, "iguanaIR");
+                    strcpy(path, kve->kve_path);
+                    retval = true;
+                    break;
+                }
+            }
+        }
+        free(freep);
+    }
+    return retval;
+}
+
+#else /* on Linux use /proc/self/maps */
 static bool findDriverDir(char *path)
 {
     void *library;
@@ -74,6 +114,7 @@ static bool findDriverDir(char *path)
     return false;
 }
 #endif
+
 
 bool loadDriver(char *path)
 {

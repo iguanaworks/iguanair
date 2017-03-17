@@ -108,7 +108,7 @@ Else()
     # argp and pthread must be explicitly linked and argp defaults to /usr/local
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
-    Set(DAEMONLIBS pthread)
+    Set(DAEMONLIBS pthread util)
     Set(ARGPLIB argp)
 
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
