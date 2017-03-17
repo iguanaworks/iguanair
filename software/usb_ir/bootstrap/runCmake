@@ -1,12 +1,12 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # remember where we come from
-SOURCE="${BASH_SOURCE[0]}"
+SOURCE="$0"
 MYPATH="$( dirname "$SOURCE" )"
 while [ -h "$SOURCE" ]
 do 
   SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$MYPATH/$SOURCE"
+  [ "$SOURCE" = "${SOURCE#/}" ] && SOURCE="$MYPATH/$SOURCE"
   MYPATH="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
 done
 MYPATH="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
@@ -39,7 +39,7 @@ if [ -e settings.txt ]; then
 fi
 
 # on an ARM architecture we need to use a toolchain file
-if [ ! "$CSPATH" == "" ]; then
+if [ "$CSPATH" != "" ]; then
   if [ ! -d "$CSPATH" ]; then
     echo "CodeSourcery path is invalid: CSPATH=${CSPATH}"
     exit 1
