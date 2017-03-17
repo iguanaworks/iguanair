@@ -5,6 +5,7 @@ import shutil
 import filecmp
 import tempfile
 import uuid
+import glob
 
 # grab the passed arguments
 slnName = os.environ['PROJECT_NAME']
@@ -13,13 +14,21 @@ csPath = os.environ['CSPATH']
 ipAddr = os.environ['TARGET_IP']
 
 # compute the include path we want
-path = None
+path = "" 
 for name in os.listdir(os.path.dirname(os.environ['CSPATH'])):
     location = os.path.join(os.path.dirname(os.environ['CSPATH']), name, 'libc', 'usr', 'include')
     if 'linux' in name and os.path.isdir(location):
         path = location
         break
 incPath = ';'.join((path, os.path.join(os.path.dirname(os.environ['QTPATH']), 'include')))
+
+prefix = "PREFIX_NOT_FOUND"
+gcc = glob.glob(csPath + "/*gcc*")
+if len(gcc) > 0:
+    gcc = os.path.basename(gcc[0])
+    _prefix = gcc.rsplit('-gcc', 1)
+    if len(_prefix) > 0:
+        prefix = _prefix[0]
 
 projName = sys.argv[1]
 names = list(sys.argv[2:])
@@ -32,7 +41,9 @@ replacements = [
  { 'before' : '__CS_PATH__',
    'after'  : csPath},
  { 'before' : '__JOM_PATH__',
-   'after'  : os.path.join(os.path.dirname(__file__), 'jom.exe')}
+   'after'  : os.path.join(os.path.dirname(__file__), 'jom.exe')},
+ { 'before' : '__PREFIX__',
+   'after'  : prefix}
 ]
 
 # include known files into the names list

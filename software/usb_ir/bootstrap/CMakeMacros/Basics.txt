@@ -3,165 +3,18 @@ If (NOT DEFINED PROJECT_NAME)
   Message("WARNING: You should define the project name before including Basics.txt")
 EndIf()
 
-# restrict the Windows configurations to just Release and Debug
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-  set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
-EndIf()
+# dance to get a correct list dir in a macro
+get_filename_component(_Basics_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-
-# add our custom CMakeModules path to the search path
-# NOTE: until 2.8.3 CMAKE_CURRENT_LIST_DIR was not provided so we make it
-GET_FILENAME_COMPONENT(CMAKE_CURRENT_SOURCE_DIR
-                       ${CMAKE_CURRENT_LIST_FILE} PATH)
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
-
-
-# Leaving this here as an example, but will probably never use it
-#SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "debug library postfix, usually d on windows")
-
-
-# a shortcut to avoid listing some headers in the cmake files
-Macro(addHeaders target)
-  foreach(name ${ARGN})
-    string(REPLACE .cpp .h header ${name})
-    list(APPEND ${target} ${header})
-  endforeach()
-EndMacro()
-
-
-# a helper to add a flag to both CFLAGS and CXXFLAGS
-Macro(add_c_flag)
-  foreach(flag ${ARGN})
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${flag}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-  endforeach()
-EndMacro()
-
-
-# when we cross compile this block is used to generate vcxproj files
-If (DEFINED ENV{BOOTSTRAP_DIR})
-  execute_process(COMMAND cmd /C "$ENV{BOOTSTRAP_DIR}\\mkshortcut.vbs" /target:${CMAKE_BINARY_DIR}\\${PROJECT_NAME}.sln /shortcut:..\\${PROJECT_NAME}.sln)
-EndIf()
-execute_process(COMMAND "${CMAKE_COMMAND}" -E remove -f ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-settings.xml)
-If ("${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
-  find_package(PythonInterp)
-Endif()
-Macro(makeVCXProj name)
-  If ("${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
-    Set(fullpaths "")
-    foreach(filename ${ARGN})
-      If(NOT filename STREQUAL "WIN32")
-        get_filename_component(fullpath ${filename} REALPATH)
-        List(APPEND fullpaths ${fullpath})
-      EndIf()
-    endforeach()
-
-    # list all the files we compile into the vcxproj file somewhere
-    Set(ENV{PROJECT_NAME} "${PROJECT_NAME}")
-    Set(ENV{CSPATH} "${CMAKE_CSPATH}")
-    Set(ENV{DEST_DIR} "${CMAKE_BINARY_DIR}")
-    Set(ENV{TARGET_IP} "${CMAKE_TARGET_IP}")
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} "${BOOTSTRAP_DIR}/vcxprojWriter.py" ${name} ${fullpaths})
-  EndIf()
-EndMacro()
-
-
-# add a mechanism to include version numbers in DLLs and EXEs
-Macro(add_version_rc name ext desc)
-  If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-    set(FILE_NAME ${name})
-    set(FILE_NAME_W_EXT ${name}.${ext})
-    set(FILE_DESC "${name} ${desc}")
-
-    configure_file($ENV{BOOTSTRAP_DIR}/src/version.rc.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/${name}.rc
-                   @ONLY)
-    Set(RCFILE ${name}.rc)
-  EndIf()
-EndMacro()
-
-
-# basic macro to build a cross-compilable executable
-function (add_cross_executable name)
-  makeVCXProj(${name} "${ARGN}")
-  add_version_rc(${name} "exe" "Executable")
-
-  add_executable(${name} ${ARGN})
-  install(TARGETS ${name}
-          DESTINATION bin)
-endfunction()
-
-
-# basic macro to build a cross-compilable library
-function (add_cross_library name)
-  makeVCXProj(${name} "${ARGN}")
-  add_version_rc(${name} "exe" "Executable")
-
-  add_library(${name} ${ARGN})
-#TODO: what about 64 bit libraries on Fedora for example?
-  install(TARGETS ${name}
-          DESTINATION lib)
-endfunction()
-
-
-# fun w Qt
-Macro(add_qt_executable name)
-  include(${QT_USE_FILE})
-  add_definitions(${QT_DEFINITIONS})
-  add_cross_executable(${name} ${ARGN})
-  target_link_libraries(${name} ${QT_LIBRARIES} ${QT_QTMAIN_LIBRARY})
-EndMacro()
-
-
-# fun w Qt
-Macro(add_qt_library name)
-  include(${QT_USE_FILE})
-  add_definitions(${QT_DEFINITIONS})
-  add_cross_library(${name} ${ARGN})
-  target_link_libraries(${name} ${QT_LIBRARIES})
-  set_target_properties(${name} PROPERTIES VERSION ${SOVERSION} SOVERSION ${MAJORVER})
-EndMacro()
-
-
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-# NOTE: skipping pedantic only because Qt has a couple issues
-#  add_c_flag(-Wall -pedantic -fpic -fvisibility=hidden)
-  add_c_flag(-Wall -fpic -fvisibility=hidden)
-  
-  # shut up about long long 
-  add_c_flag(-Wno-long-long)
-
-  # set the output directory for all projects to be the same place
-  If(NOT "${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/result)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/result)
-  EndIf()
-
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-  # limit Visual Studio to only Debug/Release
-  set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
-
-  # For release compiles adding a few optimizations:
-  #    /GS  "Buffers security check" - checks for buffer overwrites
-  #    /GL  "Enables whole program optimization"
-  #    /Oi  "Generates intrinsic functions"
-  #    /Ot  "Favors fast code"
-#  If("${CMAKE_PLATFORM}" MATCHES "Release")
-#    add_c_flag(/GS /GL /Oi /Ot /LTCG)
-#  EndIf()
-
-  # set the output directory for all projects to be the same place
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${CMAKE_PLATFORM})
-Else()
-  message(FATAL_ERROR "Unhandled platform: ${CMAKE_PLATFORM} on ${CMAKE_SYSTEM}")
-EndIf()
-
+# pull in the various bits
+include(${_Basics_LIST_DIR}/Helpers.txt)
+include(${_Basics_LIST_DIR}/Platform.txt)
+include(${_Basics_LIST_DIR}/CrossCompile.txt)
 
 # let the user know what generator, platform, and tools we're using
 message("CMake configuration:")
 message(" Generator: ${CMAKE_GENERATOR}")
 message(" Platform:  ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
-# TODO: Get_Filename_Component(BASENAME ${CMAKE_C_COMPILER} NAME)
 message(" Compilers:")
 If(NOT "${CMAKE_C_COMPILER}" STREQUAL "")
   message("      C: " ${CMAKE_C_COMPILER})

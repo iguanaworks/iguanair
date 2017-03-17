@@ -1,0 +1,34 @@
+# dance to get a correct list dir in a macro
+get_filename_component(_Qt_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+
+# locate the qt crap TODO: trim the build if something is missing
+find_package(Qt5Core QUIET)
+#include(${_Qt_LIST_DIR}/Qwt.txt)
+If(NOT Qt5Core_FOUND)
+  include(${_Qt_LIST_DIR}/Qt4.txt)
+Else()
+  include(${_Qt_LIST_DIR}/Qt5.txt)
+EndIf()
+
+
+# fun w Qt
+Macro(add_qt_executable name)
+  If(NOT "${QT_USE_FILE}" STREQUAL "")
+    include(${QT_USE_FILE})
+  EndIf()
+  add_definitions(${QT_DEFINITIONS})
+  add_cross_executable(${name} ${ARGN})
+  target_link_libraries(${name} ${QT_LIBRARIES} ${QT_QTMAIN_LIBRARY})
+EndMacro()
+
+
+# fun w Qt
+Macro(add_qt_library name)
+  If(NOT "${QT_USE_FILE}" STREQUAL "")
+    include(${QT_USE_FILE})
+  EndIf()
+  add_definitions(${QT_DEFINITIONS})
+  add_cross_library(${name} ${ARGN})
+  target_link_libraries(${name} ${QT_LIBRARIES})
+  set_target_properties(${name} PROPERTIES VERSION ${SOVERSION} SOVERSION ${MAJORVER})
+EndMacro()

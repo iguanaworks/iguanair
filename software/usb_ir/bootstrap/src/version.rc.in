@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
-#include "../../version.h"
+#include "..\..\..\Version\release.h"
+#include "..\..\..\Version\version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -50,30 +51,30 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION IDENT_MAJOR,IDENT_MINOR,IDENT_BUILD,0
- PRODUCTVERSION IDENT_MAJOR,IDENT_MINOR,IDENT_BUILD,0
- FILEFLAGSMASK 0x3fL
+ FILEVERSION TDT_NOBUILD_FILE_VERSION,TDT_SW_VER_RAW
+ PRODUCTVERSION TDT_NOBUILD_FILE_VERSION,TDT_SW_VER_RAW
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
- FILEFLAGS 0x1L
+ FILEFLAGS VS_FF_DEBUG
 #else
  FILEFLAGS 0x0L
 #endif
- FILEOS 0x40004L
- FILETYPE 0x2L
+ FILEOS VOS_NT
+ FILETYPE @FILE_TYPE_ENUM@
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Optima Neuroscience, Inc."
+            VALUE "CompanyName", TDT_COMPANY_NAME
             VALUE "FileDescription", "@FILE_DESC@\0"
-            VALUE "FileVersion", IDENT_RELEASE_STR
+            VALUE "FileVersion", TDT_NOBUILD_FILE_VERSION,TDT_SW_VER_RAW
             VALUE "InternalName", "@FILE_NAME@\0"
-            VALUE "LegalCopyright", "Copyright (C) 2013"
+            VALUE "LegalCopyright", TDT_COPYRIGHT_NOTICE
             VALUE "OriginalFilename", "@FILE_NAME_W_EXT@\0"
-            VALUE "ProductName", IDENT_PRODUCT_NAME "\0"
-            VALUE "ProductVersion", IDENT_RELEASE_STR
+            VALUE "ProductName", "@FILE_PROD_NAME@\0"
+            VALUE "ProductVersion", TDT_VER_STR(TDT_DRIVERS_RELEASE)
         END
     END
     BLOCK "VarFileInfo"

@@ -1,0 +1,24 @@
+# dance to get a correct list dir in a macro
+get_filename_component(_NMakeJOM_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+
+# when we cross compile this block is used to generate vcxproj files
+execute_process(COMMAND "${CMAKE_COMMAND}" -E remove -f ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-settings.xml)
+find_package(PythonInterp)
+Macro(makeVCXProj name)
+  If ("${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
+    Set(fullpaths "")
+    foreach(filename ${ARGN})
+      If(NOT filename STREQUAL "WIN32")
+        get_filename_component(fullpath ${filename} REALPATH)
+        List(APPEND fullpaths ${fullpath})
+      EndIf()
+    endforeach()
+
+    # list all the files we compile into the vcxproj file somewhere
+    Set(ENV{PROJECT_NAME} "${PROJECT_NAME}")
+    Set(ENV{CSPATH} "${CMAKE_CSPATH}")
+    Set(ENV{DEST_DIR} "${CMAKE_BINARY_DIR}")
+    Set(ENV{TARGET_IP} "${CMAKE_TARGET_IP}")
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} "${_NMakeJOM_LIST_DIR}/../vcxprojWriter.py" ${name} ${fullpaths})
+  EndIf()
+EndMacro()

@@ -21,14 +21,23 @@ if NOT EXIST CMakeLists.txt (
 REM load up some defaults
 SET BUILDDIR=build
 SET PYPATH=C:\Python27
-SET QTPATH=C:\qt\4.6.4\bin
+SET QTPATH=C:\qt\5.1.0\bin
 SET CMAKE="C:\Program Files (x86)\CMake 2.8\bin\cmake.exe"
 SET GENERATOR="Visual Studio 10"
 SET JOM="%BOOTSTRAP_DIR%\jom.exe"
+SET CMAKE_ARGS=
+
+REM Allow optional command line argument to pass name of settings file
+REM   this also allows us to drag/drop the settings file onto this script
+IF "%1"=="" (
+  set SETTINGS="settings.bat"
+) else (
+  set SETTINGS=%1
+)
 
 REM override the defaults w use settings
-if EXIST settings.bat (
-  call settings.bat
+if EXIST %SETTINGS% (
+  call %SETTINGS%
 )
 
 REM for cross compiles we need to use a toolchain file
@@ -42,7 +51,7 @@ if NOT "%CSPATH%" == "" (
 
   REM not strictly necessary but makes the otuput cleaner
   if "%LIBPATH%" == "" (
-    CALL "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat"
+    CALL "%BOOTSTRAP_DIR%\CMakeMacros\VsDir.bat"
   )
 )
 
@@ -54,27 +63,8 @@ if NOT EXIST %CMAKE% (
     echo CMake not found!  Please check the CMAKE variable in the settings.bat file.
     GOTO EXIT
 )
-%CMAKE% %CHAIN% -G %GENERATOR% ..
+%CMAKE% %CMAKE_ARGS% %CHAIN% -G %GENERATOR% ..
 cd ..
-
-REM only regular VS projects need a shortcut made or DLLs copied
-if NOT %GENERATOR% == "Visual Studio 10" GOTO EXIT
-
-REM TODO: only copy the ones we actually need...........
-REM copy over the dlls from the Qt directory into debug and release
-echo Copying Qt Debug/ DLLs....
-mkdir Debug
-SET ext=d4
-for %%N in (phonon QtCore QtGui QtNetwork QtSql QtWebKit QtXml QtXmlPatterns QtOpenGL) do copy %QTPATH%\%%Nd4.dll Debug
-echo Copying Qt Release/ DLLs....
-mkdir Release
-SET ext=4
-for %%N in (phonon QtCore QtGui QtNetwork QtSql QtWebKit QtXml QtXmlPatterns QtOpenGL) do copy %QTPATH%\%%N4.dll Release
-
-REM copy OpenSSL dlls into debug and release
-echo Copying OpenSSL DLLs....
-for %%N in (libeay32 ssleay32) do copy %QTPATH%\..\..\openssl\bin\%%N.dll Debug
-for %%N in (libeay32 ssleay32) do copy %QTPATH%\..\..\openssl\bin\%%N.dll Release
 
 :EXIT
 REM pause if necessary

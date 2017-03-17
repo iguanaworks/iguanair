@@ -1,0 +1,27 @@
+# basic macro to build a cross-compilable executable
+function (add_cross_executable name)
+  If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    add_version_rc(${name} "exe" "Executable")
+  ElseIf ("${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
+    makeVCXProj(${name} "${ARGN}")
+  EndIf()
+
+  add_executable(${name} ${ARGN})
+  install(TARGETS ${name}
+          DESTINATION bin)
+endfunction()
+
+
+# basic macro to build a cross-compilable library
+function (add_cross_library name)
+  If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    add_version_rc(${name} "dll" "Library")
+  ElseIf ("${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
+    makeVCXProj(${name} "${ARGN}")
+  EndIf()
+
+  add_library(${name} ${ARGN})
+#TODO: what about 64 bit libraries on Fedora for example?
+  install(TARGETS ${name}
+          DESTINATION lib)
+endfunction()

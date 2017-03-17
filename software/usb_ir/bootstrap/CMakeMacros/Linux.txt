@@ -1,0 +1,20 @@
+# dance to get a correct list dir in a macro
+get_filename_component(_Linux_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+
+# NOTE: skipping pedantic only because Qt has a couple issues
+#add_c_flag(-Wall -pedantic -fpic -fvisibility=hidden)
+add_c_flag(-Wall -fpic -fvisibility=hidden)
+  
+# shut up about long long 
+add_c_flag(-Wno-long-long)
+
+# set the output directory for all projects to be the same place
+If(NOT "${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/result)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/result)
+EndIf()
+
+# JOM builds always think they are Linux
+If ("${CMAKE_GENERATOR}" MATCHES "NMake Makefiles JOM")
+  include(${_Linux_LIST_DIR}/NMakeJOM.txt)
+EndIf()

@@ -2,10 +2,10 @@
         <class name="ProjectCommon" >
             <values>
                 <value name="strMakefileCompilerC" >
-                arm-none-linux-gnueabi-gcc.exe
+                __PREFIX__-gcc.exe
                 </value>
                 <value name="strMakefileCompilerCXX" >
-                arm-none-linux-gnueabi-g++.exe
+                __PREFIX__-g++.exe
                 </value>
                 <value name="strMakefileRM" >
                 rm -f
@@ -20,13 +20,13 @@
                 Debug\bin
                 </value>
                 <value name="strMakefileCFLAGS" >
-                -g -IC:\Qt\4.8.2-arm\include
+                -g
                 </value>
                 <value name="strMakefileCXXFLAGS" >
-                -g -IC:\Qt\4.8.2-arm\include
+                -g
                 </value>
                 <value name="strMakefileLDFLAGS" >
-                -LC:\Qt\4.8.2-arm\lib -L..\libs -lQtCore -lQtGui -lQtNetwork
+                -L..\libs
                 </value>
                 <value name="strRemoteBuildCommand" >
                 __JOM_PATH__ __PROJECT_NAME__
@@ -101,7 +101,7 @@
                 1
                 </value>
                 <value name="pathSysrootOnHost" >
-                __CS_PATH__\..\arm-none-linux-gnueabi\libc
+                __CS_PATH__\..\__PREFIX__\libc
                 </value>
                 <value name="bDisableHangReporter" >
                 false
@@ -110,7 +110,7 @@
                 false
                 </value>
                 <value name="pathDebugger" >
-                __CS_PATH__\arm-none-linux-gnueabi-gdb.exe
+                __CS_PATH__\__PREFIX__-gdb.exe
                 </value>
                 <value name="pathToolchain" >
                 __CS_PATH__

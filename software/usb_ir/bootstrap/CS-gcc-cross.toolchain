@@ -27,11 +27,12 @@ If("${CMAKE_CSPATH}" STREQUAL "" AND DEFINED ENV{CSPATH})
     Get_Filename_Component(FILES "${FILES}" NAME)
     String(REGEX MATCH "[^-]*" FILES ${FILES})
     Set(CMAKE_ARCH "${FILES}" CACHE STRING "Target architecture" FORCE)
+
   EndIf()
 EndIf()
 
 # make sure that we only need to pass the IP once as well
-If("${CMAKE_TARGET_IP}" STREQUAL "" AND DEFINED ENV{TARGET_IP})
+If(DEFINED ENV{TARGET_IP})
   File(TO_CMAKE_PATH $ENV{TARGET_IP} TARGET_IP)
   Set(CMAKE_TARGET_IP "${TARGET_IP}" CACHE STRING "Default IP address of the target device" FORCE)
   Unset(ENV{TARGET_IP})
@@ -46,21 +47,22 @@ If("${CMAKE_FS_ROOT}" STREQUAL "" AND DEFINED ENV{FS_ROOT})
 EndIf()
 
 # specify the platform and processor
-Set(CMAKE_SYSTEM_NAME Linux)
+Set(CMAKE_SYSTEM_NAME Generic)
 If("${CMAKE_ARCH}" STREQUAL "arm")
   Message("Cross compilation architecture: ${CMAKE_ARCH}")
   Set(CMAKE_SYSTEM_PROCESSOR "armv7")
-  Set(ARMTUNING "-march=armv7-a -mtune=cortex-a8 -mthumb -mfpu=neon -mfloat-abi=softfp -Wa,-mimplicit-it=thumb")
+  Set(ARMTUNING "-mcpu=cortex-m0 -mthumb")
+  Set(ENV{LDFLAGS} "-nostartfiles -Wl,--gc-sections -Wl,-Map=testagain.map -Wl,-T/home/jdunn/ARM/ARMloader/arm-gcc-link.ld")
   If(NOT "${CMAKE_C_FLAGS}" MATCHES "${ARMTUNING}")
     Set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${ARMTUNING}" CACHE STRING "Flags used by the compiler during all build types." FORCE)
     Set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ARMTUNING}" CACHE STRING "Flags used by the compiler during all build types." FORCE)
   EndIf()
 
-ElseIf("${CMAKE_ARCH}" STREQUAL "x86" "OR" "${CMAKE_ARCH}" STREQUAL "i686")
+ElseIf("${CMAKE_ARCH}" STREQUAL "x86" OR "${CMAKE_ARCH}" STREQUAL "i686")
   Message("Cross compilation architecture: ${CMAKE_ARCH}")
   Set(CMAKE_SYSTEM_PROCESSOR "x86")
 
-ElseIf("${CMAKE_ARCH}" STREQUAL "x86_64" "OR" "${CMAKE_ARCH}" STREQUAL "amd64")
+ElseIf("${CMAKE_ARCH}" STREQUAL "x86_64" OR "${CMAKE_ARCH}" STREQUAL "amd64")
   Set(CMAKE_SYSTEM_PROCESSOR "x86_64")
   If(NOT "${CMAKE_C_FLAGS}" MATCHES "-m64")
     Set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -m64" CACHE STRING "Flags used by the compiler during all build types." FORCE)
@@ -78,5 +80,5 @@ EndIf()
 Set(BOOTSTRAP_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 # find the cross compiler
-findExe(CMAKE_C_COMPILER   ${CMAKE_CSPATH}/*gcc)
-findExe(CMAKE_CXX_COMPILER ${CMAKE_CSPATH}/*g++)
+findExe(CMAKE_C_COMPILER   ${CMAKE_CSPATH}/${CMAKE_ARCH}*gcc)
+findExe(CMAKE_CXX_COMPILER ${CMAKE_CSPATH}/${CMAKE_ARCH}*g++)

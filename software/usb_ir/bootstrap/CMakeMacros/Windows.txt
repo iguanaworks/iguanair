@@ -1,0 +1,59 @@
+# dance to get a correct list dir in a macro
+get_filename_component(_Windows_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+
+# limit Visual Studio to only Debug/Release
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
+
+# For release compiles adding a few optimizations:
+#    /GS  "Buffers security check" - checks for buffer overwrites
+#    /GL  "Enables whole program optimization"
+#    /Oi  "Generates intrinsic functions"
+#    /Ot  "Favors fast code"
+#  If("${CMAKE_PLATFORM}" MATCHES "Release")
+#    add_c_flag(/GS /GL /Oi /Ot /LTCG)
+#  EndIf()
+
+# set the output directory for all projects to be the same place
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${CMAKE_PLATFORM})
+
+# add path to OpenGL libraries, particularly for glu32.lib, for Qt 5.1.0
+execute_process(COMMAND "${_Platform_LIST_DIR}\\..\\CMakeMacros\\VsDir.bat" OUTPUT_VARIABLE VSDIR_OUT)
+ForEach(VSDIR ${VSDIR_OUT})
+  Set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${VSDIR})
+EndForEach(VSDIR)
+
+# add a mechanism to include version information in DLLs and EXEs using rc files
+Macro(add_version_rc name ext desc)
+  set(FILE_NAME ${name})
+  set(FILE_NAME_W_EXT ${name}.${ext})
+  set(FILE_DESC "${name} ${desc}")
+  set(FILE_PROD_NAME ${PROJECT_NAME})
+
+  If(${exe} MATCHES "exe")
+    set(FILE_TYPE_ENUM VFT_APP)
+  Else()
+    set(FILE_TYPE_ENUM VFT_DLL)
+  EndIf()
+
+  configure_file(${_Windows_LIST_DIR}/../src/version.rc.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/${name}.rc
+                 @ONLY)
+  Set(RCFILE ${name}.rc)
+EndMacro()
+
+# macro to set _WIN32_WINNT suppress the _WIN32_WINNT not defined compiler warnings
+macro(get_WIN32_WINNT version)
+    if (WIN32 AND CMAKE_SYSTEM_VERSION)
+        set(ver ${CMAKE_SYSTEM_VERSION})
+        string(REPLACE "." "" ver ${ver})
+        string(REGEX REPLACE "([0-9])" "0\\1" ver ${ver})
+
+        set(${version} "0x${ver}")
+    endif()
+endmacro()
+
+# links to the solution are nice
+execute_process(COMMAND cmd /C "${_Windows_LIST_DIR}\\..\\mkshortcut.vbs" /target:${CMAKE_BINARY_DIR}\\${PROJECT_NAME}.sln /shortcut:..\\${PROJECT_NAME}.sln)
+
+# Leaving this here as an example, but will probably never use it
+#SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "debug library postfix, usually d on windows")

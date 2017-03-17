@@ -1,0 +1,30 @@
+# a shortcut to avoid listing some headers in the cmake files
+Macro(addHeaders target)
+  foreach(name ${ARGN})
+    string(REPLACE .cpp .h header ${name})
+    list(APPEND ${target} ${header})
+  endforeach()
+EndMacro()
+
+
+# a helper to add a flag to both CFLAGS and CXXFLAGS
+Macro(add_c_flag)
+  foreach(flag ${ARGN})
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${flag}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+  endforeach()
+EndMacro()
+
+
+# until 2.8.3 CMAKE_CURRENT_LIST_DIR was not provided so bitch if it's not
+# set, but still do the same work
+If(CMAKE_CURRENT_LIST_DIR)
+  # add our custom CMakeModules path to the search path 
+  Set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/CMakeModules)
+Else()
+  message(STATUS "CMAKE_CURRENT_LIST_DIR is not set, module path set using CMAKE_CURRENT_LIST_FILE.")
+
+  # add our custom CMakeModules path to the search path 
+  get_filename_component(_self_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
+  Set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${_self_dir}/CMakeModules)
+EndIf()

@@ -1,0 +1,11 @@
+# dance to get a correct list dir in a macro
+get_filename_component(_Platform_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+  include(${_Platform_LIST_DIR}/Linux.txt)
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+  include(${_Platform_LIST_DIR}/Windows.txt)
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Generic")
+Else()
+  message(FATAL_ERROR "Unhandled platform: ${CMAKE_PLATFORM} on ${CMAKE_SYSTEM}")
+EndIf()

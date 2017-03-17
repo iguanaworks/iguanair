@@ -1,0 +1,2 @@
+ARCH=arm
+CSPATH=/opt/arm-2012.03/bin/

@@ -1,0 +1,39 @@
+# Tell CMake to run moc when necessary:
+set(CMAKE_AUTOMOC ON)
+
+# As moc files are generated in the binary dir, tell CMake
+# to always look for includes there:
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# attempt to find and copy a lot of DLLs into the Debug and Release folders
+If (${MSVC})
+  message(STATUS "Copying Qt dlls into ${CMAKE_CONFIGURATION_TYPES} folders")
+  Set(COPY_MODULES Core Widgets Gui Network Sql Xml XmlPatterns OpenGL Svg PrintSupport SerialPort) # Qt5Multimedia)
+  ForEach(name ${COPY_MODULES})
+    find_package(Qt5${name} QUIET)
+    If (${Qt5${name}_FOUND})
+      ForEach(platform ${CMAKE_CONFIGURATION_TYPES})
+        Set(SUFFIX "")
+        If ("${platform}" STREQUAL "Debug")
+          Set(SUFFIX "d")
+        EndIf()
+        Execute_Process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Qt5${name}_DIR}/../../../bin/Qt5${name}${SUFFIX}.dll" "${CMAKE_SOURCE_DIR}/${platform}/Qt5${name}${SUFFIX}.dll")
+      EndForEach()
+    EndIf()
+  EndForEach()
+
+  message(STATUS "Copying openssl dlls into ${CMAKE_CONFIGURATION_TYPES} folders")
+  message(STATUS "    (Hope you did the native build last or these DLLs will not be found....)")
+  Set(COPY_MODULES libeay32 ssleay32)
+  ForEach(name ${COPY_MODULES})
+    ForEach(platform ${CMAKE_CONFIGURATION_TYPES})
+      Execute_Process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Qt5Core_DIR}/../../../../openssl/bin/${name}.dll" "${CMAKE_SOURCE_DIR}/${platform}/${name}.dll")
+    EndForEach()
+  EndForEach()
+
+  message(STATUS "Copying quazip dlls into ${CMAKE_CONFIGURATION_TYPES} folders")
+  ForEach(platform ${CMAKE_CONFIGURATION_TYPES})
+    Execute_Process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Qt5Core_DIR}/../../../../quazip/build/${platform}/quazip.dll" "${CMAKE_SOURCE_DIR}/${platform}/quazip.dll")
+    Execute_Process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Qt5Core_DIR}/../../../../quazip/zlib/zlib1.dll" "${CMAKE_SOURCE_DIR}/${platform}/zlib1.dll")
+  EndForEach()
+EndIf()

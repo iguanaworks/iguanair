@@ -1,0 +1,45 @@
+find_package(Qt4 QUIET)
+If(Qt4_FOUND)
+    Macro(qt5_use_modules)
+      # just a convenient place to put these
+      include_directories(${CMAKE_CURRENT_BINARY_DIR})
+      include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    EndMacro()
+
+    Macro(qt5_add_resources)
+      qt4_add_resources(${ARGN})
+    EndMacro()
+
+    Macro(qt5_wrap_ui)
+      qt4_wrap_ui(${ARGN})
+    EndMacro()
+
+
+    # attempt to find and copy a lot of DLLs into the Debug and Release folders
+    If ("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 10")
+        # uncomment below to display all available variables
+        # very useful in debugging build system
+
+        #get_cmake_property(_variableNames VARIABLES)
+        #foreach (_variableName ${_variableNames})
+        #    message(STATUS "${_variableName}=${${_variableName}}")
+        #endforeach()
+
+        message(STATUS "Copying Qt dlls into ${CMAKE_CONFIGURATION_TYPES} folders")
+        find_package(Qt4 REQUIRED QtCore QtGui QtNetwork QtSql QtWebKit QtXml QtXmlPatterns QtOpenGL QUIET)
+        If (Qt4_FOUND)
+            Set(COPY_MODULES Core Gui Network Sql WebKit Xml XmlPatterns OpenGL) #Qt5Multimedia)
+            ForEach(name ${COPY_MODULES})
+              ForEach(platform ${CMAKE_CONFIGURATION_TYPES})
+                Set(SUFFIX "")
+                If ("${platform}" STREQUAL "Debug")
+                  Set(SUFFIX "d")
+                EndIf()
+                Execute_Process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${QT_BINARY_DIR}/Qt${name}${SUFFIX}4.dll" "${CMAKE_SOURCE_DIR}/${platform}/Qt${name}${SUFFIX}4.dll")
+              EndForEach()
+            EndForEach()
+        EndIf()
+    EndIf()
+EndIf()
+
+
