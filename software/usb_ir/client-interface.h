@@ -42,7 +42,7 @@ void releaseClient(client *target);
 bool handleReader(iguanaDev *idev);
 void clientConnected(PIPE_PTR clientFd, iguanaDev *idev);
 bool handleClient(client *me);
-void setAlias(unsigned int id, const char *alias);
+void setAlias(iguanaDev *idev, bool deleteAll, const char *alias);
 
 /* the worker thread has to check the id at startup */
 void getID(iguanaDev *idev);

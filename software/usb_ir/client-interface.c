@@ -437,7 +437,14 @@ bool handleClient(client *me)
 
 void getID(iguanaDev *idev)
 {
+    char buf[8];
+    uint8_t loc[2];
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
+
+    /* add an alias based on bus location */
+    getDeviceLocation(idev->usbDev, loc);
+    sprintf(buf, "%d-%d", loc[0], loc[1]);
+    setAlias(idev, true, buf);
 
     if (! srvSettings.readLabels ||
         /* reflasher and loader-only devices have no id */
@@ -445,23 +452,19 @@ void getID(iguanaDev *idev)
         return;
 
     request.code = IG_DEV_GETID;
-#if 1 /* support body versions 1 through 4 */
-    /* NOTE: a fake call because in some firmware the first body
-       command fails. */
+    /* NOTE: trigger a dummy call because in early (pre 5) body
+       firmware the first call fails. */
     if ((idev->version & 0xFF00) &&
         (idev->version & 0x00FF) < 0x05)
         deviceTransaction(idev, &request, &response);
-#endif
 
+    /* use any alias the user has set */
     if (! deviceTransaction(idev, &request, &response))
-    {
-        setAlias(idev->usbDev->id, NULL);
         message(LOG_INFO,
                 "Failed to get id.  Device may not have one assigned.\n");
-    }
     else
     {
-        setAlias(idev->usbDev->id, (char*)response->data);
+        setAlias(idev, false, (char*)response->data);
         freeDataPacket(response);
     }
 }

@@ -607,7 +607,8 @@ void listenToClients(iguanaDev *idev)
             }
         }
 
-        setAlias(idev->usbDev->id, NULL);
+        /* unlink any existing aliases */
+        setAlias(idev, true, NULL);
         stopListening(listener, name);
 
         /* and release any connected clients */
@@ -616,30 +617,32 @@ void listenToClients(iguanaDev *idev)
     }
 }
 
-void setAlias(unsigned int id, const char *alias)
+void setAlias(iguanaDev *idev, bool deleteAll, const char *alias)
 {
-    /* find the alias and nuke it if it is a link to the name */
-    DIR_HANDLE dir = NULL;
-    char buffer[PATH_MAX], name[4];
+    /* prepare the device index string */
+    char idxStr[4];
+    sprintf(idxStr, "%d", idev->usbDev->id);
 
-    /* prepare the name string */
-    sprintf(name, "%d", id);
-
-    /* look through all symlinks in the directory and delete links to
-       name */
-    strcpy(buffer, IGSOCK_NAME);
-    while((dir = findNextFile(dir, buffer)) != NULL)
+    if (deleteAll)
     {
-        char ptr[PATH_MAX], buf[PATH_MAX];
-        int length;
+        DIR_HANDLE dir = NULL;
+        char buffer[PATH_MAX];
 
-        sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
-        length = readlink(buf, ptr, PATH_MAX - 1);
-        if (length > 0)
+        /* examine symlinks in the dir and delete links to idxStr */
+        strcpy(buffer, IGSOCK_NAME);
+        while((dir = findNextFile(dir, buffer)) != NULL)
         {
-            ptr[length] = '\0';
-            if (strcmp(name, ptr) == 0)
-                unlink(buf);
+            char ptr[PATH_MAX], buf[PATH_MAX];
+            int length;
+
+            sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
+            length = readlink(buf, ptr, PATH_MAX - 1);
+            if (length > 0)
+            {
+                ptr[length] = '\0';
+                if (strcmp(idxStr, ptr) == 0)
+                    unlink(buf);
+            }
         }
     }
 
@@ -666,7 +669,7 @@ void setAlias(unsigned int id, const char *alias)
                 message(LOG_ERROR, "failed to unlink old alias: %s\n",
                         translateError(errno));
         }
-        if (symlink(name, path) != 0)
+        if (symlink(idxStr, path) != 0)
                 message(LOG_ERROR, "failed to symlink alias: %s\n",
                         translateError(errno));
     }
