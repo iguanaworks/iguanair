@@ -393,7 +393,7 @@ bool checkVersion(iguanaDev *idev)
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
     bool retval = false, getVersion = false;
 
-    /* Seems necessary, but means that we lose the interface.....
+    /* TODO: Seems necessary, but means that we lose the interface.....
 #ifdef WIN32
     request.code = IG_DEV_RESET;
     if (! deviceTransaction(idev, &request, &response))
@@ -408,6 +408,7 @@ bool checkVersion(iguanaDev *idev)
        and the second will be answered. */
     if (deviceTransaction(idev, &request, &response))
         getVersion = true;
+
     /* try a second time to get the version */
     if (! getVersion &&
         ! deviceTransaction(idev, &request, &response))
@@ -908,15 +909,13 @@ void handleIncomingPackets(iguanaDev *idev)
 
                     /* Send SIGHUP to trigger rescan and see if we can find
                     'new' device unless user has disabled that option */
-#ifndef _WIN32
                     if (srvSettings.autoRescan)
                     {
                         Sleep(10);
                         message(LOG_INFO,
                             "Rescaning for devices after recent disconnect.\n");
-                        kill(getpid(), SIGHUP);
+                        triggerCommand((THREAD_PTR)SCAN_TRIGGER);
                     }
-#endif
                 }
             }
             else if (length == 0)

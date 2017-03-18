@@ -11,6 +11,7 @@
  * See LICENSE-LGPL for license details.
  */
 #include "iguanaIR.h"
+#include "config.h"
 #include "compat.h"
 
 #include <string.h>

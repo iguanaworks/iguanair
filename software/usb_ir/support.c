@@ -11,8 +11,7 @@
  * Distributed under the LGPL version 2.1.
  * See LICENSE-LGPL for license details.
  */
-#include "iguanaIR.h"
-#include "compat.h"
+#include "support.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,8 +20,6 @@
 #include <stdarg.h>
 #include <time.h>
 #include <assert.h>
-
-#include "support.h"
 
 static char *msgPrefixes[] =
 {
@@ -142,7 +139,7 @@ int message(int level, char *format, ...)
     va_end(list);
 
     /* die at callers request */
-    assert(level >  LOG_FATAL);
+    assert(level > LOG_FATAL);
 
     return retval;
 }

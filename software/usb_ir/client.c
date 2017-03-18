@@ -13,20 +13,18 @@
  */
 #include "iguanaIR.h"
 #include "version.h"
-#include <argp.h>
 #include "compat.h"
+
+/* not necessary for a client; helpful for supporting functions. */
+#include "support.h"
+#include "list.h"
+
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <errno.h>
 #ifndef WIN32
   #include <arpa/inet.h>
 #endif
-
-/* not necessary for a client, just helpful for some supporting
- * functions. */
-#include "support.h"
-#include "list.h"
+#include <argp.h>
 
 enum
 {

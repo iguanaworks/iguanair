@@ -2,9 +2,7 @@
 #define _DRIVER_API_
 
 #include "devicebase.h"
-#ifndef _WIN32
-  #include <stdint.h>
-#endif
+#include <stdint.h>
 
 #ifdef WIN32
     #ifdef DRIVER_EXPORTS

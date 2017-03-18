@@ -27,6 +27,8 @@
     #endif
 #endif
 
+#include <stdbool.h>
+
 enum
 {
     /* message levels */

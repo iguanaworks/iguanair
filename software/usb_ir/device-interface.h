@@ -14,7 +14,6 @@
 #define _PROTOCOL_
 
 #include "list.h"
-#include "config.h"
 
 enum
 {

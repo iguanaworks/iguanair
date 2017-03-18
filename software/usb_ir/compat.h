@@ -15,7 +15,7 @@
 #ifndef _COMPAT_
 #define _COMPAT_
 
-#include "config.h"
+#include <stdint.h>
 
 #ifdef WIN32
     /* The old functions CAN be used safely... stop the warnings. */
@@ -28,16 +28,10 @@
     #define _WIN32_WINNT 0x0500
     #include <windows.h>
 
-    typedef unsigned char uint8_t;
-    typedef unsigned short uint16_t;
-    typedef unsigned int uint32_t;
-    typedef unsigned long long uint64_t;
-
     /* taken from libusb-win32/src/error.h */
     #define USB_ETIMEDOUT 116
     #define ETIMEDOUT ERROR_TIMEOUT
 
-    #define getpid GetCurrentProcessId
     #define setlinebuf(a)
     #define snprintf _snprintf
 
@@ -67,7 +61,6 @@
     #define getFuncAddress    GetProcAddress
 
 #else
-    #include <stdint.h>
     #include <unistd.h>
     /* need __USE_GNU to get pthread_yield */
     #define __USE_GNU
