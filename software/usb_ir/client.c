@@ -15,7 +15,8 @@
 #include "version.h"
 #include "compat.h"
 
-/* not necessary for a client; helpful for supporting functions. */
+/* not necessary for any client application but helpful for some
+   supporting functions in this case. */
 #include "support.h"
 #include "list.h"
 
@@ -617,26 +618,18 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
             request = iguanaCreateRequest((unsigned char)cmd->spec->code,
                                           result, data);
             if (request == NULL)
-                message(LOG_ERROR,
-                        "Out of memory allocating request.\n");
+                message(LOG_ERROR, "Out of memory allocating request.\n");
             else if (! iguanaWriteRequest(request, conn))
-                message(LOG_ERROR,
-                        "Failed to write request to server.\n");
+                message(LOG_ERROR, "Failed to write request to server.\n");
             else if (receiveResponse(conn, cmd, 10000))
                 retval = true;
 
-            /* release any allocated data buffers (including
-             * data ptr) */
+            /* release allocated data buffers (including data ptr) */
             iguanaFreePacket(request);
         }
     }
 
     return retval;
-}
-
-static void freeTask(igtask *cmd)
-{
-    free(cmd);
 }
 
 static int performQueuedTasks(PIPE_PTR conn)
@@ -649,7 +642,7 @@ static int performQueuedTasks(PIPE_PTR conn)
     {
         if (checkTask(cmd) && ! performTask(conn, cmd))
             failed++;
-        freeTask(cmd);
+        free(cmd);
     }
 
     return failed;
@@ -660,13 +653,12 @@ static igtask* enqueueTask(char *text, const char *arg)
     igtask *cmd;
 
     cmd = (igtask*)malloc(sizeof(igtask));
-    if (cmd != NULL)
-    {
-        memset(cmd, 0, sizeof(igtask));
-        cmd->command = text;
-        cmd->arg = arg;
-        insertItem(&tasks, NULL, (itemHeader*)cmd);
-    }
+    if (cmd == NULL)
+        message(LOG_FATAL, "igtask malloc failed: %s\n", translateError(errno));
+    memset(cmd, 0, sizeof(igtask));
+    cmd->command = text;
+    cmd->arg = arg;
+    insertItem(&tasks, NULL, (itemHeader*)cmd);
     return cmd;
 }
 
@@ -951,7 +943,7 @@ int main(int argc, char **argv)
 
     /* delete any left over tasks on error */
     while((junk = (igtask*)removeFirstItem(&tasks)) != NULL)
-        freeTask(junk);
+        free(junk);
 
     return retval;
 }
