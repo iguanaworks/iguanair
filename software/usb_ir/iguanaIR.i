@@ -20,13 +20,19 @@
 #include "iguanaIR.h"
 %}
 
-%rename(createRequest) iguanaCreateRequest;
-%rename(writeRequest) iguanaWriteRequest;
+/* iguanaConnect_real handled below */
+%rename(close)           iguanaClose;
+%rename(createRequest)   iguanaCreateRequest;
+%rename(removeData)      iguanaRemoveData;
+%rename(code)            iguanaCode;
+%rename(freePacket)      iguanaFreePacket;
+%rename(writeRequest)    iguanaWriteRequest;
+/* iguanaReadResponse handled below */
 %rename(responseIsError) iguanaResponseIsError;
-%rename(removeData) iguanaRemoveData;
-%rename(readPulseFile) iguanaReadPulseFile;
-%rename(code) iguanaCode;
-%rename(close) iguanaClose;
+%rename(readPulseFile)   iguanaReadPulseFile;
+%rename(readBlockFile)   iguanaReadBlockFile;
+%rename(pinSpecToData)   iguanaPinSpecToData;
+%rename(dataToPinSpec)   iguanaDataToPinSpec;
 
 %typemap(default) (unsigned int dataLength, void *data)
 {

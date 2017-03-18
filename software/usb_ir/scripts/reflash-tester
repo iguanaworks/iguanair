@@ -109,7 +109,7 @@ def deviceTransaction(type, data = '', quiet = False):
 #        print '--- %s %s' % (deviceTransaction(iguanaIR.IG_DEV_GETVERSION),
 #                             deviceTransaction(iguanaIR.IG_DEV_RESET))
 #        print '--- %s' % deviceTransaction(iguanaIR.IG_DEV_GETVERSION)
-#        iguanaIR.iguanaClose(_conn)
+#        iguanaIR.close(_conn)
 #        _conn = None
 #    except KeyboardInterrupt:
 #        print 'Really quit? (press ctrl-c again) (try %d)' % count
