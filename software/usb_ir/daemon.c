@@ -214,6 +214,12 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
                 THREAD_PTR thread = INVALID_THREAD_PTR;
                 void *exitVal;
 
+                /* TODO: not doing anything w ctlSock now, but need to accept a cmd:
+                            - list - show what clients exist like: 0:1.2:fred
+                         and send notices to clients when clients connect and disconnect:
+                            - print something like: C:0, D:0?
+                 */
+
                 /* wait for a new ctl connection, a command from an
                    existing ctl connection, or a message from an exiting
                    child thread. */
