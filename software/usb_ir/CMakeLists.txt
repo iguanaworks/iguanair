@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
+include(${BOOTSTRAP_DIR}/CMakeMacros/Basics.txt)
+
 # Make sure to change the value in Changelog as well
 Set(FULLVER 1.1.2)
 
@@ -139,11 +141,6 @@ include(CheckIncludeFile)
 set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
 CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
 CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
-
-# let the user know what platform was detected
-message("Generator: ${CMAKE_GENERATOR}")
-message("Platform:  ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
-
 
 # build the user library
 add_library(iguanaIR SHARED
