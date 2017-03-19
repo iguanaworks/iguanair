@@ -5,8 +5,7 @@ If(TARGET_ANDROID)
   include_directories(libusb-compat-android/libusb)
 EndIf()
 
-# TODO: only expose the specific API!
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(USBPRE1LIB ${CMAKE_SOURCE_DIR}/win32/libusb-win32/lib/msvc/libusb.lib)
   Set(SUPPORTSRCS ../win32/pipes.c ../support.c)
 Else()
@@ -17,7 +16,7 @@ Else()
     Set(NEEDED OPTIONAL)
   EndIf()
 EndIf()
-# OS X
+# OS X : TODO: necessary?
 #Set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
 
 If(COMPILE_NEW)
@@ -25,11 +24,11 @@ If(COMPILE_NEW)
   add_library(usbdrv SHARED libusb.c ../list.c)
   set_property(TARGET usbdrv
                APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
-  if("${HAVE_USB_10_LIBUSB_H}" EQUAL 1)
-      target_link_libraries(usbdrv usb-1.0)
-  else()
-      target_link_libraries(usbdrv usb)
-  endif()
+  If(HAVE_USB_10_LIBUSB_H)
+    target_link_libraries(usbdrv usb-1.0)
+  Else()
+    target_link_libraries(usbdrv usb)
+  EndIf()
 
   install(TARGETS usbdrv
           DESTINATION ${LIBDIR}/iguanaIR)
@@ -42,11 +41,14 @@ set_property(TARGET usbpre1drv
 target_link_libraries(usbpre1drv ${USBPRE1LIB})
 If(TARGET_ANDROID)
   target_link_libraries(usbpre1drv usb-compat-android)
+EndIf()
+If(NOT "${NEEDED}" STREQUAL "OPTIONAL")
   install(TARGETS usbpre1drv
           DESTINATION ${LIBDIR}/iguanaIR
           ${NEEDED})
 EndIf()
 
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+#TODO: see if this is actually necessary since the usbpre1 changed to usbpre1drv
+If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   set_target_properties(usbpre1drv PROPERTIES RELEASE_OUTPUT_NAME "driver-libusb")
 EndIf()
