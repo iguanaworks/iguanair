@@ -30,15 +30,16 @@ Set(BASESRC logging.c)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   add_subdirectory(win32/argp-standalone-1.3)
+  # TODO: might have search code for these in bootstrap?
   Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe) # TODO: we should find instead of hard coding this
   Set(PYTHON_INCLUDE_DIR "C:/Python27/include") # TODO: we should find instead of hard coding this
 
-  List(APPEND BASELIBS ws2_32)
+  List(APPEND BASELIBS ws2_32) # TODO: why? htonl maybe?
   Set(PIPESRC win32/pipes.c)
   Set(DAEMONSRC win32/service.c)
-  Set(DAEMONLIBS setupapi)
+  Set(DAEMONLIBS setupapi) # TODO: why?
   List(APPEND BASESRC win32/compat-windows.c)
-  include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/win32 ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
+  include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 Else()
   include(CheckLibraryExists)

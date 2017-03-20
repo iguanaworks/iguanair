@@ -18,8 +18,6 @@ Else()
     Set(NEEDED OPTIONAL)
   EndIf()
 EndIf()
-# OS X : TODO: necessary?
-#Set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
 
 If(COMPILE_NEW)
   # build a driver that uses libusb version 1.0 or later
@@ -49,4 +47,3 @@ If(NOT "${NEEDED}" STREQUAL "OPTIONAL")
           DESTINATION ${LIBDIR}/iguanaIR
           ${NEEDED})
 EndIf()
-
