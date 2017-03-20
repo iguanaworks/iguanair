@@ -52,7 +52,7 @@ Source: "../Release/igdaemon.exe";              DestDir: "{app}"; Flags: ignorev
 Source: "../Release/igclient.exe";              DestDir: "{app}"; Flags: ignoreversion
 Source: "../Release/iguanaIR.dll";              DestDir: "{app}"; Flags: ignoreversion
 Source: "Release/iguanaIR.lib";              DestDir: "{app}"; Flags: ignoreversion
-Source: "../Release/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/usbpre1drv.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; compiled python APIs
 Source: "../Release/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion

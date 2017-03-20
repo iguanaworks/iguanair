@@ -805,17 +805,18 @@ void listenToClients(iguanaDev *idev)
     LeaveCriticalSection(&aliasLock);
 }
 
-void setAlias(unsigned int id, const char *alias)
+// TODO: only allows for 1 alias, but alright
+void setAlias(iguanaDev *idev, bool deleteAll, const char *alias)
 {
     EnterCriticalSection(&aliasLock);
-    if (listeners[id][1] != NULL)
+    if (listeners[idev->usbDev->id][1] != NULL)
     {
-        CloseHandle(listeners[id][1]);
-        listeners[id][1] = NULL;
+        CloseHandle(listeners[idev->usbDev->id][1]);
+        listeners[idev->usbDev->id][1] = NULL;
     }
     if (alias != NULL)
-        strcpy(aliases[id], alias);
+        strcpy(aliases[idev->usbDev->id], alias);
 	else
-		aliases[id][0] = '\0';
+		aliases[idev->usbDev->id][0] = '\0';
     LeaveCriticalSection(&aliasLock);
 }

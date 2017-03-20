@@ -48,7 +48,3 @@ If(NOT "${NEEDED}" STREQUAL "OPTIONAL")
           ${NEEDED})
 EndIf()
 
-#TODO: see if this is actually necessary since the usbpre1 changed to usbpre1drv
-If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-  set_target_properties(usbpre1drv PROPERTIES RELEASE_OUTPUT_NAME "driver-libusb")
-EndIf()
