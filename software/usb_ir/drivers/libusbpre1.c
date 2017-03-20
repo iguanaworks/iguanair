@@ -21,7 +21,7 @@
 #include <errno.h>
 
 #include "../pipes.h"
-#include "../support.h"
+#include "loggingWrap.h"
 #include "../driverapi.h"
 
 #include "../list.h"
@@ -66,9 +66,6 @@ typedef struct usbDeviceList
 } usbDeviceList;
 
 #define handleFromInfoPtr(ptr) (usbDevice*)((char*)ptr - offsetof(usbDevice, info))
-
-
-
 
 static void setError(usbDevice *handle, char *error)
 {
@@ -479,7 +476,8 @@ driverImpl impl_libusbpre1 = {
     printError
 };
 
-driverImpl* getImplementation()
+driverImpl* getImplementation(const loggingImpl *impl)
 {
+    setLoggingPtrs(impl);
     return &impl_libusbpre1;
 }

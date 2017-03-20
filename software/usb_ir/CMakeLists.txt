@@ -26,7 +26,7 @@ EndIf()
 # TODO: installation should go to lib64 on some platforms, but not sure this handles it now
 
 # set a couple variables early
-Set(BASESRC support.c)
+Set(BASESRC logging.c)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   add_subdirectory(win32/argp-standalone-1.3)

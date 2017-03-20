@@ -5,9 +5,11 @@ If(TARGET_ANDROID)
   include_directories(libusb-compat-android/libusb)
 EndIf()
 
+Set(BASESRCS loggingWrap.c ../list.c)
+
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(USBPRE1LIB ${CMAKE_SOURCE_DIR}/win32/libusb-win32/lib/msvc/libusb.lib)
-  Set(SUPPORTSRCS ../win32/pipes.c ../support.c)
+  List(APPEND BASESRCS ../win32/pipes.c)
 Else()
   Set(USBPRE1LIB usb)
   If(NOT "${CMAKE_ARCH}" STREQUAL "arm")
@@ -21,7 +23,7 @@ EndIf()
 
 If(COMPILE_NEW)
   # build a driver that uses libusb version 1.0 or later
-  add_library(usbdrv SHARED libusb.c ../list.c)
+  add_library(usbdrv SHARED libusb.c ${BASESRCS})
   set_property(TARGET usbdrv
                APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
   If(HAVE_USB_10_LIBUSB_H)
@@ -35,7 +37,7 @@ If(COMPILE_NEW)
 EndIf()
 
 # optionally build a driver that uses libusb pre version 1.0
-add_library(usbpre1drv SHARED ${EXCLUDE} libusbpre1.c ../list.c ${SUPPORTSRCS})
+add_library(usbpre1drv SHARED ${EXCLUDE} libusbpre1.c ${BASESRCS})
 set_property(TARGET usbpre1drv
              APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
 target_link_libraries(usbpre1drv ${USBPRE1LIB})

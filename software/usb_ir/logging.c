@@ -1,9 +1,8 @@
 /****************************************************************************
- ** support.c ***************************************************************
+ ** logging.c ***************************************************************
  ****************************************************************************
  *
- * Basic functions and definitions for I/O, both for logging and
- * device communication.
+ * Basic functions and definitions for logging.
  *
  * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
@@ -18,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <stdarg.h>
 #include <time.h>
 #include <assert.h>
 
@@ -91,11 +89,22 @@ bool wouldOutput(int level)
 /* Print a message to a certain debug level */
 int message(int level, char *format, ...)
 {
+    int retval;
     va_list list;
+
+    va_start(list, format);
+    retval = vaMessage(level, format, list);
+    va_end(list);
+
+    return retval;
+}
+
+/* do the actual work of printing */
+int vaMessage(int level, char *format, va_list list)
+{
     int retval = 0;
     FILE *out;
 
-    va_start(list, format);
     out = pickStream(level);
     if (out != NULL)
     {
@@ -137,7 +146,6 @@ int message(int level, char *format, ...)
         if (buffer != format)
             free(buffer);
     }
-    va_end(list);
 
     /* die at callers request */
     assert(level > LOG_FATAL);

@@ -52,6 +52,7 @@ typedef struct driverImpl
 
 } driverImpl;
 
-DRIVER_API driverImpl* getImplementation();
+struct loggingImpl;
+DRIVER_API driverImpl* getImplementation(const struct loggingImpl *impl);
 
 #endif

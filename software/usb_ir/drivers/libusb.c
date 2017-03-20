@@ -28,7 +28,7 @@
 #endif
 
 #include "../pipes.h"
-#include "../support.h"
+#include "loggingWrap.h"
 #include "../driverapi.h"
 
 #include "../list.h"
@@ -681,7 +681,8 @@ driverImpl impl_libusb = {
     printError
 };
 
-driverImpl* getImplementation()
+driverImpl* getImplementation(const loggingImpl *impl)
 {
+    setLoggingPtrs(impl);
     return &impl_libusb;
 }

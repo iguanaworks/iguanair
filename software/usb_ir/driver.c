@@ -118,6 +118,7 @@ static bool findDriverDir(char *path)
 
 bool loadDriver(char *path)
 {
+    loggingImpl logImpl = { wouldOutput, vaMessage, appendHex };
     char *ext;
     void *library;
     driverImpl* (*getImplementation)();
@@ -128,7 +129,7 @@ bool loadDriver(char *path)
         (library = loadLibrary(path)) != NULL &&
         (*(void**)(&getImplementation) = getFuncAddress(library,
                                                         "getImplementation")) != NULL)
-        return (implementation = getImplementation()) != NULL;
+        return (implementation = getImplementation(&logImpl)) != NULL;
 
     return false;
 }
