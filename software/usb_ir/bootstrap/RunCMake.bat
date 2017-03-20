@@ -63,7 +63,7 @@ if NOT EXIST %CMAKE% (
     echo CMake not found!  Please check the CMAKE variable in the settings.bat file.
     GOTO EXIT
 )
-%CMAKE% %CMAKE_ARGS% %CHAIN% -G %GENERATOR% ..
+%CMAKE% %CMAKE_ARGS% -DBOOTSTRAP_DIR=%BOOTSTRAP_DIR% %CHAIN% -G %GENERATOR% ..
 cd ..
 
 :EXIT

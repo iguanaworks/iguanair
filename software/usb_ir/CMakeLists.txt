@@ -38,7 +38,7 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(DAEMONSRC win32/service.c)
   Set(DAEMONLIBS setupapi)
   List(APPEND BASESRC win32/compat-windows.c)
-  include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
+  include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/win32 ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 Else()
   include(CheckLibraryExists)
