@@ -43,29 +43,29 @@ DefaultDirName={pf}\IguanaIR
 DefaultGroupName=IguanaIR
 ;#Compression=bzip"
 
-OutputDir=Release
+OutputDir=../Release
 OutputBaseFilename=iguanaIR-%(version)s
 
 [Files]
 ; compiled from C sources
-Source: "Release/igdaemon.exe";              DestDir: "{app}"; Flags: ignoreversion
-Source: "Release/igclient.exe";              DestDir: "{app}"; Flags: ignoreversion
-Source: "Release/iguanaIR.dll";              DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/igdaemon.exe";              DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/igclient.exe";              DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/iguanaIR.dll";              DestDir: "{app}"; Flags: ignoreversion
 Source: "Release/iguanaIR.lib";              DestDir: "{app}"; Flags: ignoreversion
-Source: "drivers/Release/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/driver-libusb.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; compiled python APIs
-Source: "Release/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion
-Source: "iguanaIR.py";               DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/_iguanaIR.pyd";     DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/iguanaIR.py";               DestDir: "{app}"; Flags: ignoreversion
 
 ; executable, zip file, python library, et al for py2exe applications
-Source: "Release/library.zip";            DestDir: "{app}"; Flags: ignoreversion
-Source: "Release/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
-Source: "Release/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Release/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
+Source: "../Release/library.zip";            DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/python%(pyver)s.dll";    DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/iguanaIR-reflasher.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/hex/*.hex";              DestDir: "{app}/hex"; Flags: ignoreversion
 
 ; argp and libusb libraries
-Source: "win32/argp-standalone-1.3/Release/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "../win32/libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}"; Flags: ignoreversion; DestName: libusb0.dll
 
 ; the rest are created by libusb's tools

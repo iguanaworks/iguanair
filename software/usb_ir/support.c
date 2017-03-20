@@ -12,6 +12,7 @@
  * See LICENSE-LGPL for license details.
  */
 #include "support.h"
+#include "compat.h"
 
 #include <stdlib.h>
 #include <stdio.h>

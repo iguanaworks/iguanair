@@ -27,7 +27,7 @@
     #endif
 #endif
 
-#include <stdbool.h>
+#include "iguanaIR.h"
 
 enum
 {

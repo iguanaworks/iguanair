@@ -15,6 +15,7 @@
 #ifndef _COMPAT_
 #define _COMPAT_
 
+//#include "iguanaIR.h"
 #include <stdint.h>
 
 #ifdef WIN32
