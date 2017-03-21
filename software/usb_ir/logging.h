@@ -15,7 +15,7 @@ enum
     LOG_DEBUG2,
     LOG_DEBUG3,
 
-    LOG_ALWAYS,
+    LOG_ALWAYS
 };
 
 /* functions for configuring logging */
