@@ -313,7 +313,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
     if (describe)
         message(LOG_NORMAL, "  USB IR device number %d on bus %d:\n", devIndex, busIndex);
 
-    len = sprintf(buffer, "/sys/bus/usb/devices/usb%d", busIndex);
+    len = sprintf(buffer, "/sys/bus/usb/devices");
     if ((dir = opendir(buffer)) != NULL)
     {
         while((dp = readdir(dir)) != NULL)
@@ -334,6 +334,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
                 sprintf(buffer + len, "/%s:1.0/driver", dp->d_name);
                 if (readlink(buffer, link, PATH_MAX) != -1)
                 {
+                    strcat(buffer, "/unbind");
                     if (describe)
                     {
                         char *slash;
@@ -345,7 +346,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
                         else
                         {
                             message(LOG_NORMAL, "    claimed by kernel driver '%s'\n", slash + 1);
-                            message(LOG_INFO, "Release command:\n      echo '%s:1.0' > '/sys/bus/usb/devices/usb5/%s/%s:1.0/driver/unbind'\n", dp->d_name, dp->d_name, dp->d_name);
+                            message(LOG_INFO, "Release with: echo '%s:1.0' > '%s'\n", dp->d_name, buffer);
                         }
                     }
                     else
@@ -353,7 +354,6 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
                         /* attempt to force an unbind of the current driver */
                         FILE *output;
                         message(LOG_INFO, "Attempting to unbind current driver from %s\n", dp->d_name);
-                        strcat(buffer, "/unbind");
                         if ((output = fopen(buffer, "w")) == NULL)
                         {
                             message(LOG_ERROR, "Failed to unbind %s: %d\n", dp->d_name, errno);
