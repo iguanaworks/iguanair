@@ -104,6 +104,9 @@ iguanaPacket readResponse(PIPE_PTR connection, unsigned int timeout)
  * default value. */
 %rename(connect) iguanaConnect_python;
 %ignore iguanaConnect_real;
+%typemap(default) const char *name {
+    $1 = "0";
+}
 %inline %{
 PIPE_PTR iguanaConnect_python(const char *name)
 {
