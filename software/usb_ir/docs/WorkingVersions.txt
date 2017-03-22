@@ -1,0 +1,97 @@
+Below we've recorded the versions of various dependencies that we are
+known to work with along with the platform where each was seen.
+
+Platform legend:
+ - FXX   = Fedora XX, i.e. F24 = Fedora 24
+ - DebX  = Debian X, i.e. Deb8 = Debian 8
+ - UXXXX = Ubuntu XX.XX, i.e. U1604 = Ubuntu 16.04
+ - WinXX = Windows XX, could be XP, 7, 10
+ - Hurd  = Debian Hurd (build only)
+ - RP    = RaspberryPi, Raspbian
+
+
+CMake: required for build
+ - 2.8.7 - U1204
+ - 2.8.12.2 - U1404
+ - 3.0.2 - Deb8
+ - 3.3.2 - F22
+ - 3.4.3 - F23
+ - 3.5.1 - U1604
+ - 3.5.2 - U1610
+ - 3.6.2 - RP,F24,F25
+ - 3.7.2 - Hurd,Deb9
+
+Compiler: required for build: gcc, clang, xcode, msvc
+ - gcc
+  - 4.6.3 - U1204
+  - 4.8.4 - U1404
+  - 4.9.2 - RP,Deb8
+  - 5.3.1 - F22,F23
+  - 5.4.0 - U1604
+  - 6.2.0 - U1610
+  - 6.3.0 - Hurd,Deb9
+  - 6.3.1 - F24,F25
+ - clang
+  - 3.9.1 - F25
+ - xcode
+
+LibUsb: required for build or use: >= v1.0 OR < v1.0 are separate drivers
+ - libusb-1.0
+  - 1.0.9  - U1204
+  - 1.0.17 - U1404
+  - 1.0.19 - RP,Deb8
+  - 1.0.20 - U1604,U1610
+  - 1.0.21 - Hurd,F22,F23,F24,F25,Deb9
+ - libusb-pre1
+  - 0.1.5  - F22,F23,F24,F25
+  - 0.1.12 - Hurd,Deb8,Deb9,U1204,U1404,U1604,U1610
+
+Git: semi-required for build
+   - 1.7.9.5 - U1204
+   - 1.9.1  - U1404
+   - 2.1.4  - RP,Deb8
+   - 2.4.11 - F22
+   - 2.5.5  - F23
+   - 2.7.4  - F24,U1604
+   - 2.9.3  - F25,U1610
+   - 2.11.0 - Hurd,Deb9
+
+Swig: optional for build, required if you want the Python API
+   - 2.0.4  - U1204
+   - 2.0.11 - U1404
+   - 2.0.12 - RP,Deb8
+   - 3.0.7  - F22,F23
+   - 3.0.8  - F24,U1604,U1610
+   - 3.0.10 - Hurd,Deb9
+   - 3.0.11 - F25
+
+Python: optional for build or use
+ - python2
+  - 2.7.3  - U1204
+  - 2.7.6  - U1404
+  - 2.7.9  - Deb8
+  - 2.7.10 - F22
+  - 2.7.11 - F23
+  - 2.7.12 - U1604,U1610
+  - 2.7.13 - Hurd,F24,F25,Deb9
+ - python3
+  - 3.4.2 - RP,F22,Deb8
+  - 3.4.3 - F23,U1404
+  - 3.5.2 - U1604,U1610
+  - 3.5.3 - Hurd,F24,F25,Deb9
+
+Lirc: optional for build or use though most people will want it
+ - 0.9.0  - RP,Deb8,U1204,U1404,U1604,U1610
+ - 0.9.2a - F22
+ - 0.9.3a - F23
+ - 0.9.4c - Hurd,F24,F25,Deb9
+
+UDev: optional
+   - 175 - U1204
+   - 204 - U1404
+   - 215 - Deb8
+   - 219 - F22
+   - 222 - F23
+   - 229 - F24,U1604
+   - 231 - F25,U1610
+   - 232 - Deb9
