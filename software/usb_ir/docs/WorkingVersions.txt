@@ -1,7 +1,9 @@
-Below we've recorded the versions of various dependencies that we are
+Below we've recorded the versions of various dependencies that we are*
 known to work with along with the platform where each was seen.
+Versions may be added to this list if the software compiles, and
+should be starred (*) if it turns out not to actually run properly.
 
-Platform legend:
+Platform legend:)
  - FXX   = Fedora XX, i.e. F24 = Fedora 24
  - DebX  = Debian X, i.e. Deb8 = Debian 8
  - UXXXX = Ubuntu XX.XX, i.e. U1604 = Ubuntu 16.04
@@ -86,7 +88,7 @@ Lirc: optional for build or use though most people will want it
  - 0.9.3a - F23
  - 0.9.4c - Hurd,F24,F25,Deb9
 
-UDev: optional
+UDev: optional, but required for hotplug on Linux
    - 175 - U1204
    - 204 - U1404
    - 215 - Deb8
