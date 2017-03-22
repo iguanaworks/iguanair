@@ -308,7 +308,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
     DIR *dir;
     int len, devIndex, busIndex;
 
-    devIndex = libusb_get_port_number(dev);
+    devIndex = libusb_get_device_address(dev);
     busIndex = libusb_get_bus_number(dev);
     if (describe)
         message(LOG_NORMAL, "  USB IR device number %d on bus %d:\n", devIndex, busIndex);
