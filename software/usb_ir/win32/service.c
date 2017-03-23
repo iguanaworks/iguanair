@@ -273,10 +273,15 @@ static struct argp parser = {
     NULL
 };
 
-static void isStopping(void *state)
+static bool isStopping(void *state)
 {
     HANDLE stopEvent = (HANDLE)state;
-    return (stopEvent == NULL || WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT);
+    return (stopEvent != NULL && WaitForSingleObject(stopEvent, 0) != WAIT_TIMEOUT);
+}
+
+static void stopNow(void *state)
+{
+    SetEvent((HANDLE)state);
 }
 
 static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
@@ -331,6 +336,8 @@ int main(int argc, char **argv)
             /* we could be running as a console application */
             if (error == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
             {
+                HANDLE stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
                 /* populate the device list once */
                 if (! updateDeviceList(srvSettings.list))
                     message(LOG_ERROR, "initial scan failed.\n");
@@ -339,7 +346,9 @@ int main(int argc, char **argv)
                     message(LOG_ERROR, "Could not set control handler\n");
                 else
                     /* block waiting for commPipe commands */
-                    waitOnCommPipe(isStopping, NULL);
+                    waitOnCommPipe(isStopping, stopNow, stopEvent);
+
+                CloseHandle(stopEvent);
             }
             else
                 return error;
@@ -347,7 +356,6 @@ int main(int argc, char **argv)
         cleanupServer();
     }
 
-    // TODO: this seems odd... does this get deleted when it could still be used!?!?!?
     DeleteCriticalSection(&aliasLock);
     return 0;
 }
@@ -390,7 +398,7 @@ static void WINAPI serviceMain(int argc, char **argv)
 
         /* tell SCM about our progress and wait for death */
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
-        waitOnCommPipe(isStopping, service_stop_event);
+        waitOnCommPipe(isStopping, stopNow, service_stop_event);
         CloseHandle(service_stop_event);
     }
 
