@@ -95,12 +95,6 @@ void initServerSettings(deviceFunc devFunc)
 
 static struct argp_option options[] =
 {
-    { NULL, 0, NULL, 0, "Logging options:", LOG_GROUP },
-    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", LOG_GROUP },
-    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   LOG_GROUP },
-    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 LOG_GROUP },
-    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             LOG_GROUP },
-
     { NULL, 0, NULL, 0, "Driver selection options:", DRV_GROUP },
     { "driver",         'd',             "DRIVER", 0, "Use this driver in preference to others.  This command can be111 used multiple times.", DRV_GROUP },
     { "only-preferred", ARG_ONLY_PREFER, NULL,     0, "Use only drivers specified by the --driver option.",                                 DRV_GROUP },
@@ -112,51 +106,14 @@ static struct argp_option options[] =
     { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                                  MSC_GROUP },
     { "scan-timer",      ARG_NO_SCANWHEN,  "SECS",   0, "Periodically rescan the USB bus for new devices regardless of hotplug events.", MSC_GROUP },
 
-    /* argp seems to recognize this and move it to the end */
-    { "version",         'V',              NULL,     0, "Print the build and version numbers.",                                          MSC_GROUP },
-
     /* end of table */
     {0}
 };
 
 static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
-//    struct parameters *params = (struct parameters*)state->input;
     switch(key)
     {
-    /* Logging options */
-    case 'l':
-        openLog(arg);
-        break;
-
-    case 'q':
-        changeLogLevel(-1);
-        break;
-
-    case 'v':
-        changeLogLevel(+1);
-        break;
-
-    case 'V':
-        printf("Software version: %s\n", IGUANAIR_VER_STR("igdaemon"));
-        exit(0);
-        break;
-
-    case ARG_LOG_LEVEL:
-    {
-        char *end;
-        long int res = strtol(arg, &end, 0);
-        if (arg[0] == '\0' || end[0] != '\0' || res < LOG_FATAL || res > LOG_DEBUG3 )
-        {
-            argp_error(state, "Log level requires a numeric argument between %d and %d\n",
-                       LOG_FATAL, LOG_DEBUG3);
-            return ARGP_HELP_STD_ERR;
-        }
-        else
-            setLogLevel(res);
-        break;
-    }
-
     /* driver options */
     case 'd':
         srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));

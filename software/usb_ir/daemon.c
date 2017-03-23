@@ -389,15 +389,15 @@ int main(int argc, char **argv)
 {
     int retval = 0;
     struct parameters params;
-    struct argp_child children[2];
+    struct argp_child children[3];
 
     /* initialize the server-level settings */
     initServerSettings(startWorker);
 
-    /* grab the base arguments from server.c */
-    memset(children, 0, sizeof(struct argp_child) * 2);
+    /* include the log and base argument parsers */
+    memset(children, 0, sizeof(struct argp_child) * 3);
     children[0].argp = baseArgParser();
-    children[0].group = 0;
+    children[1].argp = logArgParser();
     parser.children = children;
 
     /* initialize the parameters structure and parse the cmd line args */

@@ -24,9 +24,6 @@ void triggerCommand(THREAD_PTR cmd);
 
 enum
 {
-    /* generic actions */
-    ARG_LOG_LEVEL = 0x100,
-
     /* igdaemon specific actions */
     ARG_NO_IDS = 0x200,
     ARG_NO_RESCAN,
@@ -36,9 +33,7 @@ enum
     LAST_BASE_ARG,
 
     /* defines for argp */
-    LOG_GROUP = 1,
-    DRV_GROUP,
-    MSC_GROUP,
+    DRV_GROUP = MSC_GROUP + 1,
     OS_GROUP,
     HELP_GROUP
 };

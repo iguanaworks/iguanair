@@ -49,8 +49,9 @@ enum
     INTERNAL_SETHOLDPINS,
 
     /* defines for using argp */
-    GROUP0 = 0,
-    ARG_LOG_LEVEL = 0xFF,
+    GEN_GROUP = MSC_GROUP,
+    DEV_GROUP,
+    HELP_GROUP,
 
     /* substitutes to avoid odd characters in --help */
     ARGP_OFFSET = 0x200,
@@ -695,58 +696,56 @@ static igtask* enqueueTaskById(unsigned short code, const char *arg)
 }
 
 static struct argp_option options[] = {
-    /* general options */
-    { "device",      'd',           "DEVICE", 0, "Specify the target device index or id.",  GROUP0 },
-    { "interactive", 'i',           NULL,     0, "Use the client interactively.",           GROUP0 },
-    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
-    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   GROUP0 },
-    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 GROUP0 },
-    { "version",     'V',           NULL,     0, "Print the build and version numbers.",    GROUP0 },
-    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
+    { NULL, 0, NULL, 0, "General options:", GEN_GROUP },
+    { "device",      'd',            "DEVICE", 0, "Specify the target device index or id.",  GEN_GROUP },
+    { "interactive", 'i',            NULL,     0, "Use the client interactively.",           GEN_GROUP },
+    { "sleep",       INTERNAL_SLEEP, "NUM",    0, "Sleep for NUM seconds.",                  GEN_GROUP },
 
     /* device commands */
-    { "get-version",     IG_DEV_GETVERSION,  NULL,       0, "Return the version of the device firmware.",                    GROUP0 },
-    { "get-features",    IG_DEV_GETFEATURES, NULL,       0, "Return the features associated w/ this device.",                GROUP0 },
-    { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       GROUP0 },
-    { "resend",          OFFSET_RESEND,      "DELAY",    0, "Resend the contents of the device buffer after DELAY seconds.", GROUP0 },
-    { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  GROUP0 },
-    { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        GROUP0 },
-    { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       GROUP0 },
-    { "get-pins",        IG_DEV_GETPINS,     NULL,       0, "Get the pin values.",                                           GROUP0 },
-    { "set-pins",        IG_DEV_SETPINS,     "PINS",     0, "Set the pin values.",                                           GROUP0 },
-    { "get-buffer-size", IG_DEV_GETBUFSIZE,  NULL,       0, "Check onboard RAM send/receive buffer size.",                   GROUP0 },
-    { "write-block",     IG_DEV_WRITEBLOCK,  "FILE",     0, "Write the block specified in the file.",                        GROUP0 },
-    { "execute",         IG_DEV_EXECUTE,     NULL,       0, "Execute code starting at address 0x1fc0 on the device.",        GROUP0 },
-    { "lcd-text",        IG_DEV_PINBURST,    "STR",      0, "Send bulk transfers of pin settings to display STR on an LCD.", GROUP0 },
-    { "reset",           IG_DEV_RESET,       NULL,       0, "Reset the USB device.",                                         GROUP0 },
-    { "get-channels",    IG_DEV_GETCHANNELS, NULL,       0, "Check which channels are used during transmits.",               GROUP0 },
-    { "set-channels",    IG_DEV_SETCHANNELS, "CHANNELS", 0, "Set which channels are used during transmits.",                 GROUP0 },
-    { "get-carrier",     IG_DEV_GETCARRIER,  NULL,       0, "Check the carrier frequency for transmits.",                    GROUP0 },
-    { "set-carrier",     IG_DEV_SETCARRIER, "HZ",        0, "Set the carrier frequency for transmits.",                      GROUP0 },
+    { NULL, 0, NULL, 0, "Device commands:", DEV_GROUP },
+    { "get-version",     IG_DEV_GETVERSION,  NULL,       0, "Return the version of the device firmware.",                    DEV_GROUP },
+    { "get-features",    IG_DEV_GETFEATURES, NULL,       0, "Return the features associated w/ this device.",                DEV_GROUP },
+    { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       DEV_GROUP },
+    { "resend",          OFFSET_RESEND,      "DELAY",    0, "Resend the contents of the device buffer after DELAY seconds.", DEV_GROUP },
+    { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  DEV_GROUP },
+    { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        DEV_GROUP },
+    { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       DEV_GROUP },
+    { "get-pins",        IG_DEV_GETPINS,     NULL,       0, "Get the pin values.",                                           DEV_GROUP },
+    { "set-pins",        IG_DEV_SETPINS,     "PINS",     0, "Set the pin values.",                                           DEV_GROUP },
+    { "get-buffer-size", IG_DEV_GETBUFSIZE,  NULL,       0, "Check onboard RAM send/receive buffer size.",                   DEV_GROUP },
+    { "write-block",     IG_DEV_WRITEBLOCK,  "FILE",     0, "Write the block specified in the file.",                        DEV_GROUP },
+    { "execute",         IG_DEV_EXECUTE,     NULL,       0, "Execute code starting at address 0x1fc0 on the device.",        DEV_GROUP },
+    { "lcd-text",        IG_DEV_PINBURST,    "STR",      0, "Send bulk transfers of pin settings to display STR on an LCD.", DEV_GROUP },
+    { "reset",           IG_DEV_RESET,       NULL,       0, "Reset the USB device.",                                         DEV_GROUP },
+    { "get-channels",    IG_DEV_GETCHANNELS, NULL,       0, "Check which channels are used during transmits.",               DEV_GROUP },
+    { "set-channels",    IG_DEV_SETCHANNELS, "CHANNELS", 0, "Set which channels are used during transmits.",                 DEV_GROUP },
+    { "get-carrier",     IG_DEV_GETCARRIER,  NULL,       0, "Check the carrier frequency for transmits.",                    DEV_GROUP },
+    { "set-carrier",     IG_DEV_SETCARRIER, "HZ",        0, "Set the carrier frequency for transmits.",                      DEV_GROUP },
 
     /* commands that actually store and load the pin configuration */
-    { "get-pin-config", IG_DEV_GETPINCONFIG, NULL, 0, "Retrieve the internal pin state.", GROUP0 },
-    { "set-pin-config", IG_DEV_SETPINCONFIG, NULL, 0, "Store the internal pin state.",    GROUP0 },
+    { "get-pin-config", IG_DEV_GETPINCONFIG, NULL, 0, "Retrieve the internal pin state.", DEV_GROUP },
+    { "set-pin-config", IG_DEV_SETPINCONFIG, NULL, 0, "Store the internal pin state.",    DEV_GROUP },
 
     /* internal commands from here on down (i.e. handled within the app w/o communication w the device) */
     /* pin configuration commands */
-    { "get-output-pins",     INTERNAL_GETOUTPINS,  NULL,   0, "Check which pins are set to be outputs.",     GROUP0 },
-    { "set-output-pins",     INTERNAL_SETOUTPINS,  "PINS", 0, "Set which pins should be outputs.",           GROUP0 },
-    { "get-pullup-pins",     INTERNAL_GETPULLPINS, NULL,   0, "Check which pins are set to be pullups.",     GROUP0 },
-    { "set-pullup-pins",     INTERNAL_SETPULLPINS, "PINS", 0, "Set which pins should be pullups.",           GROUP0 },
-    { "get-open-drain-pins", INTERNAL_GETOPENPINS, NULL,   0, "Check which pins are set to be open drains.", GROUP0 },
-    { "set-open-drain-pins", INTERNAL_SETOPENPINS, "PINS", 0, "Set which pins should be open drains.",       GROUP0 },
-    { "get-high-sink-pins",  INTERNAL_GETSINKPINS, NULL,   0, "Check which pins are set to be high sinks.",  GROUP0 },
-    { "set-high-sink-pins",  INTERNAL_SETSINKPINS, "PINS", 0, "Set which pins should be high sinks.",        GROUP0 },
-    { "get-threshold-pins",  INTERNAL_GETHOLDPINS, NULL,   0, "Check which pins are set to be thresholds.",  GROUP0 },
-    { "set-threshold-pins",  INTERNAL_SETHOLDPINS, "PINS", 0, "Set which pins should be thresholds.",        GROUP0 },
+    { "get-output-pins",     INTERNAL_GETOUTPINS,  NULL,   0, "Check which pins are set to be outputs.",     DEV_GROUP },
+    { "set-output-pins",     INTERNAL_SETOUTPINS,  "PINS", 0, "Set which pins should be outputs.",           DEV_GROUP },
+    { "get-pullup-pins",     INTERNAL_GETPULLPINS, NULL,   0, "Check which pins are set to be pullups.",     DEV_GROUP },
+    { "set-pullup-pins",     INTERNAL_SETPULLPINS, "PINS", 0, "Set which pins should be pullups.",           DEV_GROUP },
+    { "get-open-drain-pins", INTERNAL_GETOPENPINS, NULL,   0, "Check which pins are set to be open drains.", DEV_GROUP },
+    { "set-open-drain-pins", INTERNAL_SETOPENPINS, "PINS", 0, "Set which pins should be open drains.",       DEV_GROUP },
+    { "get-high-sink-pins",  INTERNAL_GETSINKPINS, NULL,   0, "Check which pins are set to be high sinks.",  DEV_GROUP },
+    { "set-high-sink-pins",  INTERNAL_SETSINKPINS, "PINS", 0, "Set which pins should be high sinks.",        DEV_GROUP },
+    { "get-threshold-pins",  INTERNAL_GETHOLDPINS, NULL,   0, "Check which pins are set to be thresholds.",  DEV_GROUP },
+    { "set-threshold-pins",  INTERNAL_SETHOLDPINS, "PINS", 0, "Set which pins should be thresholds.",        DEV_GROUP },
 
     /* other application internal commands */
-    { "sleep",               INTERNAL_SLEEP,       "NUM",  0, "Sleep for NUM seconds.",                               GROUP0 },
-    { "get-id",              OFFSET_GETID,         NULL,   0, "Fetch the unique id from the USB device.",             GROUP0 },
-    { "set-id",              OFFSET_SETID,         "STR",  0, "Set the unique id from the USB device.",               GROUP0 },
-    { "get-location",        OFFSET_GETLOCATION,   NULL,   0, "Fetch the bus and device indices for the USB device.", GROUP0 },
-    { "repeater-on",         OFFSET_REPEATER,      NULL,   0, "Put the device into a mode that repeats signals.",     GROUP0 },
+    { "get-id",              OFFSET_GETID,         NULL,   0, "Fetch the unique id from the USB device.",             DEV_GROUP },
+    { "set-id",              OFFSET_SETID,         "STR",  0, "Set the unique id from the USB device.",               DEV_GROUP },
+    { "get-location",        OFFSET_GETLOCATION,   NULL,   0, "Fetch the bus and device indices for the USB device.", DEV_GROUP },
+    { "repeater-on",         OFFSET_REPEATER,      NULL,   0, "Put the device into a mode that repeats signals.",     DEV_GROUP },
+
+    { NULL, 0, NULL, 0, "Help related options:", HELP_GROUP },
 
     /* end of table */
     {0}
@@ -828,26 +827,6 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         interactive = true;
         break;
 
-    case 'l':
-        openLog(arg);
-        break;
-
-    case 'q':
-        changeLogLevel(-1);
-        break;
-
-    case 'v':
-        changeLogLevel(+1);
-        break;
-
-    case 'V':
-        printf("Software version: %s\n", IGUANAIR_VER_STR("igclient"));
-        break;
-
-    case 'e':
-        setLogLevel(atoi(arg));
-        break;
-
     default:
         return ARGP_ERR_UNKNOWN;
     }
@@ -870,6 +849,12 @@ int main(int argc, char **argv)
     struct parameters params;
     int retval = 1;
     igtask *junk;
+    struct argp_child children[2];
+
+    /* include the log argument parser */
+    memset(children, 0, sizeof(struct argp_child) * 2);
+    children[0].argp = logArgParser();
+    parser.children = children;
 
     /* initialize the parameters structure and parse the cmd line args */
     params.device = "0";

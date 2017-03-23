@@ -12,6 +12,7 @@
  */
 #include "support.h"
 #include "compat.h"
+#include "version.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,6 +20,8 @@
 #include <errno.h>
 #include <time.h>
 #include <assert.h>
+
+#include <argp.h>
 
 static char *msgPrefixes[] =
 {
@@ -35,6 +38,74 @@ static char *msgPrefixes[] =
 /* logging variables */
 static int currentLevel = LOG_NORMAL;
 static FILE *logFile = NULL;
+
+static struct argp_option options[] =
+{
+    { NULL, 0, NULL, 0, "Logging options:", LOG_GROUP },
+    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", LOG_GROUP },
+    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   LOG_GROUP },
+    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 LOG_GROUP },
+    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             LOG_GROUP },
+
+    /* argp seems to recognize this and move it to the end */
+    { "version",     'V',           NULL,     0, "Print the build and version numbers.",    MSC_GROUP },
+
+    {0}
+};
+
+static error_t parseOption(int key, char *arg, struct argp_state *state)
+{
+//    struct parameters *params = (struct parameters*)state->input;
+    switch(key)
+    {
+    /* Logging options */
+    case 'l':
+        openLog(arg);
+        break;
+
+    case 'q':
+        changeLogLevel(-1);
+        break;
+
+    case 'v':
+        changeLogLevel(+1);
+        break;
+
+    case ARG_LOG_LEVEL:
+    {
+        char *end;
+        long int res = strtol(arg, &end, 0);
+        if (arg[0] == '\0' || end[0] != '\0' || res < LOG_FATAL || res > LOG_DEBUG3 )
+        {
+            argp_error(state, "Log level requires a numeric argument between %d and %d\n",
+                       LOG_FATAL, LOG_DEBUG3);
+            return ARGP_HELP_STD_ERR;
+        }
+        else
+            setLogLevel(res);
+        break;
+    }
+
+    case 'V':
+        printf("Software version: %s\n", IGUANAIR_VER_STR("igdaemon"));
+        exit(0);
+        break;
+
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+static struct argp parser = {
+    options,
+    parseOption
+};
+
+struct argp* logArgParser()
+{
+    return &parser;
+}
 
 void changeLogLevel(int difference)
 {

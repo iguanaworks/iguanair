@@ -15,10 +15,16 @@ enum
     LOG_DEBUG2,
     LOG_DEBUG3,
 
-    LOG_ALWAYS
+    LOG_ALWAYS,
+
+    /* argp related logging defines */
+    ARG_LOG_LEVEL = 0x100,
+    LOG_GROUP = 1,
+    MSC_GROUP
 };
 
 /* functions for configuring logging */
+struct argp* logArgParser();
 void changeLogLevel(int difference);
 void setLogLevel(int value);
 void openLog(const char *filename);
