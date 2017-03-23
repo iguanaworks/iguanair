@@ -36,9 +36,9 @@ static deviceList *list;
 
 /* we keep a global list of aliases and listeners */
 #define MAX_DEVICES 64
-char aliases[MAX_DEVICES][MAX_PATH] = {{'\0'}};
-HANDLE listeners[MAX_DEVICES + 1][2] = {{NULL, NULL}};
-CRITICAL_SECTION aliasLock;
+static char aliases[MAX_DEVICES][MAX_PATH] = {{'\0'}};
+static HANDLE listeners[MAX_DEVICES + 1][2] = {{NULL, NULL}};
+static CRITICAL_SECTION aliasLock;
 
 /* guids for registering for device notifications */
 DEFINE_GUID(GUID_DEVINTERFACE_USB_HUB, 0xf18a0e88, 0xc30c, 0x11d0, 0x88,
