@@ -195,14 +195,16 @@ enum
 static struct argp_option options[] =
 {
     /* Windows specific stuff for controlling the service */
-    { NULL, 0, NULL, 0, "Windows specific options:" },
-    { "regsvc",     'r',        NULL, 0, "Register this executable as the system igdaemon service.",   GROUP0 },
-    { "unregsvc",   'u',        NULL, 0, "Remove the system igdaemon service.",                        GROUP0 },
-    { "startsvc",   's',        NULL, 0, "Start the system igdaemon service.",                         GROUP0 },
-    { "stopsvc",    't',        NULL, 0, "Stop the system igdaemon service.",                          GROUP0 },
+    { NULL, 0, NULL, 0, "Windows specific options:", OS_GROUP },
+    { "regsvc",     'r',        NULL, 0, "Register this executable as the system igdaemon service.",   OS_GROUP },
+    { "unregsvc",   'u',        NULL, 0, "Remove the system igdaemon service.",                        OS_GROUP },
+    { "startsvc",   's',        NULL, 0, "Start the system igdaemon service.",                         OS_GROUP },
+    { "stopsvc",    't',        NULL, 0, "Stop the system igdaemon service.",                          OS_GROUP },
 
-    { "rescan",     ARG_RESCAN, NULL, 0, "Trigger a rescan by pausing and then resuming the service.", GROUP0 },
-    { "installinf", 'i',        NULL, 0, "Manually install the INF for the device.",                   GROUP0 },
+    { "rescan",     ARG_RESCAN, NULL, 0, "Trigger a rescan by pausing and then resuming the service.", OS_GROUP },
+    { "installinf", 'i',        NULL, 0, "Manually install the INF for the device.",                   OS_GROUP },
+
+    { NULL, 0, NULL, 0, "Help related options:", HELP_GROUP },
 
     /* end of table */
     {0}

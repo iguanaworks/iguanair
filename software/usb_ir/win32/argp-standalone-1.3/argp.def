@@ -1,3 +1,4 @@
 LIBRARY   ARGP
 EXPORTS
    argp_parse
+   argp_error
