@@ -85,11 +85,15 @@ typedef struct
 #ifdef LIBUSB_NO_THREADS_OPTION
     bool noThreads;
 #endif
+
+    /* list of devices that we are handling */
+    deviceList *list;
 } serverSettings;
 
 void initServerSettings();
 struct argp* baseArgParser();
-deviceList* initServer();
+bool initServer();
+void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state);
 char* aliasSummary();
 char* deviceSummary();
 void cleanupServer();

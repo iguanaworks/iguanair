@@ -207,9 +207,9 @@ static void* ctlSockListener(void *junk)
     return NULL;
 }
 
-deviceList* initServer()
+bool initServer()
 {
-    deviceList *list = NULL;
+    bool retval = false;
     int x;
     for(x = 0; usbIds[x].idVendor != INVALID_VENDOR; x++)
         usbIds[x].data = &srvSettings.devSettings;
@@ -249,16 +249,81 @@ deviceList* initServer()
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");
     else if (! initializeDriver())
         message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
-    else if ((list = prepareDeviceList(usbIds, startWorker)) == NULL)
+    else if ((srvSettings.list = prepareDeviceList(usbIds, startWorker)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
     else
-        claimDevices(list, ! srvSettings.justDescribe, srvSettings.unbind);
+    {
+        claimDevices(srvSettings.list, ! srvSettings.justDescribe, srvSettings.unbind);
+        retval = true;
+    }
 
 #if DEBUG
 message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[READ],  __FILE__, __LINE__);
 message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
 #endif
-    return list;
+    return retval;
+}
+
+void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state)
+{
+    while(! isStopping(state))
+    {
+#ifdef _WIN32
+        THREAD_PTR child = INVALID_THREAD_PTR;
+        if (readPipeTimed(srvSettings.commPipe[READ], (char*)&child, sizeof(THREAD_PTR), 250) == sizeof(THREAD_PTR))
+        {
+            void *exitVal;
+            joinThread(child, &exitVal);
+        }
+        else if (errno != ETIMEDOUT)
+            message(LOG_ERROR, "Failure reading from commPipe in service\n");
+
+#else
+        THREAD_PTR thread = INVALID_THREAD_PTR;
+        void *exitVal;
+
+        /* wait for a new ctl connection, a command from an
+           existing ctl connection, or a message from an exiting
+           child thread. */
+
+        /* read a command and check for error */
+        if (readPipe(srvSettings.commPipe[READ], &thread,
+                     sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+        {
+            message(LOG_ERROR,
+                    "CommPipe read failed: %s\n", translateError(errno));
+            stopNow(state);
+        }
+        /* threads trigger a join by telling the main thread their id */
+        else if (thread != INVALID_THREAD_PTR)
+            joinThread(thread, &exitVal);
+        /* read the actual command (came from a signal handler) */
+        else if (readPipe(srvSettings.commPipe[READ], &thread,
+                          sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
+        {
+            message(LOG_ERROR,
+                    "Command read failed: %s\n", translateError(errno));
+            stopNow(state);
+        }
+        /* handle the shutdown command */
+        else if (thread == (THREAD_PTR)QUIT_TRIGGER)
+            stopNow(state);
+        /* complain about unknown commands */
+        else if (thread != (THREAD_PTR)SCAN_TRIGGER)
+            message(LOG_ERROR,
+                    "Unknown command from commPipe: %d\n", thread);
+        /* handle the scan/rescan command */
+        else
+        {
+            if (srvSettings.justDescribe)
+                message(LOG_NORMAL, "Detected Iguanaworks devices:\n");
+            if (! updateDeviceList(srvSettings.list))
+                message(LOG_ERROR, "scan failed.\n");
+            if (srvSettings.justDescribe)
+                break;
+        }
+#endif
+    }
 }
 
 char* aliasSummary(iguanaDev *idev)

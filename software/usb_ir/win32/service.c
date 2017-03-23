@@ -273,19 +273,10 @@ static struct argp parser = {
     NULL
 };
 
-static void waitCommPipe(HANDLE stopEvent)
+static void isStopping(void *state)
 {
-    while(stopEvent == NULL || WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT)
-    {
-        THREAD_PTR child = INVALID_THREAD_PTR;
-        if (readPipeTimed(srvSettings.commPipe[READ], (char*)&child, sizeof(THREAD_PTR), 250) == sizeof(THREAD_PTR))
-        {
-            void *exitVal;
-            joinThread(child, &exitVal);
-        }
-        else if (errno != ERROR_TIMEOUT)
-            message(LOG_ERROR, "Failure reading from commPipe in service\n");
-    }
+    HANDLE stopEvent = (HANDLE)state;
+    return (stopEvent == NULL || WaitForSingleObject(stopEvent, 0) == WAIT_TIMEOUT);
 }
 
 static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
@@ -325,9 +316,7 @@ int main(int argc, char **argv)
 	if (retval != -1)
 		return retval;
 
-    if ((list = initServer()) == NULL)
-        message(LOG_ERROR, "failed to initialize device list.\n");
-    else
+    if (initServer())
     {
         SERVICE_TABLE_ENTRY dispatch_table[] =
         {
@@ -335,7 +324,6 @@ int main(int argc, char **argv)
             { NULL, NULL }
         };
 
-        //openLog("c:\\igdaemon.txt");
         if (StartServiceCtrlDispatcher(dispatch_table) == FALSE)
         {
             DWORD error;
@@ -344,14 +332,14 @@ int main(int argc, char **argv)
             if (error == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
             {
                 /* populate the device list once */
-                if (! updateDeviceList(list))
-                    message(LOG_ERROR, "scan failed.\n");
+                if (! updateDeviceList(srvSettings.list))
+                    message(LOG_ERROR, "initial scan failed.\n");
 
                 if (! SetConsoleCtrlHandler(CtrlHandler, TRUE))
                     message(LOG_ERROR, "Could not set control handler\n");
                 else
                     /* block waiting for commPipe commands */
-                    waitCommPipe(NULL);
+                    waitOnCommPipe(isStopping, NULL);
             }
             else
                 return error;
@@ -359,6 +347,7 @@ int main(int argc, char **argv)
         cleanupServer();
     }
 
+    // TODO: this seems odd... does this get deleted when it could still be used!?!?!?
     DeleteCriticalSection(&aliasLock);
     return 0;
 }
@@ -396,12 +385,12 @@ static void WINAPI serviceMain(int argc, char **argv)
         registerNotifications();
 
         /* populate the device list as soon as we have notifications */
-        if (! updateDeviceList(list))
-            message(LOG_ERROR, "scan failed.\n");
+        if (! updateDeviceList(srvSettings.list))
+            message(LOG_ERROR, "initial scan failed.\n");
 
         /* tell SCM about our progress and wait for death */
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
-        waitCommPipe(service_stop_event);
+        waitOnCommPipe(isStopping, service_stop_event);
         CloseHandle(service_stop_event);
     }
 
@@ -428,7 +417,7 @@ static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
     case SERVICE_CONTROL_DEVICEEVENT:
         /* receive one of these on device plug */
         if (event_type == DBT_DEVICEARRIVAL &&
-            ! updateDeviceList(list))
+            ! updateDeviceList(srvSettings.list))
             message(LOG_ERROR, "scan failed.\n");
         break;
 
@@ -441,7 +430,7 @@ static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
     case SERVICE_CONTROL_CONTINUE:
         setServiceStatus(SERVICE_CONTINUE_PENDING, NO_ERROR);
         registerNotifications();
-        if (! updateDeviceList(list))
+        if (! updateDeviceList(srvSettings.list))
             message(LOG_ERROR, "scan failed.\n");
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
         break;
