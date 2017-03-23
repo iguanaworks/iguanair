@@ -93,7 +93,7 @@ typedef struct
 void initServerSettings();
 struct argp* baseArgParser();
 bool initServer();
-void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state);
+void waitOnCommPipe();
 char* aliasSummary();
 char* deviceSummary();
 void cleanupServer();

@@ -39,13 +39,7 @@ void triggerCommand(THREAD_PTR cmd)
 {
     THREAD_PTR flg = INVALID_THREAD_PTR;
     if (cmd == (THREAD_PTR)QUIT_TRIGGER)
-    {
         message(LOG_INFO, "Triggering shutdown.\n");
-#ifdef _WIN32
-        message(LOG_INFO, "Just exiting for lack of a command handler.\n");
-        exit(0);
-#endif
-    }
 
     if (writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR) ||
         writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
@@ -264,21 +258,15 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __L
     return retval;
 }
 
-void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state)
+void waitOnCommPipe()
 {
-    while(! isStopping(state))
-    {
-#ifdef _WIN32
-        THREAD_PTR child = INVALID_THREAD_PTR;
-        if (readPipeTimed(srvSettings.commPipe[READ], (char*)&child, sizeof(THREAD_PTR), 250) == sizeof(THREAD_PTR))
-        {
-            void *exitVal;
-            joinThread(child, &exitVal);
-        }
-        else if (errno != ETIMEDOUT)
-            message(LOG_ERROR, "Failure reading from commPipe in service\n");
+    bool quit = false;
 
-#else
+    /* trigger an initial device scan */
+    triggerCommand((THREAD_PTR)SCAN_TRIGGER);
+
+    while(! quit)
+    {
         THREAD_PTR thread = INVALID_THREAD_PTR;
         void *exitVal;
 
@@ -292,7 +280,7 @@ void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state)
         {
             message(LOG_ERROR,
                     "CommPipe read failed: %s\n", translateError(errno));
-            stopNow(state);
+            quit = true;
         }
         /* threads trigger a join by telling the main thread their id */
         else if (thread != INVALID_THREAD_PTR)
@@ -303,11 +291,11 @@ void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state)
         {
             message(LOG_ERROR,
                     "Command read failed: %s\n", translateError(errno));
-            stopNow(state);
+            quit = true;
         }
         /* handle the shutdown command */
         else if (thread == (THREAD_PTR)QUIT_TRIGGER)
-            stopNow(state);
+            quit = true;
         /* complain about unknown commands */
         else if (thread != (THREAD_PTR)SCAN_TRIGGER)
             message(LOG_ERROR,
@@ -322,8 +310,10 @@ void waitOnCommPipe(isStoppingFunc isStopping, stopNowFunc stopNow, void *state)
             if (srvSettings.justDescribe)
                 break;
         }
-#endif
     }
+
+    /* wait for all the workers to finish */
+    reapAllChildren(srvSettings.list);
 }
 
 char* aliasSummary(iguanaDev *idev)

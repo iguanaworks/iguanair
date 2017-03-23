@@ -34,9 +34,5 @@ typedef struct deviceInfo
 /* prototype of the function called when a new device is found */
 typedef void (*deviceFunc)(deviceInfo *info);
 
-/* prototype of the functions dealing w application shutdown */
-typedef bool (*isStoppingFunc)(void *state);
-typedef void (*stopNowFunc)(void *state);
-
 /* hide type that we pass to list functions */
 typedef void deviceList;

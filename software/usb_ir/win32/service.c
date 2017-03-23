@@ -50,7 +50,6 @@ DEFINE_GUID(GUID_DEVINTERFACE_USB_DEVICE, 0xA5DCBF10L, 0x6530, 0x11D2,
 static SERVICE_STATUS service_status;
 static SERVICE_STATUS_HANDLE service_status_handle;
 static HDEVNOTIFY notification_handle_hub, notification_handle_dev;
-static HANDLE service_stop_event;
 
 /* just prototypes */
 static void WINAPI serviceMain(int argc, char **argv);
@@ -273,15 +272,21 @@ static struct argp parser = {
     NULL
 };
 
-static bool isStopping(void *state)
+static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
-    HANDLE stopEvent = (HANDLE)state;
-    return (stopEvent != NULL && WaitForSingleObject(stopEvent, 0) != WAIT_TIMEOUT);
-}
+    switch( fdwCtrlType )
+    { 
+    case CTRL_C_EVENT: 
+    case CTRL_CLOSE_EVENT: 
+    case CTRL_BREAK_EVENT: 
+    case CTRL_LOGOFF_EVENT: 
+    case CTRL_SHUTDOWN_EVENT: 
+        triggerCommand((HANDLE)QUIT_TRIGGER);
+        return TRUE;
 
-static void stopNow(void *state)
-{
-    SetEvent((HANDLE)state);
+    default:
+        return FALSE;
+    }
 }
 
 static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
@@ -331,24 +336,14 @@ int main(int argc, char **argv)
 
         if (StartServiceCtrlDispatcher(dispatch_table) == FALSE)
         {
-            DWORD error;
-            error = GetLastError();
-            /* we could be running as a console application */
+            /* if we're running as a console application the call waitOnCommPipe */
+            DWORD error = GetLastError();
             if (error == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
             {
-                HANDLE stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-                /* populate the device list once */
-                if (! updateDeviceList(srvSettings.list))
-                    message(LOG_ERROR, "initial scan failed.\n");
-
                 if (! SetConsoleCtrlHandler(CtrlHandler, TRUE))
                     message(LOG_ERROR, "Could not set control handler\n");
                 else
-                    /* block waiting for commPipe commands */
-                    waitOnCommPipe(isStopping, stopNow, stopEvent);
-
-                CloseHandle(stopEvent);
+                    waitOnCommPipe();
             }
             else
                 return error;
@@ -379,32 +374,21 @@ static void WINAPI serviceMain(int argc, char **argv)
     service_status_handle = RegisterServiceCtrlHandlerEx(SERVICE_NAME,
                                                          serviceHandler,
                                                          NULL);
-    if (!service_status_handle)
-        return;
-
-    /* notify the SCM that we're starting */
-    setServiceStatus(SERVICE_START_PENDING, NO_ERROR);
-
-    /* create and watch the stop event */
-    service_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (service_stop_event)
+    if (service_status_handle)
     {
+        /* notify the SCM that we're starting */
+        setServiceStatus(SERVICE_START_PENDING, NO_ERROR);
+
         /* register for plug notifications */
         registerNotifications();
 
-        /* populate the device list as soon as we have notifications */
-        if (! updateDeviceList(srvSettings.list))
-            message(LOG_ERROR, "initial scan failed.\n");
-
-        /* tell SCM about our progress and wait for death */
+        /* tell SCM about our progress and wait for commands */
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
-        waitOnCommPipe(isStopping, stopNow, service_stop_event);
-        CloseHandle(service_stop_event);
-    }
+        waitOnCommPipe();
 
-    /* tell the SCM that we've stopped */
-    setServiceStatus(SERVICE_STOPPED, NO_ERROR);
-    return;
+        /* tell the SCM that we've stopped */
+        setServiceStatus(SERVICE_STOPPED, NO_ERROR);
+    }
 }
 
 static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
@@ -418,15 +402,13 @@ static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
     case SERVICE_CONTROL_STOP:
         setServiceStatus(SERVICE_STOP_PENDING, NO_ERROR);
         unregisterNotifications();
-        if(service_stop_event)
-            SetEvent(service_stop_event);
+        triggerCommand((HANDLE)QUIT_TRIGGER);
         break;
 
     case SERVICE_CONTROL_DEVICEEVENT:
         /* receive one of these on device plug */
-        if (event_type == DBT_DEVICEARRIVAL &&
-            ! updateDeviceList(srvSettings.list))
-            message(LOG_ERROR, "scan failed.\n");
+        if (event_type == DBT_DEVICEARRIVAL)
+            triggerCommand((HANDLE)SCAN_TRIGGER);
         break;
 
     case SERVICE_CONTROL_PAUSE:
@@ -438,8 +420,7 @@ static DWORD WINAPI serviceHandler(DWORD code, DWORD event_type,
     case SERVICE_CONTROL_CONTINUE:
         setServiceStatus(SERVICE_CONTINUE_PENDING, NO_ERROR);
         registerNotifications();
-        if (! updateDeviceList(srvSettings.list))
-            message(LOG_ERROR, "scan failed.\n");
+        triggerCommand((HANDLE)SCAN_TRIGGER);
         setServiceStatus(SERVICE_RUNNING, NO_ERROR);
         break;
 

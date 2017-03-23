@@ -168,16 +168,6 @@ static void stopListening(int fd, const char *name)
     close(fd);
 }
 
-static bool isStopping(void *state)
-{
-    return *(bool*)state;
-}
-
-void stopNow(void *state)
-{
-    *(bool*)state = true;
-}
-
 static void workLoop()
 {
     /* initialize the driver, signals, and device list */
@@ -193,8 +183,6 @@ static void workLoop()
             message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
         else
         {
-            bool quit = false;
-
             /* trigger the initial device scan */
             scanHandler(SIGHUP);
 
@@ -205,15 +193,7 @@ static void workLoop()
 #endif
 
             /* loop, waiting for commands.  Only returns on application shutdown. */
-            waitOnCommPipe(isStopping, stopNow, &quit);
-
-            // TODO: move this into the waitOnCommPipe call, but check on Windows first
-            /* wait for all the workers to finish */
-            reapAllChildren(srvSettings.list);
-
-            // TODO: add a ctrl sock to Windows as well
-            /* close up the server socket */
-//            stopListening(ctlSock, NULL);
+            waitOnCommPipe();
         }
 
         /* release any server-side resources on the way out */
