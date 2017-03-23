@@ -22,6 +22,27 @@ enum
 };
 void triggerCommand(THREAD_PTR cmd);
 
+enum
+{
+    /* generic actions */
+    ARG_LOG_LEVEL = 0x100,
+
+    /* igdaemon specific actions */
+    ARG_NO_IDS = 0x200,
+    ARG_NO_RESCAN,
+    ARG_NO_SCANWHEN,
+    ARG_ONLY_PREFER,
+    ARG_DRIVER_DIR,
+    LAST_BASE_ARG,
+
+    /* defines for argp */
+    LOG_GROUP = 1,
+    DRV_GROUP,
+    MSC_GROUP,
+    OS_GROUP,
+    HELP_GROUP
+};
+
 typedef struct
 {
     /* driver location and prefered driver information */
@@ -63,6 +84,7 @@ typedef struct
 } serverSettings;
 
 void initServerSettings(deviceFunc devFunc);
+struct argp* baseArgParser();
 deviceList* initServer();
 void cleanupServer();
 

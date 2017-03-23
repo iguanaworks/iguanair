@@ -189,54 +189,20 @@ static bool installINF()
 
 enum
 {
-    /* defines for using argp */
-    GROUP0 = 0,
-    ARG_LOG_LEVEL = 0xFF,
-
-    /* generic actions */
-    ARG_LOG_FILE,
-    ARG_QUIETER,
-    ARG_LOUDER,
-//    ARG_LOG_LEVEL,
-
-    /* igdaemon specific actions */
-    ARG_FOREGROUND,
-    ARG_PID_FILE,
-    ARG_NO_IDS,
-    ARG_NO_RESCAN,
-    ARG_NO_THREADS,
-    ARG_DRIVER,
-    ARG_ONLY_PREFER,
-    ARG_DRIVER_DIR,
-	ARG_RESCAN
+	ARG_RESCAN = LAST_BASE_ARG
 };
 
 static struct argp_option options[] =
 {
-    /* general daemon options */
-    { "log-file",    'l',           "FILE",   0, "Specify a log file (defaults to \"-\").", GROUP0 },
-    { "quiet",       'q',           NULL,     0, "Reduce the verbosity.",                   GROUP0 },
-    { "version",     'V',           NULL,     0, "Print the build and version numbers.",    GROUP0 },
-    { "verbose",     'v',           NULL,     0, "Increase the verbosity.",                 GROUP0 },
-    { "log-level",   ARG_LOG_LEVEL, "NUM",    0, "Set the verbosity directly.",             GROUP0 },
-
-    /* iguanaworks specific options */
-    { "no-auto-rescan",  ARG_NO_RESCAN,    NULL,     0, "Do not automatically rescan the USB bus after device disconnect.", GROUP0 },
-    { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                           GROUP0 },
-    { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                     GROUP0 },
-
     /* Windows specific stuff for controlling the service */
+    { NULL, 0, NULL, 0, "Windows specific options:" },
     { "regsvc",     'r',        NULL, 0, "Register this executable as the system igdaemon service.",   GROUP0 },
     { "unregsvc",   'u',        NULL, 0, "Remove the system igdaemon service.",                        GROUP0 },
     { "startsvc",   's',        NULL, 0, "Start the system igdaemon service.",                         GROUP0 },
     { "stopsvc",    't',        NULL, 0, "Stop the system igdaemon service.",                          GROUP0 },
+
     { "rescan",     ARG_RESCAN, NULL, 0, "Trigger a rescan by pausing and then resuming the service.", GROUP0 },
     { "installinf", 'i',        NULL, 0, "Manually install the INF for the device.",                   GROUP0 },
-
-    /* options specific to the drivers */
-    { "driver",         'd',             "DRIVER", 0, "Use this driver in preference to others.  This command can be used multiple times.", GROUP0 },
-    { "only-preferred", ARG_ONLY_PREFER, NULL,     0, "Use only drivers specified by the --driver option.",                                 GROUP0 },
-    { "driver-dir",     ARG_DRIVER_DIR,  "DIR",    0, "Specify the location of driver objects.",                                            GROUP0 },
 
     /* end of table */
     {0}
@@ -247,36 +213,6 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
 	int *retval = (int*)state->input;
     switch(key)
     {
-    case 'l':
-        openLog(arg);
-        break;
-
-    case 'q':
-        changeLogLevel(-1);
-        break;
-
-    case 'v':
-        changeLogLevel(+1);
-        break;
-        
-   case 'V':
-        printf("Software version: %s\n", IGUANAIR_VER_STR("igdaemon"));
-        exit(0);
-        break;
-
-    case ARG_LOG_LEVEL:
-/* TODO: replace atoi with something that complains on non-int args */
-        setLogLevel(atoi(arg));
-        break;
-
-    case ARG_NO_RESCAN:
-        srvSettings.autoRescan = false;
-        break;
-
-    case ARG_NO_IDS:
-        srvSettings.readLabels = false;
-        break;
-
     case 'r':
         if (registerWithSCM())
             *retval = 0;
@@ -320,21 +256,6 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
 	        *retval = 1;
 		break;
 
-    /* driver options */
-    case 'd':
-        srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
-        srvSettings.preferred[srvSettings.preferredCount - 1] = arg;
-        srvSettings.preferred[srvSettings.preferredCount++] = NULL;
-        break;
-
-    case ARG_ONLY_PREFER:
-        srvSettings.onlyPreferred = true;
-        break;
-
-    case ARG_DRIVER_DIR:
-        srvSettings.driverDir = arg;
-        break;
-
     default:
         return ARGP_ERR_UNKNOWN;
     }
@@ -369,10 +290,17 @@ static void waitCommPipe(HANDLE stopEvent)
 int main(int argc, char **argv)
 {
 	int retval = -1;
+    struct argp_child children[2];
 
 	/* initialize the settings for the server process */
     InitializeCriticalSection(&aliasLock);
     initServerSettings(startWorker);
+
+    /* grab the base arguments from server.c */
+    memset(children, 0, sizeof(struct argp_child) * 2);
+    children[0].argp = baseArgParser();
+    children[0].group = 0;
+    parser.children = children;
 
     /* parse the cmd line args */
     argp_parse(&parser, argc, argv, 0, NULL, &retval);
