@@ -10,8 +10,7 @@
  * Distributed under the LGPL version 2.1.
  * See LICENSE-LGPL for license details.
  */
-#ifndef _DATA_PACKETS_
-#define _DATA_PACKETS_
+#pragma once
 
 #include "list.h"
 
@@ -30,5 +29,3 @@ typedef struct dataPacket
 bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout);
 bool writeDataPacket(dataPacket *packet, PIPE_PTR fd);
 void freeDataPacket(dataPacket *packet);
-
-#endif

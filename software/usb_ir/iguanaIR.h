@@ -10,8 +10,7 @@
  * Distributed under the LGPL version 2.1.
  * See LICENSE-LGPL for license details.
  */
-#ifndef _IGUANA_IR_
-#define _IGUANA_IR_
+#pragma once
 
 #ifdef WIN32
     #ifdef IGUANAIR_EXPORTS
@@ -197,5 +196,3 @@ enum
     /* number of GPIO pins on our device */
     IG_PIN_COUNT = 8
 };
-
-#endif

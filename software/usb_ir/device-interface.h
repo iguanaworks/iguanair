@@ -10,8 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#ifndef _PROTOCOL_
-#define _PROTOCOL_
+#pragma once
 
 #include "list.h"
 
@@ -118,5 +117,3 @@ void handleIncomingPackets(iguanaDev *idev);
 
 /* translation of data for transmission */
 uint32_t* iguanaDevToPulses(unsigned char *code, int *length);
-
-#endif

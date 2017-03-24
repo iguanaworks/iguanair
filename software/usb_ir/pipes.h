@@ -11,8 +11,7 @@
  * See LICENSE-LGPL for license details.
  */
 
-#ifndef _PIPES_
-#define _PIPES_
+#pragma once
 
 #ifdef WIN32
   bool createPipePair(PIPE_PTR *pair);
@@ -42,5 +41,3 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
 /* used for notification of packet arrival */
 int notified(PIPE_PTR fd, int timeout);
 bool notify(PIPE_PTR fd);
-
-#endif

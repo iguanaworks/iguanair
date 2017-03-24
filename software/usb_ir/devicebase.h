@@ -1,5 +1,4 @@
-#ifndef _DEVICE_BASE_
-#define _DEVICE_BASE_
+#pragma once
 
 enum
 {
@@ -37,5 +36,3 @@ typedef void (*deviceFunc)(deviceInfo *info);
 
 /* hide type that we pass to list functions */
 typedef void deviceList;
-
-#endif

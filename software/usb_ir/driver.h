@@ -10,8 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#ifndef _DRIVER_H_
-#define _DRIVER_H_
+#pragma once
 
 #include "devicebase.h"
 
@@ -45,5 +44,3 @@ unsigned int releaseDevices(deviceList *devList);
 
 /* dump errors to a stream */
 void printError(int level, char *msg, deviceInfo *info);
-
-#endif

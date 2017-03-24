@@ -1,5 +1,4 @@
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#pragma once
 
 /*-----------------------------------------------------------------------------------
 Version strings as defined by git and the FULLVER from CMakeLists.txt. The version.h
@@ -7,9 +6,7 @@ file is created from version.h.in. To update the release, update version.h.in.
 BEWARE: all changes to version.h are discarded by runCmake.
 -----------------------------------------------------------------------------------*/
 #ifdef _DEBUG
-#define IGUANAIR_VER_STR(a) "DEBUG!: mk@snorken"
+  #define IGUANAIR_VER_STR(a) "DEBUG!: mk@snorken"
 #else
-#define IGUANAIR_VER_STR(a) "Release: ${FULLVER} - ${GIT_VERSION}"
-#endif
-
+  #define IGUANAIR_VER_STR(a) "Release: ${FULLVER} - ${GIT_VERSION}"
 #endif

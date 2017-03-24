@@ -10,8 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#ifndef _LIST_
-#define _LIST_
+#pragma once
 
 typedef struct item
 {
@@ -44,5 +43,3 @@ typedef bool (*actionFunc)(itemHeader *item, void *userData);
 
 /* to perform an action on every item in a list */
 void forEach(listHeader *list, actionFunc action, void *userData);
-
-#endif

@@ -10,8 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#ifndef _IGDAEMON_
-#define _IGDAEMON_
+#pragma once
 
 typedef struct client
 {
@@ -52,5 +51,3 @@ void getID(iguanaDev *idev);
 void startWorker(deviceInfo *info);
 /* terminate and join with each child thread */
 bool reapAllChildren(deviceList *list);
-
-#endif

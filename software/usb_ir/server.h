@@ -11,8 +11,7 @@
  * See LICENSE for license details.
  */
 
-#ifndef _DAEMON_BASE_H_
-#define _DAEMON_BASE_H_
+#pragma once
 
 /* possible commands that can be triggered by signals */
 enum
@@ -88,5 +87,3 @@ extern serverSettings srvSettings;
 
 /* used during shutdown to clean up threads */
 void makeParentJoin(THREAD_PTR thread);
-
-#endif

@@ -10,10 +10,7 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#ifndef _COMPATIBILITY_
-#define _COMPATIBILITY_
+#pragma once
 
 bool translateClient(uint8_t *code, uint16_t version, bool fromClient);
 bool translateDevice(uint8_t *code, uint16_t version, bool fromDevice);
-
-#endif

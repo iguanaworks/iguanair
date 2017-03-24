@@ -44,6 +44,7 @@ uint64_t microsSinceX()
 bool setNonBlocking(PIPE_PTR pipe)
 {
     UNUSED(pipe);
+    // TODO: implementing this might close ticket #9
     return true;
 }
 

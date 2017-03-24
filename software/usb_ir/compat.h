@@ -12,8 +12,7 @@
  * See LICENSE-LGPL for license details.
  */
 
-#ifndef _COMPAT_
-#define _COMPAT_
+#pragma once
 
 #include <stdint.h>
 
@@ -40,7 +39,6 @@
     #define INVALID_THREAD_PTR NULL
     bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg);
     void joinThread(THREAD_PTR *handle, void **exitVal);
-    #define CURRENT_THREAD_PTR OpenThread(THREAD_ALL_ACCESS, FALSE, GetCurrentThreadId())
 
     /* lock defines */
     #define LOCK_PTR CRITICAL_SECTION
@@ -78,7 +76,6 @@
     #define INVALID_THREAD_PTR 0
     #define startThread(a, b, c) (pthread_create((a), NULL, (b), (c)) == 0)
     #define joinThread(a,b) (void)pthread_join((a), (b))
-    #define CURRENT_THREAD_PTR pthread_self()
 
     /* lock defines */
     #define LOCK_PTR pthread_mutex_t
@@ -115,5 +112,3 @@ uint64_t microsSinceX();
 bool setNonBlocking(PIPE_PTR pipe);
 char* translateError(int errnum);
 DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer);
-
-#endif

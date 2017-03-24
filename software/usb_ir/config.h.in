@@ -1,3 +1,5 @@
+#pragma once
+
 /* use the available clock_gettime */
 #cmakedefine HAVE_CLOCK_GETTIME 1
 #cmakedefine HAVE_MACH_ABSOLUTE_TIME 1

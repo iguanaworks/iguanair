@@ -1,5 +1,4 @@
-#ifndef _DRIVER_API_
-#define _DRIVER_API_
+#pragma once
 
 #include "devicebase.h"
 #include <stdint.h>
@@ -54,5 +53,3 @@ typedef struct driverImpl
 
 struct loggingImpl;
 DRIVER_API driverImpl* getImplementation(const struct loggingImpl *impl);
-
-#endif
