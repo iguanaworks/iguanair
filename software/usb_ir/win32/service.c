@@ -289,23 +289,6 @@ static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
     }
 }
 
-static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
-{
-    switch( fdwCtrlType )
-    {
-    case CTRL_C_EVENT:
-    case CTRL_CLOSE_EVENT:
-    case CTRL_BREAK_EVENT:
-    case CTRL_LOGOFF_EVENT:
-    case CTRL_SHUTDOWN_EVENT:
-        triggerCommand((HANDLE)QUIT_TRIGGER);
-        return TRUE;
-
-    default:
-        return FALSE;
-    }
- }
-
 int main(int argc, char **argv)
 {
 	int retval = -1;
