@@ -36,13 +36,15 @@ typedef struct client
 #endif
 } client;
 
-/* API used by the daemon/service code */
+/* API implemented by the daemon/service code */
 void listenToClients(iguanaDev *idev);
+void setAlias(iguanaDev *idev, bool deleteAll, const char *alias);
+
+/* API used by the daemon/service code */
 void releaseClient(client *target);
 bool handleReader(iguanaDev *idev);
 void clientConnected(PIPE_PTR clientFd, iguanaDev *idev);
 bool handleClient(client *me);
-void setAlias(iguanaDev *idev, bool deleteAll, const char *alias);
 
 /* the worker thread has to check the id at startup */
 void getID(iguanaDev *idev);

@@ -595,12 +595,6 @@ bool handleReader(iguanaDev *idev)
             forEach(&idev->clientList, tellReceivers, &info);
             break;
 
-/*
-        case IG_DEV_BIGSEND:
-            message(LOG_ERROR, "Send too large for USB device.\n");
-            break;
-*/
-
         default:
             message(LOG_ERROR,
                     "Unexpected code (0x%x) with %d data bytes from usb\n",

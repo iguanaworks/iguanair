@@ -26,6 +26,7 @@
 #include "device-interface.h"
 #include "server.h"
 #include "pipes.h"
+#include "client-interface.h"
 
 /* global variables, internal and shared */
 serverSettings srvSettings;
@@ -37,13 +38,16 @@ usbId usbIds[] = {
 void triggerCommand(THREAD_PTR cmd)
 {
     THREAD_PTR flg = INVALID_THREAD_PTR;
+    if (cmd == (THREAD_PTR)QUIT_TRIGGER)
+        message(LOG_INFO, "Triggering shutdown.\n");
+
     if (writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR) ||
         writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
         message(LOG_ERROR, "failed to write flag and command over commPipe: %s\n",
                 translateError(errno));
 }
 
-void initServerSettings(deviceFunc devFunc)
+void initServerSettings()
 {
     /* Driver location and preference information.  The preferred list
        is a NULL terminated list of strings. */
@@ -67,9 +71,6 @@ void initServerSettings(deviceFunc devFunc)
 
     /* EPIPE usually means device disconnect, but not reliably */
     srvSettings.devSettings.disconnectOnEPipe = false;
-
-    /* an OS-specific function */
-    srvSettings.devFunc = devFunc;
 
     /* default to reading device ids */
     srvSettings.readLabels = true;
@@ -209,7 +210,7 @@ deviceList* initServer()
         message(LOG_ERROR, "failed to find a loadable driver layer.\n");
     else if (! initializeDriver())
         message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
-    else if ((list = prepareDeviceList(usbIds, srvSettings.devFunc)) == NULL)
+    else if ((list = prepareDeviceList(usbIds, startWorker)) == NULL)
         message(LOG_ERROR, "failed to initialize the device list.\n");
     else
         claimDevices(list, ! srvSettings.justDescribe, srvSettings.unbind);

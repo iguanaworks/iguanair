@@ -391,8 +391,12 @@ int main(int argc, char **argv)
     struct parameters params;
     struct argp_child children[3];
 
+    /* initialize the parameters structure */
+    params.runAsDaemon = true;
+    params.pidFile = NULL;
+
     /* initialize the server-level settings */
-    initServerSettings(startWorker);
+    initServerSettings();
 
     /* include the log and base argument parsers */
     memset(children, 0, sizeof(struct argp_child) * 3);
@@ -400,9 +404,7 @@ int main(int argc, char **argv)
     children[1].argp = logArgParser();
     parser.children = children;
 
-    /* initialize the parameters structure and parse the cmd line args */
-    params.runAsDaemon = true;
-    params.pidFile = NULL;
+    /* parse the cmd line args */
     if (argp_parse(&parser, argc, argv, 0, NULL, &params) != 0)
         retval = 3;
 

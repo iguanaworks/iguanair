@@ -289,6 +289,23 @@ static void waitCommPipe(HANDLE stopEvent)
     }
 }
 
+static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+    switch( fdwCtrlType )
+    {
+    case CTRL_C_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+        triggerCommand((HANDLE)QUIT_TRIGGER);
+        return TRUE;
+
+    default:
+        return FALSE;
+    }
+ }
+
 int main(int argc, char **argv)
 {
 	int retval = -1;
@@ -296,7 +313,7 @@ int main(int argc, char **argv)
 
 	/* initialize the settings for the server process */
     InitializeCriticalSection(&aliasLock);
-    initServerSettings(startWorker);
+    initServerSettings();
 
     /* grab the base arguments from server.c */
     memset(children, 0, sizeof(struct argp_child) * 2);
@@ -331,12 +348,16 @@ int main(int argc, char **argv)
                 if (! updateDeviceList(list))
                     message(LOG_ERROR, "scan failed.\n");
 
-                /* block waiting for commPipe commands */
-                waitCommPipe(NULL);
+                if (! SetConsoleCtrlHandler(CtrlHandler, TRUE))
+                    message(LOG_ERROR, "Could not set control handler\n");
+                else
+                    /* block waiting for commPipe commands */
+                    waitCommPipe(NULL);
             }
             else
                 return error;
         }
+        cleanupServer();
     }
 
     DeleteCriticalSection(&aliasLock);

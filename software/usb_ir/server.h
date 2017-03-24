@@ -49,9 +49,6 @@ typedef struct
     /* timeouts and other device settings */
     deviceSettings devSettings;
 
-    /* function called whenever a new device is found */
-    deviceFunc devFunc;
-
     /* whether the server should ask devices for their labels */
     bool readLabels;
 
@@ -78,7 +75,7 @@ typedef struct
 #endif
 } serverSettings;
 
-void initServerSettings(deviceFunc devFunc);
+void initServerSettings();
 struct argp* baseArgParser();
 deviceList* initServer();
 void cleanupServer();
