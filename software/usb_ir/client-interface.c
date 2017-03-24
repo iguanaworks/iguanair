@@ -675,7 +675,7 @@ bool reapAllChildren(deviceList *list)
         int result;
         THREAD_PTR child;
 
-        /* NOTE: using 2*recv timeout to allow readers to exit. */
+        /* NOTE: using 2*recv timeout to allow readers to exit. TODO: we might want to move this to server.c  */
         result = readPipeTimed(srvSettings.commPipe[READ],
                                (char*)&child, sizeof(THREAD_PTR),
                                2 * srvSettings.devSettings.recvTimeout);
