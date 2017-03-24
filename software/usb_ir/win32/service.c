@@ -309,16 +309,16 @@ static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 int main(int argc, char **argv)
 {
 	int retval = -1;
-    struct argp_child children[2];
+    struct argp_child children[3];
 
 	/* initialize the settings for the server process */
     InitializeCriticalSection(&aliasLock);
     initServerSettings();
 
     /* grab the base arguments from server.c */
-    memset(children, 0, sizeof(struct argp_child) * 2);
-    children[0].argp = baseArgParser();
-    children[0].group = 0;
+    memset(children, 0, sizeof(struct argp_child) * 3);
+    children[0].argp = logArgParser();
+    children[1].argp = baseArgParser();
     parser.children = children;
 
     /* parse the cmd line args */

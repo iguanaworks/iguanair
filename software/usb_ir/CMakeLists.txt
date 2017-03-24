@@ -147,7 +147,7 @@ CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 add_library(iguanaIR SHARED
             iguanaIR.c dataPackets.c ${PIPESRC}
             ${BASESRC})
-target_link_libraries(iguanaIR ${BASELIBS})
+target_link_libraries(iguanaIR ${BASELIBS} ${ARGPLIB})
 set_target_properties(iguanaIR PROPERTIES
                       VERSION ${FULLVER} SOVERSION ${SOVERSION})
 set_property(TARGET iguanaIR

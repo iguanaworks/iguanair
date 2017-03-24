@@ -39,7 +39,13 @@ void triggerCommand(THREAD_PTR cmd)
 {
     THREAD_PTR flg = INVALID_THREAD_PTR;
     if (cmd == (THREAD_PTR)QUIT_TRIGGER)
+    {
         message(LOG_INFO, "Triggering shutdown.\n");
+#ifdef _WIN32
+        message(LOG_INFO, "Just exiting for lack of a command handler.\n");
+        exit(0);
+#endif
+    }
 
     if (writePipe(srvSettings.commPipe[WRITE], &flg, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR) ||
         writePipe(srvSettings.commPipe[WRITE], &cmd, sizeof(THREAD_PTR)) != sizeof(THREAD_PTR))
