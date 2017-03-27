@@ -969,7 +969,7 @@ pulse 490
 
     # store the requested signal in a temporary file
     output = tempfile.NamedTemporaryFile(delete = False)
-    output.write(testSignals[options.test_signal])
+    output.write(testSignals[options.test_signal].encode('UTF-8'))
     output.close()
 
     # read that file using the readPulseFile API (kinda round-about, I know)
@@ -1154,7 +1154,7 @@ What kind of device is plugged in?
             message(LOG_NORMAL, "Doing sockets tests.\n")
             for channels in plugs:
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
-                                  chr(channels))
+                                  struct.pack('B', channels))
                 sendTestSignal()
                 time.sleep(0.1)
 
@@ -1164,7 +1164,7 @@ What kind of device is plugged in?
                 message(LOG_NORMAL, "Press enter to send panasonic power on channel %s.\n" % channels)
                 line = sys.stdin.readline()
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
-                                  chr(channels))
+                                  struct.pack('B', channels))
                 sendTestSignal()
                 if len(leds) == 1:
                     message(LOG_NORMAL, "Press enter to send again.\n")
@@ -1173,7 +1173,7 @@ What kind of device is plugged in?
                             "Flip, then press enter to send again.\n")
                 line = sys.stdin.readline()
                 deviceTransaction(iguanaIR.IG_DEV_SETCHANNELS,
-                                  chr(channels))
+                                  struct.pack('B', channels))
                 sendTestSignal()
 
         if gpios:
@@ -1184,7 +1184,7 @@ What kind of device is plugged in?
             sys.stdin.readline()
             for mask in gpios:
                 deviceTransaction(iguanaIR.IG_DEV_SETPINS,
-                                  chr(mask) + chr(0x00))
+                                  struct.pack('BB', (mask, 0)))
                 time.sleep(0.1)
 
     except KeyboardInterrupt:
