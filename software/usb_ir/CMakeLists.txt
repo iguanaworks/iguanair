@@ -37,9 +37,9 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 
   List(APPEND BASESRC win32/compat-windows.c)
   List(APPEND PIPESRC win32/pipes.c)
-  Set(BASELIBS ws2_32) # TODO: why? htonl maybe?
   Set(DAEMONSRC win32/service.c)
-  Set(DAEMONLIBS setupapi) # TODO: why?
+  Set(DAEMONLIBS setupapi) # for INF installation
+  Set(BASELIBS ws2_32) # for htonl
   include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 Else()
