@@ -55,7 +55,6 @@ static struct argp_option options[] =
 
 static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
-//    struct parameters *params = (struct parameters*)state->input;
     switch(key)
     {
     /* Logging options */

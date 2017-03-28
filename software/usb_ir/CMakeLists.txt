@@ -11,7 +11,7 @@ Set(FULLVER 1.1.2) # TODO: pull from version.h or directly from git at cmake tim
 SET(SO_CURRENT 0)
 Set(SO_AGE 3)
 Set(SO_REV 0)
-Set(SOVERSION 0) # TODO: duplicative?
+Set(SOVERSION 0)
 
 # Our Android support is probably junk at this point, but keeping it
 # in another file for reference
@@ -32,7 +32,6 @@ Set(PIPESRC pipes.h)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   add_subdirectory(win32/argp-standalone-1.3)
-  # TODO: might have search code for these in bootstrap?
   Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe) # TODO: we should find instead of hard coding this
   Set(PYTHON_INCLUDE_DIR "C:/Python27/include") # TODO: we should find instead of hard coding this
 
@@ -217,10 +216,6 @@ Else()
     include_directories(${PYTHON_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
     swig_add_module(iguanaIR python iguanaIR.i)
     swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
-    If(CMAKE_COMPILER_IS_GNUCC)
-      set_source_files_properties(${swig_generated_file_fullname}
-                                  PROPERTIES COMPILE_FLAGS "-Wno-long-long -Wno-unused-value")
-    EndIf()
 
     # install the python support
     install(TARGETS _iguanaIR
