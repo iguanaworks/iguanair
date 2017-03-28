@@ -53,15 +53,19 @@ Else()
   Set(DAEMONSRC daemon.c)
   List(APPEND BASESRC compat-unix.c)
   Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
+  Set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
 
   # see if we have clock_gettime possibly in rt
   check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
   If(NOT HAVE_CLOCK_GETTIME)
     check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+    If(NOT HAVE_CLOCK_GETTIME)
+      check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
+    EndIf()
   Else()
     List(APPEND BASELIBS rt)
   EndIf()
-  
+
   If("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
     # flag that this was a recognized system
     List(APPEND PIPESRC pipes.c)
@@ -116,23 +120,18 @@ Else()
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     # flag that this was a recognized system, and add os specific code
     List(APPEND PIPESRC pipes.c)
+
+    # pull in hotplug and the frameworks it requires
+    Set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework IOKit")
     List(APPEND DAEMONSRC darwin/hotplug.c)
 
-    # pull in the frameworks required by hotplug code
-    SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework IOKit" )
-    
-    # TODO: we might be able to move the clock_gettime check out if Darwin is ok w it
-    # see if we have mach_absolute_time
-    check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
-
-    # TODO: why does macports need the -I at the end of this cflags?
-    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/opt/local/include")
-    Set(ARGPLIB argp)
-#    Set(DAEMONLIBS pthread) ok or no?
-
-    #    include_directories(/opt/local/include)
-    include_directories(/opt/local/include/libusb-1.0)
+    # add the /opt paths for includes and linking and explicitly link to argp
+    include_directories(/opt/local/include)
     link_directories(/opt/local/lib)
+    Set(ARGPLIB argp)
+
+    # make sure the coming libusb-1.0 search looks in the /opt path as well
+    Set(CMAKE_REQUIRED_FLAGS "-I/opt/local/include")
   EndIf()
 EndIf()
 
@@ -142,7 +141,6 @@ EndIf()
 
 # check that we have assorted headers
 include(CheckIncludeFile)
-set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
 CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
 CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 
