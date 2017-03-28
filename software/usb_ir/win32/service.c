@@ -12,7 +12,7 @@
  */
 
 #include "iguanaIR.h"
-#include "../version.h"
+#include "version.h"
 #include <argp.h>
 #include "compat.h"
 
