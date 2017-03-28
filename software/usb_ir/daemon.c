@@ -205,7 +205,7 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
 
 #ifdef __APPLE__
             /* Support hot plug in on Mac OS X -- TODO: returns non-zero for error */
-            darwin_hotplug(ids);
+            darwin_hotplug(usbIds);
 #endif
 
             /* loop, waiting for commands */

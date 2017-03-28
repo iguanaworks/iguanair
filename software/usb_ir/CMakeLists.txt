@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
+# shut up CMake complaints on Darwin
+cmake_policy(SET CMP0042 NEW)
+
 include(${BOOTSTRAP_DIR}/CMakeMacros/Basics.txt)
 include(${BOOTSTRAP_DIR}/CMakeMacros/GitVersion.txt)
 
@@ -50,6 +53,14 @@ Else()
   Set(DAEMONSRC daemon.c)
   List(APPEND BASESRC compat-unix.c)
   Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
+
+  # see if we have clock_gettime possibly in rt
+  check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+  If(NOT HAVE_CLOCK_GETTIME)
+    check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+  Else()
+    List(APPEND BASELIBS rt)
+  EndIf()
   
   If("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
     # flag that this was a recognized system
@@ -86,14 +97,6 @@ Else()
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 
-    # see if we have clock_gettime possibly in rt
-    check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
-    If(NOT HAVE_CLOCK_GETTIME)
-      check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
-    Else()
-      Set(BASELIBS rt)
-    EndIf()
-
     # default all symbols to hidden TODO: might belong in more places, or a compiler specific place
     Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 
@@ -115,6 +118,9 @@ Else()
     List(APPEND PIPESRC pipes.c)
     List(APPEND DAEMONSRC darwin/hotplug.c)
 
+    # pull in the frameworks required by hotplug code
+    SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework IOKit" )
+    
     # TODO: we might be able to move the clock_gettime check out if Darwin is ok w it
     # see if we have mach_absolute_time
     check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
