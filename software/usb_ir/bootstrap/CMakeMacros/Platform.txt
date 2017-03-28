@@ -1,10 +1,10 @@
 # dance to get a correct list dir in a macro
 get_filename_component(_Platform_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  include(${_Platform_LIST_DIR}/Linux.txt)
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
-  # TODO: so far nothing is FreeBSD specific so we use Linux (should rename as Unix?)
+# TODO: so far nothing is FreeBSD/Darwin specific so we use Linux (should rename as Unix?)
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" OR
+   "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD" OR
+   "${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
   include(${_Platform_LIST_DIR}/Linux.txt)
 ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
   include(${_Platform_LIST_DIR}/Windows.txt)
