@@ -107,7 +107,7 @@ DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer)
             closedir(hFind);
             hFind = NULL;
         }
-        else if ((dent->d_type & DT_DIR) == 0)
+        else if (dent->d_type != DT_DIR)
         {
             strcpy(buffer, dent->d_name);
             break;
