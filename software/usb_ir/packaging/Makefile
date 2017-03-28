@@ -1,6 +1,5 @@
 NAME    = $(shell grep Name: fedora/*.spec | head -1 | sed 's/[^ ]*[ ]*//')
-#NAME    = $(shell head -n 1 ../ChangeLog | sed 's/\([^ ]*\).*/\1/')
-VERSION = $(shell head -n 1 ../ChangeLog | sed 's/.*(\(.*\)).*/\1/')
+VERSION = $(shell grep 'Set.FULLVER' ../CMakeLists.txt | sed 's/.* //' | sed 's/.$$//')
 CURRENT = $(shell head -n 1 /etc/issue | sed 's/ .*//' | tr 'A-Z' 'a-z')
 NAMEVER = $(NAME)-$(VERSION)
 

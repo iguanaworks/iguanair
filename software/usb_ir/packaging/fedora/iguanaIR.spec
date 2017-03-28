@@ -1,6 +1,6 @@
 # determine the python version
 %define pyver %(python -V 2>&1 | sed 's/Python \\(.\\..\\).*/\\1/')
-%define version %(head -n 1 ../ChangeLog | sed 's/.*(\\(.*\\)).*/\\1/')
+%define version %(grep 'Set.FULLVER' ../CMakeLists.txt | sed 's/.* //' | sed 's/.$//')
 
 Name:           iguanaIR
 Version:        %{version}
@@ -64,7 +64,7 @@ what this means, you do not need it.
 %build
 mkdir -p build
 cd build
-cmake -DPYVER=%{pyver} -DLIBDIR=%{_libdir} ..
+cmake -DPYVER=%{pyver} -DLIBDIR=%{_libdir} -DBOOTSTRAP_DIR=`pwd`/../bootstrap ..
 cd ..
 make -C build %{?_smp_mflags}
 
@@ -105,12 +105,16 @@ fi
 %{_bindir}/iguanaIR-rescan
 %{_libdir}/lib%{name}.so.*
 %{_libdir}/%{name}/*.so
-/etc/init.d/%{name}
+/usr/lib/systemd/system/%{name}.service
 # makes .rpmsave
 %config /etc/default/%{name}
 # makes .rpmnew
 #%config(noreplace) /etc/default/%{name}
-/lib/udev/rules.d/80-%{name}.rules
+/usr/lib/udev/rules.d/80-%{name}.rules
+/usr/share/man/man1/igclient.1.gz
+/usr/share/man/man1/%{name}-rescan.1.gz
+/usr/share/man/man8/igdaemon.8.gz
+/usr/lib/tmpfiles.d/iguanair.conf
 
 %files devel
 %{_includedir}/%{name}.h
@@ -123,6 +127,7 @@ fi
 %files reflasher
 %{_datadir}/%{name}-reflasher/
 %{_bindir}/%{name}-reflasher
+/usr/share/man/man1/%{name}-reflasher.1.gz
 
 %changelog
 * Sat Nov 20 2010 Joseph Dunn <jdunn@iguanaworks.net> 1.0-1
