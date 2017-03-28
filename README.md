@@ -1,5 +1,4 @@
-# IguanaIR software / firmware project README
-===========================================
+# IguanaIR software / firmware project
 
 This project provides the software and firmware used with the
 IguanaWorks usbir hardware.  This hardware is used to communicate via
@@ -24,26 +23,25 @@ With either this software, or the kernel driver, Linux users commonly
 rely on LIRC to decode the infrared signals into a more user-friendly
 format such as "TV Power" or "Heater On":
 
-  http://www.lirc.org/
+ * http://www.lirc.org/
 
 Windows users usually rely on WinLIRC for signal decoding and coupled
 with plugins for frameworks such as Girder or EventGhost these
 configurations can tie infrared signals into home automation:
 
-  http://winlirc.sourceforge.net/
-  https://www.promixis.com/girder.php
-  http://www.eventghost.org/
-
-
+ * http://winlirc.sourceforge.net/
+ * https://www.promixis.com/girder.php
+ * http://www.eventghost.org/
 
 The hardware can be purchased from our website and bulk discounts are
 available:
 
-  http://www.iguanaworks.net
+ * http://www.iguanaworks.net
 
 The IguanaWorks website also provides Windows binaries, frequently
 asked questions, and a support site to contact the developers with
 questions, issues, or descriptions of interesting projects.
 
 Thank you for your interest.
- -The IguanaWorks Team
+
+-The IguanaWorks Team
