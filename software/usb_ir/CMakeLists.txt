@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
 include(${BOOTSTRAP_DIR}/CMakeMacros/Basics.txt)
+include(${BOOTSTRAP_DIR}/CMakeMacros/GitVersion.txt)
 
 # Make sure to change the value in Changelog as well
-Set(FULLVER 1.1.2)
+Set(FULLVER 1.1.2) # TODO: pull from version.h or directly from git at cmake time?
 
 # SONAME links, unrelated to the package version.
 SET(SO_CURRENT 0)
@@ -26,7 +27,8 @@ EndIf()
 # TODO: installation should go to lib64 on some platforms, but not sure this handles it now
 
 # set a couple variables early
-Set(BASESRC logging.c)
+Set(BASESRC compat.h logging.c logging.h)
+Set(PIPESRC pipes.h)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   add_subdirectory(win32/argp-standalone-1.3)
@@ -34,11 +36,11 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(SWIG_EXECUTABLE C:\\swigwin-2.0.9\\swig.exe) # TODO: we should find instead of hard coding this
   Set(PYTHON_INCLUDE_DIR "C:/Python27/include") # TODO: we should find instead of hard coding this
 
-  List(APPEND BASELIBS ws2_32) # TODO: why? htonl maybe?
-  Set(PIPESRC win32/pipes.c)
+  List(APPEND BASESRC win32/compat-windows.c)
+  List(APPEND PIPESRC win32/pipes.c)
+  Set(BASELIBS ws2_32) # TODO: why? htonl maybe?
   Set(DAEMONSRC win32/service.c)
   Set(DAEMONLIBS setupapi) # TODO: why?
-  List(APPEND BASESRC win32/compat-windows.c)
   include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
 
 Else()
@@ -52,10 +54,10 @@ Else()
   
   If("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
     # flag that this was a recognized system
-    Set(PIPESRC pipes.c)
+    List(APPEND PIPESRC pipes.c)
 
     If("${CMAKE_SYSTEM_NAME}" STREQUAL "GNU")
-      # this makes it build on GNU Mach, but there's not USB support....
+      # this makes it build on GNU Mach, but there's no USB support....
       add_definitions(-DPATH_MAX=1024)
     EndIf()
 
@@ -68,26 +70,21 @@ Else()
 
     # Use pkg-config to find udev
     pkg_check_modules(UDEV udev)
-    if ("${UDEV_FOUND}" EQUAL 1)
+    if(UDEV_FOUND)
       execute_process(COMMAND pkg-config --variable udevdir udev
-                      OUTPUT_VARIABLE UDEVDIR)
-      string(REGEX REPLACE "\n$" "" UDEVDIR ${UDEVDIR})
-      string(STRIP UDEVDIR ${UDEVDIR})
-    else()
-      set(UDEVDIR "")
+                      OUTPUT_VARIABLE UDEVDIR
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 
     # Use pkg-config to find systemd
     pkg_check_modules(SYSTEMD systemd)
-    if ("${SYSTEMD_FOUND}" EQUAL 1)
+    if (SYSTEMD_FOUND)
       execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
-                      OUTPUT_VARIABLE SYSTEMD_UNITDIR)
-      string(REGEX REPLACE "\n$" "" SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
-      string(STRIP SYSTEMD_UNITDIR ${SYSTEMD_UNITDIR})
+                      OUTPUT_VARIABLE SYSTEMD_UNITDIR
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
       execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
-                      OUTPUT_VARIABLE TMPFILESDIR)
-      string(REGEX REPLACE "\n$" "" TMPFILESDIR ${TMPFILESDIR})
-      string(STRIP TMPFILESDIR ${TMPFILESDIR})
+                      OUTPUT_VARIABLE TMPFILESDIR
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 
     # see if we have clock_gettime possibly in rt
@@ -95,15 +92,15 @@ Else()
     If(NOT HAVE_CLOCK_GETTIME)
       check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
     Else()
-      List(APPEND BASELIBS rt)
+      Set(BASELIBS rt)
     EndIf()
-    
-    # default all symbols to hidden
+
+    # default all symbols to hidden TODO: might belong in more places, or a compiler specific place
     Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     # flag that this was a recognized system
-    Set(PIPESRC pipes.c)
+    List(APPEND PIPESRC pipes.c)
 
     # try to find clock_gettime for subsecond timing
     check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
@@ -116,7 +113,7 @@ Else()
 
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     # flag that this was a recognized system, and add os specific code
-    Set(PIPESRC pipes.c)
+    List(APPEND PIPESRC pipes.c)
     List(APPEND DAEMONSRC darwin/hotplug.c)
 
     # TODO: we might be able to move the clock_gettime check out if Darwin is ok w it
@@ -134,19 +131,26 @@ Else()
   EndIf()
 EndIf()
 
-If("${PIPESRC}" STREQUAL "")
+If("${PIPESRC}" STREQUAL "pipes.h")
   message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
 
+# check that we have assorted headers
 include(CheckIncludeFile)
 set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
 CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
 CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 
+# Make config.h based on what cmake found and include it's path
+configure_file("${CMAKE_SOURCE_DIR}/config.h.in" config.h)
+include_directories(${CMAKE_BINARY_DIR})
+
+# write out version.h w every call to build
+GitVersionH("${CMAKE_SOURCE_DIR}/version.h.in")
+
 # build the user library
-add_library(iguanaIR SHARED
-            iguanaIR.c dataPackets.c ${PIPESRC}
-            ${BASESRC})
+add_library(iguanaIR SHARED ${PIPESRC} ${BASESRC}
+            iguanaIR.c iguanaIR.h dataPackets.c dataPackets.h)
 target_link_libraries(iguanaIR ${BASELIBS} ${ARGPLIB})
 set_target_properties(iguanaIR PROPERTIES
                       VERSION ${FULLVER} SOVERSION ${SOVERSION})
@@ -158,28 +162,32 @@ set_property(TARGET iguanaIR
              PROPERTY SOVERSION ${SOVERSION})
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
+# TODO: should have this just build early w/o an explicit dep?
+add_dependencies(iguanaIR VersionH)
 
 # build the service/server that controls hardware
-add_executable(igdaemon ${DAEMONSRC}
-               server.c client-interface.c device-interface.c driver.c
-               list.c protocol-versions.c ${PIPESRC} dataPackets.c ${BASESRC})
+add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
+  server.c server.h
+  client-interface.c client-interface.h
+  device-interface.c device-interface.h
+  driver.c driver.h driverapi.h
+  list.c list.h protocol-versions.c protocol-versions.h
+  dataPackets.c dataPackets.h)
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 target_link_libraries(igdaemon iguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
-
 # build all the drivers
 add_subdirectory(drivers)
 
-# build igclient to test our API
-add_executable(igclient client.c list.c ${BASESRC})
+# build igclient
+add_executable(igclient ${BASESRC} client.c list.c list.h)
 set_property(TARGET igclient
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
-
 
 # see if we have python and swig
 If("${CMAKE_ARCH}" STREQUAL "arm")
@@ -240,65 +248,38 @@ Else()
   EndIf()
 EndIf()
 
-
-# Create a version string based on git info: hash, modififed
-# (adds :M if uncommited stuff) and a timestamp.
-execute_process(COMMAND git log -1 --format=format:%h
-                OUTPUT_VARIABLE GIT_HASH
-                ERROR_QUIET)
-execute_process(COMMAND  git diff-index --quiet HEAD --
-                RESULT_VARIABLE GIT_STATUS
-                ERROR_QUIET)
-execute_process(COMMAND git log -1 --format=format:%ci
-                OUTPUT_VARIABLE GIT_WHEN
-                ERROR_QUIET)
-if (${GIT_STATUS} EQUAL 0)
-  Set(GIT_MOD "")
-else()
-  set(GIT_MOD ":M")
-endif()
-
-# Make config.h and version.h based on what we found
-configure_file(config.h.in ${CMAKE_SOURCE_DIR}/config.h)
-if (NOT "x_${GIT_HASH}" STREQUAL "x_")
-  set(GIT_VERSION "${GIT_HASH}${GIT_MOD}-${GIT_WHEN}")
-  string(REGEX REPLACE ":[^:]+$" "" GIT_WHEN ${GIT_WHEN})
-  configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
-elseif (NOT EXISTS ${CMAKE_SOURCE_DIR}/version.h)
-  set(GIT_VERSION "(no git data available)")
-  configure_file(version.h.in ${CMAKE_SOURCE_DIR}/version.h)
-endif()
-
-# install all the other bits and pieces
-install(DIRECTORY files/base/etc files/base/usr
-        USE_SOURCE_PERMISSIONS
-        DESTINATION /)
-install(FILES iguanaIR.h
-        DESTINATION /usr/include)
-if ("${UDEV_FOUND}" EQUAL 1)
-  install(DIRECTORY files/base/lib/udev/rules.d
-          DESTINATION ${UDEVDIR})
-endif()
-if ("${SYSTEMD_FOUND}" EQUAL 1)
-  install(FILES files/systemd/lib/systemd/system/iguanaIR.service
-          DESTINATION ${SYSTEMD_UNITDIR})
-  install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
-          DESTINATION ${UDEVDIR}/rules.d)
-  install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
-          DESTINATION ${TMPFILESDIR})
-  install(DIRECTORY files/systemd/usr
-          USE_SOURCE_PERMISSIONS
-          DESTINATION /)
-else()
-  install(DIRECTORY files/sysV/usr files/sysV/etc
-          USE_SOURCE_PERMISSIONS
-          DESTINATION /)
-endif()
-
+# install all the other bits and pieces under different OSes
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   find_package(PythonInterp)
   add_custom_target(BuildReleasePackage
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/py2exe-setup.py py2exe
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
                     DEPENDS igdaemon igclient usbpre1drv argp _iguanaIR)
+Else()
+  install(DIRECTORY files/base/etc files/base/usr
+          USE_SOURCE_PERMISSIONS
+          DESTINATION /)
+  install(FILES iguanaIR.h
+          DESTINATION /usr/include)
+
+  If(UDEV_FOUND)
+    install(DIRECTORY files/base/lib/udev/rules.d
+            DESTINATION ${UDEVDIR})
+  EndIf()
+
+  If(SYSTEMD_FOUND)
+    install(FILES files/systemd/lib/systemd/system/iguanaIR.service
+            DESTINATION ${SYSTEMD_UNITDIR})
+    install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
+            DESTINATION ${UDEVDIR}/rules.d)
+    install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
+            DESTINATION ${TMPFILESDIR})
+    install(DIRECTORY files/systemd/usr
+            USE_SOURCE_PERMISSIONS
+            DESTINATION /)
+  Else()
+    install(DIRECTORY files/sysV/usr files/sysV/etc
+            USE_SOURCE_PERMISSIONS
+            DESTINATION /)
+  EndIf()
 EndIf()

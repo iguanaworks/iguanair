@@ -11,7 +11,7 @@
  * See LICENSE for license details.
  */
 #include "../iguanaIR.h"
-#include "../config.h"
+#include "config.h"
 #include "../compat.h"
 
 #include <stdlib.h>

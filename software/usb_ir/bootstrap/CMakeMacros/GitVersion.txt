@@ -1,0 +1,15 @@
+Macro(GitVersionH SRC)
+  # compute the output filename (basename minus trailing .in)
+  get_filename_component(OUTPUT "${SRC}" NAME)
+  string(REGEX REPLACE "^(.*).in$"
+         "\\1" OUTPUT
+         ${OUTPUT})
+
+  add_custom_target(VersionH
+    COMMAND ${CMAKE_COMMAND}
+        -DIN="${SRC}"
+        -DOUT="${OUTPUT}"
+        -P "${BOOTSTRAP_DIR}/CMakeMacros/GitVersionWriter.txt"
+  )
+  include_directories(${CMAKE_BINARY_DIR})
+EndMacro()

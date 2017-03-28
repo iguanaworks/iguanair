@@ -1,7 +1,4 @@
 /build
-/release.h
-/version.h
-/config.h
-/*.lnk
 /Release
 /Debug
+/*.lnk
