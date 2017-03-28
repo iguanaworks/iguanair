@@ -5,11 +5,15 @@ Macro(GitVersionH SRC)
          "\\1" OUTPUT
          ${OUTPUT})
 
-  add_custom_target(VersionH
-    COMMAND ${CMAKE_COMMAND}
-        -DIN="${SRC}"
-        -DOUT="${OUTPUT}"
-        -P "${BOOTSTRAP_DIR}/CMakeMacros/GitVersionWriter.txt"
-  )
+  If(EXISTS "${CMAKE_SOURCE_DIR}/${OUTPUT}" AND NOT EXISTS "${SRC}")
+    add_custom_target(VersionH)
+  Else()
+    add_custom_target(VersionH
+      COMMAND ${CMAKE_COMMAND}
+          -DIN="${SRC}"
+          -DOUT="${OUTPUT}"
+          -P "${BOOTSTRAP_DIR}/CMakeMacros/GitVersionWriter.txt")
+  EndIf()
+
   include_directories(${CMAKE_BINARY_DIR})
 EndMacro()
