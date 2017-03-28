@@ -1,4 +1,4 @@
-IguanaIR software / firmware project README
+# IguanaIR software / firmware project README
 ===========================================
 
 This project provides the software and firmware used with the
