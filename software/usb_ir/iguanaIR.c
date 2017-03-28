@@ -23,6 +23,35 @@
 #include "support.h"
 #include "dataPackets.h"
 
+IGUANAIR_API const char* iguanaListDevices()
+{
+#ifdef WIN32
+    return strdup("");
+#else
+    DIR_HANDLE dir = NULL;
+    char buffer[PATH_MAX], *retval;
+    int count = 1;
+
+    strcpy(buffer, IGSOCK_NAME);
+    while((dir = findNextFile(dir, buffer)) != NULL)
+        if (strcmp(buffer, "ctl") != 0)
+            count += strlen(buffer) + 1;
+
+    retval = malloc(count);
+    retval[0] = '\0';
+    strcpy(buffer, IGSOCK_NAME);
+    while((dir = findNextFile(dir, buffer)) != NULL)
+        if (strcmp(buffer, "ctl") != 0)
+        {
+            if (retval[0] != '\0')
+                strcat(retval, ";");
+            strcat(retval, buffer);
+        }
+
+    return retval;
+#endif
+}
+
 IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion)
 {
     PIPE_PTR conn = INVALID_PIPE;

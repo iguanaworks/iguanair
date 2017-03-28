@@ -136,6 +136,9 @@ enum
     IG_DEV_SETCONFIG1 = 0x0A
 };
 
+/* list the available devices */
+IGUANAIR_API const char* iguanaListDevices();
+
 /* manage a connection to the server */
 #define iguanaConnect(a) iguanaConnect_real(a, IG_PROTOCOL_VERSION)
 IGUANAIR_API PIPE_PTR iguanaConnect_real(const char *name,
