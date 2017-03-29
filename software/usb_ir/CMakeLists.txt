@@ -54,8 +54,8 @@ Else()
   # set variables common to all Unix-like systems
   Set(DAEMONSRC daemon.c)
   List(APPEND BASESRC compat-unix.c)
-  Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -pedantic")
   Set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
+  add_c_flag(-pedantic -g -O2)
 
   # see if we have clock_gettime possibly in rt
   check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
@@ -77,12 +77,13 @@ Else()
       add_definitions(-DPATH_MAX=1024)
     EndIf()
 
-    find_package(PkgConfig REQUIRED)
-
     # non-Android Linux systems need to link to dl and pthread
     If(NOT TARGET_ANDROID)
       Set(DAEMONLIBS pthread dl)
     EndIf()
+
+    # we rely on PkgConfig to find udev and systemd
+    find_package(PkgConfig REQUIRED)
 
     # Use pkg-config to find udev
     pkg_check_modules(UDEV udev)
@@ -102,16 +103,9 @@ Else()
                       OUTPUT_VARIABLE TMPFILESDIR
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
-
-    # default all symbols to hidden TODO: might belong in more places, or a compiler specific place
-    Set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
-
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     # flag that this was a recognized system
     List(APPEND PIPESRC pipes.c)
-
-    # try to find clock_gettime for subsecond timing
-    check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
 
     # argp and pthread must be explicitly linked and argp defaults to /usr/local
     include_directories(/usr/local/include)
@@ -120,7 +114,7 @@ Else()
     Set(ARGPLIB argp)
 
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-    # flag that this was a recognized system, and add os specific code
+    # flag that this was a recognized system
     List(APPEND PIPESRC pipes.c)
 
     # pull in hotplug and the frameworks it requires
