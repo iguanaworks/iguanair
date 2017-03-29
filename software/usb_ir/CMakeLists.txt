@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.6)
 project(IguanaIR C)
 
 # shut up CMake complaints on Darwin
-cmake_policy(SET CMP0042 NEW)
+If(POLICY CMP0042)
+  cmake_policy(SET CMP0042 NEW)
+EndIf()
 
 include(${BOOTSTRAP_DIR}/CMakeMacros/Basics.txt)
 include(${BOOTSTRAP_DIR}/CMakeMacros/GitVersion.txt)

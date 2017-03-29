@@ -9,7 +9,6 @@ Set(BASESRCS loggingWrap.c ../list.c)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(USBPRE1LIB ${CMAKE_SOURCE_DIR}/win32/libusb-win32/lib/msvc/libusb.lib)
-  List(APPEND BASESRCS ../win32/pipes.c)
 Else()
   Set(USBPRE1LIB usb)
   If(NOT "${CMAKE_ARCH}" STREQUAL "arm")
@@ -28,6 +27,7 @@ If(COMPILE_NEW)
     target_link_libraries(usbdrv usb-1.0)
   Else()
     target_link_libraries(usbdrv usb)
+    message("Found libusb > 1.0 but not called libusb-1.0") # TODO: pull this else if this doesnt show
   EndIf()
 
   install(TARGETS usbdrv
