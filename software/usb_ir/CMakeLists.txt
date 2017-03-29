@@ -137,7 +137,6 @@ EndIf()
 
 # check that we have assorted headers
 include(CheckIncludeFile)
-CHECK_INCLUDE_FILE("limits.h" HAVE_SYSLIMITS_H)
 CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 
 # Make config.h based on what cmake found and include it's path
