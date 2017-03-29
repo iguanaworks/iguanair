@@ -1,0 +1,84 @@
+Taken from one of our tickets (github #14)
+
+First see (if it still exists):
+  http://lirc.org/html/configuration-guide.html#overall-configuration-decisions
+
+
+Sean Young:
+
+> That doesn't explain anything.
+>
+> Please read that link again. I don't want to quote here, unless
+> necessary. It states several reasons when to use lirc, as well as
+> the situation when there is no need for it.
+
+I can only find two reasons mentioned there.
+ 1. Your remote is not supported by rc-core
+ 2. IR blasting
+
+However:
+
+ 1. You can add custom remotes yourself to rc-core and many remotes are already included
+
+ 2. IR blasting is supported by rc-core although user space tools could be improved
+
+>> IR core (now called rc-core) was a way of upstreaming lirc,
+> No. It was a (very successful) way of upstreaming the LIRC kernel modules.
+
+Yes, but those lirc modules were not accepted as-is, the kernel
+community wanted them to be tied to the input layer. So rc-core was
+created to bridge the gap and do in-kernel decoding. In the process
+the lirc daemon was bypassed and made obsolete. Some people keep on
+flogging a dead horse.
+
+
+
+
+Alec Leamas
+
+> I can only find two reasons mentioned there.
+I find seven:
+
+ 1. You might have a remote which is supported by LIRC but not the
+    kernel.
+
+ 2. If you have a remote which isn't supported at all, LIRC is
+    probably your best bet to get it running.
+
+> You can add custom remotes yourself to rc-core
+>
+>> Yep, But the workflow based on irrecord is still much more
+>> attractive.
+
+ 3. You might be on a non-Linux platform supporting lirc e. g., MacOS.
+
+ 4. You might have an application which is more or less designed to
+    use LIRC.
+
+ 5. You might need LIRC's capabilities e. g., modes where a single
+    remote button can be teached to deliver different keys to the
+    application. Handling input to multiple program is also easier
+    with lirc
+
+ 6. You might want to send IR signals to other devices (IR blasting).
+
+> IR blasting is supported by rc-core although user space tools could
+>  be improved
+>
+>> True. However, the design was made with the idea that lirc (i. e.,
+>> irsend) is that tool.
+
+ 7. You might want to use lirc's applications e. g., irexec(1) which can run arbitrary commands in parallel with an application such as mythtv or xbmc.
+
+> So rc-core was created to bridge the gap and do in-kernel
+> decoding. In the process the lirc daemon was bypassed and made
+> obsolete.
+
+No. In the process the /dev/lirc interface was kept intact with the
+very idea that lirc should have access to the raw, undecoded data. The
+lirc daemon is by no mean obsolete by this. On the contrary, one of
+the design criterias for ir-core was a close cooperation with the
+lircd daemon.
+
+On a sidenote, lirc of course uses the kernel decoding when
+suitable. From 0.9.4 this is the default setup.
