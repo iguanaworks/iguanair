@@ -26,8 +26,8 @@ If(COMPILE_NEW)
   If(HAVE_USB_10_LIBUSB_H)
     target_link_libraries(usbdrv usb-1.0)
   Else()
+    # FreeBSD can be a bit different
     target_link_libraries(usbdrv usb)
-    message("Found libusb > 1.0 but not called libusb-1.0") # TODO: pull this else if this doesnt show
   EndIf()
 
   install(TARGETS usbdrv

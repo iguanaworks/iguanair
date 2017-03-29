@@ -34,6 +34,8 @@ Compiler: required for build: gcc, clang, xcode, msvc
   - 6.3.0 - Hurd,Deb9
   - 6.3.1 - F24,F25
  - clang
+  - 3.4.1 - FBSD103
+  - 3.8.0 - FBSD11
   - 3.9.1 - F25
  - xcode
 
@@ -61,7 +63,7 @@ Git: semi-required for build
 Swig: optional for build, required if you want the Python API
    - 2.0.4  - U1204
    - 2.0.11 - U1404
-   - 2.0.12 - RP,Deb8
+   - 2.0.12 - RP,Deb8,FBSD103,FBSD11
    - 3.0.7  - F22,F23
    - 3.0.8  - F24,U1604,U1610
    - 3.0.10 - Hurd,Deb9
@@ -75,7 +77,7 @@ Python: optional for build or use
   - 2.7.10 - F22
   - 2.7.11 - F23
   - 2.7.12 - U1604,U1610
-  - 2.7.13 - Hurd,F24,F25,Deb9
+  - 2.7.13 - Hurd,F24,F25,Deb9,FBSD103,FBSD11
  - python3
   - 3.4.2 - RP,F22,Deb8
   - 3.4.3 - F23,U1404
