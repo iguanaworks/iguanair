@@ -204,7 +204,7 @@ if options.logFile != None:
     sys.log = open(options.logFile, "a", 1)
     options.logFile = "-"
 
-def listDevices(path = iguanaIR.IGSOCK_NAME):
+def listDevices(path = iguanaIR.IGSOCK_NAME, withAliases = True):
     global MessageCannotlistdevice
     devices = []
     try:
@@ -213,65 +213,137 @@ def listDevices(path = iguanaIR.IGSOCK_NAME):
 
         for device in os.listdir(path):
             if device != 'ctl' and \
-               not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode):
+               (withAliases or not stat.S_ISLNK(os.lstat(os.path.join(path, device)).st_mode)):
                 devices.append(device)
     except Exception as inst:
         devices = ['0']
         if MessageCannotlistdevice == False:
-            message(LOG_WARN,"""Guessing device "0", failed to list devices:\n  %s\n""" % inst)
+            message(LOG_WARN,"""Failed to list devices, guessing device "0". Error:\n  %s\n""" % inst)
             MessageCannotlistdevice = True
 
+    devices.sort()
+#    print('list:%s' % devices)
     return devices
 
 _conn = None
-def connect(timeout = 2, willChange = False, quiet = False):
-    global _conn
+_devLoc = None
+_devNam = None
+def connectDev(name):
+    global _conn, _devLoc
 
-    # sometimes the change is a removal and reappearance
-    changed = False
+    _conn = iguanaIR.connect(_devNam)
+    if _conn == iguanaIR.INVALID_PIPE:
+        return False
+
+    # on successful connect, record the device location as _devLoc
+    try:
+        loc = deviceTransaction(iguanaIR.IG_DEV_GETLOCATION, quiet = True)
+        if loc and isinstance(loc, bytes):
+            loc = struct.unpack('B' * len(loc), loc)
+            _devLoc = '%d-%d' % loc
+    except:
+        pass
+#    print('connected: %s %s %s' % (_conn, _devNam, _devLoc))
+    return True
+
+def connectWhich():
+    devices = listDevices(withAliases = False)
+    if len(devices) == 0:
+        message(LOG_NORMAL, "No devices found.\n")
+        raise KeyboardInterrupt()
+    elif len(devices) == 1:
+        return devices[0]
+
+    devMap = {}
+    message(LOG_NORMAL, """
+What device do you want to connect to?
+""")
+    idx = 1
+    for dev in listDevices():
+        try:
+            message(LOG_NORMAL, '    %d) %s\n' % (idx, dev))
+            devMap[idx] = dev
+            idx += 1
+        except:
+            pass
+    while True:
+        message(LOG_NORMAL, "Enter a number, blank for the first, or q to quit: ")
+        sys.stdout.flush()
+        line = sys.stdin.readline().strip().lower()
+        if len(line) == 0:
+            return devMap[1]
+        elif line == 'q':
+            raise KeyboardInterrupt()
+        else:
+            pick = None
+            try:
+                pick = int(line)
+            except:
+                pass
+            if pick in devMap:
+                return devMap[pick]
+
+def connect(timeout = 2, waitVanish = False, quiet = False):
+    global _conn, _devLoc, _devNam
 
     # check every quarter second
     sleepTime = 0.25
-    timeoutStart = timeout
 
-    start = None
-    while timeout > 0:
-        # list the possible devices
-        devices = listDevices()
-        devices.sort()
+    # immediately grab a device list
+    devices = listDevices()
 
-        # no change, so lets just run on
-        if len(devices) == 0:
-            # note the change if there used to be a device
-            if start is not None:
-                changed = True
-        # if any devices are found record the first one
-        elif start is None:
-            start = devices[0]
-            if not willChange:
+    # wait for the device to vanish if requested
+    if waitVanish and _devNam in devices:
+        while timeout > 0:
+            devices = listDevices()
+            if _devNam not in devices:
+                waitVanish = False
                 break
-        # if the device is found and has not always been the same break out
-        elif len(devices) == 1 and \
-             start and (start != devices[0] or changed):
-            break
 
         # delay and count down the timeout
         time.sleep(sleepTime)
         timeout -= sleepTime
 
-    # make sure there is a device detected
-    devices = listDevices()
-    if len(devices) == 0:
-        if not quiet:
-            message(LOG_ERROR,
-                    "Device not found.  Please be sure the device is plugged in and the daemon/driver/service is running.\n")
+    # wait for the last used device to come back favoring _devLoc
+    _conn = None
+    first = True
+    while first or timeout > 0:
+        # try once no matter the timeout
+        first = False
+
+        devices = listDevices()
+        if len(devices) > 0:
+            if (_devLoc is not None and _devLoc in devices and connectDev(_devLoc)) or \
+               (_devNam is not None and _devNam in devices and connectDev(_devNam)):
+                return
+            elif _devLoc is None and _devNam is None:
+                _devNam = connectWhich()
+                connectDev(_devNam)
+                return
+
+        # delay and count down the timeout
+        if timeout > 0:
+            time.sleep(sleepTime)
+            timeout -= sleepTime
+
+    # if there are no devices error out
+    if _conn is None:
+        if len(devices) == 0:
+            if not quiet:
+                message(LOG_ERROR,
+                        "Device not found.  Please be sure the device is plugged in and the daemon/driver/service is running.\n")
             raise KeyboardInterrupt()
-    # connect to the device
-    else:
-        if len(devices) > 1 and not quiet:
-            message(LOG_WARN,
-                    "Multiple devices found, using '%s'\n" % devices[0])
-        _conn = iguanaIR.connect(devices[0])
+        else:
+            devs = []
+            if _devNam is not None:
+                devs.append("'%s'" % _devNam)
+            if _devLoc is not None:
+                devs.append("'%s'" % _devLoc)
+            devs = ', '.join(devs)
+
+            message(LOG_NORMAL, "Previously used device %s not found." % devs)
+            _devNam = connectWhich()
+            connectDev(_devNam)
 
 # used detect the version before we try to write it
 def deviceTransaction(code, data = b'', quiet = False):
@@ -689,7 +761,7 @@ def reflashDevice(features):
             id = None
 
     if id:
-        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id)
+        message(LOG_NORMAL, "Attempting to reset device id to '%s'.\n" % id.decode('utf-8'))
     else:
         message(LOG_NORMAL, "Setting device id to default: iguana\n")
         id = b'iguana\0'
