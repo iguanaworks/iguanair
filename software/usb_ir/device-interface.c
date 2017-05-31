@@ -407,7 +407,7 @@ bool checkVersion(iguanaDev *idev)
     if (deviceTransaction(idev, &request, &response))
         getVersion = true;
 
-    /* try a second time to get the version */
+    /* if needed try a second time to get the version */
     if (! getVersion &&
         ! deviceTransaction(idev, &request, &response))
         message(LOG_ERROR, "Failed to get version.\n");
