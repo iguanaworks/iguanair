@@ -163,6 +163,17 @@ install(TARGETS iguanaIR
 # TODO: should have this just build early w/o an explicit dep?
 add_dependencies(iguanaIR VersionH)
 
+# build the library that can be used to communicate with the devices
+add_library(directIguanaIR SHARED
+  driver.c driver.h driverapi.h
+  ${BASESRC})
+#set_property(TARGET directIguanaIR
+#             APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
+set_property(TARGET directIguanaIR
+             APPEND PROPERTY COMPILE_DEFINITIONS DIRECT_EXPORTS)
+target_link_libraries(directIguanaIR iguanaIR
+                      ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
+
 # build the service/server that controls hardware
 add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
   server.c server.h
@@ -173,6 +184,7 @@ add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
   dataPackets.c dataPackets.h)
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
+#target_link_libraries(igdaemon iguanaIR directIguanaIR
 target_link_libraries(igdaemon iguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)

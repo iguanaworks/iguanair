@@ -7,6 +7,7 @@
 #include "sys/types.h"
 
 #include "support.h"
+#include "driver.h"
 #include "driverapi.h"
 
 /* will hold driver-supplied function pointers */
