@@ -12,7 +12,7 @@
  */
 #pragma once
 
-#include <stdbool.h>
+#include "iguanaIR.h"
 #include <stdint.h>
 #include "direct.h"
 #include "devicebase.h"
