@@ -166,9 +166,8 @@ add_dependencies(iguanaIR VersionH)
 # build the library that can be used to communicate with the devices
 add_library(directIguanaIR SHARED
   driver.c driver.h driverapi.h
+  sendFormat.c sendFormat.h
   ${BASESRC})
-#set_property(TARGET directIguanaIR
-#             APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 set_property(TARGET directIguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS DIRECT_EXPORTS)
 target_link_libraries(directIguanaIR iguanaIR
@@ -179,13 +178,13 @@ add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
   server.c server.h
   client-interface.c client-interface.h
   device-interface.c device-interface.h
-  driver.c driver.h driverapi.h
+  driver.c driver.h driverapi.h sendFormat.c sendFormat.h # this OR directIguanaIR
   list.c list.h protocol-versions.c protocol-versions.h
   dataPackets.c dataPackets.h)
 set_property(TARGET igdaemon
              APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 #target_link_libraries(igdaemon iguanaIR directIguanaIR
-target_link_libraries(igdaemon iguanaIR
+target_link_libraries(igdaemon iguanaIR # this OR directIguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
