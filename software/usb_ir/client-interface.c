@@ -464,7 +464,11 @@ void getID(iguanaDev *idev)
                 "Failed to get id.  Device may not have one assigned.\n");
     else
     {
-        setAlias(idev, false, (char*)response->data);
+        /* make sure we properly terminate the id in case someone sets
+           one of maximum length */
+        char buf[13] = {0};
+        strncpy(buf, (char*)response->data, 12);
+        setAlias(idev, false, buf);
         freeDataPacket(response);
     }
 }
