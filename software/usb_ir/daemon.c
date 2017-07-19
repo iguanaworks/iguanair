@@ -189,8 +189,6 @@ static void workLoop()
             message(LOG_ERROR, "failed to install SIGHUP handler.\n");
         else if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
             message(LOG_ERROR, "failed to ignore SIGPIPE messages.\n");
-        else if (! srvSettings.justDescribe && (ctlSock = startListening(NULL)) == INVALID_PIPE)
-            message(LOG_ERROR, "failed to open the control socket.\n");
         else
         {
             bool quit = false;
@@ -447,13 +445,12 @@ int main(int argc, char **argv)
     return retval;
 }
 
-void listenToClients(iguanaDev *idev)
+// TODO: recvTimeout can be pulled from the srvSettings
+void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 {
     PIPE_PTR listener;
-    char name[4];
 
     /* start the listener */
-    sprintf(name, "%d", idev->usbDev->id);
     listener = startListening(name);
     if (listener == INVALID_PIPE)
         message(LOG_ERROR, "Worker failed to start listening.\n");
@@ -462,7 +459,8 @@ void listenToClients(iguanaDev *idev)
         fd_set fds, fdsin, fdserr;
 
         /* check the initial aliases */
-        getID(idev);
+        if (idev != NULL)
+            getID(idev);
 
         /* loop while checking the pipes for activity */
         FD_ZERO(&fdsin);
@@ -470,30 +468,37 @@ void listenToClients(iguanaDev *idev)
         while(true)
         {
             client *john;
-            int max;
+            int max = 0;
             FD_ZERO(&fds);
 
-            /* first check the listener and read pipe for error */
-            if (FD_ISSET(listener, &fdserr) ||
-                FD_ISSET(idev->readerPipe[READ], &fdserr))
-                break;
+            /* if we're listening to a device pipe then check the reader */
+            if (idev != NULL)
+            {
+                /* check the read pipe for error */
+                if (FD_ISSET(idev->readerPipe[READ], &fdserr))
+                    break;
 
-            /* take care of messages from the reader */
-            if (FD_ISSET(idev->readerPipe[READ], &fdsin) &&
-                ! handleReader(idev))
+                /* take care of messages from the reader */
+                if (FD_ISSET(idev->readerPipe[READ], &fdsin) &&
+                    ! handleReader(idev))
+                    break;
+                FD_SET(idev->readerPipe[READ], &fds);
+                max = idev->readerPipe[READ];
+            }
+
+            /* check the listener for error */
+            if (FD_ISSET(listener, &fdserr))
                 break;
-            FD_SET(idev->readerPipe[READ], &fds);
-            max = idev->readerPipe[READ];
 
             /* next handle incoming connections */
             if (FD_ISSET(listener, &fdsin))
-                clientConnected(accept(listener, NULL, NULL), idev);
+                clientConnected(accept(listener, NULL, NULL), clientList, idev);
             FD_SET(listener, &fds);
             if (listener > max)
                 max = listener;
 
             /* last check the clients */
-            for(john = (client*)idev->clientList.head; john != NULL;)
+            for(john = (client*)clientList->head; john != NULL;)
             {
                 client *next;
 
@@ -522,12 +527,13 @@ void listenToClients(iguanaDev *idev)
         }
 
         /* unlink any existing aliases */
-        setAlias(idev, true, NULL);
+        if (idev != NULL)
+            setAlias(idev, true, NULL);
         stopListening(listener, name);
 
         /* and release any connected clients */
-        while(idev->clientList.count > 0)
-            releaseClient((client*)idev->clientList.head);
+        while(clientList->count > 0)
+            releaseClient((client*)clientList->head);
     }
 }
 

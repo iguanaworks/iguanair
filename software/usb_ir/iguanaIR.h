@@ -70,6 +70,9 @@ enum
        first thing sent by the client. */
     IG_EXCH_VERSIONS = 0xFE, /* internal to client/daemon */
 
+    /* used to ask the daemon about devices */
+    IG_CTL_LISTDEVS = 0x80,
+
     /* used in response packets */
     IG_DEV_ERROR = 0x00,
 
@@ -108,6 +111,7 @@ enum
     IG_DEV_GETLOCATION  = 0x26, /* internal to client/daemon */
     IG_DEV_RESEND       = 0x27,
     IG_DEV_SENDSIZE     = 0x28, /* internal to client/daemon */
+    IG_DEV_LISTALIASES  = 0x29, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,

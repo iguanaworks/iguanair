@@ -67,14 +67,16 @@ static versionedType types[] =
     /* exchanging the versions of the client and server */
     {0, 0, {IG_EXCH_VERSIONS, CTL_TODEV, 2, true, 2}},
 
-    /* use the upper version bound to list the MAX_VERSION */
-    {0, 0, {IG_DEV_GETVERSION, CTL_TODEV,   NO_PAYLOAD,  true, 2}},
+    /* daemon ctl functionality */
+    {1, 1, {IG_CTL_LISTDEVS, CTL_TODEV, NO_PAYLOAD, true, ANY_PAYLOAD}},
 
     /* device functionality */
+    {0,      0, {IG_DEV_GETVERSION,  CTL_TODEV,  NO_PAYLOAD, true, 2}},
     {0x0101, 0x203, {IG_DEV_GETFEATURES, CTL_TODEV,  NO_PAYLOAD, true, 1}},
     {0x0204, 0, {IG_DEV_GETFEATURES, CTL_TODEV,  NO_PAYLOAD, true, 2}},
     {0,      0, {IG_DEV_SEND,        CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0x0309, 0, {IG_DEV_RESEND,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
+    {0,      0, {IG_DEV_LISTALIASES, CTL_TODEV,  NO_PAYLOAD, true, ANY_PAYLOAD}},
     {0,      0, {IG_DEV_SENDSIZE,    CTL_TODEV, ANY_PAYLOAD, true, 2}},
     {0,      0, {IG_DEV_RECVON,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
     {0x0101, 0, {IG_DEV_RAWRECVON,   CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
@@ -351,8 +353,14 @@ static void* generateIDBlock(const char *label, uint16_t version)
         if (strlen(label) > 12)
             message(LOG_ERROR, "Label is too long, truncating to 12 bytes.\n");
 
-        /* construct the bytes that will travel over the wire */
-        strncpy((char*)buf + 4, label, 12);
+        /* construct the bytes that will travel over the wire,
+           replacing a couple characters with underscores */
+        /* TODO: this could be UTF-8 content! */
+        for(x = 0; x < 12 && label[x] != '\0'; x++)
+            if (label[x] == '|' || label[x] == '\n')
+                buf[4 + x] = '_';
+            else
+                buf[4 + x] = label[x];
 
         /* assemble the code to transmit the bytes in 2 packets */
         for(x = 0; x < 2; x++)
@@ -484,7 +492,11 @@ packetType* checkIncomingProtocol(iguanaDev *idev, dataPacket *request,
 {
     packetType *type;
 
-    type = findTypeEntry(request->code, idev->version);
+    uint16_t version = IG_PROTOCOL_VERSION;
+    if (idev != NULL)
+        version = idev->version;
+
+    type = findTypeEntry(request->code, version);
     errno = EINVAL;
     if (type == NULL)
         message(LOG_ERROR,

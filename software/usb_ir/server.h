@@ -64,6 +64,14 @@ typedef struct
     int scanSeconds;
     THREAD_PTR scanTimerThread;
 
+    /* thread that listens for ctl requests */
+    THREAD_PTR ctlSockThread;
+    listHeader ctlClients;
+
+    /* a locked list of known devices */
+    LOCK_PTR devsLock;
+    listHeader devs;
+
     /* a method for children to communicate back to the list owner */
     PIPE_PTR commPipe[2];
 
@@ -77,6 +85,8 @@ typedef struct
 void initServerSettings();
 struct argp* baseArgParser();
 deviceList* initServer();
+char* aliasSummary();
+char* deviceSummary();
 void cleanupServer();
 
 /* usb ids that we support */

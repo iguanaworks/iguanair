@@ -161,7 +161,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
 
     /* figure out what version of the compression we support */
     compressVersion = COMPRESS_VER0;
-    if ((target->idev->version & 0xFF) >= 0x08)
+    if (target->idev != NULL && (target->idev->version & 0xFF) >= 0x08)
         compressVersion = COMPRESS_VER1;
 
     switch(request->code)
@@ -177,6 +177,15 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
     }
+
+    case IG_CTL_LISTDEVS:
+        request->data = (unsigned char*)deviceSummary();
+        if (request->data == NULL)
+            request->dataLen = 0;
+        else
+            request->dataLen = strlen((char*)request->data) + 1;
+        retval = true;
+        break;
 
     case IG_DEV_GETFEATURES:
         /* shortcut the request if possible */
@@ -310,6 +319,19 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
     }
+
+    case IG_DEV_LISTALIASES:
+        request->data = (unsigned char*)aliasSummary(target->idev);
+        if (request->data == NULL)
+        {
+            request->dataLen = 0;
+            message(LOG_ERROR, "Avoiding a crash, but no device can have NO aliases.\n");
+        }
+        else
+            request->dataLen = strlen((char*)request->data) + 1;
+        retval = true;
+        break;
+
     }
 
     if (retval)
@@ -391,8 +413,7 @@ bool handleClient(client *me)
     bool retval = true;
     dataPacket request;
 
-    if (! readDataPacket(&request, me->fd,
-                         me->idev->settings->recvTimeout))
+    if (! readDataPacket(&request, me->fd, srvSettings.devSettings.recvTimeout))
     {
         releaseClient(me);
         retval = false;
@@ -437,7 +458,7 @@ bool handleClient(client *me)
 
 void getID(iguanaDev *idev)
 {
-    char buf[8];
+    char buf[13] = {0};
     uint8_t loc[2];
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
 
@@ -445,6 +466,8 @@ void getID(iguanaDev *idev)
     getDeviceLocation(idev->usbDev, loc);
     sprintf(buf, "%d-%d", loc[0], loc[1]);
     setAlias(idev, true, buf);
+    free(idev->locAlias);
+    idev->locAlias = strdup(buf);
 
     if (! srvSettings.readLabels ||
         /* reflasher and loader-only devices have no id */
@@ -466,9 +489,11 @@ void getID(iguanaDev *idev)
     {
         /* make sure we properly terminate the id in case someone sets
            one of maximum length */
-        char buf[13] = {0};
+        memset(buf, 0, 13);
         strncpy(buf, (char*)response->data, 12);
         setAlias(idev, false, buf);
+        free(idev->userAlias);
+        idev->userAlias = strdup(buf);
         freeDataPacket(response);
     }
 }
@@ -482,7 +507,7 @@ static void joinWithReader(iguanaDev *idev)
     joinThread(idev->reader, &exitVal);
 }
 
-void clientConnected(PIPE_PTR clientFd, iguanaDev *idev)
+void clientConnected(PIPE_PTR clientFd, listHeader *clientList, iguanaDev *idev)
 {
 #if DEBUG
 message(LOG_WARN, "OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
@@ -507,7 +532,7 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
             newClient->idev = idev;
             newClient->receiving = 0;
             newClient->fd = clientFd;
-            insertItem(&idev->clientList, NULL, (itemHeader*)newClient);
+            insertItem(clientList, NULL, (itemHeader*)newClient);
         }
     }
 }
@@ -628,10 +653,19 @@ static void* workLoop(void *instance)
     message(LOG_INFO, "Worker %d starting\n", idev->usbDev->id);
     if (checkVersion(idev))
     {
-        listenToClients(idev);
+        char name[4];
 
-        /* Close some of the pipes.  Leave one to note when the device
-           reader exits. */
+        /* add this device to the list of devices */
+        EnterCriticalSection(&srvSettings.devsLock);
+        insertItem(&srvSettings.devs, NULL, (itemHeader*)idev);
+        LeaveCriticalSection(&srvSettings.devsLock);
+
+        /* start the listener */
+        sprintf(name, "%d", idev->usbDev->id);
+        listenToClients(name, &idev->clientList, idev);
+
+        /* Close some of the pipes but leave one to mark when the
+           device reader exits. */
         closePipe(idev->readerPipe[READ]);
         closePipe(idev->responsePipe[READ]);
         closePipe(idev->responsePipe[WRITE]);
@@ -640,6 +674,11 @@ message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->readerPipe[READ], __FILE__, __LINE_
 message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->responsePipe[READ], __FILE__, __LINE__);
 message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
 #endif
+
+        /* remove this from the active device list */
+        EnterCriticalSection(&srvSettings.devsLock);
+        removeItem((itemHeader*)idev);
+        LeaveCriticalSection(&srvSettings.devsLock);
     }
 
     /* log the shutdown and grab a copy of the thread id for later */
@@ -650,6 +689,8 @@ message(LOG_WARN, "CLOSE %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LI
     joinWithReader(idev);
     releaseDevice(idev->usbDev);
     freeDevice(idev->usbDev);
+    free(idev->locAlias);
+    free(idev->userAlias);
     free(idev);
 
     /* tell the parent thread to go ahead and reclaim our resources */

@@ -39,8 +39,11 @@ typedef struct deviceSettings
 
 typedef struct iguanaDev
 {
+    /* we keep a list of iguanaDevs for ctl queries */
+    itemHeader header;
+
     /* used to pass data from the reader to the worker, closed to
-     * notify worker to terminate */
+       notify worker to terminate */
     PIPE_PTR readerPipe[2];
     PIPE_PTR responsePipe[2];
 
@@ -76,7 +79,9 @@ typedef struct iguanaDev
     /* what carrier frequency should we transmit at?  default 38k */
     unsigned int carrier;
 
-    /* might as well keep the list of clients here */
+    /* might as well keep the aliases and list of clients here */
+    char *locAlias;
+    char *userAlias;
     listHeader clientList;
 
     /* link to the global settings object */

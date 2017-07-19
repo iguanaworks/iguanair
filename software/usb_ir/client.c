@@ -61,6 +61,7 @@ enum
     OFFSET_GETLOCATION = ARGP_OFFSET + IG_DEV_GETLOCATION,
     OFFSET_REPEATER    = ARGP_OFFSET + IG_DEV_REPEATER,
     OFFSET_SENDSIZE    = ARGP_OFFSET + IG_DEV_SENDSIZE,
+    OFFSET_LISTALIASES = ARGP_OFFSET + IG_DEV_LISTALIASES,
 
     /* used to check the receive buffer is empty in the end */
     FINAL_CHECK = 0xFFFF,
@@ -69,9 +70,14 @@ enum
     PACKET_BUFFER_BASE = 0xF8
 };
 
+/* declare and initialize the parameters structure */
 struct parameters
 {
     const char *device;
+    bool listDevs;
+} params = {
+    "0",
+    false
 };
 
 typedef struct commandSpec
@@ -87,6 +93,8 @@ static commandSpec supportedCommands[] =
 {
     {"final check", false, FINAL_CHECK, 0, false},
 
+    {"all devices", false, IG_CTL_LISTDEVS, 0, false},
+
     {"get version",     false, IG_DEV_GETVERSION,      0,      false},
     {"write block",     false, IG_DEV_WRITEBLOCK,      0,      false},
     {"checksum block",  false, IG_DEV_WRITEBLOCK,      0,      false},
@@ -99,6 +107,7 @@ static commandSpec supportedCommands[] =
     {"receiver off",    false, IG_DEV_RECVOFF,         0,      false},
     {"send",            false, IG_DEV_SEND,            0,      false},
     {"resend",          false, IG_DEV_RESEND,          0,      false},
+    {"all aliases",     false, IG_DEV_LISTALIASES,     0,      false},
     {"encoded size",    false, IG_DEV_SENDSIZE,        0,      false},
     {"get channels",    false, IG_DEV_GETCHANNELS,     0,      false},
     {"set channels",    false, IG_DEV_SETCHANNELS,     0,      true},
@@ -158,9 +167,7 @@ static unsigned char pinState[IG_PIN_COUNT];
 static bool interactive = false, recvOn = false;
 static int deviceFeatures = 0;
 
-static bool performTask(PIPE_PTR conn, igtask *cmd);
-
-bool parseNumber(const char *text, unsigned int *value)
+static bool parseNumber(const char *text, unsigned int *value)
 {
     bool retval = false;
     char c;
@@ -276,44 +283,12 @@ static void setSetting(unsigned int setting, const char *pins,
         }
 }
 
-static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
+static bool processResponse(unsigned char code, igtask *cmd, unsigned int length, void *data)
 {
     bool retval = false;
-    uint64_t end;
+    int x;
 
-    /* read the start and add the timeout */
-    end = microsSinceX() + timeout * 1000;
-
-    while(timeout >= 0)
-    {
-        iguanaPacket response;
-
-        /* determine the time remaining */
-        if (microsSinceX() >= end)
-            break;
-
-        response = iguanaReadResponse(conn, timeout);
-        if (iguanaResponseIsError(response))
-        {
-            if ((errno != 110 || (cmd->spec->code != INTERNAL_SLEEP && cmd->spec->code != FINAL_CHECK)) &&
-                (errno != 5   ||  cmd->spec->code != INTERNAL_SLEEP))
-                message(LOG_NORMAL, "%s: failed: %d: %s\n", cmd->spec->text,
-                        errno, translateError(errno));
-            /* failure means stop */
-            timeout = -1;
-        }
-        else
-        {
-            void *data;
-            unsigned int length, x;
-            unsigned char code;
-
-            /* need to translate the data, and can then toss the
-             * response */
-            data = iguanaRemoveData(response, &length);
-            code = iguanaCode(response);
-
-            if (code == IG_DEV_RECV)
+    if (code == IG_DEV_RECV)
             {
                 length /= sizeof(uint32_t);
                 message(LOG_NORMAL, "received %d signal(s):", length);
@@ -338,6 +313,14 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                     message(LOG_NORMAL, "%s: success", cmd->spec->text);
                 switch(code)
                 {
+                case IG_CTL_LISTDEVS:
+                case IG_DEV_LISTALIASES:
+                    if (data == NULL)
+                        message(LOG_NORMAL, ": no devices");
+                    else
+                        message(LOG_NORMAL, ": %s", (char*)data);
+                    break;
+
                 case IG_DEV_GETVERSION:
                     message(LOG_NORMAL, ": version=0x%4.4x",
                             (((unsigned char*)data)[1] << 8 | \
@@ -407,12 +390,52 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
                 }
                 }
 
-                /* success means stop */
-                timeout = -1;
                 retval = true;
             }
             if (! cmd->isSubTask)
                 message(LOG_NORMAL, "\n");
+
+            return retval;
+}
+
+static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
+{
+    bool retval = false;
+    uint64_t end;
+
+    /* read the start and add the timeout */
+    end = microsSinceX() + timeout * 1000;
+
+    while(timeout >= 0)
+    {
+        iguanaPacket response;
+
+        /* determine the time remaining */
+        if (microsSinceX() >= end)
+            break;
+
+        response = iguanaReadResponse(conn, timeout);
+        if (iguanaResponseIsError(response))
+        {
+            if ((errno != 110 || (cmd->spec->code != INTERNAL_SLEEP && cmd->spec->code != FINAL_CHECK)) &&
+                (errno != 5   ||  cmd->spec->code != INTERNAL_SLEEP))
+                message(LOG_NORMAL, "%s: failed: %d: %s\n", cmd->spec->text,
+                        errno, translateError(errno));
+            /* failure means stop */
+            timeout = -1;
+        }
+        else
+        {
+            void *data;
+            unsigned int length;
+
+            /* translate the data and then toss the response */
+            data = iguanaRemoveData(response, &length);
+
+            retval = processResponse(iguanaCode(response), cmd, length, data);
+            /* success means stop looping, but do the coming cleanup */
+            if (retval)
+                timeout = -1;
 
             free(data);
         }
@@ -456,6 +479,24 @@ static bool handleInternalTask(igtask *cmd, PIPE_PTR conn)
     else
         message(LOG_FATAL, "Unhandled internal task: %s\n", cmd->spec->text);
 
+    return retval;
+}
+
+static bool transaction(igtask *cmd, PIPE_PTR conn, int amt, void *data)
+{
+    bool retval = false;
+    iguanaPacket request = NULL;
+
+    request = iguanaCreateRequest((unsigned char)cmd->spec->code, amt, data);
+    if (request == NULL)
+        message(LOG_ERROR, "Out of memory allocating request.\n");
+    else if (! iguanaWriteRequest(request, conn))
+        message(LOG_ERROR, "Failed to write request to server.\n");
+    else if (receiveResponse(conn, cmd, 10000))
+        retval = true;
+
+    /* release allocated data buffers (including data ptr) */
+    iguanaFreePacket(request);
     return retval;
 }
 
@@ -613,21 +654,7 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
             message(LOG_ERROR,
                     "Failed to pack data: %s\n", translateError(errno));
         else
-        {
-            iguanaPacket request = NULL;
-
-            request = iguanaCreateRequest((unsigned char)cmd->spec->code,
-                                          result, data);
-            if (request == NULL)
-                message(LOG_ERROR, "Out of memory allocating request.\n");
-            else if (! iguanaWriteRequest(request, conn))
-                message(LOG_ERROR, "Failed to write request to server.\n");
-            else if (receiveResponse(conn, cmd, 10000))
-                retval = true;
-
-            /* release allocated data buffers (including data ptr) */
-            iguanaFreePacket(request);
-        }
+            retval = transaction(cmd, conn, result, data);
     }
 
     return retval;
@@ -697,6 +724,7 @@ static igtask* enqueueTaskById(unsigned short code, const char *arg)
 
 static struct argp_option options[] = {
     { NULL, 0, NULL, 0, "General options:", GEN_GROUP },
+    { "all-devices", 'a',            NULL,     0, "List all devices known to the daemon.",   GEN_GROUP },
     { "device",      'd',            "DEVICE", 0, "Specify the target device index or id.",  GEN_GROUP },
     { "interactive", 'i',            NULL,     0, "Use the client interactively.",           GEN_GROUP },
     { "sleep",       INTERNAL_SLEEP, "NUM",    0, "Sleep for NUM seconds.",                  GEN_GROUP },
@@ -707,6 +735,7 @@ static struct argp_option options[] = {
     { "get-features",    IG_DEV_GETFEATURES, NULL,       0, "Return the features associated w/ this device.",                DEV_GROUP },
     { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       DEV_GROUP },
     { "resend",          OFFSET_RESEND,      "DELAY",    0, "Resend the contents of the device buffer after DELAY seconds.", DEV_GROUP },
+    { "all-aliases",     OFFSET_LISTALIASES, NULL,       0, "List all the valid names for this device.",                     DEV_GROUP },
     { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  DEV_GROUP },
     { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        DEV_GROUP },
     { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       DEV_GROUP },
@@ -753,7 +782,6 @@ static struct argp_option options[] = {
 
 static error_t parseOption(int key, char *arg, struct argp_state *state)
 {
-    struct parameters *params = (struct parameters*)state->input;
     switch(key)
     {
     /* device commands */
@@ -785,7 +813,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case INTERNAL_SETSINKPINS:
     case INTERNAL_GETHOLDPINS:
     case INTERNAL_SETHOLDPINS:
-    case INTERNAL_SLEEP: /* TODO: need to confirm that the argument is a float or int */
+    case INTERNAL_SLEEP:
         enqueueTaskById((unsigned short)key, arg);
         break;
 
@@ -797,6 +825,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case OFFSET_GETLOCATION:
     case OFFSET_REPEATER:
     case OFFSET_SENDSIZE:
+    case OFFSET_LISTALIASES:
         enqueueTaskById((unsigned short)(key - ARGP_OFFSET), arg);
         break;
 
@@ -819,8 +848,12 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
 
     /* handling of the normal command arguments */
+    case 'a':
+        params.listDevs = true;
+        break;
+
     case 'd':
-        params->device = arg;
+        params.device = arg;
         break;
 
     case 'i':
@@ -846,7 +879,6 @@ static struct argp parser = {
 int main(int argc, char **argv)
 {
     PIPE_PTR conn = INVALID_PIPE;
-    struct parameters params;
     int retval = 1;
     igtask *junk;
     struct argp_child children[2];
@@ -856,9 +888,8 @@ int main(int argc, char **argv)
     children[0].argp = logArgParser();
     parser.children = children;
 
-    /* initialize the parameters structure and parse the cmd line args */
-    params.device = "0";
-    argp_parse(&parser, argc, argv, 0, NULL, &params);
+    /* parse the cmd line args */
+    argp_parse(&parser, argc, argv, 0, NULL, NULL);
 
     /* line buffer the output */
 #ifndef ANDROID
@@ -866,9 +897,44 @@ int main(int argc, char **argv)
     setlinebuf(stderr);
 #endif
 
-    /* connect first */
-    conn = iguanaConnect(params.device);
-    if (conn == INVALID_PIPE)
+    /* issue any ctl commands before connecting to devices */
+    bool ctlCommands = false;
+    if (params.listDevs)
+    {
+        ctlCommands = true;
+        conn = iguanaConnect("ctl");
+        if (conn == INVALID_PIPE)
+        {
+#ifdef WIN32
+            /* windows does not set errno correctly on failure */
+            errno = GetLastError();
+#endif
+            if (errno == 2)
+                message(LOG_ERROR, "Failed to connect to iguanaIR ctl interface: %s: is the daemon running?\n",
+                        translateError(errno));
+            else if (errno != 0)
+                message(LOG_ERROR, "Failed to connect to iguanaIR ctl interface: %s\n",
+                        translateError(errno));
+        }
+        else
+        {
+            igtask cmd;
+            memset(&cmd, 0, sizeof(igtask));
+            cmd.command = "all devices";
+            if (! checkTask(&cmd))
+                message(LOG_ERROR, "Unexpected error making 'all devices' task.\n");
+            else if (! transaction(&cmd, conn, 0, NULL))
+                message(LOG_ERROR, "Transaction failed during 'all devices' task: %s\n",
+                        translateError(errno));
+        }
+    }
+
+    if (! interactive && firstItem(&tasks) == NULL)
+    {
+        if (! ctlCommands)
+            message(LOG_ERROR, "No tasks specified.\n");
+    }
+    else if ((conn = iguanaConnect(params.device)) == INVALID_PIPE)
     {
 #ifdef WIN32
         /* windows does not set errno correctly on failure */
@@ -912,8 +978,6 @@ int main(int argc, char **argv)
                 enqueueTask(line, argument);
             } while(true);
         }
-        else if (firstItem(&tasks) == NULL)
-            message(LOG_ERROR, "No tasks specified.\n");
         else
             retval = performQueuedTasks(conn);
 

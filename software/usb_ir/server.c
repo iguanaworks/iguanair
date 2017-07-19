@@ -94,6 +94,14 @@ void initServerSettings()
     srvSettings.scanSeconds = 0;
     srvSettings.scanTimerThread = INVALID_THREAD_PTR;
 
+    /* thread that listens for ctl requests */
+    srvSettings.ctlSockThread = INVALID_THREAD_PTR;
+    initializeList(&srvSettings.ctlClients);
+
+    /* list of known devices */
+    InitializeCriticalSection(&srvSettings.devsLock);
+    initializeList(&srvSettings.devs);
+
     /* old flag to handle libusb pre 1.0 threading issues */
 #ifdef LIBUSB_NO_THREADS_OPTION
     srvSettings.noThreads = false;
@@ -185,6 +193,12 @@ static void* scanTrigger(void *junk)
     return NULL;
 }
 
+static void* ctlSockListener(void *junk)
+{
+    listenToClients(NULL, &srvSettings.ctlClients, NULL);
+    return NULL;
+}
+
 deviceList* initServer()
 {
     deviceList *list = NULL;
@@ -202,6 +216,10 @@ deviceList* initServer()
     /* start up a thread to trigger periodic rescans if requested */
     if (srvSettings.scanSeconds > 0 && ! startThread(&srvSettings.scanTimerThread, scanTrigger, NULL))
         message(LOG_ERROR, "failed to start a scanning timer.\n");
+    /* start listening on the control socket */
+    else if (! srvSettings.justDescribe &&
+             ! startThread(&srvSettings.ctlSockThread, ctlSockListener, NULL))
+        message(LOG_ERROR, "failed to start the listener.\n");
     /* initialize the commPipe, driver, and device list */
     else if (! createPipePair(srvSettings.commPipe))
     {
@@ -226,6 +244,76 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[0],   __FILE__, __LIN
 message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[1],   __FILE__, __LINE__);
 #endif
     return list;
+}
+
+char* aliasSummary(iguanaDev *idev)
+{
+    int len = 1;
+    char name[8], *buf;
+
+    sprintf(name, "%d", idev->usbDev->id);
+    len += 2 + strlen(name);
+    if (idev->locAlias != NULL)
+        len += 3 + strlen(idev->locAlias);
+    if (idev->userAlias != NULL)
+        len += 3 + strlen(idev->userAlias);
+
+    buf = (char*)malloc(len);
+    if (buf != NULL)
+    {
+        strcpy(buf, "i:");
+        strcat(buf, name);
+        if (idev->locAlias != NULL)
+        {
+            strcat(buf, ",l:");
+            strcat(buf, idev->locAlias);
+        }
+        if (idev->userAlias != NULL)
+        {
+            strcat(buf, ",u:");
+            strcat(buf, idev->userAlias);
+        }
+    }
+    return buf;
+}
+
+static bool summarize(itemHeader *item, void *userData)
+{
+    bool retval = false, first = false;
+    int len;
+    char *sum, **buf = (char**)userData;
+
+    sum = aliasSummary((iguanaDev*)item);
+    if (sum != NULL)
+    {
+        if (*buf == NULL)
+        {
+            first = true;
+            len = 1;
+        }
+        else
+            len = strlen(*buf) + 1;
+        len += strlen(sum) + 1;
+
+        *buf = (char*)realloc(*buf, len);
+        if (first)
+            strcpy(*buf, sum);
+        else
+        {
+            strcat(*buf, "|");
+            strcat(*buf, sum);
+        }
+        retval = true;
+    }
+
+    return retval;
+}
+
+char* deviceSummary()
+{
+    char *buf = NULL;
+    forEach(&srvSettings.devs, summarize, &buf);
+    return buf;
 }
 
 void cleanupServer()

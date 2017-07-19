@@ -36,13 +36,13 @@ typedef struct client
 } client;
 
 /* API implemented by the daemon/service code */
-void listenToClients(iguanaDev *idev);
+void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev);
 void setAlias(iguanaDev *idev, bool deleteAll, const char *alias);
 
 /* API used by the daemon/service code */
 void releaseClient(client *target);
 bool handleReader(iguanaDev *idev);
-void clientConnected(PIPE_PTR clientFd, iguanaDev *idev);
+void clientConnected(PIPE_PTR clientFd, listHeader *clientList, iguanaDev *idev);
 bool handleClient(client *me);
 
 /* the worker thread has to check the id at startup */
