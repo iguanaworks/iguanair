@@ -91,7 +91,7 @@ static bool mkdirs(char *path)
 static int startListening(const char *name)
 {
     int sockfd, attempt = 0;
-    struct sockaddr_un server;
+    struct sockaddr_un server = {0};
     bool retry = true;
 
     /* generate the server address */

@@ -41,7 +41,7 @@ void socketName(const char *name, char *buffer, unsigned int length)
 PIPE_PTR connectToPipe(const char *name)
 {
     PIPE_PTR retval = INVALID_PIPE;
-    struct sockaddr_un server;
+    struct sockaddr_un server = {0};
 
     /* generate the server address */
     server.sun_family = PF_UNIX;

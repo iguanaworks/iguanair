@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
+#include <string.h>
 
 #include <argp.h>
 #include "version.h"
