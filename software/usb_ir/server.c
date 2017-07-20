@@ -202,7 +202,7 @@ static void* ctlSockListener(void *junk)
     */
     /* because we do not have a way to poke this thread while it
        blocks waiting for clients we're allowing a leak of the
-       resources of this thread. */
+       resources of this thread including the ctlSock. */
     listenToClients(NULL, &srvSettings.ctlClients, NULL);
     return NULL;
 }

@@ -167,15 +167,11 @@ static void stopListening(int fd, const char *name)
     /* and nuke it */
     unlink(path);
     close(fd);
-#if DEBUG
-message(LOG_WARN, "CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
-#endif
 }
 
 static void workLoop()
 {
     deviceList *list;
-    int ctlSock = INVALID_PIPE;
 
     /* initialize the driver, signals, and device list */
     if ((list = initServer(&srvSettings)) == NULL)
@@ -249,9 +245,6 @@ static void workLoop()
 
             /* wait for all the workers to finish */
             reapAllChildren(list);
-
-            /* close up the server socket */
-            stopListening(ctlSock, NULL);
         }
 
         /* release any server-side resources on the way out */
@@ -516,6 +509,9 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         if (idev != NULL)
             setAlias(idev, true, NULL);
         stopListening(listener, name);
+#if DEBUG
+message(LOG_WARN, "CLOSE %d %s(%d)\n", listener, __FILE__, __LINE__);
+#endif
 
         /* and release any connected clients */
         while(clientList->count > 0)
