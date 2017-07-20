@@ -202,8 +202,9 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
             scanHandler(SIGHUP);
 
 #ifdef __APPLE__
-            /* Support hot plug in on Mac OS X -- TODO: returns non-zero for error */
-            darwin_hotplug(usbIds);
+            /* Support hot plug in on Mac OS X */
+            if (darwin_hotplug(usbIds) != 0)
+                message(LOG_ERROR, "Failed to enable hotplug\n");
 #endif
 
             /* loop, waiting for commands */
@@ -211,16 +212,6 @@ printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
             {
                 THREAD_PTR thread = INVALID_THREAD_PTR;
                 void *exitVal;
-
-                /* TODO: not doing anything w ctlSock now, but need to accept a cmd:
-                            - list - show what clients exist like: 0:1.2:fred
-                         and send notices to clients when clients connect and disconnect:
-                            - print something like: C:0, D:0?
-                 */
-
-                /* wait for a new ctl connection, a command from an
-                   existing ctl connection, or a message from an exiting
-                   child thread. */
 
                 /* read a command and check for error */
                 if (readPipe(srvSettings.commPipe[READ], &thread,
@@ -445,7 +436,6 @@ int main(int argc, char **argv)
     return retval;
 }
 
-// TODO: recvTimeout can be pulled from the srvSettings
 void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 {
     PIPE_PTR listener;

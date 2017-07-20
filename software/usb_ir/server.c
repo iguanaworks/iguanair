@@ -195,6 +195,9 @@ static void* scanTrigger(void *junk)
 
 static void* ctlSockListener(void *junk)
 {
+    /* TODO: and send notices to clients when clients connect and disconnect:
+       - print something like: C:0, D:0?
+    */
     listenToClients(NULL, &srvSettings.ctlClients, NULL);
     return NULL;
 }

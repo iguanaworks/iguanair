@@ -31,7 +31,7 @@ IGUANAIR_API const char* iguanaListDevices()
     DIR_HANDLE dir = NULL;
     char buffer[PATH_MAX], *retval;
     int count = 1;
-
+//TODO: connect to ctl and query
     strcpy(buffer, IGSOCK_NAME);
     while((dir = findNextFile(dir, buffer)) != NULL)
         if (strcmp(buffer, "ctl") != 0)

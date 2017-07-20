@@ -297,7 +297,7 @@ static void computeCarrierDelays(uint32_t carrier, unsigned char *delays,
     */
     cycles -= loopCycles;
 
-    /* TODO: this next line is too magical */
+    /* this next line is too magical, but works */
     sevens = (4 - (cycles % 4)) % 4;
     fours = (unsigned char)((cycles - sevens * 7) / 4);
 
@@ -400,14 +400,6 @@ bool checkVersion(iguanaDev *idev)
 {
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
     bool retval = false, getVersion = false;
-
-    /* TODO: Seems necessary, but means that we lose the interface.....
-#ifdef WIN32
-    request.code = IG_DEV_RESET;
-    if (! deviceTransaction(idev, &request, &response))
-        message(LOG_ERROR, "Failed to to do a soft reset.\n");
-#endif
-        */
 
     request.code = IG_DEV_GETVERSION;
     /* Due to a firmware mistake related to repeater mode loader
@@ -982,7 +974,7 @@ void handleIncomingPackets(iguanaDev *idev)
 
                         message(LOG_DEBUG2,
                                 "Data without ctl header assuming IG_DEV_RECV.\n");
-/* TODO: DEBUG: sleep here to test overflow on the device
+/* DEBUG: sleep here to test overflow on the device
                         sleep(3);
 */
                     }

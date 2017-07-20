@@ -196,7 +196,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
             request->dataLen = 1;
             retval = true;
         }
-        /* TODO: an else would be nice to handle failure! */
+        else
+            message(LOG_ERROR, "checkFeatures failed: %s\n", translateError(errno));
         break;
 
     case IG_DEV_RECVON:
