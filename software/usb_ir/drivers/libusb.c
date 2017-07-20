@@ -48,6 +48,9 @@ typedef struct usbDevice
     /* read and write endpoints (set by higher layer) */
     const struct libusb_endpoint_descriptor *epIn, *epOut;
 
+    /* need to hang onto this for the life of epIn/epOut */
+    struct libusb_config_descriptor *cdesc;
+
     /* usbclient and libusb errors */
     char *error, *usbError;
 
@@ -252,6 +255,7 @@ static void releaseDevice(deviceInfo *info)
         retval = libusb_release_interface(handle->device, 0);
         if (retval < 0)
             setError(handle, "Failed to release interface", retval);
+        libusb_free_config_descriptor(handle->cdesc);
         libusb_close(handle->device);
         handle->device = NULL;
 
@@ -461,10 +465,7 @@ static bool initializeDriver()
 
 static void cleanupDriver()
 {
-    /* We should be calling libusb_exit but that introduces crashes. */
-#if 0
     libusb_exit(NULL);
-#endif
 }
 
 static bool updateDeviceList(deviceList *devList)
@@ -594,23 +595,22 @@ static bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize)
 {
     usbDevice *handle = handleFromInfoPtr(info);
     struct libusb_device *dev;
-    struct libusb_config_descriptor *cdesc;
     const struct libusb_interface_descriptor *idesc;
 
     dev = libusb_get_device(handle->device);
-    libusb_get_config_descriptor(dev, 0, &cdesc);
+    libusb_get_config_descriptor(dev, 0, &handle->cdesc);
 
     /* sanity checks that we're looking at an acceptable device */
     if (/*dev->descriptor.bNumConfigurations != 1 || TODO: ?*/
-        cdesc->bNumInterfaces != 1 ||
-        cdesc->interface[0].num_altsetting != 1)
+        handle->cdesc->bNumInterfaces != 1 ||
+        handle->cdesc->interface[0].num_altsetting != 1)
         return false;
 
-    idesc = &cdesc->interface[0].altsetting[0];
+    idesc = &handle->cdesc->interface[0].altsetting[0];
     if (idesc->bNumEndpoints != 2)
         return false;
 
-    /* grab the pointers */
+    /* grab the pointers, so now we cannot free the cdesc */
     handle->epIn = &idesc->endpoint[0];
     handle->epOut = &idesc->endpoint[1];
 
