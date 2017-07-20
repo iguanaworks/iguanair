@@ -805,7 +805,7 @@ bool reapAllChildren(deviceList *list)
         }
         /* discard the scan/quit/etc. command and read again */
         else
-            readPipe(srvSettings.commPipe[READ], &child, sizeof(THREAD_PTR));
+            result = readPipe(srvSettings.commPipe[READ], &child, sizeof(THREAD_PTR));
     }
     releaseDevices(list);
 
