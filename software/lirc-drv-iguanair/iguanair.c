@@ -326,23 +326,107 @@ static int iguana_send(struct ir_remote* remote, struct ir_ncode* code)
     return retval;
 }
 
-static int iguana_ioctl(unsigned int code, void* arg)
-{
-    int retcode = -1;
-    uint8_t channels = *(uint8_t*)arg;
+#if VERSION_NODOTS >= 1000
 
-    /* set the transmit channels: return 0 on success, 4 if
-     * out-of-range (see ioctl) */
-    if (code == LIRC_SET_TRANSMITTER_MASK)
+static int list_devices(glob_t* glob)
+{
+    const char *devList, *pos;
+    glob_t devices;
+    glob_t_init(devices);
+
+    pos = devList = iguanaListDevices();
+    if (devList != NULL)
     {
-        if (channels > 0x0F)
-            retcode = 4;
-        else if (daemonTransaction(IG_DEV_SETCHANNELS, &channels, sizeof(channels)))
-            retcode = 0;
+        char *start, idx[8], type;
+        while(pos[0] != '\0')
+        {
+            type = *pos;
+            pos += 2;
+
+            start = pos;
+            while(true)
+            {
+                // TODO: technically the user alias could be 12 bytes of UTF-8
+                if (*pos == '\0' || *pos == '|' ||
+                    ((type == 'i' || type == 'l') && *pos == ','))
+                    break;
+                pos++;
+            }
+
+            if (pos != start)
+            {
+                char s = (char*)malloc(60);
+                strncpy(s, start, pos - start);
+                s[pos - start] = '\0';
+                if (type == 'i')
+                    strcpy(idx, s);
+
+                /* First word is the device path, the rest optional
+                   free-format info on device usable in a UI. */
+                switch(type)
+                {
+                case 'i':
+                    strcat(s, " IguanaWorks USB Infrared device");
+                    break;
+
+                case 'l':
+                    strcat(s, " Hardware location based alias for device ");
+                    strcat(s, idx);
+                    break;
+
+                case 'u':
+                    strcat(s, " User specified alias for device ");
+                    strcat(s, idx);
+                    break;
+                }
+                glob_t_add_path(devices, s);
+            }
+
+            if (*pos != '\0')
+                pos++;
+        }
+        free(devList);
     }
 
-    return retcode;
+    return devices;
 }
+
+#endif
+
+
+/*
+ * Set the transmit channel(s) bitmask:.
+ * Return 0 on success, 4  out-of-range, -1 on other errors. See
+ * LIRC_SET_TRANSMITTER in lirc(4)
+ */
+static int set_transmitters(uint8_t channels)
+{
+       if (channels > 0x0F)
+               return DRV_ERR_BAD_VALUE;
+       if (daemonTransaction(IG_DEV_SETCHANNELS, &channels, sizeof(channels)))
+               return 0;
+       return -1;
+       // FIXME: Should return DRV_ERR_BAD_VALUE, DRV_ERR_INTERNAL, DRV_ERR_BAD_STATE?
+}
+
+
+static int drvctl_func(unsigned int cmd, void* arg)
+{
+    switch (cmd) {
+#if VERSION_NODOTS >= 1000
+    case DRVCTL_GET_DEVICES:
+        return list_devices((glob_t*) arg);
+    case DRVCTL_FREE_DEVICES:
+        drv_enum_free((glob_t*) arg);
+        return 0;
+#endif
+    case LIRC_SET_TRANSMITTER_MASK:
+        return set_transmitters(*(uint8_t*) arg);
+    default:
+        return DRV_ERR_NOT_IMPLEMENTED;
+    }
+}
+
 
 static lirc_t readdata(lirc_t timeout)
 {
@@ -358,7 +442,7 @@ static lirc_t readdata(lirc_t timeout)
     return code;
 }
 
-const struct driver hw_iguanaIR = {
+static const struct driver hw_iguanaIR = {
     .name           = "iguanair",
     .device         = "0",
     .features       = LIRC_CAN_REC_MODE2 |
@@ -375,12 +459,12 @@ const struct driver hw_iguanaIR = {
     .send_func      = iguana_send,
     .rec_func       = iguana_rec,
     .decode_func    = receive_decode,
-    .drvctl_func    = iguana_ioctl,
+    .drvctl_func    = drvctl_func,
     .readdata       = readdata,
     .api_version    = 3,
     .driver_version = "0.9.3",
     .info           = "See file://" PLUGINDOCS "/iguanair.html",
-    .device_hint    = "/var/run/iguanaIR/*",
+    .device_hint    = "drvctl"
 };
 
 const struct driver* hardwares[] = {
