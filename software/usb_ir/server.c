@@ -187,6 +187,8 @@ static void* scanTrigger(void *junk)
 {
     while(true)
     {
+        /* because we do not want to loop faster than requested we're
+           allowing a leak of the resources of this thread. */
         Sleep(srvSettings.scanSeconds * 1000);
         triggerCommand((THREAD_PTR)SCAN_TRIGGER);
     }
@@ -198,6 +200,9 @@ static void* ctlSockListener(void *junk)
     /* TODO: and send notices to clients when clients connect and disconnect:
        - print something like: C:0, D:0?
     */
+    /* because we do not have a way to poke this thread while it
+       blocks waiting for clients we're allowing a leak of the
+       resources of this thread. */
     listenToClients(NULL, &srvSettings.ctlClients, NULL);
     return NULL;
 }
