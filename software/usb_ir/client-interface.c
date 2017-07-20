@@ -338,6 +338,8 @@ static bool handleClientRequest(dataPacket *request, client *target)
     if (retval)
         message(LOG_INFO,
                 "Request handled within daemon: 0x%x\n", request->code);
+    else if (target->idev == NULL)
+        message(LOG_ERROR, "Unknown request from ctl interface.\n");
     else if (! deviceTransaction(target->idev, request, &response))
     {
         if (request->code == IG_DEV_RESET)
@@ -423,11 +425,11 @@ bool handleClient(client *me)
     {
         if (! handleClientRequest(&request, me))
         {
-            request.code = IG_DEV_ERROR;
-            request.dataLen = -errno;
             message(LOG_ERROR,
                     "handleClientRequest(0x%2.2x) failed with: %d (%s)\n",
                     request.code, errno, translateError(errno));
+            request.code = IG_DEV_ERROR;
+            request.dataLen = -errno;
         }
 
         if (! writeDataPacket(&request, me->fd))
