@@ -2,13 +2,14 @@
 get_filename_component(_Platform_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
 # TODO: so far nothing is FreeBSD/Darwin specific so we use Linux (should rename as Unix?)
-If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" OR
-   "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD" OR
-   "${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+If("${CMAKE_SYSTEM_NAME}" MATCHES "Linux"   OR   # most Linux
+   "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD" OR   # FreeBSD
+   "${CMAKE_SYSTEM_NAME}" MATCHES "Darwin"  OR   # OS X
+   "${CMAKE_SYSTEM_NAME}" MATCHES "GNU")         # Debian Hurd
   include(${_Platform_LIST_DIR}/Linux.txt)
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Windows") # all Windows
   include(${_Platform_LIST_DIR}/Windows.txt)
-ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Generic")
+ElseIf("${CMAKE_SYSTEM_NAME}" MATCHES "Generic") # TODO: unsure
 Else()
   message(FATAL_ERROR "Unhandled platform: ${CMAKE_PLATFORM} on ${CMAKE_SYSTEM}")
 EndIf()
