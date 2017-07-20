@@ -23,33 +23,50 @@
 #include "support.h"
 #include "dataPackets.h"
 
-IGUANAIR_API const char* iguanaListDevices()
-{
-#ifdef WIN32
-    return strdup("");
-#else
-    DIR_HANDLE dir = NULL;
-    char buffer[PATH_MAX], *retval;
-    int count = 1;
-//TODO: connect to ctl and query
-    strcpy(buffer, IGSOCK_NAME);
-    while((dir = findNextFile(dir, buffer)) != NULL)
-        if (strcmp(buffer, "ctl") != 0)
-            count += strlen(buffer) + 1;
+IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
 
-    retval = malloc(count);
-    retval[0] = '\0';
-    strcpy(buffer, IGSOCK_NAME);
-    while((dir = findNextFile(dir, buffer)) != NULL)
-        if (strcmp(buffer, "ctl") != 0)
+static bool transaction(PIPE_PTR conn, dataPacket *request, dataPacket **respOut)
+{
+    bool retval = false;
+
+    /* check versions of the client and server */
+    if (request &&
+        iguanaWriteRequest(request, conn))
+    {
+        dataPacket *response = iguanaReadResponse(conn, 10000);
+        if (iguanaResponseIsError(response))
+            freeDataPacket(response);
+        else
         {
-            if (retval[0] != '\0')
-                strcat(retval, ";");
-            strcat(retval, buffer);
+            if (respOut != NULL)
+                *respOut = response;
+            else
+                freeDataPacket(response);
+            retval = true;
         }
+    }
 
     return retval;
-#endif
+}
+
+IGUANAIR_API const char* iguanaListDevices()
+{
+    char *retval = NULL;
+    PIPE_PTR conn = iguanaConnect_internal("ctl", IG_PROTOCOL_VERSION, true);
+    if (conn != INVALID_PIPE)
+    {
+        dataPacket *response,
+            *request = iguanaCreateRequest(IG_CTL_LISTDEVS, 0, NULL);
+        if (transaction(conn, request, &response))
+        {
+            if (response->data != NULL)
+                retval = strdup((char*)response->data);
+            freeDataPacket(response);
+        }
+        freeDataPacket(request);
+    }
+
+    return retval;
 }
 
 IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion)
@@ -57,41 +74,44 @@ IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int prot
     PIPE_PTR conn = INVALID_PIPE;
 
     if (protocol != IG_PROTOCOL_VERSION)
-        message(LOG_ERROR, "Client application was not built against a protocol-compatible library (%d != %d).  Aborting connect iguanaConnect.\n", protocol, IG_PROTOCOL_VERSION);
+        message(LOG_ERROR, "Client application was not built against a protocol-compatible library (%d != %d).  Aborting connect.\n", protocol, IG_PROTOCOL_VERSION);
     else
     {
-        conn = connectToPipe(name);
+        const char *target = name;
+        if (target == NULL)
+            target = "0";
+
+        conn = connectToPipe(target);
         if (conn == INVALID_PIPE)
         {
-            if (name != NULL &&
-                strncmp(name, "/dev/iguanaIR/", 14) == 0)
+            if (name == NULL)
+            {
+                /* since we failed to connect to the default device
+                   check in with the daemon about getting a different
+                   device name */
+                char name[8] = {0};
+                const char *text = iguanaListDevices();
+                strncpy(name, text + 2, strchr(text, ',') - (text + 2));
+                conn = iguanaConnect_internal(name, protocol, true);
+            }
+            else if (strncmp(name, "/dev/iguanaIR/", 14) == 0)
             {
                 char buffer[PATH_MAX] = "/var/run/iguanaIR/";
                 strcat(buffer, name + 14);
                 message(LOG_WARN, "Client application failed to connect to a socket in /dev.  The proper location is now in /var/run.  Please update your paths accordingly.  Re-trying with corrected path: %s\n", buffer);
-                return iguanaConnect_real(buffer, protocol);
+                return iguanaConnect_internal(buffer, protocol, true);
             }
         }
         else if (checkVersion)
         {
             uint16_t clientVersion = IG_PROTOCOL_VERSION;
-            dataPacket *request;
-
-            /* check versions of the client and server */
-            request = iguanaCreateRequest(IG_EXCH_VERSIONS, 2, &clientVersion);
-            if (request &&
-                iguanaWriteRequest(request, conn))
+            dataPacket *request = iguanaCreateRequest(IG_EXCH_VERSIONS, 2, &clientVersion);
+            if (! transaction(conn, request, NULL))
             {
-                dataPacket *response;
-                response = iguanaReadResponse(conn, 10000);
-                if (iguanaResponseIsError(response))
-                {
-                    message(LOG_ERROR, "Server did not understand version request, aborting.  Is the igdaemon is up to date?\n");
-                    iguanaClose(conn);
-                    errno = 0;
-                    conn = INVALID_PIPE;
-                }
-                freeDataPacket(response);
+                message(LOG_ERROR, "Server did not understand version request, aborting.  Is the igdaemon is up to date?\n");
+                iguanaClose(conn);
+                errno = 0;
+                conn = INVALID_PIPE;
             }
             request->data = NULL;
             freeDataPacket(request);

@@ -76,7 +76,7 @@ struct parameters
     const char *device;
     bool listDevs;
 } params = {
-    "0",
+    NULL,
     false
 };
 
