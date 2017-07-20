@@ -51,9 +51,6 @@ struct parameters
 
 static void quitHandler(int UNUSED(sig))
 {
-#if DEBUG
-printf("CLOSE %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
-#endif
     triggerCommand((THREAD_PTR)QUIT_TRIGGER);
 }
 
@@ -107,6 +104,10 @@ static int startListening(const char *name)
         attempt++;
 
         sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
+#if DEBUG
+message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
+#endif
+
         if (sockfd == -1)
             message(LOG_ERROR, "failed to create server socket.\n");
         else if (bind(sockfd, (struct sockaddr*)&server,
@@ -147,10 +148,10 @@ static int startListening(const char *name)
                     "failed to set permissions on the server socket.\n");
         else
             return sockfd;
+        close(sockfd);
 #if DEBUG
 printf("CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
 #endif
-        close(sockfd);
     }
 
     return INVALID_PIPE;
@@ -165,10 +166,10 @@ static void stopListening(int fd, const char *name)
 
     /* and nuke it */
     unlink(path);
-#if DEBUG
-printf("CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
-#endif
     close(fd);
+#if DEBUG
+message(LOG_WARN, "CLOSE %d %s(%d)\n", fd, __FILE__, __LINE__);
+#endif
 }
 
 static void workLoop()
@@ -192,11 +193,6 @@ static void workLoop()
         else
         {
             bool quit = false;
-
-#if DEBUG
-printf("OPEN %d %s(%d)\n", srvSettings.commPipe[0], __FILE__, __LINE__);
-printf("OPEN %d %s(%d)\n", srvSettings.commPipe[1], __FILE__, __LINE__);
-#endif
 
             /* trigger the initial device scan */
             scanHandler(SIGHUP);

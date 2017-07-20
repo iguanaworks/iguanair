@@ -732,10 +732,10 @@ void startWorker(deviceInfo *info)
         else
         {
 #if DEBUG
-message(LOG_WARN, "OPEN %d %s(%d)\n", idev->readerPipe[0],   __FILE__, __LINE__);
-message(LOG_WARN, "OPEN %d %s(%d)\n", idev->readerPipe[1],   __FILE__, __LINE__);
-message(LOG_WARN, "OPEN %d %s(%d)\n", idev->responsePipe[0], __FILE__, __LINE__);
-message(LOG_WARN, "OPEN %d %s(%d)\n", idev->responsePipe[1], __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->readerPipe[READ],    __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->readerPipe[WRITE],   __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->responsePipe[READ],  __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", idev->responsePipe[WRITE], __FILE__, __LINE__);
 #endif
 
             /* this must be set before the call to findDeviceEndpoints */

@@ -248,8 +248,8 @@ deviceList* initServer()
         claimDevices(list, ! srvSettings.justDescribe, srvSettings.unbind);
 
 #if DEBUG
-message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[0],   __FILE__, __LINE__);
-message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[1],   __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[READ],  __FILE__, __LINE__);
+message(LOG_WARN, "OPEN %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
 #endif
     return list;
 }
@@ -327,6 +327,12 @@ char* deviceSummary()
 void cleanupServer()
 {
     cleanupDriver();
+    closePipe(srvSettings.commPipe[READ]);
+    closePipe(srvSettings.commPipe[WRITE]);
+#if DEBUG
+message(LOG_WARN, "CLOSE %d %s(%d)\n", srvSettings.commPipe[READ],  __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
+#endif
 }
 
 void makeParentJoin(THREAD_PTR thread)
