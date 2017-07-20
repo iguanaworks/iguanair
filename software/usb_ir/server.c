@@ -187,23 +187,21 @@ static void* scanTrigger(void *junk)
 {
     while(true)
     {
-        /* because we do not want to loop faster than requested we're
-           allowing a leak of the resources of this thread. */
-        Sleep(srvSettings.scanSeconds * 1000);
-        triggerCommand((THREAD_PTR)SCAN_TRIGGER);
+        if (readPipeTimed(srvSettings.scanTimerPipe[READ],
+                          (char*)&junk, 1, srvSettings.scanSeconds * 1000) == 0)
+            triggerCommand((THREAD_PTR)SCAN_TRIGGER);
+        else
+            break;
     }
     return NULL;
 }
 
 static void* ctlSockListener(void *junk)
 {
-    /* TODO: and send notices to clients when clients connect and disconnect:
+    /* TODO: send notices to clients when clients connect and disconnect:
        - print something like: C:0, D:0?
     */
-    /* because we do not have a way to poke this thread while it
-       blocks waiting for clients we're allowing a leak of the
-       resources of this thread including the ctlSock. */
-    listenToClients(NULL, &srvSettings.ctlClients, NULL);
+    listenToClients("ctl", &srvSettings.ctlClients, NULL);
     return NULL;
 }
 
@@ -221,9 +219,15 @@ deviceList* initServer()
     message(LOG_DEBUG,
             "  sendTimeout: %d\n", srvSettings.devSettings.sendTimeout);
 
+    /* prepare the pipe for shutting down any scan thread */
+    if (! createPipePair(srvSettings.scanTimerPipe))
+        message(LOG_ERROR, "failed to create the scan timer pipe pair\n");
     /* start up a thread to trigger periodic rescans if requested */
     if (srvSettings.scanSeconds > 0 && ! startThread(&srvSettings.scanTimerThread, scanTrigger, NULL))
         message(LOG_ERROR, "failed to start a scanning timer.\n");
+    /* prepare the pipe for shutting down the ctl listener */
+    else if (! createPipePair(srvSettings.ctlSockPipe))
+        message(LOG_ERROR, "failed to create the ctl pipe pair\n");
     /* start listening on the control socket */
     else if (! srvSettings.justDescribe &&
              ! startThread(&srvSettings.ctlSockThread, ctlSockListener, NULL))
@@ -327,12 +331,21 @@ char* deviceSummary()
 void cleanupServer()
 {
     cleanupDriver();
-    closePipe(srvSettings.commPipe[READ]);
     closePipe(srvSettings.commPipe[WRITE]);
+    closePipe(srvSettings.commPipe[READ]);
 #if DEBUG
-message(LOG_WARN, "CLOSE %d %s(%d)\n", srvSettings.commPipe[READ],  __FILE__, __LINE__);
 message(LOG_WARN, "CLOSE %d %s(%d)\n", srvSettings.commPipe[WRITE], __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", srvSettings.commPipe[READ],  __FILE__, __LINE__);
 #endif
+
+    /* shut down the ctl listener */
+    closePipe(srvSettings.ctlSockPipe[WRITE]);
+    joinThread(srvSettings.ctlSockThread, NULL);
+
+    /* shut down any scan timer */
+    closePipe(srvSettings.scanTimerPipe[WRITE]);
+    if (srvSettings.scanSeconds > 0)
+        joinThread(srvSettings.scanTimerThread, NULL);
 }
 
 void makeParentJoin(THREAD_PTR thread)

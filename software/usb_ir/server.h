@@ -64,10 +64,12 @@ typedef struct
     /* should the server scan the usb bus periodically? */
     int scanSeconds;
     THREAD_PTR scanTimerThread;
+    PIPE_PTR scanTimerPipe[2];
 
     /* thread that listens for ctl requests */
     THREAD_PTR ctlSockThread;
     listHeader ctlClients;
+    PIPE_PTR ctlSockPipe[2];
 
     /* a locked list of known devices */
     LOCK_PTR devsLock;

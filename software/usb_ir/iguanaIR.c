@@ -91,8 +91,13 @@ IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int prot
                    device name */
                 char name[8] = {0};
                 const char *text = iguanaListDevices();
-                strncpy(name, text + 2, strchr(text, ',') - (text + 2));
-                conn = iguanaConnect_internal(name, protocol, true);
+                if (text != NULL)
+                {
+                    strncpy(name, text + 2, strchr(text, ',') - (text + 2));
+                    conn = iguanaConnect_internal(name, protocol, true);
+                }
+                else
+                    errno = ENOENT;
             }
             else if (strncmp(name, "/dev/iguanaIR/", 14) == 0)
             {

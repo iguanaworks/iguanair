@@ -150,7 +150,7 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
             return sockfd;
         close(sockfd);
 #if DEBUG
-printf("CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
+message(LOG_WARN, "CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
 #endif
     }
 
@@ -446,24 +446,28 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         FD_ZERO(&fdserr);
         while(true)
         {
+            PIPE_PTR reader;
             client *john;
             int max = 0;
             FD_ZERO(&fds);
 
-            /* if we're listening to a device pipe then check the reader */
-            if (idev != NULL)
-            {
-                /* check the read pipe for error */
-                if (FD_ISSET(idev->readerPipe[READ], &fdserr))
-                    break;
+            /* the reader is either feedback from a device or a way to
+               cleanly shutdown */
+            if (idev == NULL)
+                reader = srvSettings.ctlSockPipe[READ];
+            else
+                reader = idev->readerPipe[READ];
 
-                /* take care of messages from the reader */
-                if (FD_ISSET(idev->readerPipe[READ], &fdsin) &&
-                    ! handleReader(idev))
-                    break;
-                FD_SET(idev->readerPipe[READ], &fds);
-                max = idev->readerPipe[READ];
-            }
+            /* check the read pipe for error */
+            if (FD_ISSET(reader, &fdserr))
+                break;
+
+            /* take care of messages from the reader */
+            if (FD_ISSET(reader, &fdsin) &&
+                (idev == NULL || ! handleReader(idev)))
+                break;
+            FD_SET(reader, &fds);
+            max = reader;
 
             /* check the listener for error */
             if (FD_ISSET(listener, &fdserr))
