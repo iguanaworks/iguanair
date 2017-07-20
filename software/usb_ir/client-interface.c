@@ -801,7 +801,7 @@ bool reapAllChildren(deviceList *list)
         {
             joinThread(child, &exitVal);
             x--;
-            message(LOG_DEBUG, "Reaped child: %p\n", child);
+            message(LOG_DEBUG, "Reaped worker: %p\n", child);
         }
         /* discard the scan/quit/etc. command and read again */
         else
