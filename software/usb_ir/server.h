@@ -13,10 +13,11 @@
 
 #pragma once
 
-/* possible commands that can be triggered by signals */
+/* start possible commands that can be triggered by signals at an
+   arbitrary but recognizable value */
 enum
 {
-    SCAN_TRIGGER,
+    SCAN_TRIGGER = 0x55,
     QUIT_TRIGGER
 };
 void triggerCommand(THREAD_PTR cmd);
