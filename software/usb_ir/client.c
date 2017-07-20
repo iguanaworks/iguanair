@@ -853,7 +853,10 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
 
     case 'd':
-        params.device = arg;
+        if (strlen(arg) == 0)
+            params.device = NULL;
+        else
+            params.device = arg;
         break;
 
     case 'i':
