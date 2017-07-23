@@ -25,7 +25,8 @@ void joinThread(THREAD_PTR *handle, void **exitVal)
 {
     /* wait for the thread to exit */
     WaitForSingleObject(handle, INFINITE);
-    GetExitCodeThread(handle, (DWORD*)exitVal);
+    if (exitVal != NULL)
+        GetExitCodeThread(handle, (DWORD*)exitVal);
     CloseHandle(handle);
 }
 

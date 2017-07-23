@@ -655,7 +655,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         /* handle the reader thread sending us things, and on failure quit */
         if (WaitForSingleObject(handles[0], 0) == WAIT_OBJECT_0)
         {
-            if (! handleReader(idev))
+            if (idev == NULL || ! handleReader(idev))
                 break;
 
             /* Prepare for the next pass */
@@ -721,8 +721,8 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         if (listeners[id][x] != NULL)
 		{
 			// crashes without the disconnect call here
-			DisconnectNamedPipe(listeners[idev->usbDev->id][x]);
-            CloseHandle(listeners[idev->usbDev->id][x]);
+			DisconnectNamedPipe(listeners[id][x]);
+            CloseHandle(listeners[id][x]);
 			listeners[id][x] = NULL;
 		}
     LeaveCriticalSection(&aliasLock);
