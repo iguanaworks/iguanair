@@ -35,10 +35,10 @@
 /* iguana local variables */
 static deviceList *list;
 
-/* we keep a global list of aliases and  */
+/* we keep a global list of aliases and listeners */
 #define MAX_DEVICES 64
 char aliases[MAX_DEVICES][MAX_PATH] = {{'\0'}};
-HANDLE listeners[MAX_DEVICES][2] = {{NULL, NULL}};
+HANDLE listeners[MAX_DEVICES + 1][2] = {{NULL, NULL}};
 CRITICAL_SECTION aliasLock;
 
 /* guids for registering for device notifications */
@@ -501,16 +501,22 @@ static void startOverlappedAction(PIPE_PTR fd, OVERLAPPED *over, bool connect)
 }
 
 /* listen to clients connecting to either name or alias, and the idev->reader */
-void listenToClients(iguanaDev *idev)
+void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 {
     HANDLE *handles = NULL;
     OVERLAPPED over[3];
-    int x;
+    int x, id;
     client *john;
     bool firstPass = true;
 
+    if (idev == NULL)
+        id = MAX_DEVICES;
     /* get any intial ID from the device */
-    getID(idev);
+    else
+    {
+        getID(idev);
+        id = idev->usbDev->id;
+    }
 
     /* clear the overlapped structures */
     memset(over, 0, sizeof(OVERLAPPED) * 3);
@@ -519,10 +525,13 @@ void listenToClients(iguanaDev *idev)
         int count = 1;
 
         /* allocate the handles and overlap objects that I need to populate */
-        handles = (HANDLE*)realloc(handles, sizeof(HANDLE) * (1 + 2 + idev->clientList.count));
+        handles = (HANDLE*)realloc(handles, sizeof(HANDLE) * (1 + 2 + clientList->count));
         if (firstPass)
 		{
-            startOverlappedAction(idev->readerPipe[READ], over + 0, false);
+            if (idev == NULL)
+                startOverlappedAction(srvSettings.ctlSockPipe[READ], over + 0, false);
+            else
+                startOverlappedAction(idev->readerPipe[READ], over + 0, false);
             handles[0] = over[0].hEvent;
 		}
 
@@ -530,14 +539,14 @@ void listenToClients(iguanaDev *idev)
         for(x = 0; x < 2; x++)
         {
             /* handle the case there there is no alias */
-            if (x == 1 && aliases[idev->usbDev->id][0] == '\0')
+            if (x == 1 && aliases[id][0] == '\0')
             {
                 handles[x + 1] = NULL;
                 break;
             }
 
             EnterCriticalSection(&aliasLock);
-            if (firstPass || listeners[idev->usbDev->id][x] == NULL)
+            if (firstPass || listeners[id][x] == NULL)
             {
                 char path[PATH_MAX], name[4];
                 PSID pEveryoneSID = NULL, pAdminSID = NULL;
@@ -612,26 +621,29 @@ void listenToClients(iguanaDev *idev)
                 sa.bInheritHandle = FALSE;
 
                 /* prepare the name/path variables */
-                switch(x)
-                {
-                default:
-                case 0:
-                    sprintf(name, "%d", idev->usbDev->id);
-                    socketName(name, path, PATH_MAX);
-                    break;
+                if (idev == NULL)
+                    socketName("ctl", path, PATH_MAX);
+                else
+                    switch(x)
+                    {
+                    default:
+                    case 0:
+                        sprintf(name, "%d", idev->usbDev->id);
+                        socketName(name, path, PATH_MAX);
+                        break;
 
-                case 1:
-                    socketName(aliases[idev->usbDev->id], path, PATH_MAX);
-                    break;
-                }
+                    case 1:
+                        socketName(aliases[idev->usbDev->id], path, PATH_MAX);
+                        break;
+                    }
 
-                // Use the security attributes to set the security descriptor
-                listeners[idev->usbDev->id][x] = CreateNamedPipe(path,
-                                                       PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
-                                                       PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-                                                       PIPE_UNLIMITED_INSTANCES,
-                                                       64, 64, NMPWAIT_USE_DEFAULT_WAIT, &sa);
-                startOverlappedAction(listeners[idev->usbDev->id][x], over + x + 1, true);
+                /* Use the security attributes to set the security descriptor */
+                listeners[id][x] = CreateNamedPipe(path,
+                                                   PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+                                                   PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                                                   PIPE_UNLIMITED_INSTANCES,
+                                                   64, 64, NMPWAIT_USE_DEFAULT_WAIT, &sa);
+                startOverlappedAction(listeners[id][x], over + x + 1, true);
                 handles[x + 1] = over[x + 1].hEvent;
 
             Cleanup:
@@ -651,7 +663,7 @@ void listenToClients(iguanaDev *idev)
         }
 
         /* list the current clients last */
-        for(john = (client*)idev->clientList.head; john != NULL; john = (client*)john->header.next)
+        for(john = (client*)clientList->head; john != NULL; john = (client*)john->header.next)
         {
 			/* check if an existing overlapped action is still running */
 			bool pending = false;
@@ -695,23 +707,23 @@ void listenToClients(iguanaDev *idev)
         for(x = 0; x < 2; x++)
         {
             /* handle the case there there is no alias */
-            if (x == 1 && aliases[idev->usbDev->id][0] == '\0')
+            if (x == 1 && aliases[id][0] == '\0')
                 break;
 
             if (WaitForSingleObject(handles[x + 1], 0) == WAIT_OBJECT_0)
             {
-                clientConnected(listeners[idev->usbDev->id][x], idev);
+                clientConnected(listeners[id][x], clientList, idev);
 
                 /* create a new pipe instance on the next pass */
                 CloseHandle(over[x + 1].hEvent);
                 over[x + 1].hEvent = NULL;
-                listeners[idev->usbDev->id][x] = NULL;
+                listeners[id][x] = NULL;
             }
         }
         LeaveCriticalSection(&aliasLock);
 
         /* last, handle existing clients */
-        for(john = (client*)idev->clientList.head; john != NULL;)
+        for(john = (client*)clientList->head; john != NULL;)
         {
             HANDLE event;
             client *next;
@@ -735,9 +747,9 @@ void listenToClients(iguanaDev *idev)
     free(handles);
 
     /* and release any connected clients */
-    while(idev->clientList.count > 0)
+    while(clientList->count > 0)
     {
-        client *john = (client*)idev->clientList.head;
+        client *john = (client*)clientList->head;
         if (john->over.hEvent != NULL)
             CloseHandle(john->over.hEvent);
         releaseClient(john);
@@ -746,12 +758,12 @@ void listenToClients(iguanaDev *idev)
 	/* "disconnect" and release the unconnected pipes */
     EnterCriticalSection(&aliasLock);
     for(x = 0; x < 2; x++)
-        if (listeners[idev->usbDev->id][x] != NULL)
+        if (listeners[id][x] != NULL)
 		{
 			// crashes without the disconnect call here
 			DisconnectNamedPipe(listeners[idev->usbDev->id][x]);
             CloseHandle(listeners[idev->usbDev->id][x]);
-			listeners[idev->usbDev->id][x] = NULL;
+			listeners[id][x] = NULL;
 		}
     LeaveCriticalSection(&aliasLock);
 }
