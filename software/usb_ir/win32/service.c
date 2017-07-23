@@ -25,7 +25,6 @@
 
 #include "driver.h"
 #include "pipes.h"
-#include "support.h"
 #include "device-interface.h"
 #include "client-interface.h"
 #include "server.h"

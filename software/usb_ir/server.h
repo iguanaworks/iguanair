@@ -21,10 +21,6 @@ enum
        arbitrary but recognizable value */
     SCAN_TRIGGER = 0x55,
     QUIT_TRIGGER,
-
-    /* for use with readPipe */
-    READ  = 0,
-    WRITE = 1
 };
 void triggerCommand(THREAD_PTR cmd);
 

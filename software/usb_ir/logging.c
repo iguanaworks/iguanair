@@ -77,8 +77,8 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         long int res = strtol(arg, &end, 0);
         if (arg[0] == '\0' || end[0] != '\0' || res < LOG_FATAL || res > LOG_DEBUG3 )
         {
-            argp_error(state, "Log level requires a numeric argument between %d and %d\n",
-                       LOG_FATAL, LOG_DEBUG3);
+            fprintf(stderr, "Log level requires a numeric argument between %d and %d\n",
+                    LOG_FATAL, LOG_DEBUG3);
             return ARGP_HELP_STD_ERR;
         }
         else

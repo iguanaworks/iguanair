@@ -13,6 +13,13 @@
 
 #pragma once
 
+enum
+{
+    /* for use with readPipe */
+    READ  = 0,
+    WRITE = 1
+};
+
 #ifdef WIN32
   bool createPipePair(PIPE_PTR *pair);
   int readPipe(PIPE_PTR fd, void *buf, int count);

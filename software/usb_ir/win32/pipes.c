@@ -12,11 +12,9 @@
  */
 #include "iguanaIR.h"
 #include "compat.h"
-
-#include <stdio.h>
-
 #include "pipes.h"
-#include "support.h"
+
+#include <stdio.h> /* sprintf */
 
 bool createPipePair(PIPE_PTR *pair)
 {
