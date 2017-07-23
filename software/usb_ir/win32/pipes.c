@@ -18,15 +18,15 @@
 #include "pipes.h"
 #include "support.h"
 
-#define ANONYMOUS_NAME IGSOCK_NAME "INTERNAL"
-
 bool createPipePair(PIPE_PTR *pair)
 {
 #if 1
     bool retval = false;
+    char buf[PATH_MAX];
 
     /* create the pipe at a known (stupid) name */
-    pair[READ] = CreateNamedPipe(ANONYMOUS_NAME,
+    sprintf(buf, "%sINTERNAL-%p", IGSOCK_NAME, pair);
+    pair[READ] = CreateNamedPipe(buf,
                                  PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
                                  PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                                  PIPE_UNLIMITED_INSTANCES,
@@ -41,7 +41,7 @@ bool createPipePair(PIPE_PTR *pair)
         ConnectNamedPipe(pair[READ], &over);
 
         /* child connects to the server */
-        pair[WRITE] = CreateFile(ANONYMOUS_NAME,
+        pair[WRITE] = CreateFile(buf,
                                  GENERIC_WRITE, 
                                  0,
                                  NULL,
