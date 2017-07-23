@@ -1,5 +1,4 @@
-#ifndef _DIRECT_H_
-#define _DIRECT_H_
+#pragma once
 
 #ifdef WIN32
     #ifdef DIRECT_EXPORTS
@@ -13,6 +12,4 @@
     #else
         #define DIRECT_API
     #endif
-#endif
-
 #endif

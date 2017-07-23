@@ -1,5 +1,4 @@
-#ifndef _SEND_FORMAT_H_
-#define _SEND_FORMAT_H_
+#pragma once
 
 #include "direct.h"
 #include <stdint.h>
@@ -18,5 +17,3 @@ enum
 DIRECT_API int pulsesToIguanaSend(int carrier,
                                   uint32_t *sendCode, int length,
                                   unsigned char **results, int compress);
-
-#endif
