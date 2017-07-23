@@ -32,7 +32,7 @@ with open('../CMakeLists.txt') as input:
 	for line in input:
 		line = ' '.join(line.strip().split())
 		if line.startswith('Set(FULLVER '):
-			vars['version'] = line.split(None, 1)[1][:-1]
+			vars['version'] = line.split(None, 1)[1].split(')')[0]
 
 out = open(ISSPath, 'w')
 out.write("""
