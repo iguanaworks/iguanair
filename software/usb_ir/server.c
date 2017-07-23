@@ -21,7 +21,6 @@
 
 #include "iguanaIR.h"
 #include "compat.h"
-#include "support.h"
 #include "driver.h"
 #include "devicebase.h"
 #include "device-interface.h"
@@ -56,6 +55,8 @@ void triggerCommand(THREAD_PTR cmd)
 
 void initServerSettings()
 {
+    initLogSystem(NULL);
+
     /* Driver location and preference information.  The preferred list
        is a NULL terminated list of strings. */
     srvSettings.onlyPreferred = false;
@@ -219,6 +220,7 @@ deviceList* initServer()
             "  recvTimeout: %d\n", srvSettings.devSettings.recvTimeout);
     message(LOG_DEBUG,
             "  sendTimeout: %d\n", srvSettings.devSettings.sendTimeout);
+    initializeDriverLayer(logImplementation());
 
     /* prepare the pipe for shutting down any scan thread */
     if (! createPipePair(srvSettings.scanTimerPipe))

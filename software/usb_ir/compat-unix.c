@@ -17,7 +17,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include "support.h"
+#include "logging.h"
 
 #if HAVE_CLOCK_GETTIME
 #include <time.h>

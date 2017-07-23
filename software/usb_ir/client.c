@@ -17,7 +17,7 @@
 
 /* not necessary for any client application but helpful for some
    supporting functions in this case. */
-#include "support.h"
+#include "logging.h"
 #include "list.h"
 
 #include <stdlib.h>
@@ -886,6 +886,8 @@ int main(int argc, char **argv)
     igtask *junk;
     struct argp_child children[2];
     bool ctlCommands;
+
+    initLogSystem(NULL);
 
     /* include the log argument parser */
     memset(children, 0, sizeof(struct argp_child) * 2);

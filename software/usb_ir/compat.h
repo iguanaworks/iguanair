@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "iguanaIR.h"
 
 #ifdef WIN32
     /* The old functions CAN be used safely... stop the warnings. */
@@ -66,6 +67,7 @@
     #undef __USE_GNU
     #include <dirent.h>
     #include <dlfcn.h>
+    #include <stdbool.h>
 
     /* because it's different in windows */
     #define USB_ETIMEDOUT ETIMEDOUT

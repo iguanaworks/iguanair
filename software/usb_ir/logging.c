@@ -10,7 +10,7 @@
  * Distributed under the LGPL version 2.1.
  * See LICENSE-LGPL for license details.
  */
-#include "support.h"
+#include "logging.h"
 #include "compat.h"
 #include "version.h"
 
@@ -36,6 +36,7 @@ static char *msgPrefixes[] =
 };
 
 /* logging variables */
+static loggingImpl logImpl = {NULL,NULL,NULL};
 static int currentLevel = LOG_NORMAL;
 static FILE *logFile = NULL;
 
@@ -101,37 +102,6 @@ static struct argp parser = {
     parseOption
 };
 
-struct argp* logArgParser()
-{
-    return &parser;
-}
-
-void changeLogLevel(int difference)
-{
-    currentLevel += difference;
-    if (currentLevel < LOG_FATAL)
-        currentLevel = LOG_FATAL;
-}
-
-void setLogLevel(int value)
-{
-    changeLogLevel(value - currentLevel);
-}
-
-void openLog(const char *filename)
-{
-    if (logFile != NULL)
-        fclose(logFile);
-    logFile = NULL;
-
-    if (strcmp(filename, "-") != 0)
-    {
-        logFile = fopen(filename, "a");
-        if (logFile != NULL)
-            setlinebuf(logFile);
-    }
-}
-
 static FILE* pickStream(int level)
 {
     FILE *out = NULL;
@@ -151,26 +121,13 @@ static FILE* pickStream(int level)
     return out;
 }
 
-bool wouldOutput(int level)
+static bool wouldOutput_internal(int level)
 {
     return pickStream(level) != NULL;
 }
 
-/* Print a message to a certain debug level */
-int message(int level, char *format, ...)
-{
-    int retval;
-    va_list list;
-
-    va_start(list, format);
-    retval = vaMessage(level, format, list);
-    va_end(list);
-
-    return retval;
-}
-
 /* do the actual work of printing */
-int vaMessage(int level, char *format, va_list list)
+static int vaMessage_internal(int level, char *format, va_list list)
 {
     int retval = 0;
     FILE *out;
@@ -223,7 +180,7 @@ int vaMessage(int level, char *format, va_list list)
     return retval;
 }
 
-void appendHex(int level, void *location, unsigned int length)
+static void appendHex_internal(int level, void *location, unsigned int length)
 {
     FILE *out;
     int retval = 0;
@@ -241,4 +198,79 @@ void appendHex(int level, void *location, unsigned int length)
         if (out == logFile)
             fflush(logFile);
     }
+}
+
+void initLogSystem(const loggingImpl *impl)
+{
+    if (impl == NULL)
+    {
+        static loggingImpl staticLogImpl = { wouldOutput_internal,
+                                             vaMessage_internal,
+                                             appendHex_internal };
+        logImpl = staticLogImpl;
+    }
+    else
+        logImpl = *impl;
+}
+
+loggingImpl* logImplementation()
+{
+    return &logImpl;
+}
+
+struct argp* logArgParser()
+{
+    return &parser;
+}
+
+void changeLogLevel(int difference)
+{
+    currentLevel += difference;
+    if (currentLevel < LOG_FATAL)
+        currentLevel = LOG_FATAL;
+}
+
+void setLogLevel(int value)
+{
+    changeLogLevel(value - currentLevel);
+}
+
+void openLog(const char *filename)
+{
+    if (logFile != NULL)
+        fclose(logFile);
+    logFile = NULL;
+
+    if (strcmp(filename, "-") != 0)
+    {
+        logFile = fopen(filename, "a");
+        if (logFile != NULL)
+            setlinebuf(logFile);
+    }
+}
+
+bool wouldOutput(int level)
+{
+    if (logImpl.wouldOutput != NULL)
+        return logImpl.wouldOutput(level);
+    return true;
+}
+
+int message(int level, char *format, ...)
+{
+    int retval = 0;
+    if (logImpl.vaMessage != NULL)
+    {
+        va_list list;
+        va_start(list, format);
+        retval = logImpl.vaMessage(level, format, list);
+        va_end(list);
+    }
+    return retval;
+}
+
+void appendHex(int level, void *location, unsigned int length)
+{
+    if (logImpl.appendHex != NULL)
+        logImpl.appendHex(level, location, length);
 }

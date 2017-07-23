@@ -22,7 +22,6 @@
 #include <sys/stat.h>
 
 #include "pipes.h"
-#include "support.h"
 
 void socketName(const char *name, char *buffer, unsigned int length)
 {

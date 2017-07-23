@@ -19,7 +19,7 @@
 #include <time.h>
 
 #include "pipes.h"
-#include "support.h"
+#include "logging.h"
 #include "dataPackets.h"
 
 bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)

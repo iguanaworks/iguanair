@@ -23,7 +23,17 @@ enum
     MSC_GROUP
 };
 
+/* for passing to drivers */
+typedef struct loggingImpl
+{
+    bool (*wouldOutput)(int level);
+    int (*vaMessage)(int level, char *format, va_list list);
+    void (*appendHex)(int level, void *location, unsigned int length);
+} loggingImpl;
+
 /* functions for configuring logging */
+void initLogSystem(const loggingImpl *impl);
+loggingImpl* logImplementation();
 struct argp* logArgParser();
 void changeLogLevel(int difference);
 void setLogLevel(int value);
@@ -36,11 +46,3 @@ void appendHex(int level, void *location, unsigned int length);
 
 /* internal to the logging subsystem */
 int vaMessage(int level, char *format, va_list list);
-
-/* for passing to drivers */
-typedef struct loggingImpl
-{
-    bool (*wouldOutput)(int level);
-    int (*vaMessage)(int level, char *format, va_list list);
-    void (*appendHex)(int level, void *location, unsigned int length);
-} loggingImpl;

@@ -5,7 +5,7 @@ If(TARGET_ANDROID)
   include_directories(libusb-compat-android/libusb)
 EndIf()
 
-Set(BASESRCS loggingWrap.c ../list.c)
+Set(BASESRCS ../logging.c ../list.c)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(USBPRE1LIB ${CMAKE_SOURCE_DIR}/win32/libusb-win32/lib/msvc/libusb.lib)

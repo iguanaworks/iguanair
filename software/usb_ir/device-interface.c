@@ -10,7 +10,6 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "iguanaIR.h"
 #include "compat.h"
 
 #include <errno.h>
@@ -20,7 +19,6 @@
 #include <signal.h>
 
 #include "pipes.h"
-#include "support.h"
 #include "driver.h"
 #include "dataPackets.h"
 #include "device-interface.h"

@@ -20,8 +20,13 @@
 #include <limits.h>
 
 #include "pipes.h"
-#include "support.h"
+#include "logging.h"
 #include "dataPackets.h"
+
+enum
+{
+    MAX_LINE = 1024,
+};
 
 IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
 

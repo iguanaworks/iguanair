@@ -45,7 +45,7 @@
     #define IGSOCK_NAME "\\\\.\\pipe\\iguanaIR-"
 #else
     /* hate including headers from headers, but we need a bool */
-    #include "stdbool.h"
+    #include <stdbool.h>
 
     #define PIPE_PTR int
     #define INVALID_PIPE -1
@@ -62,7 +62,7 @@
 #endif
 
 /* NOTE: all IR timings will be in microseconds and packed in uint32_t
- * arrays */
+   arrays */
 
 enum
 {

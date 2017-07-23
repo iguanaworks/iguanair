@@ -13,12 +13,18 @@
 
 #pragma once
 
-/* start possible commands that can be triggered by signals at an
-   arbitrary but recognizable value */
+#include "logging.h"
+
 enum
 {
+    /* start possible commands that can be triggered by signals at an
+       arbitrary but recognizable value */
     SCAN_TRIGGER = 0x55,
-    QUIT_TRIGGER
+    QUIT_TRIGGER,
+
+    /* for use with readPipe */
+    READ  = 0,
+    WRITE = 1
 };
 void triggerCommand(THREAD_PTR cmd);
 

@@ -6,9 +6,9 @@
 #include "limits.h"
 #include "sys/types.h"
 
-#include "support.h"
 #include "driver.h"
 #include "driverapi.h"
+#include "logging.h"
 
 /* will hold driver-supplied function pointers */
 static driverImpl *implementation = NULL;
@@ -119,7 +119,6 @@ static bool findDriverDir(char *path)
 
 bool loadDriver(char *path)
 {
-    loggingImpl logImpl = { wouldOutput, vaMessage, appendHex };
     char *ext;
     void *library;
     driverImpl* (*getImplementation)();
@@ -130,7 +129,7 @@ bool loadDriver(char *path)
         (library = loadLibrary(path)) != NULL &&
         (*(void**)(&getImplementation) = getFuncAddress(library,
                                                         "getImplementation")) != NULL)
-        return (implementation = getImplementation(&logImpl)) != NULL;
+        return (implementation = getImplementation(logImplementation())) != NULL;
 
     return false;
 }
@@ -174,6 +173,11 @@ bool checkDriver(const char *root, const char *name)
     if (retval)
         message(LOG_INFO, "Loaded driver: %s\n", driver);
     return retval;
+}
+
+void initializeDriverLayer(loggingImpl *impl)
+{
+    initLogSystem(impl);
 }
 
 /* search for shared objects in the drivers directory and use the

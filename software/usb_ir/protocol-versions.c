@@ -16,7 +16,7 @@
 #include "iguanaIR.h"
 #include "compat.h"
 
-#include "support.h"
+#include "logging.h"
 #include "protocol-versions.h"
 
 /* mapping from old values to new ones */

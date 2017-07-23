@@ -178,13 +178,11 @@ add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
   server.c server.h
   client-interface.c client-interface.h
   device-interface.c device-interface.h
-  driver.c driver.h driverapi.h sendFormat.c sendFormat.h # this OR directIguanaIR
+#  driver.c driver.h driverapi.h sendFormat.c sendFormat.h # this OR directIguanaIR
   list.c list.h protocol-versions.c protocol-versions.h
   dataPackets.c dataPackets.h)
-set_property(TARGET igdaemon
-             APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
-#target_link_libraries(igdaemon iguanaIR directIguanaIR
-target_link_libraries(igdaemon iguanaIR # this OR directIguanaIR
+target_link_libraries(igdaemon iguanaIR directIguanaIR
+#target_link_libraries(igdaemon iguanaIR # this OR directIguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
@@ -193,8 +191,6 @@ add_subdirectory(drivers)
 
 # build igclient
 add_executable(igclient ${BASESRC} client.c list.c list.h)
-set_property(TARGET igclient
-             APPEND PROPERTY COMPILE_DEFINITIONS SUPPORT_EXPORTS)
 target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
 install(TARGETS igclient DESTINATION /usr/bin)
 

@@ -11,7 +11,6 @@
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
-#include "iguanaIR.h"
 #include "compat.h"
 #include "sendFormat.h"
 
@@ -26,7 +25,6 @@
     #include <arpa/inet.h>
 #endif
 
-#include "support.h"
 #include "pipes.h"
 #include "dataPackets.h"
 #include "driver.h"
