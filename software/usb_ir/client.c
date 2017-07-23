@@ -286,7 +286,7 @@ static void setSetting(unsigned int setting, const char *pins,
 static bool processResponse(unsigned char code, igtask *cmd, unsigned int length, void *data)
 {
     bool retval = false;
-    int x;
+    unsigned int x;
 
     if (code == IG_DEV_RECV)
             {
@@ -885,6 +885,7 @@ int main(int argc, char **argv)
     int retval = 1;
     igtask *junk;
     struct argp_child children[2];
+    bool ctlCommands;
 
     /* include the log argument parser */
     memset(children, 0, sizeof(struct argp_child) * 2);
@@ -901,7 +902,7 @@ int main(int argc, char **argv)
 #endif
 
     /* issue any ctl commands before connecting to devices */
-    bool ctlCommands = false;
+    ctlCommands = false;
     if (params.listDevs)
     {
         ctlCommands = true;
