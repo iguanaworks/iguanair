@@ -39,6 +39,7 @@ static int sendConn = -1;
 static pid_t child = 0;
 static int recvDone = 0;
 static int currentCarrier = -1;
+static uint8_t features = 0;
 
 static void quitHandler(int sig)
 {
@@ -69,7 +70,19 @@ static bool daemonTransaction(int conn, unsigned char code, void *value, size_t 
 
     /* handle success */
     if (! iguanaResponseIsError(response))
+    {
+        if (code == IG_DEV_GETFEATURES)
+        {
+            void *data;
+            data = iguanaRemoveData(response, NULL);
+            if (data != NULL)
+            {
+                features = *(uint8_t*)data;
+                free(data);
+            }
+        }
         retval = true;
+    }
     iguanaFreePacket(response);
 
     return retval;
@@ -421,15 +434,43 @@ static int list_devices(glob_t* devices)
 
 
 /*
- * Set the transmit channel(s) bitmask:.
- * Return 0 on success, 4 out-of-range, -1 on other errors. See
+ * Set the transmit channel(s) bitmask.  Return 0 on success,
+ * transmitter count on out-of-range, -1 on other errors. See
  * LIRC_SET_TRANSMITTER in lirc(4)
  */
 static int set_transmitters(uint32_t channels)
 {
-    if (channels > 0x0F)
-// TODO: check the device features for the transmitter count to return on bad mask
-        return 4;
+    int maxCount = 4, mask = 0x0F;
+    if (features == 0)
+        daemonTransaction(sendConn, IG_DEV_GETFEATURES, NULL, 0);
+
+    switch(features)
+    {
+    case IG_HAS_LEDS:
+        /* TODO: dual LED devices have 1, 3, not 1, 2
+           maxCount = 2;
+           mask = 0x05;
+           break;
+        */
+    case IG_HAS_BOTH:
+        /* TODO: hybrid devices have 1, 3, 4, not 1, 2, 3
+           maxCount = 3;
+           mask = 0x0D;
+           break;
+        */
+    case IG_HAS_SOCKETS:
+        maxCount = 4;
+        mask = 0x0F;
+        break;
+
+    case IG_SLOT_DEV:
+        maxCount = 6;
+        mask = 0x3F;
+        break;
+    }
+
+    if (channels & ~mask)
+        return maxCount;
     else
     {
         uint8_t chans = channels;
