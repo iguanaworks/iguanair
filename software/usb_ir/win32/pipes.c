@@ -75,7 +75,8 @@ int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
     over.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (ReadFile(fd, buf, count, NULL, &over) == TRUE)
         retval = count;
-    else if (GetLastError() == ERROR_HANDLE_EOF)
+    else if (GetLastError() == ERROR_HANDLE_EOF ||
+             GetLastError() == ERROR_BROKEN_PIPE)
         retval = 0;
     else if (GetLastError() == ERROR_IO_PENDING)
         switch(WaitForSingleObject(over.hEvent, timeout))
