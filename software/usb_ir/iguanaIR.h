@@ -141,7 +141,7 @@ enum
 };
 
 /* list the available devices */
-IGUANAIR_API const char* iguanaListDevices();
+IGUANAIR_API char* iguanaListDevices();
 
 /* manage a connection to the server */
 #define iguanaConnect(a) iguanaConnect_real(a, IG_PROTOCOL_VERSION)

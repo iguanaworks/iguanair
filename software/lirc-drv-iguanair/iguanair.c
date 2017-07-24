@@ -262,30 +262,24 @@ static char* iguana_rec(struct ir_remote* remotes)
 
 static bool daemonTransaction(unsigned char code, void* value, size_t size)
 {
-    uint8_t* data;
     bool retval = false;
+    iguanaPacket request, response = NULL;
 
-    data = (uint8_t*)malloc(size);
-    if (data != NULL)
+    request = iguanaCreateRequest(code, size, value);
+    if (request != NULL)
     {
-        iguanaPacket request, response = NULL;
+        if (iguanaWriteRequest(request, sendConn))
+            response = iguanaReadResponse(sendConn, 10000);
 
-        memcpy(data, value, size);
-        request = iguanaCreateRequest(code, size, data);
-        if (request)
-        {
-            if (iguanaWriteRequest(request, sendConn))
-                response = iguanaReadResponse(sendConn, 10000);
-            iguanaFreePacket(request);
-        }
-        else
-            free(data);
-
-        /* handle success */
-        if (!iguanaResponseIsError(response))
-            retval = true;
-        iguanaFreePacket(response);
+        iguanaRemoveData(request, NULL);
+        iguanaFreePacket(request);
     }
+
+    /* handle success */
+    if (! iguanaResponseIsError(response))
+        retval = true;
+    iguanaFreePacket(response);
+
     return retval;
 }
 
@@ -310,10 +304,9 @@ static int iguana_send(struct ir_remote* remote, struct ir_ncode* code)
         signals = send_buffer_data();
 
         igsignals = (uint32_t*)malloc(sizeof(uint32_t) * length);
-        if (igsignals != NULL) {
-            iguanaPacket request, response = NULL;
-
-            /* must pack the data into a unit32_t array */
+        if (igsignals != NULL)
+        {
+            /* pack the data into a unit32_t array */
             for (x = 0; x < length; x++)
             {
                 igsignals[x] = signals[x] & PULSE_MASK;
@@ -321,25 +314,9 @@ static int iguana_send(struct ir_remote* remote, struct ir_ncode* code)
                     igsignals[x] |= IG_PULSE_BIT;
             }
 
-            /* construct a request and send it to the daemon
-             * TRICKY: IguanaFreePacket free()'s both the
-             * igsignals  chunk and the request packet, but
-             * iguanaCreateRequest does not malloc that chunk.
-             */
-            request = iguanaCreateRequest(IG_DEV_SEND, sizeof(uint32_t) * length, igsignals);
-            if (iguanaWriteRequest(request, sendConn))
-            {
-                /* response will only come back after the device has
-                 * transmitted */
-                response = iguanaReadResponse(sendConn, 10000);
-                if (!iguanaResponseIsError(response))
-                    retval = 1;
-
-                iguanaFreePacket(response);
-            }
-
-            /* free the packet and the data */
-            iguanaFreePacket(request);
+            if (daemonTransaction(IG_DEV_SEND, igsignals, sizeof(uint32_t) * length))
+                retval = 1;
+            free(igsignals);
         }
     }
 
@@ -442,32 +419,36 @@ static int list_devices(glob_t* devices)
  * Return 0 on success, 4 out-of-range, -1 on other errors. See
  * LIRC_SET_TRANSMITTER in lirc(4)
  */
-// TODO: what is the correct out-of-range return
-static int set_transmitters(uint8_t channels)
+static int set_transmitters(uint32_t channels)
 {
     if (channels > 0x0F)
-        return DRV_ERR_BAD_VALUE;
-    else if (! daemonTransaction(IG_DEV_SETCHANNELS, &channels, sizeof(channels)))
-        return DRV_ERR_INTERNAL;
+// TODO: check the device features for the transmitter count to return on bad mask
+        return 4;
+    else
+    {
+        uint8_t chans = channels;
+        if (! daemonTransaction(IG_DEV_SETCHANNELS, &chans, 1))
+            return -1;
+    }
     return 0;
 }
 
 
-static int drvctl_func(unsigned int cmd, void* arg)
+static int drvctl_func(unsigned int cmd, void *arg)
 {
     switch (cmd)
     {
 #if VERSION_NODOTS >= 1000
     case DRVCTL_GET_DEVICES:
-        return list_devices((glob_t*) arg);
+        return list_devices((glob_t*)arg);
 
     case DRVCTL_FREE_DEVICES:
-        drv_enum_free((glob_t*) arg);
+        drv_enum_free((glob_t*)arg);
         return 0;
 #endif
 
     case LIRC_SET_TRANSMITTER_MASK:
-        return set_transmitters(*(uint8_t*) arg);
+        return set_transmitters(*(uint32_t*)arg);
 
     default:
         return DRV_ERR_NOT_IMPLEMENTED;

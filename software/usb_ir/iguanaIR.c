@@ -54,7 +54,7 @@ static bool transaction(PIPE_PTR conn, dataPacket *request, dataPacket **respOut
     return retval;
 }
 
-IGUANAIR_API const char* iguanaListDevices()
+IGUANAIR_API char* iguanaListDevices()
 {
     char *retval = NULL;
     PIPE_PTR conn = iguanaConnect_internal("ctl", IG_PROTOCOL_VERSION, true);
