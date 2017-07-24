@@ -46,6 +46,29 @@ static int connectToIgdaemon(const char *device)
     return iguanaConnect(device);
 }
 
+static bool daemonTransaction(int conn, unsigned char code, void *value, size_t size)
+{
+    bool retval = false;
+    iguanaPacket request, response = NULL;
+
+    request = iguanaCreateRequest(code, size, value);
+    if (request != NULL)
+    {
+        if (iguanaWriteRequest(request, conn))
+            response = iguanaReadResponse(conn, 10000);
+
+        iguanaRemoveData(request, NULL);
+        iguanaFreePacket(request);
+    }
+
+    /* handle success */
+    if (! iguanaResponseIsError(response))
+        retval = true;
+    iguanaFreePacket(response);
+
+    return retval;
+}
+
 static void recv_loop(int fd, int notify)
 {
     int conn;
@@ -63,12 +86,15 @@ static void recv_loop(int fd, int notify)
     conn = connectToIgdaemon(drv.device);
     if (conn != -1)
     {
-        iguanaPacket request, response;
+        iguanaPacket response;
         lirc_t prevCode = -1;
 
-        request = iguanaCreateRequest(IG_DEV_RECVON, 0, NULL);
-        if (iguanaWriteRequest(request, conn))
+        /* turn on the receiver */
+        if (! daemonTransaction(conn, IG_DEV_RECVON, NULL, 0))
         {
+            log_error("error when turning receiver on: %s\n", strerror(errno));
+        }
+        else
             while (!recvDone)
             {
                 /* read from device */
@@ -86,7 +112,7 @@ static void recv_loop(int fd, int notify)
                     }
                     break;
                 }
-                else if (iguanaCode(response) == IG_DEV_RECV)
+                else
                 {
                     uint32_t* code;
                     unsigned int length, x, y = 0;
@@ -144,9 +170,6 @@ static void recv_loop(int fd, int notify)
 
                 iguanaFreePacket(response);
             }
-        }
-
-        iguanaFreePacket(request);
     }
 
     iguanaClose(conn);
@@ -260,29 +283,6 @@ static char* iguana_rec(struct ir_remote* remotes)
     return retval;
 }
 
-static bool daemonTransaction(unsigned char code, void* value, size_t size)
-{
-    bool retval = false;
-    iguanaPacket request, response = NULL;
-
-    request = iguanaCreateRequest(code, size, value);
-    if (request != NULL)
-    {
-        if (iguanaWriteRequest(request, sendConn))
-            response = iguanaReadResponse(sendConn, 10000);
-
-        iguanaRemoveData(request, NULL);
-        iguanaFreePacket(request);
-    }
-
-    /* handle success */
-    if (! iguanaResponseIsError(response))
-        retval = true;
-    iguanaFreePacket(response);
-
-    return retval;
-}
-
 static int iguana_send(struct ir_remote* remote, struct ir_ncode* code)
 {
     int retval = 0;
@@ -291,7 +291,7 @@ static int iguana_send(struct ir_remote* remote, struct ir_ncode* code)
     /* set the carrier frequency if necessary */
     freq = htonl(remote->freq);
     if (remote->freq != currentCarrier && remote->freq >= 25000 && remote->freq <= 100000
-        && daemonTransaction(IG_DEV_SETCARRIER, &freq, sizeof(freq)))
+        && daemonTransaction(sendConn, IG_DEV_SETCARRIER, &freq, sizeof(freq)))
         currentCarrier = remote->freq;
 
     if (send_buffer_put(remote, code))
@@ -314,7 +314,7 @@ static int iguana_send(struct ir_remote* remote, struct ir_ncode* code)
                     igsignals[x] |= IG_PULSE_BIT;
             }
 
-            if (daemonTransaction(IG_DEV_SEND, igsignals, sizeof(uint32_t) * length))
+            if (daemonTransaction(sendConn, IG_DEV_SEND, igsignals, sizeof(uint32_t) * length))
                 retval = 1;
             free(igsignals);
         }
@@ -427,7 +427,7 @@ static int set_transmitters(uint32_t channels)
     else
     {
         uint8_t chans = channels;
-        if (! daemonTransaction(IG_DEV_SETCHANNELS, &chans, 1))
+        if (! daemonTransaction(sendConn, IG_DEV_SETCHANNELS, &chans, 1))
             return -1;
     }
     return 0;
