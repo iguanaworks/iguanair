@@ -96,6 +96,8 @@ typedef struct iguanaDev
     LOCK_PTR devLock;
     bool needToWrite;
 #endif
+
+    bool willFail, firstTimeout;
 } iguanaDev;
 
 /* use the protocol table to see if the version is supported */

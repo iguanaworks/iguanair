@@ -115,7 +115,8 @@ static struct argp_option options[] =
     { "no-auto-rescan",  ARG_NO_RESCAN,    NULL,     0, "Do not automatically rescan the USB bus after device disconnect.",              MSC_GROUP },
     { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                                        MSC_GROUP },
     { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                                  MSC_GROUP },
-    { "scan-timer",      ARG_NO_SCANWHEN,  "SECS",   0, "Periodically rescan the USB bus for new devices regardless of hotplug events.", MSC_GROUP },
+    { "scan-timer",      ARG_SCANWHEN,   "SECS",     0, "Periodically rescan the USB bus for new devices regardless of hotplug events.", MSC_GROUP },
+    { "bad-toggle-fix",  ARG_BADTOGGLE,    NULL,     0, "On OS X our hardware has a data toggle mismatch and this works around it.",     MSC_GROUP },
 
     /* end of table */
     {0}
@@ -149,7 +150,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         srvSettings.autoRescan = false;
         break;
 
-    case ARG_NO_SCANWHEN:
+    case ARG_SCANWHEN:
     {
         char *end;
         long int res = strtol(arg, &end, 0);
@@ -162,6 +163,10 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
             srvSettings.scanSeconds = res;
         break;
     }
+
+    case ARG_BADTOGGLE:
+        srvSettings.fixToggle = true;
+        break;
 
     default:
         return ARGP_ERR_UNKNOWN;

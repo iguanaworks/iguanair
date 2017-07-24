@@ -29,7 +29,8 @@ enum
     /* igdaemon specific actions */
     ARG_NO_IDS = 0x200,
     ARG_NO_RESCAN,
-    ARG_NO_SCANWHEN,
+    ARG_SCANWHEN,
+    ARG_BADTOGGLE,
     ARG_ONLY_PREFER,
     ARG_DRIVER_DIR,
     LAST_BASE_ARG,
@@ -76,6 +77,9 @@ typedef struct
     /* a locked list of known devices */
     LOCK_PTR devsLock;
     listHeader devs;
+
+    /* whether to try and fix the toggle issue on OS X */
+    bool fixToggle;
 
     /* a method for children to communicate back to the list owner */
     PIPE_PTR commPipe[2];

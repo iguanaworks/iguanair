@@ -706,6 +706,21 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
         }
 #endif
 
+        /* Due to a usb data toggle issue only evident on OS X this
+           code will send a fake get-version request whenever the
+           incoming packet would have the wrong toggle value.  The
+           response will be lost, but the toggle will then match up
+           again for the actual request. */
+        if (srvSettings.fixToggle && idev->willFail)
+        {
+            unsigned char msg[MAX_PACKET_SIZE] = {CTL_START, CTL_START, CTL_TODEV, IG_DEV_GETVERSION};
+            interruptSend(idev->usbDev, msg, 4, 100);
+
+            message(LOG_INFO, "Injected fake get-version to fix toggle\n");
+            idev->willFail = false;
+            idev->firstTimeout = false;
+        }
+
         /* flush any extraneous CTL_TODEV responses */
         flushToDevResponsePackets(idev);
         /* time the transfer */
@@ -838,6 +853,13 @@ void handleIncomingPackets(iguanaDev *idev)
     unsigned char *buffer = NULL;
     int length = 0, prev = 0;
     dataPacket *current = NULL;
+    bool toggle = 1;
+
+    if (srvSettings.fixToggle)
+    {
+        idev->willFail = false;
+        idev->firstTimeout = true;
+    }
 
     /* allocate space for receiving */
     buffer = (unsigned char*)malloc(idev->maxPacketSize);
@@ -865,12 +887,23 @@ void handleIncomingPackets(iguanaDev *idev)
             /* wait for data to arrive */
             length = interruptRecv(idev->usbDev, buffer, idev->maxPacketSize,
                                    idev->settings->recvTimeout);
-
             if (length < 0)
             {
                 /* loop on timeouts */
                 if (errno == EAGAIN || errno == USB_ETIMEDOUT)
+                {
+                    if (srvSettings.fixToggle)
+                    {
+                        //message(LOG_WARN, "%d %d %d %d %d\n", errno, length, EAGAIN, USB_ETIMEDOUT, LIBUSB_ERROR_TIMEOUT);
+                        //interruptRecv(idev->usbDev, NULL, 0, 424242);
+                        if (idev->firstTimeout && toggle)
+                            idev->willFail = true;
+                        //message(LOG_INFO, "timeout: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout);
+                        idev->firstTimeout = false;
+                        toggle = 0;
+                    }
                     length = 0;
+                }
                 /* loop on timeouts */
                 else if (errno == EPIPE)
                 {
@@ -921,9 +954,26 @@ void handleIncomingPackets(iguanaDev *idev)
                 }
             }
             else if (length == 0)
+            {
                 message(LOG_DEBUG, "0 length recv on %d.\n", idev->usbDev->id);
+                if (srvSettings.fixToggle)
+                {
+                    toggle ^= 1;
+                    idev->willFail = false;
+                    idev->firstTimeout = true;
+                    //message(LOG_INFO, "packet: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout);
+                }
+            }
             else /* if (length > 0)*/
             {
+                if (srvSettings.fixToggle)
+                {
+                    toggle ^= 1;
+                    idev->willFail = false;
+                    idev->firstTimeout = true;
+                    //message(LOG_INFO, "packet: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout);
+                }
+
                 /* now we need to store a dataPacket */
                 current = (dataPacket*)malloc(sizeof(dataPacket));
                 if (current == NULL)
@@ -998,6 +1048,8 @@ void handleIncomingPackets(iguanaDev *idev)
                                                    buffer,
                                                    idev->maxPacketSize,
                                                   idev->settings->recvTimeout);
+                            if (srvSettings.fixToggle)
+                                toggle ^= 1;
                             /* timeouts should never happen, but handle it */
                             if (length > 0 && length <= idev->maxPacketSize)
                             {
