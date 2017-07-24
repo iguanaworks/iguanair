@@ -28,6 +28,12 @@
 #define DESCRIBE_DEVICES
 */
 
+enum
+{
+    READ = 0,
+    WRITE
+};
+
 static const logchannel_t logchannel = LOG_DRIVER;
 static int sendConn = -1;
 static pid_t child = 0;
@@ -211,12 +217,12 @@ static int iguana_init()
         if (pipe(notify) != 0)
         {
             log_error("couldn't open pipe: %s", strerror(errno));
-            close(recv_pipe[0]);
-            close(recv_pipe[1]);
+            close(recv_pipe[READ]);
+            close(recv_pipe[WRITE]);
         }
         else
         {
-            drv.fd = recv_pipe[0];
+            drv.fd = recv_pipe[READ];
 
             child = fork();
             if (child == -1)
@@ -225,20 +231,20 @@ static int iguana_init()
             }
             else if (child == 0)
             {
-                close(recv_pipe[0]);
-                close(notify[0]);
-                recv_loop(recv_pipe[1], notify[1]);
+                close(recv_pipe[READ]);
+                close(notify[READ]);
+                recv_loop(recv_pipe[WRITE], notify[WRITE]);
                 _exit(0);
             }
             else
             {
                 int dummy;
 
-                close(recv_pipe[1]);
-                close(notify[1]);
+                close(recv_pipe[WRITE]);
+                close(notify[WRITE]);
                 /* make sure child has set its signal handler to avoid race with iguana_deinit() */
-                chk_read(notify[0], &dummy, 1);
-                close(notify[0]);
+                chk_read(notify[READ], &dummy, 1);
+                close(notify[READ]);
                 sendConn = connectToIgdaemon(drv.device);
                 if (sendConn == -1)
                 {
@@ -459,7 +465,12 @@ static int drvctl_func(unsigned int cmd, void *arg)
 static lirc_t readdata(lirc_t timeout)
 {
     lirc_t code = 0;
-    struct pollfd pfd = {.fd = drv.fd, .events = POLLIN, .revents = 0};
+    struct pollfd pfd = {
+        .fd = drv.fd,
+        .events = POLLIN,
+        .revents = 0
+    };
+
     /* attempt a read with a timeout using select */
     if (poll(&pfd, 1, timeout / 1000) > 0)
     {
@@ -467,6 +478,7 @@ static lirc_t readdata(lirc_t timeout)
         if (read(drv.fd, &code, sizeof(lirc_t)) <= 0)
             iguana_deinit();
     }
+
     return code;
 }
 
