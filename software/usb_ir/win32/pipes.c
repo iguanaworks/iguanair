@@ -18,7 +18,8 @@
 
 bool createPipePair(PIPE_PTR *pair)
 {
-#if 1
+// TODO: seems like this function should just be a call to CreatePair, but that does not work
+// return (CreatePipe(pair + READ, pair + WRITE, NULL, 0) == TRUE);
     bool retval = false;
     char buf[PATH_MAX];
 
@@ -61,9 +62,6 @@ bool createPipePair(PIPE_PTR *pair)
     }
 
     return retval;
-#else
-    return (CreatePipe(pair + READ, pair + WRITE, NULL, 0) == TRUE);
-#endif
 }
 
 int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
