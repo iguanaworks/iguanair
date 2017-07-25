@@ -14,7 +14,7 @@ endif
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	mkdir -p build;	cd build;cmake ..;cd ..
+	mkdir -p build;	cd build;cmake .. -DBOOTSTRAP_DIR=bootstrap/  ;cd ..
 	touch configure-stamp
 
 build: configure-stamp build-stamp
@@ -42,6 +42,7 @@ install: build
 
 	# main install
 	make -C build install DESTDIR=$(CURDIR)/debian/iguanair
+	
 	#add symlink for library
 	#ln -s libiguanaIR.so libiguanaIR.so.0
 	#mv libiguanaIR.so.0 $(CURDIR)/debian/tmp/usr/lib/
