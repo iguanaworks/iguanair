@@ -98,6 +98,13 @@ void initServerSettings()
     InitializeCriticalSection(&srvSettings.devsLock);
     initializeList(&srvSettings.devs);
 
+    /* initialize the toggle workaround based on our OS */
+#ifdef __APPLE
+    srvSettings.fixToggle = true;
+#else
+    srvSettings.fixToggle = false;
+#endif
+
     /* old flag to handle libusb pre 1.0 threading issues */
 #ifdef LIBUSB_NO_THREADS_OPTION
     srvSettings.noThreads = false;
@@ -116,7 +123,11 @@ static struct argp_option options[] =
     { "no-ids",          ARG_NO_IDS,       NULL,     0, "Do not query the device for its label.",                                        MSC_GROUP },
     { "no-labels",       ARG_NO_IDS,       NULL,     0, "DEPRECATED: same as --no-ids",                                                  MSC_GROUP },
     { "scan-timer",      ARG_SCANWHEN,   "SECS",     0, "Periodically rescan the USB bus for new devices regardless of hotplug events.", MSC_GROUP },
+#ifdef __APPLE
+    { "no-bad-toggle-fix", ARG_BADTOGGLE,  NULL,     0, "On OS X our hardware has a data toggle mismatch and this disables the works around.", MSC_GROUP },
+#else
     { "bad-toggle-fix",  ARG_BADTOGGLE,    NULL,     0, "On OS X our hardware has a data toggle mismatch and this works around it.",     MSC_GROUP },
+#endif
 
     /* end of table */
     {0}
@@ -165,7 +176,11 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     }
 
     case ARG_BADTOGGLE:
+#ifdef __APPLE
+        srvSettings.fixToggle = false;
+#else
         srvSettings.fixToggle = true;
+#endif
         break;
 
     default:
