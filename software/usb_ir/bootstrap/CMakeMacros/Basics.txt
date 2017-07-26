@@ -1,4 +1,9 @@
 # settings we include in every CMake project
+
+# dummy use of BOOTSTRAP_DIR to shut up a warning
+If ("${BOOTSTRAP_DIR}")
+EndIf()
+
 If (NOT DEFINED PROJECT_NAME)
   Message("WARNING: You should define the project name before including Basics.txt")
 EndIf()
