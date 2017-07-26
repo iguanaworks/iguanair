@@ -1,3 +1,5 @@
+Set(GIT_VERSION_WRITER_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
 Macro(GitVersionH SRC)
   # compute the output filename (basename minus trailing .in)
   get_filename_component(OUTPUT "${SRC}" NAME)
@@ -12,7 +14,7 @@ Macro(GitVersionH SRC)
       COMMAND ${CMAKE_COMMAND}
           -DIN="${SRC}"
           -DOUT="${OUTPUT}"
-          -P "${BOOTSTRAP_DIR}/CMakeMacros/GitVersionWriter.txt")
+          -P "${GIT_VERSION_WRITER_DIR}/GitVersionWriter.txt")
   EndIf()
 
   include_directories(${CMAKE_BINARY_DIR})
