@@ -103,7 +103,7 @@ fi
 %{_bindir}/igdaemon
 %{_bindir}/igclient
 %{_bindir}/iguanaIR-rescan
-%{_libdir}/lib%{name}.so.*
+%{_libdir}/lib*.so*
 %{_libdir}/%{name}/*.so
 /usr/lib/systemd/system/%{name}.service
 # makes .rpmsave
