@@ -6,11 +6,11 @@ If(POLICY CMP0042)
   cmake_policy(SET CMP0042 NEW)
 EndIf()
 
-include(${BOOTSTRAP_DIR}/CMakeMacros/Basics.txt)
-include(${BOOTSTRAP_DIR}/CMakeMacros/GitVersion.txt)
+include(${CMAKE_SOURCE_DIR}/bootstrap/CMakeMacros/Basics.txt)
+include(${CMAKE_SOURCE_DIR}/bootstrap/CMakeMacros/GitVersion.txt)
 
 # Make sure to change the value in Changelog as well
-Set(FULLVER 1.1.2) # TODO: pull from version.h or directly from git at cmake time?
+Set(FULLVER 1.2.0)
 
 # SONAME links, unrelated to the package version.
 SET(SO_CURRENT 0)
