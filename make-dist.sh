@@ -31,7 +31,7 @@ git describe --always --tags ${treeish} > /dev/null
 release=$( git archive ${treeish} software/usb_ir/CMakeLists.txt |
                tar -x --to-stdout |
                sed -rne '/Set\(FULLVER/s/[^ ]+ ([^\)]+)\).*/\1/p' )
-tarname=${TARNAME:-"IguanaIR-$release"}
+tarname=${TARNAME:-"iguanaIR-$release"}
 
 # create a complete archive of the selected tree
 git archive --prefix ${tarname}/ --output dist/${tarname}.tar ${treeish}
