@@ -18,12 +18,18 @@ driver          = iguanair
 all:  $(driver).so
 
 # OS X requires an additional linker flag  TODO: is it really OS X or clang?
-LDFLAGS         += -lusb -liguanaIR -L../usb_ir/build
+LDFLAGS         += -liguanaIR -L../usb_ir/build/result
 ifeq ("$(shell uname)", "Darwin")
   LDFLAGS       += -Wl,-undefined,dynamic_lookup
 endif
 
-CFLAGS          += -I../usb_ir
+KERNLIRC=-DHAVE_KERNEL_LIRC_H
+ifeq ("$(wildcard /usr/include/linux/lirc.h)","")
+  KERNLIRC=
+endif
+
+# check with leamas how -DHAVE_KERNEL_LIRC_H should be handled
+CFLAGS          += -I../usb_ir ${KERNLIRC}
 MODPROBE_CONF   = 60-blacklist-kernel-iguanair.conf
 
 
