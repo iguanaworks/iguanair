@@ -201,35 +201,11 @@ If("${CMAKE_ARCH}" STREQUAL "arm")
   Message("Skipping Python bits on ARM.")
 Else()
   find_package(SWIG)
-  find_package(PythonLibs ${PYVER})
+  find_package(PythonLibs 2)
   If(SWIG_FOUND AND PYTHONLIBS_FOUND)
-    message(STATUS "Found Python version ${PYTHONLIBS_VERSION_STRING} (override with -DPYVER=2|3)")
-    message(STATUS "Python and SWIG found; will build Python bindings")
-
-    # ensure we have PYTHON_INCLUDE_DIR even on older CMake
-    If("${PYTHON_INCLUDE_DIR}" STREQUAL "")
-      Set(PYTHON_INCLUDE_DIR "${PYTHON_INCLUDE_PATH}")
-    EndIf()
-
-    # compute the version info we need to find site-packages
-    # for cmake < 2.8.8 (without PYTHONLIBS_VERSION_STRING) default to 2.7
-    Set(PYMAJMINVER "2.7")
-    If(NOT "${PYTHONLIBS_VERSION_STRING}" STREQUAL "")
-      string(SUBSTRING ${PYTHONLIBS_VERSION_STRING} 0 3 PYMAJMINVER)
-    EndIf()
-
-    # pull in the swig macros
-    include(${SWIG_USE_FILE})
-
-    include_directories(${PYTHON_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
-    swig_add_module(iguanaIR python iguanaIR.i)
-    swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
-
-    # install the python support
-    install(TARGETS _iguanaIR
-            DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
-    install(FILES ${CMAKE_BINARY_DIR}/iguanaIR.py
-            DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
+    ForEach(PYVER 2 3)
+      add_subdirectory(python python${PYVER})
+    EndForEach(PYVER)
 
     # install the reflasher script and hex files
     install(DIRECTORY files/python/usr
