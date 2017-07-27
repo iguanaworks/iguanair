@@ -1,12 +1,16 @@
 Source: iguanair
 Section: utils
 Priority: optional
-Maintainer: IguanaWorks [support@iguanaworks.net]
+Maintainer: IguanaWorks <support@iguanaworks.net>
+X-Python-Version: >= 2.6
+X-Python3-Version: >= 3.2
 Build-Depends: cmake,
  debhelper (>= 9),
  dh-systemd (>= 1.5),
  liblircclient-dev,
  libusb-dev | libusb-1.0-0-dev,
+ python-all,
+ python3-all,
 Standards-Version: 3.9.8
 Homepage:https://www.iguanaworks.net/
 #Vcs-Git: https://github.com/iguanaworks/iguanair.git
@@ -14,7 +18,7 @@ Homepage:https://www.iguanaworks.net/
 
 Package: iguanair
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},python2.7
+Depends: ${shlibs:Depends}, ${misc:Depends},
 Description: User-space driver and tools for IguanaWorks USB IR devices
  The daemon igdeamon(8), client tool igclient(1), some support scripts and
  a lircd(8) driver for the iguanaIR device from IguanaWorks, Inc. The tools
@@ -56,4 +60,23 @@ Depends: lirc (>= 0.9.3),
  lsb-base
 Description: iguanair lirc plugin
  lirc plugin providing full access to lirc, the same functionality which was
- part of lirc prior to version  0.9.4,
+ part of lirc prior to version  0.9.4.
+
+Package: python-iguanair
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends},libiguanair0 (= ${binary:Version}),
+Suggests:
+Description: Python iguanair wrapper library (Python 2)
+ This package lets you talk to our iguanair library with python bindings.
+ .
+ This package installs the library for Python 2.
+
+Package: python3-iguanair
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},libiguanair0 (= ${binary:Version}),
+Suggests:
+Description: Python iguanair wrapper library (Python 3)
+ This package lets you talk to our iguanair library with python bindings.
+ .
+ This package installs the library for Python 3.
+
