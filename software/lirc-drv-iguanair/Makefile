@@ -18,7 +18,7 @@ driver          = iguanair
 all:  $(driver).so
 
 # OS X requires an additional linker flag  TODO: is it really OS X or clang?
-LDFLAGS         += -lusb -liguanaIR -L../usb_ir/build
+LDFLAGS         += -liguanaIR -L../usb_ir/build
 ifeq ("$(shell uname)", "Darwin")
   LDFLAGS       += -Wl,-undefined,dynamic_lookup
 endif
