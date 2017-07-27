@@ -1,22 +1,62 @@
-This package is maintained by IguanaWorks Support <support@iguanaworks.net>, 
-and was built from the sources found at:
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: iguanair
+Source: https://www.iguanaworks.net/
 
-        http://iguanaworks.net/downloads.php
+Files: *
+Copyright: 2006 - 2017 IguanaWorks
+License: GPL-2
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
 
-Copyright (C)  2006-2008 IguanaWorks Incorporated
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, version 2
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
-
-On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL'.
+Files: ./software/usb_ir/dataPackets.h
+ ./software/usb_ir/dataPackets.h
+ ./software/usb_ir/iguanaIR.h
+ ./software/usb_ir/iguanaIR.h
+ ./software/usb_ir/support.h
+ ./software/usb_ir/support.h
+ ./software/usb_ir/pipes.c
+ ./software/usb_ir/pipes.c
+ ./software/usb_ir/iguanaIR.c
+ ./software/usb_ir/iguanaIR.c
+ ./software/usb_ir/compat-unix.c
+ ./software/usb_ir/compat-unix.c
+ ./software/usb_ir/support.c
+ ./software/usb_ir/support.c
+ ./software/usb_ir/dataPackets.c
+ ./software/usb_ir/dataPackets.c
+ ./software/usb_ir/packaging/fedora/iguanaIR.spec
+ ./software/usb_ir/packaging/fedora/iguanaIR.spec
+ ./software/usb_ir/packaging/debian/rules
+ ./software/usb_ir/compat.h
+ ./software/usb_ir/compat.h
+ ./software/usb_ir/pipes.h
+ ./software/usb_ir/pipes.h
+Copyright: 2006, 2007 IguanaWorks
+License: LGPL-2.1
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Lesser Public License as published
+ by the Free Software Foundation version 2.1
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public License
+ 2.1 along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".

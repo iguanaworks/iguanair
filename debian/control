@@ -2,33 +2,58 @@ Source: iguanair
 Section: utils
 Priority: optional
 Maintainer: IguanaWorks [support@iguanaworks.net]
-Build-Depends: debhelper (>=5), libusb-1.0-0-dev, python-dev (>=2.6.6-3~), swig, fakeroot, cmake (>= 2.6)
-Standards-Version: 3.7.2.2
+Build-Depends: cmake,
+ debhelper (>= 9),
+ dh-systemd (>= 1.5),
+ liblircclient-dev,
+ libusb-dev | libusb-1.0-0-dev,
+Standards-Version: 3.9.8
+Homepage:https://www.iguanaworks.net/
+#Vcs-Git: https://github.com/iguanaworks/iguanair.git
+#Vcs-Browser: https://github.com/iguanaworks/iguanair
 
 Package: iguanair
 Architecture: any
-Section: utils
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, udev (>= 0.99)
-Essential: no
-Recommends: lirc
-Description: This is the IguanaWorks USB IR daemon/driver and
-             client. Software allows you to control your IguanaWorks
-             USB IR device. Includes software for use with lirc.
+Depends: ${shlibs:Depends}, ${misc:Depends},python2.7
+Description: User-space driver and tools for IguanaWorks USB IR devices
+ The daemon igdeamon(8), client tool igclient(1), some support scripts and
+ a lircd(8) driver for the iguanaIR device from IguanaWorks, Inc. The tools
+ provides a programmatic API, CLI access using igdaemon and high-level
+ access to IR remotes using lircd(8).
 
-Package: iguanair-python
-Section: utils
+Package: libiguanair0
 Architecture: any
-Depends: iguanair (= ${binary:Version}), ${shlibs:Depends}, ${python:Depends}
-Essential: no
-Description: This is the Python client bindings IguanaWorks USB IR
-	     driver.
+Multi-Arch: same
+Section: libs
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ lsb-base
+Description: API for accessing iguanaIR IR remote USB-based devices
+ A library for communcating with igdaemon(1), used primarely by igclient.
 
+Package: libiguanair-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Depends:
+ libiguanair0 (= ${binary:Version}),
+ liblirc0,
+ ${misc:Depends},
+ lsb-base
+Description: IguanaIR daemon access library - development files
+ Headers and unversioned so-links used for developing applications using
+ the libiguanair library.
 
-Package: iguanair-reflasher
-Section: utils
-Architecture: all
-Depends: iguanair-python (= ${binary:Version})
-Essential: no
-Description: The program will reflash the IguanaWorks USB IR Transceiver with the
-		the latest firmware.
-
+Package:  lirc-drv-iguanair
+Architecture: any
+Multi-Arch: same
+Section: libs
+Depends: lirc (>= 0.9.3),
+ libiguanair0,
+ ${shlibs:Depends},
+ ${misc:Depends},
+ lsb-base
+Description: iguanair lirc plugin
+ lirc plugin providing full access to lirc, the same functionality which was
+ part of lirc prior to version  0.9.4,
