@@ -1,32 +1,31 @@
-# determine the python version
-%define pyver %(python -V 2>&1 | sed 's/Python \\(.\\..\\).*/\\1/')
-%define version %(grep 'Set.FULLVER' ../CMakeLists.txt | sed 's/.* //' | sed 's/.$//')
+# shorten a couple paths for later
+%define usbir software/usb_ir
+%define lircdrv software/lirc-drv-iguanair
 
-Name:           iguanaIR
-Version:        %{version}
-Release:        1
-Summary:        Driver for Iguanaworks USB IR transceiver
+# Don't add provides for python .so files
+%define __provides_exclude_from %{python_sitearch}/.*\.so$
 
-Group:          System Environment/Daemons
-License:        GPLv2 and LGPLv2
-URL:            http://iguanaworks.net/ir
-Source0:        http://iguanaworks.net/downloads/%{name}-%{version}.tar.bz2
-Requires:         libusb1
-BuildRequires:    cmake libusb1-devel
+
+Name:             iguanaIR
+# TODO: determine the version from somewhere else?
+Version:          1.2.0
+Release:          1
+Summary:          Driver for Iguanaworks USB IR transceiver
+Group:            System Environment/Daemons
+License:          GPLv2 and LGPLv2
+URL:              https://www.iguanaworks.net
+Source0:          https://www.iguanaworks.net/downloads/%{name}-%{version}.tar.gz
+Requires:         libusb1 udev systemd udev
+BuildRequires:    cmake libusb1-devel systemd-devel systemd-udev
 Requires(post):   /usr/bin/install /sbin/chkconfig
 Requires(pre):    /usr/sbin/useradd
 Requires(preun):  /sbin/chkconfig /sbin/service /bin/rmdir
 Requires(postun): /usr/sbin/userdel
 
-# some features can be disabled during the rpm build
-%{?_without_clock_gettime: %define _disable_clock_gettime --disable-clock_gettime}
-
-# Don't add provides for python .so files
-%define __provides_exclude_from %{python_sitearch}/.*\.so$
-
 %description
 This package provides igdaemon and igclient, the programs necessary to
 control the Iguanaworks USB IR transceiver.
+
 
 %package devel
 Summary: Library and header files for iguanaIR
@@ -37,20 +36,22 @@ Requires: %{name} = %{version}-%{release}
 The development files needed to interact with the iguanaIR igdaemon are
 included in this package.
 
-%package python
+
+%package -n python-iguanaIR
 Group: System Environment/Daemons
 Summary: Python module for Iguanaworks USB IR transceiver
 Requires: %{name} = %{version}-%{release}, python >= 2.4
 BuildRequires: python-devel swig
 
-%description python
+%description python-iguanaIR
 This package provides the swig-generated Python module for interfacing
 with the Iguanaworks USB IR transceiver.
+
 
 %package reflasher
 Group: System Environment/Daemons
 Summary: Reflasher for Iguanaworks USB IR transceiver
-Requires: iguanaIR-python = %{version}
+Requires: %{name}-python = %{version}
 BuildArch: noarch
 
 %description reflasher
@@ -58,19 +59,38 @@ This package provides the reflasher/testing script and assorted firmware
 versions for the Iguanaworks USB IR transceiver.  If you have no idea
 what this means, you do not need it.
 
+
+%package -n lirc-drv-iguanair
+Group: System Environment/Daemons
+Summary: LIRC driver for Iguanaworks USB IR transceiver
+Requires: %{name} = %{version}
+BuildRequires: lirc-devel
+
+%description lirc-drv-iguanair
+This package provides the lirc driver for the Iguanaworks USB IR
+transceiver.
+
+
+
 %prep
 %setup -q -n %{name}-%{version}
 
 %build
+pushd %{usbir}
 mkdir -p build
 cd build
 cmake -DPYVER=%{pyver} -DLIBDIR=%{_libdir} -DBOOTSTRAP_DIR=`pwd`/../bootstrap ..
-cd ..
-make -C build %{?_smp_mflags}
+make %{?_smp_mflags}
+popd
+pushd %{lircdrv}
+make
 
 %install
-rm -rf $RPM_BUILD_ROOT
-make -C build install DESTDIR=$RPM_BUILD_ROOT
+rm -rf "${RPM_BUILD_ROOT}"
+make DESTDIR="${RPM_BUILD_ROOT}" -C %{usbir}/build install
+make DESTDIR="${RPM_BUILD_ROOT}" -C %{lircdrv} install
+
+
 
 # must create the user and group before files are put down
 %pre
@@ -96,14 +116,21 @@ if [ $1 = 0 ]; then
   /usr/sbin/userdel iguanair
 fi
 
+
+
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS LICENSE LICENSE-LGPL WHY
-%doc README.txt ChangeLog examples
+%doc %{usbir}/AUTHORS
+%doc %{usbir}/LICENSE
+%doc %{usbir}/LICENSE-LGPL
+%doc %{usbir}/WHY
+%doc %{usbir}/README.txt
+%doc %{usbir}/ChangeLog
+%doc %{usbir}/examples
 %{_bindir}/igdaemon
 %{_bindir}/igclient
 %{_bindir}/iguanaIR-rescan
-%{_libdir}/lib%{name}.so.*
+%{_libdir}/lib*.so*
 %{_libdir}/%{name}/*.so
 /usr/lib/systemd/system/%{name}.service
 # makes .rpmsave
@@ -116,18 +143,32 @@ fi
 /usr/share/man/man8/igdaemon.8.gz
 /usr/lib/tmpfiles.d/iguanair.conf
 
+
 %files devel
 %{_includedir}/%{name}.h
 %{_libdir}/lib%{name}.so
+
 
 %files python
 #%{python3_sitearch}/*
 %{_libdir}/python*/site-packages/*
 
+
 %files reflasher
 %{_datadir}/%{name}-reflasher/
 %{_bindir}/%{name}-reflasher
 /usr/share/man/man1/%{name}-reflasher.1.gz
+
+
+%files lirc-drv
+%doc %{lircdrv}/iguanair.txt
+%doc %{lircdrv}/LICENSE
+/etc/modprobe.d/60-blacklist-kernel-iguanair.conf
+%{_libdir}/lirc/plugins/iguanair.so
+/usr/share/doc/lirc/plugindocs/iguanair.html
+/usr/share/lirc/configs/iguanair.conf
+
+
 
 %changelog
 * Sat Nov 20 2010 Joseph Dunn <jdunn@iguanaworks.net> 1.0-1

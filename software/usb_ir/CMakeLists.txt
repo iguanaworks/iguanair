@@ -13,10 +13,9 @@ include(${CMAKE_SOURCE_DIR}/bootstrap/CMakeMacros/GitVersion.txt)
 Set(FULLVER 1.2.0)
 
 # SONAME links, unrelated to the package version.
-SET(SO_CURRENT 0)
-Set(SO_AGE 3)
-Set(SO_REV 0)
-Set(SOVERSION 0)
+SET(SO_VER 0)
+Set(SO_REV 4)
+Set(SO_REL 0)
 
 # Our Android support is probably junk at this point, but keeping it
 # in another file for reference
@@ -150,16 +149,14 @@ GitVersionH("${CMAKE_SOURCE_DIR}/version.h.in")
 add_library(iguanaIR SHARED ${PIPESRC} ${BASESRC}
             iguanaIR.c iguanaIR.h dataPackets.c dataPackets.h)
 target_link_libraries(iguanaIR ${BASELIBS} ${ARGPLIB})
-set_target_properties(iguanaIR PROPERTIES
-                      VERSION ${FULLVER} SOVERSION ${SOVERSION})
 set_property(TARGET iguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS IGUANAIR_EXPORTS)
-set_property(TARGET iguanaIR
-             PROPERTY VERSION "${SO_CURRENT}.${SO_AGE}.${SO_REV}")
-set_property(TARGET iguanaIR
-             PROPERTY SOVERSION ${SOVERSION})
+set_target_properties(iguanaIR PROPERTIES
+                      VERSION "${SO_VER}.${SO_REV}.${SO_REL}"
+                      SOVERSION ${SO_VER})
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
+
 # TODO: should have this just build early w/o an explicit dep?
 add_dependencies(iguanaIR VersionH)
 
@@ -168,10 +165,15 @@ add_library(directIguanaIR SHARED
   driver.c driver.h driverapi.h
   sendFormat.c sendFormat.h
   ${BASESRC})
-set_property(TARGET directIguanaIR
-             APPEND PROPERTY COMPILE_DEFINITIONS DIRECT_EXPORTS)
 target_link_libraries(directIguanaIR iguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
+set_property(TARGET directIguanaIR
+             APPEND PROPERTY COMPILE_DEFINITIONS DIRECT_EXPORTS)
+set_target_properties(directIguanaIR PROPERTIES
+                      VERSION "${SO_VER}.${SO_REV}.${SO_REL}"
+                      SOVERSION ${SO_VER})
+install(TARGETS directIguanaIR
+        DESTINATION ${LIBDIR})
 
 # build the service/server that controls hardware
 add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
@@ -199,35 +201,11 @@ If("${CMAKE_ARCH}" STREQUAL "arm")
   Message("Skipping Python bits on ARM.")
 Else()
   find_package(SWIG)
-  find_package(PythonLibs ${PYVER})
+  find_package(PythonLibs 2)
   If(SWIG_FOUND AND PYTHONLIBS_FOUND)
-    message(STATUS "Found Python version ${PYTHONLIBS_VERSION_STRING} (override with -DPYVER=2|3)")
-    message(STATUS "Python and SWIG found; will build Python bindings")
-
-    # ensure we have PYTHON_INCLUDE_DIR even on older CMake
-    If("${PYTHON_INCLUDE_DIR}" STREQUAL "")
-      Set(PYTHON_INCLUDE_DIR "${PYTHON_INCLUDE_PATH}")
-    EndIf()
-
-    # compute the version info we need to find site-packages
-    # for cmake < 2.8.8 (without PYTHONLIBS_VERSION_STRING) default to 2.7
-    Set(PYMAJMINVER "2.7")
-    If(NOT "${PYTHONLIBS_VERSION_STRING}" STREQUAL "")
-      string(SUBSTRING ${PYTHONLIBS_VERSION_STRING} 0 3 PYMAJMINVER)
-    EndIf()
-
-    # pull in the swig macros
-    include(${SWIG_USE_FILE})
-
-    include_directories(${PYTHON_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
-    swig_add_module(iguanaIR python iguanaIR.i)
-    swig_link_libraries(iguanaIR iguanaIR ${BASELIBS} ${PYTHON_LIBRARIES})
-
-    # install the python support
-    install(TARGETS _iguanaIR
-            DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
-    install(FILES ${CMAKE_BINARY_DIR}/iguanaIR.py
-            DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
+    ForEach(PYVER 2 3)
+      add_subdirectory(python python${PYVER})
+    EndForEach(PYVER)
 
     # install the reflasher script and hex files
     install(DIRECTORY files/python/usr

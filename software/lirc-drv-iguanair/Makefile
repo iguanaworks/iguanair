@@ -23,7 +23,13 @@ ifeq ("$(shell uname)", "Darwin")
   LDFLAGS       += -Wl,-undefined,dynamic_lookup
 endif
 
-CFLAGS          += -I../usb_ir
+KERNLIRC=-DHAVE_KERNEL_LIRC_H
+ifeq ("$(wildcard /usr/include/linux/lirc.h)","")
+  KERNLIRC=
+endif
+
+# check with leamas how -DHAVE_KERNEL_LIRC_H should be handled
+CFLAGS          += -I../usb_ir ${KERNLIRC}
 MODPROBE_CONF   = 60-blacklist-kernel-iguanair.conf
 
 
