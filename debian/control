@@ -63,7 +63,7 @@ Description: iguanair lirc plugin
  part of lirc prior to version  0.9.4.
 
 Package: python-iguanair
-Architecture: all
+Architecture: any
 Depends: ${python:Depends}, ${misc:Depends},libiguanair0 (= ${binary:Version}),
 Suggests:
 Description: Python iguanair wrapper library (Python 2)
@@ -72,7 +72,7 @@ Description: Python iguanair wrapper library (Python 2)
  This package installs the library for Python 2.
 
 Package: python3-iguanair
-Architecture: all
+Architecture: any
 Depends: ${python3:Depends}, ${misc:Depends},libiguanair0 (= ${binary:Version}),
 Suggests:
 Description: Python iguanair wrapper library (Python 3)
