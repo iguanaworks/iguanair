@@ -35,9 +35,6 @@
 extern int darwin_hotplug(const usbId *);
 #endif
 
-/* local variables */
-static mode_t devMode = 0777;
-
 struct parameters
 {
     bool runAsDaemon;
@@ -52,104 +49,6 @@ static void quitHandler(int UNUSED(sig))
 static void scanHandler(int UNUSED(sig))
 {
     triggerCommand((THREAD_PTR)SCAN_TRIGGER);
-}
-
-static bool mkdirs(char *path)
-{
-    bool retval = false;
-    char *slash;
-
-    slash = strrchr(path, '/');
-    if (slash == NULL)
-        retval = true;
-    else
-    {
-        slash[0] = '\0';
-        while(true)
-        {
-            /* make the new directory */
-            if (mkdir(path,
-                      S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
-                retval = true;
-            /* try to create the parent path if that was the problem */
-            else if (errno == ENOENT && mkdirs(path))
-                continue;
-
-            break;
-        }
-        slash[0] = '/';
-    }
-
-    return retval;
-}
-
-static int startListening(const char *name)
-{
-    int sockfd, attempt = 0;
-    struct sockaddr_un server = {0};
-    bool retry = true;
-
-    /* generate the server address */
-    server.sun_family = PF_UNIX;
-    socketName(name, server.sun_path, sizeof(server.sun_path));
-
-    while(retry)
-    {
-        retry = false;
-        attempt++;
-
-        sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
-#if DEBUG
-message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
-#endif
-
-        if (sockfd == -1)
-            message(LOG_ERROR, "failed to create server socket.\n");
-        else if (bind(sockfd, (struct sockaddr*)&server,
-                      sizeof(struct sockaddr_un)) == -1)
-        {
-            if (errno == EADDRINUSE)
-            {
-                /* check that the socket has something listening */
-                int testconn;
-                testconn = connectToPipe(name);
-                if (testconn == -1 && errno == ECONNREFUSED && attempt == 1)
-                {
-                    /* if not, try unlinking the pipe and trying again */
-                    unlink(server.sun_path);
-                    retry = true;
-                }
-                else
-                {
-                    /* guess someone is there, whoops, close and complain */
-                    closePipe(testconn);
-                    message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
-                }
-            }
-            /* attempt to make the directory if we get ENOENT */
-            else if (errno == ENOENT && mkdirs(server.sun_path))
-                retry = true;
-            else
-                message(LOG_ERROR, "failed to bind server socket: %s\n",
-                        translateError(errno));
-        }
-        /* start listening */
-        else if (listen(sockfd, 5) == -1)
-            message(LOG_ERROR,
-                    "failed to put server socket in a listening state.\n");
-        /* set the proper permissions */
-        else if (chmod(server.sun_path, devMode) != 0)
-            message(LOG_ERROR,
-                    "failed to set permissions on the server socket.\n");
-        else
-            return sockfd;
-        close(sockfd);
-#if DEBUG
-message(LOG_WARN, "CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
-#endif
-    }
-
-    return INVALID_PIPE;
 }
 
 static void stopListening(int fd, const char *name)
@@ -375,7 +274,10 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
     PIPE_PTR listener;
 
     /* start the listener */
-    listener = startListening(name);
+    char **addrStr = NULL;
+    if (idev != NULL)
+        addrStr = &idev->addrStr;
+    listener = createServerPipe(name, addrStr);
     if (listener == INVALID_PIPE)
     {
         if (idev == NULL)

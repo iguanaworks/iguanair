@@ -72,6 +72,7 @@ enum
 
     /* used to ask the daemon about devices */
     IG_CTL_LISTDEVS = 0x80,
+    IG_CTL_DEVADDR  = 0x81,
 
     /* used in response packets */
     IG_DEV_ERROR = 0x00,
@@ -112,6 +113,7 @@ enum
     IG_DEV_RESEND       = 0x27,
     IG_DEV_SENDSIZE     = 0x28, /* internal to client/daemon */
     IG_DEV_LISTALIASES  = 0x29, /* internal to client/daemon */
+    IG_DEV_GETADDRESS   = 0x2A, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,

@@ -228,6 +228,11 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
 
+    case IG_DEV_GETADDRESS:
+        request->data = (unsigned char*)strdup(target->idev->addrStr);
+        request->dataLen = strlen((char*)request->data) + 1;
+        retval = true;
+        break;
     }
 
     if (retval)

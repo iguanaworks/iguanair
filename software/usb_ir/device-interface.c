@@ -66,7 +66,8 @@ static versionedType types[] =
     {0, 0, {IG_EXCH_VERSIONS, CTL_TODEV, 2, true, 2}},
 
     /* daemon ctl functionality */
-    {1, 1, {IG_CTL_LISTDEVS, CTL_TODEV, NO_PAYLOAD, true, ANY_PAYLOAD}},
+    {1, 1, {IG_CTL_LISTDEVS, CTL_TODEV,  NO_PAYLOAD, true, ANY_PAYLOAD}},
+    {1, 1, {IG_CTL_DEVADDR,  CTL_TODEV, ANY_PAYLOAD, true, ANY_PAYLOAD}},
 
     /* device functionality */
     {0,      0, {IG_DEV_GETVERSION,  CTL_TODEV,  NO_PAYLOAD, true, 2}},
@@ -75,6 +76,7 @@ static versionedType types[] =
     {0,      0, {IG_DEV_SEND,        CTL_TODEV, ANY_PAYLOAD, true, NO_PAYLOAD}},
     {0x0309, 0, {IG_DEV_RESEND,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
     {0,      0, {IG_DEV_LISTALIASES, CTL_TODEV,  NO_PAYLOAD, true, ANY_PAYLOAD}},
+    {0,      0, {IG_DEV_GETADDRESS,  CTL_TODEV,  NO_PAYLOAD, true, ANY_PAYLOAD}},
     {0,      0, {IG_DEV_SENDSIZE,    CTL_TODEV, ANY_PAYLOAD, true, 2}},
     {0,      0, {IG_DEV_RECVON,      CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},
     {0x0101, 0, {IG_DEV_RAWRECVON,   CTL_TODEV,  NO_PAYLOAD, true, NO_PAYLOAD}},

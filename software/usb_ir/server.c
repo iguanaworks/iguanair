@@ -416,6 +416,56 @@ char* deviceSummary()
     return buf;
 }
 
+typedef struct findAddrInfo
+{
+    const char *name;
+    char *result;
+} findAddrInfo;
+
+static bool findAddress(itemHeader *item, void *userData)
+{
+    bool found = false;
+    findAddrInfo *info = (findAddrInfo*)userData;
+    iguanaDev *idev = (iguanaDev*)item;
+
+    if (info->result == NULL)
+    {
+        char buf[PATH_MAX], idBuf[8];
+
+        sprintf(idBuf, "%d", idev->usbDev->id);
+        socketName(idBuf, buf, PATH_MAX);
+        if (strcmp(buf, info->name) == 0)
+            found = true;
+        else
+        {
+            socketName(idev->locAlias, buf, PATH_MAX);
+            if (strcmp(buf, info->name) == 0)
+                found = true;
+            else
+            {
+                socketName(idev->userAlias, buf, PATH_MAX);
+                if (strcmp(buf, info->name) == 0)
+                    found = true;
+            }
+        }
+    }
+
+    if (found)
+        info->result = strdup(idev->addrStr);
+    return true;
+}
+
+char* deviceAddress(const char *name)
+{
+    findAddrInfo info = {name, NULL};
+
+    forEach(&srvSettings.devs, findAddress, &info);
+
+    if (info.result == NULL)
+        return NULL;
+    return strdup(info.result);
+}
+
 void cleanupServer()
 {
     cleanupDriver();

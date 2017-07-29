@@ -62,6 +62,7 @@ enum
     OFFSET_REPEATER    = ARGP_OFFSET + IG_DEV_REPEATER,
     OFFSET_SENDSIZE    = ARGP_OFFSET + IG_DEV_SENDSIZE,
     OFFSET_LISTALIASES = ARGP_OFFSET + IG_DEV_LISTALIASES,
+    OFFSET_GETADDRESS  = ARGP_OFFSET + IG_DEV_GETADDRESS,
 
     /* used to check the receive buffer is empty in the end */
     FINAL_CHECK = 0xFFFF,
@@ -108,6 +109,7 @@ static commandSpec supportedCommands[] =
     {"send",            false, IG_DEV_SEND,            0,      false},
     {"resend",          false, IG_DEV_RESEND,          0,      false},
     {"all aliases",     false, IG_DEV_LISTALIASES,     0,      false},
+    {"get address",     false, IG_DEV_GETADDRESS,      0,      false},
     {"encoded size",    false, IG_DEV_SENDSIZE,        0,      false},
     {"get channels",    false, IG_DEV_GETCHANNELS,     0,      false},
     {"set channels",    false, IG_DEV_SETCHANNELS,     0,      true},
@@ -319,6 +321,10 @@ static bool processResponse(unsigned char code, igtask *cmd, unsigned int length
                         message(LOG_NORMAL, ": no devices");
                     else
                         message(LOG_NORMAL, ": %s", (char*)data);
+                    break;
+
+                case IG_DEV_GETADDRESS:
+                    message(LOG_NORMAL, ": %s", (char*)data);
                     break;
 
                 case IG_DEV_GETVERSION:
@@ -736,6 +742,7 @@ static struct argp_option options[] = {
     { "send",            IG_DEV_SEND,        "FILE",     0, "Send the pulses and spaces from a file.",                       DEV_GROUP },
     { "resend",          OFFSET_RESEND,      "DELAY",    0, "Resend the contents of the device buffer after DELAY seconds.", DEV_GROUP },
     { "all-aliases",     OFFSET_LISTALIASES, NULL,       0, "List all the valid names for this device.",                     DEV_GROUP },
+    { "get-address",     OFFSET_GETADDRESS,  NULL,       0, "Return the base address for a device.",                         DEV_GROUP },
     { "encoded-size",    OFFSET_SENDSIZE,    "FILE",     0, "Check the encodes size of the pulses and spaces from a file.",  DEV_GROUP },
     { "receiver-on",     IG_DEV_RECVON,      NULL,       0, "Enable the receiver on the usb device.",                        DEV_GROUP },
     { "receiver-off",    IG_DEV_RECVOFF,     NULL,       0, "Disable the receiver on the usb device.",                       DEV_GROUP },
@@ -826,6 +833,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case OFFSET_REPEATER:
     case OFFSET_SENDSIZE:
     case OFFSET_LISTALIASES:
+    case OFFSET_GETADDRESS:
         enqueueTaskById((unsigned short)(key - ARGP_OFFSET), arg);
         break;
 

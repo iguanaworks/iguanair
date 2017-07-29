@@ -39,6 +39,7 @@ enum
 #endif
 
 /* functions dealing with the server sockets */
+PIPE_PTR createServerPipe(const char *name, char **addrStr);
 void socketName(const char *name, char *buffer, unsigned int length);
 PIPE_PTR connectToPipe(const char *name);
 
