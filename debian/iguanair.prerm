@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+if [ -e /lib/systemd/system/iguanaIR.service ]; then
+    deb-systemd-invoke stop iguanaIR.service
+fi

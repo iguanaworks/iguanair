@@ -1,0 +1,3 @@
+iguanair debian README.
+
+Debian-style packaging of the Iguanaworks USB IR Transceiver software, including driver. For more information, please see https://www.iguanaworks.net. Code is available at https://github.com/iguanaworks/iguanair.

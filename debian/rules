@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/default.mk
+
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all  -- build errors
+
+export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+%:
+	dh $@ --with systemd 
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf software/usb_ir/build software/usb_ir/config.h
+	cd software/lirc-drv-iguanair; make clean
+
+override_dh_auto_configure:
+	cd software/usb_ir; CFLAGS='-fpic' ./runCmake \
+	    -DLIBDIR=lib/$(DEB_HOST_MULTIARCH) \
+	    -DCMAKE_INSTALL_PREFIX=/usr
+
+override_dh_install:
+	dh_install --fail-missing
+
+override_dh_auto_install:
+	make -C software/usb_ir/build
+	make -C software/usb_ir/build install DESTDIR=$(CURDIR)/debian/tmp 
+	if [ -f /usr/include/lirc_driver.h ]; then \
+		make -C software/lirc-drv-iguanair install DESTDIR=$(CURDIR)/debian/tmp ;\
+	fi
+#ifeq (,$(filter liblirc-dev, $(shell dh_listpackages)))
+	#make -C software/lirc-drv-iguanair install DESTDIR=$(CURDIR)/debian/tmp
+#endif
+
+

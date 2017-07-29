@@ -1,0 +1,97 @@
+Source: iguanair
+Section: utils
+Priority: optional
+Maintainer: IguanaWorks <support@iguanaworks.net>
+X-Python-Version: >= 2.6
+X-Python3-Version: >= 3.2
+Build-Depends: cmake,
+ udev,
+ swig,
+ pkg-config,
+ debhelper (>= 9),
+ dh-systemd (>= 1.5),
+ liblircclient-dev,
+ libusb-1.0-0-dev | libusb-dev,
+ python-dev,
+ python3-dev,
+Standards-Version: 3.9.8
+Homepage:https://www.iguanaworks.net/
+#Vcs-Git: https://github.com/iguanaworks/iguanair.git
+#Vcs-Browser: https://github.com/iguanaworks/iguanair
+
+Package: iguanair
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+Description: User-space driver and tools for IguanaWorks USB IR devices
+ The daemon igdeamon(8), client tool igclient(1), some support scripts and
+ a lircd(8) driver for the iguanaIR device from IguanaWorks, Inc. The tools
+ provides a programmatic API, CLI access using igdaemon and high-level
+ access to IR remotes using lircd(8).
+
+Package: libiguanair0
+Architecture: any
+Multi-Arch: same
+Section: libs
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ lsb-base
+Description: API for accessing iguanaIR IR remote USB-based devices
+ A library for communcating with igdaemon(1), used primarely by igclient.
+
+Package: libiguanair-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Depends:
+ libiguanair0 (= ${binary:Version}),
+ ${misc:Depends},
+ lsb-base
+Description: IguanaIR daemon access library - development files
+ Headers and unversioned so-links used for developing applications using
+ the libiguanair library.
+
+Package:  lirc-drv-iguanair
+Architecture: any
+Multi-Arch: same
+Section: libs
+Depends: lirc (>= 0.9.4),
+ libiguanair0,
+ ${shlibs:Depends},
+ ${misc:Depends},
+ lsb-base
+Description: iguanair lirc plugin
+ lirc plugin providing full access to lirc, the same functionality which was
+ part of lirc prior to version  0.9.4.
+
+Package: python-iguanair
+Architecture: any
+Depends: ${misc:Depends},libiguanair0 (= ${binary:Version}), ${shlibs:Depends},
+Section: python
+Suggests:
+Description: Python iguanair wrapper library (Python 2)
+ This package lets you talk to our iguanair library with python bindings.
+ .
+ This package installs the library for Python 2.
+
+Package: python3-iguanair
+Architecture: any
+Depends: ${misc:Depends},libiguanair0 (= ${binary:Version}), ${shlibs:Depends},
+Section: python
+Suggests:
+Description: Python iguanair wrapper library (Python 3)
+ This package lets you talk to our iguanair library with python bindings.
+ .
+ This package installs the library for Python 3.
+
+Package:  iguanair-reflasher
+Architecture: all
+Section: utils
+Depends: python3-iguanair | python-iguanair,
+ libiguanair0,
+ iguanair,
+ lsb-base,
+ python3 | python,
+Description: Reflasher for iguanair device (python script)
+ Provides python script for reflashing the Iguanaworks USB IR Transceiver.
+
