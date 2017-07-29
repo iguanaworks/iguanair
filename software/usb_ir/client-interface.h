@@ -37,7 +37,6 @@ typedef struct client
 
 /* API implemented by the daemon/service code */
 void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev);
-void setAlias(iguanaDev *idev, bool deleteAll, const char *alias);
 
 /* API used by the daemon/service code */
 void releaseClient(client *target);

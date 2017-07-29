@@ -129,6 +129,18 @@ message(LOG_WARN, "CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
     return INVALID_PIPE;
 }
 
+void closeServerPipe(PIPE_PTR fd, const char *name)
+{
+    char path[PATH_MAX];
+
+    /* figure out the name */
+    socketName(name, path, PATH_MAX);
+
+    /* and nuke it */
+    unlink(path);
+    close(fd);
+}
+
 void socketName(const char *name, char *buffer, unsigned int length)
 {
     /* left in case there is some daemon functionality that does not
@@ -169,6 +181,61 @@ printf("CLOSE %d %s(%d)\n", retval, __FILE__, __LINE__);
     }
 
     return retval;
+}
+
+void setAlias(const char *target, bool deleteAll, const char *alias)
+{
+    /* prepare the device index string */
+    if (deleteAll)
+    {
+        DIR_HANDLE dir = NULL;
+        char buffer[PATH_MAX];
+
+        /* examine symlinks in the dir and delete links to target */
+        strcpy(buffer, IGSOCK_NAME);
+        while((dir = findNextFile(dir, buffer)) != NULL)
+        {
+            char ptr[PATH_MAX], buf[PATH_MAX];
+            int length;
+
+            sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
+            length = readlink(buf, ptr, PATH_MAX - 1);
+            if (length > 0)
+            {
+                ptr[length] = '\0';
+                if (strcmp(target, ptr) == 0)
+                    unlink(buf);
+            }
+        }
+    }
+
+    /* create a new symlink from alias to name */
+    if (alias != NULL)
+    {
+        char path[PATH_MAX], *slash, *aliasCopy;
+        struct stat st;
+
+        aliasCopy = strdup(alias);
+        while(1)
+        {
+            slash = strchr(aliasCopy, '/');
+            if (slash == NULL)
+                break;
+            slash[0] = '|';
+        }
+        socketName(aliasCopy, path, PATH_MAX);
+        free(aliasCopy);
+
+        if (lstat(path, &st) == 0 && S_ISLNK(st.st_mode))
+        {
+            if (unlink(path) != 0)
+                message(LOG_ERROR, "failed to unlink old alias: %s\n",
+                        translateError(errno));
+        }
+        if (symlink(target, path) != 0)
+                message(LOG_ERROR, "failed to symlink alias: %s\n",
+                        translateError(errno));
+    }
 }
 
 int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)

@@ -51,18 +51,6 @@ static void scanHandler(int UNUSED(sig))
     triggerCommand((THREAD_PTR)SCAN_TRIGGER);
 }
 
-static void stopListening(int fd, const char *name)
-{
-    char path[PATH_MAX];
-
-    /* figure out the name */
-    socketName(name, path, PATH_MAX);
-
-    /* and nuke it */
-    unlink(path);
-    close(fd);
-}
-
 static void workLoop()
 {
     /* initialize the driver, signals, and device list */
@@ -363,8 +351,12 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 
         /* unlink any existing aliases */
         if (idev != NULL)
-            setAlias(idev, true, NULL);
-        stopListening(listener, name);
+        {
+            char idxStr[4];
+            sprintf(idxStr, "%d", idev->usbDev->id);
+            setAlias(idxStr, true, NULL);
+        }
+        closeServerPipe(listener, name);
 #if DEBUG
 message(LOG_WARN, "CLOSE %d %s(%d)\n", listener, __FILE__, __LINE__);
 #endif
@@ -372,63 +364,5 @@ message(LOG_WARN, "CLOSE %d %s(%d)\n", listener, __FILE__, __LINE__);
         /* and release any connected clients */
         while(clientList->count > 0)
             releaseClient((client*)clientList->head);
-    }
-}
-
-void setAlias(iguanaDev *idev, bool deleteAll, const char *alias)
-{
-    /* prepare the device index string */
-    char idxStr[4];
-    sprintf(idxStr, "%d", idev->usbDev->id);
-
-    if (deleteAll)
-    {
-        DIR_HANDLE dir = NULL;
-        char buffer[PATH_MAX];
-
-        /* examine symlinks in the dir and delete links to idxStr */
-        strcpy(buffer, IGSOCK_NAME);
-        while((dir = findNextFile(dir, buffer)) != NULL)
-        {
-            char ptr[PATH_MAX], buf[PATH_MAX];
-            int length;
-
-            sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
-            length = readlink(buf, ptr, PATH_MAX - 1);
-            if (length > 0)
-            {
-                ptr[length] = '\0';
-                if (strcmp(idxStr, ptr) == 0)
-                    unlink(buf);
-            }
-        }
-    }
-
-    /* create a new symlink from alias to name */
-    if (alias != NULL)
-    {
-        char path[PATH_MAX], *slash, *aliasCopy;
-        struct stat st;
-
-        aliasCopy = strdup(alias);
-        while(1)
-        {
-            slash = strchr(aliasCopy, '/');
-            if (slash == NULL)
-                break;
-            slash[0] = '|';
-        }
-        socketName(aliasCopy, path, PATH_MAX);
-        free(aliasCopy);
-
-        if (lstat(path, &st) == 0 && S_ISLNK(st.st_mode))
-        {
-            if (unlink(path) != 0)
-                message(LOG_ERROR, "failed to unlink old alias: %s\n",
-                        translateError(errno));
-        }
-        if (symlink(idxStr, path) != 0)
-                message(LOG_ERROR, "failed to symlink alias: %s\n",
-                        translateError(errno));
     }
 }
