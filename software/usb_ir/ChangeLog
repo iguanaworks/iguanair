@@ -1,1 +1,258 @@
-packaging/debian/changelog
+Version: 1.1.0
+Author:  Iguanaworks Support <support@iguanaworks.net>
+When:    Sun, 10 Mar 2013 13:28:28 -0600
+Debian:  stable
+Message:
+  * Switched from autoconf to cmake
+  * Added a device reboot in reflasher
+  * svn version numbers built into the executables
+END
+
+Version: 1.0.5-1
+Author:  Iguanaworks Support <support@iguanaworks.net>
+When:    Tue, 26 Jan 2013 11:00:14 -0700
+Debian:  stable
+Message:
+  * 1.0.5 Iguanaworks Release
+  * Bug fix on 1.0.4 with new socket location /var/run.
+END
+
+Version: 1.0.4-1
+Author:  Iguanaworks Support <support@iguanaworks.net>
+When:    Sun, 13 Jan 2013 15:00:14 -0700
+Debian:  stable
+Message:
+  * 1.0.4 Iguanaworks Release
+  * Various packaging improvement to be standards compliant.
+END
+
+Version: 1.0.3-1ubuntu1
+Author:  Iguanaworks Support <support@iguanaworks.net>
+When:    Tue, 21 Aug 2012 20:01:44 -0600
+Debian:  precise
+Message:
+  * 1.0.3 Iguanaworks Release
+  * 0308 Firmware and driver support for 0308 firmware
+  * Restart on device disconnect fixes issues on some systems with usb power management problems.
+END
+
+Version: 1.0.1-1
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Sat, 20 Nov 2010 20:25:29 -0700
+Debian:  maverick
+Message:
+  * 1.0.1 Iguanaworks Release
+END
+
+Version: 1.0pre2
+Author:  Ben Luey <bluey@iguanaworks.net>
+When:    Sun, 08 Nov 2009 08:48:53 -0600
+Debian:  jaunty
+Message:
+  * Works with Ubuntu 9.10. Supports slot device, bug fixes
+END
+
+Version: 1.0pre1
+Author:  Ben Luey <bluey@iguanaDev>
+When:    Sun, 12 Jul 2009 18:07:25 -0400
+Debian:  jaunty
+Message:
+  * Pre Release of 1.0.
+END
+
+Version: 0.99.1-4ubuntu1
+Author:  Ben Luey <bluey@iguanaDevUbuntu64>
+When:    Sun, 23 Nov 2008 16:36:37 -0500
+Debian:  gutsy
+Message:
+  * 0.99 IguanaWorks Release
+END
+
+Version: 0.98.1-1
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Mon, 18 Aug 2008 20:42:17 -0600
+Debian:  unstable
+Message:
+  * Upgrade to the 0.98 source.
+  * Fixed some debian specific packaging dependencies
+END
+
+Version: 0.97.1-1
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Mon, 18 Aug 2008 20:35:47 -0600
+Debian:  unstable
+Message:
+  * Upgraded to the 0.97 source (fixing udev)
+END
+
+Version: 0.96-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Fri Jun 27 2008
+Debian:  stable
+Message:
+  * Bug fix release.
+END
+
+Version: 0.95.1-1
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Fri, 27 Mar 2008 23:28:45 +1000
+Debian:  unstable
+Message:
+  * Upgraded to the 0.95 source (fixing udev)
+END
+
+Version: 0.94.1-1
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Mon, 24 Mar 2008 07:23:45 +1000
+Debian:  unstable
+Message:
+  * Upgraded to the 0.94 source.
+  * Better windows support
+  * a pile of bugs fixed
+  * Works with newer firmwares (version 0x102) including frequency and channel support with or without LIRC.
+END
+
+Version: 0.93.1-5
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Mon, 30 Feb 2008 18:01:45 +1000
+Debian:  unstable
+Message:
+  * Fixed some packaging problems.
+END
+
+Version: 0.93.1-2
+Author:  IguanaWorks Support <support@iguanaworks.net>
+When:    Thu, 14 Jun 2007 00:17:37 -0400
+Debian:  unstable
+Message:
+  * Fix good packaging.
+END
+
+Version: 0.31-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Sat Mar 10 2007
+Debian:  unstable
+Message:
+  * First release with tentative win32 and darwin support.  Darwin needs some work, and windows needs to interface with applications.
+END
+
+Version: 0.30-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Thu Feb 1 2007
+Debian:  unstable
+Message:
+  * Added a utility to change the frequency on firmware version 3, and had to make iguanaRemoveData accessible to python code.
+END
+
+Version: 0.29-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Sun Jan 21 2007
+Debian:  unstable
+Message:
+  * Last currently known problem in the driver.  Using clock_gettime instead of gettimeofday to avoid clock rollbacks.
+END
+
+Version: 0.26-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Sun Dec 31 2006
+Debian:  unstable
+Message:
+  * Happy New Years! and a bugfix.  Long standing bug that caused the igdaemon to hang is fixed.
+END
+
+Version: 0.25-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Sun Dec 10 2006
+Debian:  unstable
+Message:
+  * The socket specification accept a path instead of just an index or label.
+END
+
+Version: 0.24-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Wed Dec 6 2006
+Debian:  unstable
+Message:
+  * Fixes bad argument parsing in igdaemon, and the init script *should* work for fedora and debian now.
+END
+
+Version: 0.19-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Wed Oct 18 2006
+Debian:  unstable
+Message:
+  * A real release has been made, and we will try to keep track of version numbers a bit better now.
+END
+
+Version: 0.10-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Sat Sep 23 2006
+Debian:  unstable
+Message:
+  * Preparing for a real release.
+END
+
+Version: 0.9-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Tue Jul 11 2006
+Debian:  unstable
+Message:
+  * Switch to using udev instead of hotplug.
+END
+
+Version: 0.8-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Mon Jul 10 2006
+Debian:  unstable
+Message:
+  * Version number bumps, and added python support and package.
+END
+
+Version: 0.5-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Mon Mar 27 2006
+Debian:  unstable
+Message:
+  * Version number bump.
+END
+
+Version: 0.4-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Mon Mar 20 2006
+Debian:  unstable
+Message:
+  * Version number bump.
+END
+
+Version: 0.3-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Tue Mar 07 2006
+Debian:  unstable
+Message:
+  * Packaged a client library, and header file.
+END
+
+Version: 0.2-2
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Tue Mar 07 2006
+Debian:  unstable
+Message:
+  * Added support for chkconfig
+END
+
+Version: 0.2-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Tue Mar 07 2006
+Debian:  unstable
+Message:
+  * Added files for hotplug.
+END
+
+Version: 0.1-1
+Author:  Joseph Dunn <jdunn@iguanaworks.net>
+When:    Tue Mar 07 2006
+Debian:  unstable
+Message:
+  * Initial RPM spec file.
+END
+
