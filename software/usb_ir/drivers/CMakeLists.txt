@@ -16,7 +16,7 @@ Else()
       Set(COMPILE_OLD true)
     EndIf()
 
-    If(HAVE_LIBUSB_H)
+    If(HAVE_LIBUSB_H OR HAVE_USB_10_LIBUSB_H)
       Set(COMPILE_NEW true)
       Set(EXCLUDE EXCLUDE_FROM_ALL)
       Set(NEEDED OPTIONAL)
