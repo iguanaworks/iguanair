@@ -14,4 +14,5 @@ else
     echo >&2 "Unable to touch /lib/udev/rules.d/80-iguanaIR.rules (for udev rescan) because file does not exist."
 fi
 
-systemctl start iguanaIR.service
+deb-systemd-invoke start iguanaIR.service
+

@@ -1,0 +1,7 @@
+lib/systemd/system/*
+lib/udev/rules.d/*
+usr/lib/tmpfiles.d/*
+usr/bin/*
+usr/share/man/man1/*
+usr/share/man/man8/*
+etc/default/*

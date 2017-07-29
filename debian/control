@@ -65,7 +65,8 @@ Description: iguanair lirc plugin
 
 Package: python-iguanair
 Architecture: any
-Depends: ${python:Depends}, ${misc:Depends},libiguanair0 (= ${binary:Version}),
+Depends: ${misc:Depends},libiguanair0 (= ${binary:Version}), ${shlibs:Depends},
+Section: python
 Suggests:
 Description: Python iguanair wrapper library (Python 2)
  This package lets you talk to our iguanair library with python bindings.
@@ -74,10 +75,22 @@ Description: Python iguanair wrapper library (Python 2)
 
 Package: python3-iguanair
 Architecture: any
-Depends: ${python3:Depends}, ${misc:Depends},libiguanair0 (= ${binary:Version}),
+Depends: ${misc:Depends},libiguanair0 (= ${binary:Version}), ${shlibs:Depends},
+Section: python
 Suggests:
 Description: Python iguanair wrapper library (Python 3)
  This package lets you talk to our iguanair library with python bindings.
  .
  This package installs the library for Python 3.
+
+Package:  iguanair-reflasher
+Architecture: all
+Section: utils
+Depends: python3-iguanair | python-iguanair,
+ libiguanair0,
+ iguanair,
+ lsb-base,
+ python3 | python,
+Description: Reflasher for iguanair device (python script)
+ Provides python script for reflashing the Iguanaworks USB IR Transceiver.
 
