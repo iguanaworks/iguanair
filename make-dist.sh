@@ -53,10 +53,29 @@ tar -xf dist/${tarname}.tar ${tarname}/${usb_ir}/version.h.in --to-stdout |
     sed "s|\${GIT_REL_STR}|${git_release}|" > version.h
 echo "Packaging ${git_version}"
 
-# remove version.h.in and add version.h into the tarball, gzip, and sum it
+# remove version.h.in and add version.h into the tarball
 tar --delete --file dist/${tarname}.tar ${tarname}/${usb_ir}/version.h.in
 tar --remove-files --append --transform "s|^|${tarname}/${usb_ir}/|" \
     -f dist/${tarname}.tar version.h
+
+# unpack the ChangeLog we use as input
+tar -xf dist/${tarname}.tar ${tarname}/ChangeLog --to-stdout > dist/ChangeLog
+
+# generate the iguanair.spec with the proper %changelog content
+tar -xf dist/${tarname}.tar ${tarname}/mkChangelog --to-stdout > dist/mkChangelog
+tar -xf dist/${tarname}.tar ${tarname}/fedora/iguanair.spec --to-stdout > dist/iguanair.spec.orig
+python dist/mkChangelog --append-to-spec dist/iguanair.spec.orig > dist/iguanair.spec
+rm dist/iguanair.spec.orig
+
+# remove fedora/iguanair.spec and replace it with a modified version
+tar --delete --file dist/${tarname}.tar ${tarname}/fedora/iguanair.spec
+tar --remove-files --append --transform "s|^dist|${tarname}/fedora|" \
+    -f dist/${tarname}.tar dist/iguanair.spec
+
+# cleanup
+rm -f dist/ChangeLog dist/mkChangelog
+
+# gzip, and sum it
 gzip -f dist/${tarname}.tar
 sha256sum dist/${tarname}.tar.gz > dist/${tarname}.sum
 
