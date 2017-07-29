@@ -70,7 +70,11 @@ tar --remove-files --append --transform "s|^dist|${tarname}/fedora|" \
     -f dist/${tarname}.tar dist/iguanair.spec
 rm dist/iguanair.spec.in
 
-# write a selection debian changelog files
+# write a selection debian changelog files and put the first into the tarball
+python dist/mkChangelog --build 1 --debian-release unstable --output dist/changelog
+tar --delete --file dist/${tarname}.tar ${tarname}/debian/changelog.in
+tar --remove-files --append --transform "s|^dist|${tarname}/debian|" \
+    -f dist/${tarname}.tar dist/changelog
 python dist/mkChangelog --build 1 --debian-release stable --output dist/changelog.stable-1
 python dist/mkChangelog --build 1 --debian-release ubuntu --output dist/changelog.ubuntu-1
 
