@@ -61,16 +61,13 @@ tar --remove-files --append --transform "s|^|${tarname}/${usb_ir}/|" \
 # unpack the ChangeLog we use as input
 tar -xf dist/${tarname}.tar ${tarname}/ChangeLog --to-stdout > dist/ChangeLog
 
-# generate the iguanair.spec with the proper %changelog content
+# generate the iguanair.spec with the proper %changelog content and put it in the tarball
 tar -xf dist/${tarname}.tar ${tarname}/mkChangelog --to-stdout > dist/mkChangelog
-tar -xf dist/${tarname}.tar ${tarname}/fedora/iguanair.spec --to-stdout > dist/iguanair.spec.orig
-python dist/mkChangelog --append-to-spec dist/iguanair.spec.orig > dist/iguanair.spec
-rm dist/iguanair.spec.orig
-
-# remove fedora/iguanair.spec and replace it with a modified version
-tar --delete --file dist/${tarname}.tar ${tarname}/fedora/iguanair.spec
+tar -xf dist/${tarname}.tar ${tarname}/fedora/iguanair.spec.in --to-stdout > dist/iguanair.spec.in
+python dist/mkChangelog --append-to-spec dist/iguanair.spec.in > dist/iguanair.spec
 tar --remove-files --append --transform "s|^dist|${tarname}/fedora|" \
     -f dist/${tarname}.tar dist/iguanair.spec
+rm dist/iguanair.spec.in
 
 # cleanup
 rm -f dist/ChangeLog dist/mkChangelog

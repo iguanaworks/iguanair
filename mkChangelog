@@ -92,6 +92,12 @@ def parseArguments():
     parser.add_argument('-b', '--build',
                         metavar = 'BLDNUM',
                         help = 'Specify a build number to override the most recent entry.')
+    parser.add_argument('--arg-file',
+                        metavar = 'ARGFILE',
+                        help = 'Specify a file that lists arguments to parse one set per line.')
+    parser.add_argument('-o', '--output',
+                        metavar = 'OUTPUT',
+                        help = 'Where to put the output.')
     arguments = parser.parse_args()
     arguments.logLevel = LOG_NORMAL;
     if arguments.verbose:
@@ -109,116 +115,147 @@ if arguments.logFile != None:
     sys.log = open(arguments.logFile, "a", 1)
     arguments.logFile = "-"
 
-
 entries = []
-with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
-    entry = {}
-    inMessage = False
-    for line in input:
-        if not line:
-            continue
-
-        if 'message' in entry:
-            if line == 'END\n':
-                entries.append(entry)
-                entry = {}
-            else:
-                entry['message'] += line
-        else:
-            line = line.strip()
-            if line:
-                parts = list(map(lambda a : a.strip(), line.split(':', 1)))
-                if len(parts) == 2:
-                    if parts[0].lower() == 'version':
-                        entry['version'] = parts[1].strip()
-                    elif parts[0].lower() == 'author':
-                        entry['author'] = parts[1].strip()
-                    elif parts[0].lower() == 'when':
-                        #Tue Mar 07 2006
-                        #Tue, 21 Aug 2012 20:01:44 -0600
-                        #
-                        try:
-                            entry['when'] = datetime.datetime.strptime(parts[1], '%a %b %d %Y')
-                        except:
-                            try:
-                                entry['when'] = datetime.datetime.strptime(parts[1].rsplit(None, 1)[0],
-                                                                           '%a, %d %b %Y %H:%M:%S')
-                            except:
-                                raise Exception('Failed to parse date string: %s' % parts[1])
-                        entry['whenText'] = parts[1]
-                    elif parts[0].lower() == 'debian':
-                        debs = list(map(lambda a : a.strip(), parts[1].split(',')))
-                        if len(debs) != 2:
-                            raise Exception('Debian entry should look like: rel, bld: %s' % parts[1])
-                        entry['debianRel'] = debs[0]
-                        entry['debianBld'] = debs[1]
-                    elif parts[0].lower() == 'fedora':
-                        entry['fedoraBld'] = parts[1]
-                    elif parts[0].lower() == 'message':
-                        entry['message'] = ''
-                    else:
-                        raise Exception('Unknown field: %s' % parts[0])
-                elif line.startswith('END'):
-                    break
-                else:
-                    raise Exception('Unparsed line: %s' % line)
-
-if arguments.append_to_spec and arguments.debian_release:
-    message(LOG_FATAL, 'Either write a spec file or a debian changelog.\n')
-elif arguments.append_to_spec:
-    # pass the spec through until we reach the changlog
-    with open(arguments.append_to_spec) as input:
+def readChangeLog():
+    global entries
+    
+    with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
+        entry = {}
+        inMessage = False
         for line in input:
-            message(LOG_NORMAL, line)
-            if line.strip().lower() == '%changelog':
-                break
+            if not line:
+                continue
 
-    # fedora format
-    for entry in entries:
-        entry['whenShort'] = entry['when'].strftime('%a %b %d %Y')
-        lines = []
-        for line in entry['message'].splitlines():
-            if not line.startswith('  * '):
-                raise Exception('Unrecognized message format: %s' % line)
+            if 'message' in entry:
+                if line == 'END\n':
+                    entries.append(entry)
+                    entry = {}
+                else:
+                    entry['message'] += line
             else:
-                lines.append(line.strip()[2:])
-        text = ('- ' + ', '.join(lines)).replace('\t', ' ')
+                line = line.strip()
+                if line:
+                    parts = list(map(lambda a : a.strip(), line.split(':', 1)))
+                    if len(parts) == 2:
+                        if parts[0].lower() == 'version':
+                            entry['version'] = parts[1].strip()
+                        elif parts[0].lower() == 'author':
+                            entry['author'] = parts[1].strip()
+                        elif parts[0].lower() == 'when':
+                            #Tue Mar 07 2006
+                            #Tue, 21 Aug 2012 20:01:44 -0600
+                            #
+                            try:
+                                entry['when'] = datetime.datetime.strptime(parts[1], '%a %b %d %Y')
+                            except:
+                                try:
+                                    entry['when'] = datetime.datetime.strptime(parts[1].rsplit(None, 1)[0],
+                                                                               '%a, %d %b %Y %H:%M:%S')
+                                except:
+                                    raise Exception('Failed to parse date string: %s' % parts[1])
+                            entry['whenText'] = parts[1]
+                        elif parts[0].lower() == 'debian':
+                            debs = list(map(lambda a : a.strip(), parts[1].split(',')))
+                            if len(debs) != 2:
+                                raise Exception('Debian entry should look like: rel, bld: %s' % parts[1])
+                            entry['debianRel'] = debs[0]
+                            entry['debianBld'] = debs[1]
+                        elif parts[0].lower() == 'fedora':
+                            entry['fedoraBld'] = parts[1]
+                        elif parts[0].lower() == 'message':
+                            entry['message'] = ''
+                        else:
+                            raise Exception('Unknown field: %s' % parts[0])
+                    elif line.startswith('END'):
+                        break
+                    else:
+                        raise Exception('Unparsed line: %s' % line)
 
-        # wrap the text
-        wrapped = []
-        wrapAt = 72
-        while text:
-            if wrapAt >= len(text):
-                wrapped.append(text.strip())
-                text = ''
-            else:
-                at = wrapAt
-                while text[at] != ' ':
-                    at -= 1
-                    if at == 10:
-                        raise Exception('Cannot wrap text: %s' % text)
-                wrapped.append(text[:at].strip())
-                text = '  ' + text[at:]
-        entry['oneWrapped'] = '\n  '.join(wrapped)
+def execute(args):
+    output = sys.stdout
+    if args.output:
+        output = open(args.output, 'w')
 
-        message(LOG_NORMAL, """* %(whenShort)s %(author)s %(version)s-%(fedoraBld)s
+    if args.append_to_spec and args.debian_release:
+        message(LOG_FATAL, 'Either write a spec file or a debian changelog.\n')
+    elif args.append_to_spec:
+        # pass the spec through until we reach the changlog
+        with open(args.append_to_spec) as input:
+            for line in input:
+                output.write(line)
+                if line.strip().lower() == '%changelog':
+                    break
+
+        # fedora format
+        first = True
+        for entry in entries:
+            if first:
+                if args.build:
+                    entry = dict(entry)
+                    entry['fedoraBld'] = args.build
+                first = False
+
+            entry['whenShort'] = entry['when'].strftime('%a %b %d %Y')
+            lines = []
+            for line in entry['message'].splitlines():
+                if not line.startswith('  * '):
+                    raise Exception('Unrecognized message format: %s' % line)
+                else:
+                    lines.append(line.strip()[2:])
+            text = ('- ' + ', '.join(lines)).replace('\t', ' ')
+
+            # wrap the text
+            wrapped = []
+            wrapAt = 72
+            while text:
+                if wrapAt >= len(text):
+                    wrapped.append(text.strip())
+                    text = ''
+                else:
+                    at = wrapAt
+                    while text[at] != ' ':
+                        at -= 1
+                        if at == 10:
+                            raise Exception('Cannot wrap text: %s' % text)
+                    wrapped.append(text[:at].strip())
+                    text = '  ' + text[at:]
+            entry['oneWrapped'] = '\n  '.join(wrapped)
+
+            output.write("""* %(whenShort)s %(author)s %(version)s-%(fedoraBld)s
 %(oneWrapped)s
 
 """ % entry)
-elif arguments.debian_release:
-    # override some fields of the first entry
-    if arguments.debian_release:
-        entries[0]['debianRel'] = arguments.debian_release
-    if arguments.build:
-        entries[0]['debianBld'] = arguments.build
+    elif args.debian_release:
+        # debian format
+        first = True
+        for entry in entries:
+            if first:
+                # override some fields of the first entry
+                if args.debian_release:
+                    entry = dict(entry)
+                    entry['debianRel'] = args.debian_release
+                if args.build:
+                    entry = dict(entry)
+                    entry['debianBld'] = args.build
+                first = False
 
-    # debian format
-    for entry in entries:
-        message(LOG_NORMAL, """iguanair (%(version)s-%(debianRel)s-%(debianBld)s) %(debianRel)s; urgency=low
+            output.write("""iguanair (%(version)s-%(debianRel)s-%(debianBld)s) %(debianRel)s; urgency=low
 
 %(message)s
  -- %(author)s  %(whenText)s
 
 """ % entry)
+    else:
+        message(LOG_FATAL, 'Either write a spec file or a debian changelog: %s\n' % arguments)
+
+    if output != sys.stdout:
+        output.close()
+
+readChangeLog()
+if arguments.arg_file:
+    with open(arguments.arg_file) as input:
+        for line in map(lambda a : a.strip(), input):
+            execute(parser.parse_args(line.split()))
+    sys.exit()
 else:
-    message(LOG_FATAL, 'Either write a spec file or a debian changelog.\n')
+    execute(arguments)
