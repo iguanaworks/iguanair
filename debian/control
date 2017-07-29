@@ -5,6 +5,7 @@ Maintainer: IguanaWorks <support@iguanaworks.net>
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.2
 Build-Depends: cmake,
+ pkg-config,
  debhelper (>= 9),
  dh-systemd (>= 1.5),
  liblircclient-dev,
