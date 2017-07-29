@@ -83,6 +83,15 @@ def parseArguments():
     parser.add_argument('-v', '--verbose',
                         action = 'count',
                         help = 'Increase verbosity.')
+    parser.add_argument('-a', '--append-to-spec',
+                        metavar = 'SPECFILE',
+                        help = 'Replace the changlog in the specified spec file with our content.')
+    parser.add_argument('-d', '--debian-release',
+                        metavar = 'DEBREL',
+                        help = 'Output a debian changelog with this version used in the first entry.')
+    parser.add_argument('-b', '--build',
+                        metavar = 'BLDNUM',
+                        help = 'Specify a build number to override the most recent entry.')
     arguments = parser.parse_args()
     arguments.logLevel = LOG_NORMAL;
     if arguments.verbose:
@@ -118,7 +127,7 @@ with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
         else:
             line = line.strip()
             if line:
-                parts = map(lambda a : a.strip(), line.split(':', 1))
+                parts = list(map(lambda a : a.strip(), line.split(':', 1)))
                 if len(parts) == 2:
                     if parts[0].lower() == 'version':
                         entry['version'] = parts[1].strip()
@@ -138,7 +147,13 @@ with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
                                 raise Exception('Failed to parse date string: %s' % parts[1])
                         entry['whenText'] = parts[1]
                     elif parts[0].lower() == 'debian':
-                        entry['debian'] = parts[1].strip()
+                        debs = list(map(lambda a : a.strip(), parts[1].split(',')))
+                        if len(debs) != 2:
+                            raise Exception('Debian entry should look like: rel, bld: %s' % parts[1])
+                        entry['debianRel'] = debs[0]
+                        entry['debianBld'] = debs[1]
+                    elif parts[0].lower() == 'fedora':
+                        entry['fedoraBld'] = parts[1]
                     elif parts[0].lower() == 'message':
                         entry['message'] = ''
                     else:
@@ -148,5 +163,62 @@ with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
                 else:
                     raise Exception('Unparsed line: %s' % line)
 
-for entry in entries:
-    print "%(version)s %(author)s" % entry
+if arguments.append_to_spec and arguments.debian_release:
+    message(LOG_FATAL, 'Either write a spec file or a debian changelog.\n')
+elif arguments.append_to_spec:
+    # pass the spec through until we reach the changlog
+    with open(arguments.append_to_spec) as input:
+        for line in input:
+            message(LOG_NORMAL, line)
+            if line.strip().lower() == '%changelog':
+                break
+
+    # fedora format
+    for entry in entries:
+        entry['whenShort'] = entry['when'].strftime('%a %b %d %Y')
+        lines = []
+        for line in entry['message'].splitlines():
+            if not line.startswith('  * '):
+                raise Exception('Unrecognized message format: %s' % line)
+            else:
+                lines.append(line.strip()[2:])
+        text = ('- ' + ', '.join(lines)).replace('\t', ' ')
+
+        # wrap the text
+        wrapped = []
+        wrapAt = 72
+        while text:
+            if wrapAt >= len(text):
+                wrapped.append(text.strip())
+                text = ''
+            else:
+                at = wrapAt
+                while text[at] != ' ':
+                    at -= 1
+                    if at == 10:
+                        raise Exception('Cannot wrap text: %s' % text)
+                wrapped.append(text[:at].strip())
+                text = '  ' + text[at:]
+        entry['oneWrapped'] = '\n  '.join(wrapped)
+
+        message(LOG_NORMAL, """* %(whenShort)s %(author)s %(version)s-%(fedoraBld)s
+%(oneWrapped)s
+
+""" % entry)
+elif arguments.debian_release:
+    # override some fields of the first entry
+    if arguments.debian_release:
+        entries[0]['debianRel'] = arguments.debian_release
+    if arguments.build:
+        entries[0]['debianBld'] = arguments.build
+
+    # debian format
+    for entry in entries:
+        message(LOG_NORMAL, """iguanair (%(version)s-%(debianRel)s-%(debianBld)s) %(debianRel)s; urgency=low
+
+%(message)s
+ -- %(author)s  %(whenText)s
+
+""" % entry)
+else:
+    message(LOG_FATAL, 'Either write a spec file or a debian changelog.\n')
