@@ -212,12 +212,14 @@ static void* scanTrigger(void *junk)
     return NULL;
 }
 
+static bool ctlSockListening = true;
 static void* ctlSockListener(void *junk)
 {
     /* TODO: send notices to clients when clients connect and disconnect:
        - print something like: C:0, D:0?
     */
     listenToClients("ctl", &srvSettings.ctlClients, NULL);
+    ctlSockListening = false;
     return NULL;
 }
 
@@ -249,26 +251,35 @@ bool initServer()
     else if (! srvSettings.justDescribe &&
              ! startThread(&srvSettings.ctlSockThread, ctlSockListener, NULL))
         message(LOG_ERROR, "failed to start the listener.\n");
-    /* initialize the commPipe, driver, and device list */
-    else if (! createPipePair(srvSettings.commPipe))
-    {
-#ifdef _WIN32
-        message(LOG_ERROR, "failed to open communication pipe, is another igdaemon running?\n");
-#else
-        message(LOG_ERROR, "failed to open communication pipe.\n");
-#endif
-    }
-    else if (! findDriver(srvSettings.driverDir,
-                          srvSettings.preferred, srvSettings.onlyPreferred))
-        message(LOG_ERROR, "failed to find a loadable driver layer.\n");
-    else if (! initializeDriver())
-        message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
-    else if ((srvSettings.list = prepareDeviceList(usbIds, startWorker)) == NULL)
-        message(LOG_ERROR, "failed to initialize the device list.\n");
     else
     {
-        claimDevices(srvSettings.list, ! srvSettings.justDescribe, srvSettings.unbind);
-        retval = true;
+        /* give the ctlSockListener a quarter second to fail */
+        for(x = 0; ctlSockListening && x < 25; x++)
+            Sleep(10);
+
+        if (! ctlSockListening)
+            ; /* intentionally empty since we already logged errors */
+        /* initialize the commPipe, driver, and device list */
+        else if (! createPipePair(srvSettings.commPipe))
+        {
+#ifdef _WIN32
+            message(LOG_ERROR, "failed to open communication pipe, is another igdaemon running?\n");
+#else
+            message(LOG_ERROR, "failed to open communication pipe.\n");
+#endif
+        }
+        else if (! findDriver(srvSettings.driverDir,
+                              srvSettings.preferred, srvSettings.onlyPreferred))
+            message(LOG_ERROR, "failed to find a loadable driver layer.\n");
+        else if (! initializeDriver())
+            message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
+        else if ((srvSettings.list = prepareDeviceList(usbIds, startWorker)) == NULL)
+            message(LOG_ERROR, "failed to initialize the device list.\n");
+        else
+        {
+            claimDevices(srvSettings.list, ! srvSettings.justDescribe, srvSettings.unbind);
+            retval = true;
+        }
     }
 
 #if DEBUG

@@ -35,10 +35,6 @@
 extern int darwin_hotplug(const usbId *);
 #endif
 
-/* we need to call connect without doing a version check when we're
- * trying to detect another igdaemon */
-IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
-
 /* local variables */
 static mode_t devMode = 0777;
 
@@ -116,7 +112,7 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
             {
                 /* check that the socket has something listening */
                 int testconn;
-                testconn = iguanaConnect_internal(name, IG_PROTOCOL_VERSION, false);
+                testconn = connectToPipe(name);
                 if (testconn == -1 && errno == ECONNREFUSED && attempt == 1)
                 {
                     /* if not, try unlinking the pipe and trying again */
@@ -126,7 +122,7 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
                 else
                 {
                     /* guess someone is there, whoops, close and complain */
-                    iguanaClose(testconn);
+                    closePipe(testconn);
                     message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
                 }
             }
@@ -381,7 +377,12 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
     /* start the listener */
     listener = startListening(name);
     if (listener == INVALID_PIPE)
-        message(LOG_ERROR, "Worker failed to start listening.\n");
+    {
+        if (idev == NULL)
+            message(LOG_ERROR, "Server failed to start listening on ctl socket.\n");
+        else
+            message(LOG_ERROR, "Worker failed to start listening.\n");
+    }
     else
     {
         fd_set fds, fdsin, fdserr;
