@@ -145,8 +145,10 @@ def readChangeLog():
                             #Tue Mar 07 2006
                             #Tue, 21 Aug 2012 20:01:44 -0600
                             #
+                            entry['whenIsShort'] = False
                             try:
                                 entry['when'] = datetime.datetime.strptime(parts[1], '%a %b %d %Y')
+                                entry['whenIsShort'] = True
                             except:
                                 try:
                                     entry['when'] = datetime.datetime.strptime(parts[1].rsplit(None, 1)[0],
@@ -239,10 +241,14 @@ def execute(args):
                     entry['debianBld'] = args.build
                 first = False
 
+            if entry['whenIsShort']:
+                entry['longWhen'] = entry['when'].strftime('%a, %d %b %Y %H:%M:%S -0500')
+            else:
+                entry['longWhen'] = entry['whenText']
             output.write("""iguanair (%(version)s-%(debianRel)s-%(debianBld)s) %(debianRel)s; urgency=low
 
 %(message)s
- -- %(author)s  %(whenText)s
+            -- %(author)s  %(longWhen)s
 
 """ % entry)
     else:
