@@ -12,9 +12,15 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 Else()
   Set(USBPRE1LIB usb)
   If(NOT "${CMAKE_ARCH}" STREQUAL "arm")
-    Set(COMPILE_NEW true)
-    Set(EXCLUDE EXCLUDE_FROM_ALL)
-    Set(NEEDED OPTIONAL)
+    If(HAVE_USB_H)
+      Set(COMPILE_OLD true)
+    EndIf()
+
+    If(HAVE_LIBUSB_H)
+      Set(COMPILE_NEW true)
+      Set(EXCLUDE EXCLUDE_FROM_ALL)
+      Set(NEEDED OPTIONAL)
+    EndIf()
   EndIf()
 EndIf()
 
@@ -34,16 +40,18 @@ If(COMPILE_NEW)
           DESTINATION ${LIBDIR}/iguanaIR)
 EndIf()
 
-# optionally build a driver that uses libusb pre version 1.0
-add_library(usbpre1drv SHARED ${EXCLUDE} libusbpre1.c ${BASESRCS})
-set_property(TARGET usbpre1drv
-             APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
-target_link_libraries(usbpre1drv ${USBPRE1LIB})
-If(TARGET_ANDROID)
-  target_link_libraries(usbpre1drv usb-compat-android)
-EndIf()
-If(NOT "${NEEDED}" STREQUAL "OPTIONAL")
-  install(TARGETS usbpre1drv
-          DESTINATION ${LIBDIR}/iguanaIR
-          ${NEEDED})
+If(COMPILE_OLD)
+  # optionally build a driver that uses libusb pre version 1.0
+  add_library(usbpre1drv SHARED ${EXCLUDE} libusbpre1.c ${BASESRCS})
+  set_property(TARGET usbpre1drv
+               APPEND PROPERTY COMPILE_DEFINITIONS DRIVER_EXPORTS)
+  target_link_libraries(usbpre1drv ${USBPRE1LIB})
+  If(TARGET_ANDROID)
+    target_link_libraries(usbpre1drv usb-compat-android)
+  EndIf()
+  If(NOT "${NEEDED}" STREQUAL "OPTIONAL")
+    install(TARGETS usbpre1drv
+            DESTINATION ${LIBDIR}/iguanaIR
+            ${NEEDED})
+  EndIf()
 EndIf()
