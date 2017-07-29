@@ -114,7 +114,7 @@ END
 
 Version: 0.93.1-5
 Author:  IguanaWorks Support <support@iguanaworks.net>
-When:    Mon, 30 Feb 2008 18:01:45 +1000
+When:    Mon, 28 Feb 2008 18:01:45 +1000
 Debian:  unstable
 Message:
   * Fixed some packaging problems.

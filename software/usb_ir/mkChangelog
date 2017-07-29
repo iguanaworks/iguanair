@@ -1,0 +1,151 @@
+#!/usr/bin/python -tt
+from __future__ import with_statement
+import datetime
+import argparse
+import sys
+import os
+
+#output "constants"
+LOG_FATAL  = 0
+LOG_ERROR  = 1
+LOG_WARN   = 2
+LOG_ALWAYS = 2.5
+LOG_NORMAL = 3
+LOG_INFO   = 4
+LOG_DEBUG  = 5
+
+msgPrefixes = [
+    "FATAL: ",
+    "ERROR: ",
+    "WARNING: ",
+    "",
+    "INFO: ",
+    "DEBUG: "
+]
+
+#local variables
+null = open(os.devnull, 'r+')
+parser = argparse.ArgumentParser(description = 'Basis of my python scripts.')
+arguments = None
+
+def dieCleanly(level = None):
+    """Exit the application with proper cleanup."""
+
+    #TODO: perform application cleanup
+
+    if level == None:
+        level = LOG_ERROR
+
+    #exit with appropriate value
+    if level == LOG_FATAL:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def message(level, msg):
+    global arguments
+    """Print a message to a certain debug level"""
+    retval = None
+
+    if level <= arguments.logLevel or level == LOG_ALWAYS:
+        out = sys.stdout
+
+        # if logfile is open print to it instead
+        if arguments.logFile == "-":
+            out = sys.log
+        elif level <= LOG_WARN:
+            out = sys.stderr
+
+        retval = msgPrefixes[int(level + 0.5)] + msg
+        out.write(retval)
+        retval = len(retval)
+
+    if level <= LOG_FATAL:
+        dieCleanly(level)
+
+    return retval
+
+def printUsage(msg = None):
+    global parser
+    if msg != None:
+        message(LOG_FATAL, msg + parser.get_usage())
+    message(LOG_ALWAYS, usage)
+    dieCleanly(LOG_ALWAYS)
+
+def parseArguments():
+    global parser, arguments
+    parser.add_argument('-l', '--log-file',
+                        metavar = 'FILE', dest = 'logFile',
+                        help = 'Specify a log to receive all messages.')
+    parser.add_argument('-q', '--quiet',
+                        action = 'count',
+                        help = 'Decrease verbosity.')
+    parser.add_argument('-v', '--verbose',
+                        action = 'count',
+                        help = 'Increase verbosity.')
+    arguments = parser.parse_args()
+    arguments.logLevel = LOG_NORMAL;
+    if arguments.verbose:
+        arguments.logLevel += arguments.verbose
+    if arguments.quiet:
+        arguments.logLevel -= arguments.quiet
+        if arguments.logLevel <= LOG_FATAL:
+            arguments.logLevel = LOG_FATAL
+    if arguments.logFile == '-':
+        arguments.logFile = None
+
+parseArguments()
+# open the log file if specified
+if arguments.logFile != None:
+    sys.log = open(arguments.logFile, "a", 1)
+    arguments.logFile = "-"
+
+
+entries = []
+with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
+    entry = {}
+    inMessage = False
+    for line in input:
+        if not line:
+            continue
+
+        if 'message' in entry:
+            if line == 'END\n':
+                entries.append(entry)
+                entry = {}
+            else:
+                entry['message'] += line
+        else:
+            line = line.strip()
+            if line:
+                parts = map(lambda a : a.strip(), line.split(':', 1))
+                if len(parts) == 2:
+                    if parts[0].lower() == 'version':
+                        entry['version'] = parts[1].strip()
+                    elif parts[0].lower() == 'author':
+                        entry['author'] = parts[1].strip()
+                    elif parts[0].lower() == 'when':
+                        #Tue Mar 07 2006
+                        #Tue, 21 Aug 2012 20:01:44 -0600
+                        #
+                        try:
+                            entry['when'] = datetime.datetime.strptime(parts[1], '%a %b %d %Y')
+                        except:
+                            try:
+                                entry['when'] = datetime.datetime.strptime(parts[1].rsplit(None, 1)[0],
+                                                                           '%a, %d %b %Y %H:%M:%S')
+                            except:
+                                raise Exception('Failed to parse date string: %s' % parts[1])
+                    elif parts[0].lower() == 'debian':
+                        entry['debian'] = parts[1].strip()
+                    elif parts[0].lower() == 'message':
+                        entry['message'] = ''
+                    else:
+                        raise Exception('Unknown field: %s' % parts[0])
+                elif line.startswith('END'):
+                    break
+                else:
+                    raise Exception('Unparsed line: %s' % line)
+
+for entry in entries:
+    print "%(version)s %(author)s" % entry
