@@ -45,7 +45,6 @@ Multi-Arch: same
 Section: libdevel
 Depends:
  libiguanair0 (= ${binary:Version}),
- liblirc0,
  ${misc:Depends},
  lsb-base
 Description: IguanaIR daemon access library - development files
@@ -56,7 +55,7 @@ Package:  lirc-drv-iguanair
 Architecture: any
 Multi-Arch: same
 Section: libs
-Depends: lirc (>= 0.9.3),
+Depends: lirc (>= 0.9.4),
  libiguanair0,
  ${shlibs:Depends},
  ${misc:Depends},
