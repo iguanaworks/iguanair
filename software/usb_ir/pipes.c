@@ -16,12 +16,131 @@
 #include "compat.h"
 
 #include <stdlib.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
 
 #include "pipes.h"
+#include "logging.h"
+
+/* local variables */
+static mode_t devMode = 0777;
+
+static bool mkdirs(char *path)
+{
+    bool retval = false;
+    char *slash;
+
+    slash = strrchr(path, '/');
+    if (slash == NULL)
+        retval = true;
+    else
+    {
+        slash[0] = '\0';
+        while(true)
+        {
+            /* make the new directory */
+            if (mkdir(path,
+                      S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
+                retval = true;
+            /* try to create the parent path if that was the problem */
+            else if (errno == ENOENT && mkdirs(path))
+                continue;
+
+            break;
+        }
+        slash[0] = '/';
+    }
+
+    return retval;
+}
+
+PIPE_PTR createServerPipe(const char *name, char **addrStr)
+{
+    int sockfd, attempt = 0;
+    struct sockaddr_un server = {0};
+    bool retry = true;
+
+    /* generate the server address */
+    server.sun_family = PF_UNIX;
+    socketName(name, server.sun_path, sizeof(server.sun_path));
+
+    while(retry)
+    {
+        retry = false;
+        attempt++;
+
+        sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
+#if DEBUG
+message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
+#endif
+
+        if (sockfd == -1)
+            message(LOG_ERROR, "failed to create server socket.\n");
+        else if (bind(sockfd, (struct sockaddr*)&server,
+                      sizeof(struct sockaddr_un)) == -1)
+        {
+            if (errno == EADDRINUSE)
+            {
+                /* check that the socket has something listening */
+                int testconn;
+                testconn = connectToPipe(name);
+                if (testconn == -1 && errno == ECONNREFUSED && attempt == 1)
+                {
+                    /* if not, try unlinking the pipe and trying again */
+                    unlink(server.sun_path);
+                    retry = true;
+                }
+                else
+                {
+                    /* guess someone is there, whoops, close and complain */
+                    closePipe(testconn);
+                    message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
+                }
+            }
+            /* attempt to make the directory if we get ENOENT */
+            else if (errno == ENOENT && mkdirs(server.sun_path))
+                retry = true;
+            else
+                message(LOG_ERROR, "failed to bind server socket: %s\n",
+                        translateError(errno));
+        }
+        /* start listening */
+        else if (listen(sockfd, 5) == -1)
+            message(LOG_ERROR,
+                    "failed to put server socket in a listening state.\n");
+        /* set the proper permissions */
+        else if (chmod(server.sun_path, devMode) != 0)
+            message(LOG_ERROR,
+                    "failed to set permissions on the server socket.\n");
+        else
+        {
+            if (addrStr != NULL)
+                *addrStr = strdup(server.sun_path);
+            return sockfd;
+        }
+        close(sockfd);
+#if DEBUG
+message(LOG_WARN, "CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
+#endif
+    }
+
+    return INVALID_PIPE;
+}
+
+void closeServerPipe(PIPE_PTR fd, const char *name)
+{
+    char path[PATH_MAX];
+
+    /* figure out the name */
+    socketName(name, path, PATH_MAX);
+
+    /* and nuke it */
+    unlink(path);
+    close(fd);
+}
 
 void socketName(const char *name, char *buffer, unsigned int length)
 {
@@ -63,6 +182,61 @@ printf("CLOSE %d %s(%d)\n", retval, __FILE__, __LINE__);
     }
 
     return retval;
+}
+
+void setAlias(const char *target, bool deleteAll, const char *alias)
+{
+    /* prepare the device index string */
+    if (deleteAll)
+    {
+        DIR_HANDLE dir = NULL;
+        char buffer[PATH_MAX];
+
+        /* examine symlinks in the dir and delete links to target */
+        strcpy(buffer, IGSOCK_NAME);
+        while((dir = findNextFile(dir, buffer)) != NULL)
+        {
+            char ptr[PATH_MAX], buf[PATH_MAX];
+            int length;
+
+            sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
+            length = readlink(buf, ptr, PATH_MAX - 1);
+            if (length > 0)
+            {
+                ptr[length] = '\0';
+                if (strcmp(target, ptr) == 0)
+                    unlink(buf);
+            }
+        }
+    }
+
+    /* create a new symlink from alias to name */
+    if (alias != NULL)
+    {
+        char path[PATH_MAX], *slash, *aliasCopy;
+        struct stat st;
+
+        aliasCopy = strdup(alias);
+        while(1)
+        {
+            slash = strchr(aliasCopy, '/');
+            if (slash == NULL)
+                break;
+            slash[0] = '|';
+        }
+        socketName(aliasCopy, path, PATH_MAX);
+        free(aliasCopy);
+
+        if (lstat(path, &st) == 0 && S_ISLNK(st.st_mode))
+        {
+            if (unlink(path) != 0)
+                message(LOG_ERROR, "failed to unlink old alias: %s\n",
+                        translateError(errno));
+        }
+        if (symlink(target, path) != 0)
+                message(LOG_ERROR, "failed to symlink alias: %s\n",
+                        translateError(errno));
+    }
 }
 
 int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)

@@ -69,7 +69,7 @@ bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
     return retval;
 }
 
-bool writeDataPacket(dataPacket *packet, PIPE_PTR fd)
+bool writeDataPacket(const dataPacket *packet, PIPE_PTR fd)
 {
     bool retval = false;
     int result;
@@ -97,4 +97,20 @@ void freeDataPacket(dataPacket *packet)
         free(packet->data);
         free(packet);
     }
+}
+
+bool packetIsError(const dataPacket *packet)
+{
+    int retval = true;
+
+    errno = EIO;
+    if (packet != NULL)
+    {
+        if (packet->code != IG_DEV_ERROR)
+            retval = false;
+        else
+            errno = -packet->dataLen;
+    }
+
+    return retval;
 }

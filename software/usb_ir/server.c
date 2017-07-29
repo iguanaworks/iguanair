@@ -49,7 +49,7 @@ void triggerCommand(THREAD_PTR cmd)
 
 void initServerSettings()
 {
-    initLogSystem(NULL);
+    initializeLogging(NULL);
 
     /* Driver location and preference information.  The preferred list
        is a NULL terminated list of strings. */
@@ -212,12 +212,14 @@ static void* scanTrigger(void *junk)
     return NULL;
 }
 
+static bool ctlSockListening = true;
 static void* ctlSockListener(void *junk)
 {
     /* TODO: send notices to clients when clients connect and disconnect:
        - print something like: C:0, D:0?
     */
     listenToClients("ctl", &srvSettings.ctlClients, NULL);
+    ctlSockListening = false;
     return NULL;
 }
 
@@ -234,7 +236,7 @@ bool initServer()
             "  recvTimeout: %d\n", srvSettings.devSettings.recvTimeout);
     message(LOG_DEBUG,
             "  sendTimeout: %d\n", srvSettings.devSettings.sendTimeout);
-    initializeDriverLayer(logImplementation());
+    initializeDriverLayer(currentLogSettings());
 
     /* prepare the pipe for shutting down any scan thread */
     if (! createPipePair(srvSettings.scanTimerPipe))
@@ -249,26 +251,35 @@ bool initServer()
     else if (! srvSettings.justDescribe &&
              ! startThread(&srvSettings.ctlSockThread, ctlSockListener, NULL))
         message(LOG_ERROR, "failed to start the listener.\n");
-    /* initialize the commPipe, driver, and device list */
-    else if (! createPipePair(srvSettings.commPipe))
-    {
-#ifdef _WIN32
-        message(LOG_ERROR, "failed to open communication pipe, is another igdaemon running?\n");
-#else
-        message(LOG_ERROR, "failed to open communication pipe.\n");
-#endif
-    }
-    else if (! findDriver(srvSettings.driverDir,
-                          srvSettings.preferred, srvSettings.onlyPreferred))
-        message(LOG_ERROR, "failed to find a loadable driver layer.\n");
-    else if (! initializeDriver())
-        message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
-    else if ((srvSettings.list = prepareDeviceList(usbIds, startWorker)) == NULL)
-        message(LOG_ERROR, "failed to initialize the device list.\n");
     else
     {
-        claimDevices(srvSettings.list, ! srvSettings.justDescribe, srvSettings.unbind);
-        retval = true;
+        /* give the ctlSockListener a quarter second to fail */
+        for(x = 0; ctlSockListening && x < 25; x++)
+            Sleep(10);
+
+        if (! ctlSockListening)
+            ; /* intentionally empty since we already logged errors */
+        /* initialize the commPipe, driver, and device list */
+        else if (! createPipePair(srvSettings.commPipe))
+        {
+#ifdef _WIN32
+            message(LOG_ERROR, "failed to open communication pipe, is another igdaemon running?\n");
+#else
+            message(LOG_ERROR, "failed to open communication pipe.\n");
+#endif
+        }
+        else if (! findDriver(srvSettings.driverDir,
+                              srvSettings.preferred, srvSettings.onlyPreferred))
+            message(LOG_ERROR, "failed to find a loadable driver layer.\n");
+        else if (! initializeDriver())
+            message(LOG_ERROR, "failed to initialize the loadable driver layer.\n");
+        else if ((srvSettings.list = prepareDeviceList(usbIds, startWorker)) == NULL)
+            message(LOG_ERROR, "failed to initialize the device list.\n");
+        else
+        {
+            claimDevices(srvSettings.list, ! srvSettings.justDescribe, srvSettings.unbind);
+            retval = true;
+        }
     }
 
 #if DEBUG
@@ -369,7 +380,7 @@ char* aliasSummary(iguanaDev *idev)
 
 static bool summarize(itemHeader *item, void *userData)
 {
-    bool retval = false, first = false;
+    bool first = false;
     int len;
     char *sum, **buf = (char**)userData;
 
@@ -393,10 +404,9 @@ static bool summarize(itemHeader *item, void *userData)
             strcat(*buf, "|");
             strcat(*buf, sum);
         }
-        retval = true;
     }
 
-    return retval;
+    return true;
 }
 
 char* deviceSummary()
@@ -404,6 +414,56 @@ char* deviceSummary()
     char *buf = NULL;
     forEach(&srvSettings.devs, summarize, &buf);
     return buf;
+}
+
+typedef struct findAddrInfo
+{
+    const char *name;
+    char *result;
+} findAddrInfo;
+
+static bool findAddress(itemHeader *item, void *userData)
+{
+    bool found = false;
+    findAddrInfo *info = (findAddrInfo*)userData;
+    iguanaDev *idev = (iguanaDev*)item;
+
+    if (info->result == NULL)
+    {
+        char buf[PATH_MAX], idBuf[8];
+
+        sprintf(idBuf, "%d", idev->usbDev->id);
+        socketName(idBuf, buf, PATH_MAX);
+        if (strcmp(buf, info->name) == 0)
+            found = true;
+        else
+        {
+            socketName(idev->locAlias, buf, PATH_MAX);
+            if (strcmp(buf, info->name) == 0)
+                found = true;
+            else
+            {
+                socketName(idev->userAlias, buf, PATH_MAX);
+                if (strcmp(buf, info->name) == 0)
+                    found = true;
+            }
+        }
+    }
+
+    if (found)
+        info->result = strdup(idev->addrStr);
+    return true;
+}
+
+char* deviceAddress(const char *name)
+{
+    findAddrInfo info = {name, NULL};
+
+    forEach(&srvSettings.devs, findAddress, &info);
+
+    if (info.result == NULL)
+        return NULL;
+    return strdup(info.result);
 }
 
 void cleanupServer()

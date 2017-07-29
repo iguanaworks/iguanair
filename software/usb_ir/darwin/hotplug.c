@@ -41,8 +41,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <CoreFoundation/CFNumber.h>
 #include <CoreFoundation/CFDictionary.h>
 
-#include "iguanaIR.h"
-#include "driver.h"
+#include "../iguanaIR.h"
+#include "../driver.h"
 
 static void arm_notification(io_iterator_t iterator)
 {

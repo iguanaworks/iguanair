@@ -72,6 +72,7 @@ enum
 
     /* used to ask the daemon about devices */
     IG_CTL_LISTDEVS = 0x80,
+    IG_CTL_DEVADDR  = 0x81,
 
     /* used in response packets */
     IG_DEV_ERROR = 0x00,
@@ -112,6 +113,7 @@ enum
     IG_DEV_RESEND       = 0x27,
     IG_DEV_SENDSIZE     = 0x28, /* internal to client/daemon */
     IG_DEV_LISTALIASES  = 0x29, /* internal to client/daemon */
+    IG_DEV_GETADDRESS   = 0x2A, /* internal to client/daemon */
 
     /* FILE:body.inc packets initiated by the device */
     IG_DEV_RECV         = 0x30,
@@ -166,6 +168,9 @@ IGUANAIR_API bool iguanaWriteRequest(const iguanaPacket request,
 IGUANAIR_API iguanaPacket iguanaReadResponse(PIPE_PTR connection,
                                              unsigned int timeout);
 IGUANAIR_API bool iguanaResponseIsError(const iguanaPacket response);
+IGUANAIR_API bool iguanaTransaction(PIPE_PTR connection,
+                                    const iguanaPacket request,
+                                    iguanaPacket *response);
 
 /* a few helper functions for dealing with function arguments */
 IGUANAIR_API int iguanaReadPulseFile(const char *filename, void **pulses);

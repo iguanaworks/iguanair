@@ -100,6 +100,7 @@ bool initServer();
 void waitOnCommPipe();
 char* aliasSummary();
 char* deviceSummary();
+char* deviceAddress(const char *name);
 void cleanupServer();
 
 /* usb ids that we support */

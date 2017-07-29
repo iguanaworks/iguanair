@@ -82,6 +82,16 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
 
+    case IG_CTL_DEVADDR:
+        // TODO: dereferencing request->data as a string is a bad idea
+        request->data = (unsigned char*)deviceAddress((char*)request->data);
+        if (request->data == NULL)
+            request->dataLen = 0;
+        else
+            request->dataLen = strlen((char*)request->data) + 1;
+        retval = true;
+        break;
+
     case IG_DEV_GETFEATURES:
         /* shortcut the request if possible */
         if (checkFeatures(target->idev, UNKNOWN_FEATURES))
@@ -228,6 +238,11 @@ static bool handleClientRequest(dataPacket *request, client *target)
         retval = true;
         break;
 
+    case IG_DEV_GETADDRESS:
+        request->data = (unsigned char*)strdup(target->idev->addrStr);
+        request->dataLen = strlen((char*)request->data) + 1;
+        retval = true;
+        break;
     }
 
     if (retval)
@@ -356,14 +371,17 @@ bool handleClient(client *me)
 
 void getID(iguanaDev *idev)
 {
-    char buf[13] = {0};
+    char buf[13] = {0}, idxStr[4];
     uint8_t loc[2];
     dataPacket request = DATA_PACKET_INIT, *response = NULL;
+
+    /* define the target for aliasing */
+    sprintf(idxStr, "%d", idev->usbDev->id);
 
     /* add an alias based on bus location */
     getDeviceLocation(idev->usbDev, loc);
     sprintf(buf, "%d-%d", loc[0], loc[1]);
-    setAlias(idev, true, buf);
+    setAlias(idxStr, true, buf);
     free(idev->locAlias);
     idev->locAlias = strdup(buf);
 
@@ -389,7 +407,7 @@ void getID(iguanaDev *idev)
            one of maximum length */
         memset(buf, 0, 13);
         strncpy(buf, (char*)response->data, 12);
-        setAlias(idev, false, buf);
+        setAlias(idxStr, false, buf);
         free(idev->userAlias);
         idev->userAlias = strdup(buf);
         freeDataPacket(response);

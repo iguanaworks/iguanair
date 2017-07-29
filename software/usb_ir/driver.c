@@ -121,7 +121,7 @@ bool loadDriver(char *path)
 {
     char *ext;
     void *library;
-    driverImpl* (*getImplementation)();
+    driverImpl* (*getImplementation)(logSettings*);
 
     ext = strrchr(path, '.');
     if (ext != NULL &&
@@ -129,7 +129,7 @@ bool loadDriver(char *path)
         (library = loadLibrary(path)) != NULL &&
         (*(void**)(&getImplementation) = getFuncAddress(library,
                                                         "getImplementation")) != NULL)
-        return (implementation = getImplementation(logImplementation())) != NULL;
+        return (implementation = getImplementation(currentLogSettings())) != NULL;
 
     return false;
 }
@@ -175,9 +175,9 @@ bool checkDriver(const char *root, const char *name)
     return retval;
 }
 
-void initializeDriverLayer(loggingImpl *impl)
+void initializeDriverLayer(logSettings *globalSettings)
 {
-    initLogSystem(impl);
+    initializeLogging(globalSettings);
 }
 
 /* search for shared objects in the drivers directory and use the

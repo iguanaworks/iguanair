@@ -35,13 +35,6 @@
 extern int darwin_hotplug(const usbId *);
 #endif
 
-/* we need to call connect without doing a version check when we're
- * trying to detect another igdaemon */
-IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
-
-/* local variables */
-static mode_t devMode = 0777;
-
 struct parameters
 {
     bool runAsDaemon;
@@ -56,116 +49,6 @@ static void quitHandler(int UNUSED(sig))
 static void scanHandler(int UNUSED(sig))
 {
     triggerCommand((THREAD_PTR)SCAN_TRIGGER);
-}
-
-static bool mkdirs(char *path)
-{
-    bool retval = false;
-    char *slash;
-
-    slash = strrchr(path, '/');
-    if (slash == NULL)
-        retval = true;
-    else
-    {
-        slash[0] = '\0';
-        while(true)
-        {
-            /* make the new directory */
-            if (mkdir(path,
-                      S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
-                retval = true;
-            /* try to create the parent path if that was the problem */
-            else if (errno == ENOENT && mkdirs(path))
-                continue;
-
-            break;
-        }
-        slash[0] = '/';
-    }
-
-    return retval;
-}
-
-static int startListening(const char *name)
-{
-    int sockfd, attempt = 0;
-    struct sockaddr_un server = {0};
-    bool retry = true;
-
-    /* generate the server address */
-    server.sun_family = PF_UNIX;
-    socketName(name, server.sun_path, sizeof(server.sun_path));
-
-    while(retry)
-    {
-        retry = false;
-        attempt++;
-
-        sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
-#if DEBUG
-message(LOG_WARN, "OPEN %d %s(%d)\n", sockfd,   __FILE__, __LINE__);
-#endif
-
-        if (sockfd == -1)
-            message(LOG_ERROR, "failed to create server socket.\n");
-        else if (bind(sockfd, (struct sockaddr*)&server,
-                      sizeof(struct sockaddr_un)) == -1)
-        {
-            if (errno == EADDRINUSE)
-            {
-                /* check that the socket has something listening */
-                int testconn;
-                testconn = iguanaConnect_internal(name, IG_PROTOCOL_VERSION, false);
-                if (testconn == -1 && errno == ECONNREFUSED && attempt == 1)
-                {
-                    /* if not, try unlinking the pipe and trying again */
-                    unlink(server.sun_path);
-                    retry = true;
-                }
-                else
-                {
-                    /* guess someone is there, whoops, close and complain */
-                    iguanaClose(testconn);
-                    message(LOG_ERROR, "failed to bind server socket %s.  Is the address currently in use?\n", server.sun_path);
-                }
-            }
-            /* attempt to make the directory if we get ENOENT */
-            else if (errno == ENOENT && mkdirs(server.sun_path))
-                retry = true;
-            else
-                message(LOG_ERROR, "failed to bind server socket: %s\n",
-                        translateError(errno));
-        }
-        /* start listening */
-        else if (listen(sockfd, 5) == -1)
-            message(LOG_ERROR,
-                    "failed to put server socket in a listening state.\n");
-        /* set the proper permissions */
-        else if (chmod(server.sun_path, devMode) != 0)
-            message(LOG_ERROR,
-                    "failed to set permissions on the server socket.\n");
-        else
-            return sockfd;
-        close(sockfd);
-#if DEBUG
-message(LOG_WARN, "CLOSE %d %s(%d)\n", sockfd, __FILE__, __LINE__);
-#endif
-    }
-
-    return INVALID_PIPE;
-}
-
-static void stopListening(int fd, const char *name)
-{
-    char path[PATH_MAX];
-
-    /* figure out the name */
-    socketName(name, path, PATH_MAX);
-
-    /* and nuke it */
-    unlink(path);
-    close(fd);
 }
 
 static void workLoop()
@@ -379,9 +262,17 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
     PIPE_PTR listener;
 
     /* start the listener */
-    listener = startListening(name);
+    char **addrStr = NULL;
+    if (idev != NULL)
+        addrStr = &idev->addrStr;
+    listener = createServerPipe(name, addrStr);
     if (listener == INVALID_PIPE)
-        message(LOG_ERROR, "Worker failed to start listening.\n");
+    {
+        if (idev == NULL)
+            message(LOG_ERROR, "Server failed to start listening on ctl socket.\n");
+        else
+            message(LOG_ERROR, "Worker failed to start listening.\n");
+    }
     else
     {
         fd_set fds, fdsin, fdserr;
@@ -460,8 +351,12 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 
         /* unlink any existing aliases */
         if (idev != NULL)
-            setAlias(idev, true, NULL);
-        stopListening(listener, name);
+        {
+            char idxStr[4];
+            sprintf(idxStr, "%d", idev->usbDev->id);
+            setAlias(idxStr, true, NULL);
+        }
+        closeServerPipe(listener, name);
 #if DEBUG
 message(LOG_WARN, "CLOSE %d %s(%d)\n", listener, __FILE__, __LINE__);
 #endif
@@ -469,63 +364,5 @@ message(LOG_WARN, "CLOSE %d %s(%d)\n", listener, __FILE__, __LINE__);
         /* and release any connected clients */
         while(clientList->count > 0)
             releaseClient((client*)clientList->head);
-    }
-}
-
-void setAlias(iguanaDev *idev, bool deleteAll, const char *alias)
-{
-    /* prepare the device index string */
-    char idxStr[4];
-    sprintf(idxStr, "%d", idev->usbDev->id);
-
-    if (deleteAll)
-    {
-        DIR_HANDLE dir = NULL;
-        char buffer[PATH_MAX];
-
-        /* examine symlinks in the dir and delete links to idxStr */
-        strcpy(buffer, IGSOCK_NAME);
-        while((dir = findNextFile(dir, buffer)) != NULL)
-        {
-            char ptr[PATH_MAX], buf[PATH_MAX];
-            int length;
-
-            sprintf(buf, "%s%s", IGSOCK_NAME, buffer);
-            length = readlink(buf, ptr, PATH_MAX - 1);
-            if (length > 0)
-            {
-                ptr[length] = '\0';
-                if (strcmp(idxStr, ptr) == 0)
-                    unlink(buf);
-            }
-        }
-    }
-
-    /* create a new symlink from alias to name */
-    if (alias != NULL)
-    {
-        char path[PATH_MAX], *slash, *aliasCopy;
-        struct stat st;
-
-        aliasCopy = strdup(alias);
-        while(1)
-        {
-            slash = strchr(aliasCopy, '/');
-            if (slash == NULL)
-                break;
-            slash[0] = '|';
-        }
-        socketName(aliasCopy, path, PATH_MAX);
-        free(aliasCopy);
-
-        if (lstat(path, &st) == 0 && S_ISLNK(st.st_mode))
-        {
-            if (unlink(path) != 0)
-                message(LOG_ERROR, "failed to unlink old alias: %s\n",
-                        translateError(errno));
-        }
-        if (symlink(idxStr, path) != 0)
-                message(LOG_ERROR, "failed to symlink alias: %s\n",
-                        translateError(errno));
     }
 }

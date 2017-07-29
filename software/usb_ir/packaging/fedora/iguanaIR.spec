@@ -5,18 +5,22 @@
 # Don't add provides for python .so files
 %define __provides_exclude_from %{python_sitearch}/.*\.so$
 
-
 Name:             iguanaIR
-# TODO: determine the version from somewhere else?
+# TODO: dynamically grab the version, maybe during make-dist.sh
 Version:          1.2.0
-Release:          1
+Release:          1%{?dist}
 Summary:          Driver for Iguanaworks USB IR transceiver
 Group:            System Environment/Daemons
 License:          GPLv2 and LGPLv2
 URL:              https://www.iguanaworks.net
 Source0:          https://www.iguanaworks.net/downloads/%{name}-%{version}.tar.gz
 Requires:         libusb1 udev systemd udev
-BuildRequires:    cmake libusb1-devel systemd-devel systemd-udev
+BuildRequires:    cmake libusb1-devel systemd-devel
+%if 0%{?el7}
+BuildRequires:    udev
+%else
+BuildRequires:    systemd-udev
+%endif
 Requires(post):   /usr/bin/install /sbin/chkconfig
 Requires(pre):    /usr/sbin/useradd
 Requires(preun):  /sbin/chkconfig /sbin/service /bin/rmdir
@@ -42,11 +46,24 @@ Group: System Environment/Daemons
 Summary: Python module for Iguanaworks USB IR transceiver
 Requires: %{name} = %{version}-%{release}, python >= 2.4
 BuildRequires: python-devel swig
+Provides: %{name}-python = %{version}
 
-%description python-iguanaIR
+%description -n python-iguanaIR
 This package provides the swig-generated Python module for interfacing
 with the Iguanaworks USB IR transceiver.
 
+
+%if ! 0%{?el7}
+%package -n python3-iguanaIR
+Group: System Environment/Daemons
+Summary: Python module for Iguanaworks USB IR transceiver
+Requires: %{name} = %{version}-%{release}, python3
+BuildRequires: python3-devel swig
+
+%description -n python3-iguanaIR
+This package provides the swig-generated Python module for interfacing
+with the Iguanaworks USB IR transceiver.
+%endif
 
 %package reflasher
 Group: System Environment/Daemons
@@ -60,15 +77,17 @@ versions for the Iguanaworks USB IR transceiver.  If you have no idea
 what this means, you do not need it.
 
 
+%if ! 0%{?el7}
 %package -n lirc-drv-iguanair
 Group: System Environment/Daemons
 Summary: LIRC driver for Iguanaworks USB IR transceiver
-Requires: %{name} = %{version}
+Requires: %{name} = %{version}, lirc-core
 BuildRequires: lirc-devel
 
-%description lirc-drv-iguanair
+%description -n lirc-drv-iguanair
 This package provides the lirc driver for the Iguanaworks USB IR
 transceiver.
+%endif
 
 
 
@@ -82,13 +101,17 @@ cd build
 cmake -DPYVER=%{pyver} -DLIBDIR=%{_libdir} -DBOOTSTRAP_DIR=`pwd`/../bootstrap ..
 make %{?_smp_mflags}
 popd
+%if ! 0%{?el7}
 pushd %{lircdrv}
 make
+%endif
 
 %install
 rm -rf "${RPM_BUILD_ROOT}"
 make DESTDIR="${RPM_BUILD_ROOT}" -C %{usbir}/build install
+%if ! 0%{?el7}
 make DESTDIR="${RPM_BUILD_ROOT}" -C %{lircdrv} install
+%endif
 
 
 
@@ -149,9 +172,14 @@ fi
 %{_libdir}/lib%{name}.so
 
 
-%files python
-#%{python3_sitearch}/*
-%{_libdir}/python*/site-packages/*
+%files -n python-iguanaIR
+%{_libdir}/python2.*/site-packages/*
+
+
+%if ! 0%{?el7}
+%files -n python3-iguanaIR
+%{_libdir}/python3.*/site-packages/*
+%endif
 
 
 %files reflasher
@@ -160,13 +188,15 @@ fi
 /usr/share/man/man1/%{name}-reflasher.1.gz
 
 
-%files lirc-drv
+%if ! 0%{?el7}
+%files -n lirc-drv-iguanair
 %doc %{lircdrv}/iguanair.txt
 %doc %{lircdrv}/LICENSE
 /etc/modprobe.d/60-blacklist-kernel-iguanair.conf
 %{_libdir}/lirc/plugins/iguanair.so
 /usr/share/doc/lirc/plugindocs/iguanair.html
 /usr/share/lirc/configs/iguanair.conf
+%endif
 
 
 

@@ -23,38 +23,16 @@
 #include "logging.h"
 #include "dataPackets.h"
 
+#define OLD_IGSOCK_NAME "/dev/iguanaIR/"
+
 enum
 {
     MAX_LINE = 1024,
 };
 
-IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
+PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);
 
-static bool transaction(PIPE_PTR conn, dataPacket *request, dataPacket **respOut)
-{
-    bool retval = false;
-
-    /* check versions of the client and server */
-    if (request &&
-        iguanaWriteRequest(request, conn))
-    {
-        dataPacket *response = iguanaReadResponse(conn, 10000);
-        if (iguanaResponseIsError(response))
-            freeDataPacket(response);
-        else
-        {
-            if (respOut != NULL)
-                *respOut = response;
-            else
-                freeDataPacket(response);
-            retval = true;
-        }
-    }
-
-    return retval;
-}
-
-IGUANAIR_API char* iguanaListDevices()
+char* iguanaListDevices()
 {
     char *retval = NULL;
     PIPE_PTR conn = iguanaConnect_internal("ctl", IG_PROTOCOL_VERSION, true);
@@ -62,7 +40,7 @@ IGUANAIR_API char* iguanaListDevices()
     {
         dataPacket *response,
             *request = iguanaCreateRequest(IG_CTL_LISTDEVS, 0, NULL);
-        if (transaction(conn, request, &response))
+        if (iguanaTransaction(conn, (iguanaPacket)request, (iguanaPacket*)&response))
         {
             if (response->data != NULL)
                 retval = strdup((char*)response->data);
@@ -74,7 +52,7 @@ IGUANAIR_API char* iguanaListDevices()
     return retval;
 }
 
-IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion)
+PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion)
 {
     PIPE_PTR conn = INVALID_PIPE;
 
@@ -104,9 +82,9 @@ IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int prot
                 else
                     errno = ENOENT;
             }
-            else if (strncmp(name, "/dev/iguanaIR/", 14) == 0)
+            else if (strncmp(name, OLD_IGSOCK_NAME, strlen(OLD_IGSOCK_NAME)) == 0)
             {
-                char buffer[PATH_MAX] = "/var/run/iguanaIR/";
+                char buffer[PATH_MAX] = IGSOCK_NAME;
                 strcat(buffer, name + 14);
                 message(LOG_WARN, "Client application failed to connect to a socket in /dev.  The proper location is now in /var/run.  Please update your paths accordingly.  Re-trying with corrected path: %s\n", buffer);
                 return iguanaConnect_internal(buffer, protocol, true);
@@ -116,7 +94,7 @@ IGUANAIR_API PIPE_PTR iguanaConnect_internal(const char *name, unsigned int prot
         {
             uint16_t clientVersion = IG_PROTOCOL_VERSION;
             dataPacket *request = iguanaCreateRequest(IG_EXCH_VERSIONS, 2, &clientVersion);
-            if (! transaction(conn, request, NULL))
+            if (! iguanaTransaction(conn, (iguanaPacket)request, NULL))
             {
                 message(LOG_ERROR, "Server did not understand version request, aborting.  Is the igdaemon is up to date?\n");
                 iguanaClose(conn);
@@ -231,16 +209,30 @@ iguanaPacket iguanaReadResponse(PIPE_PTR connection, unsigned int timeout)
 
 bool iguanaResponseIsError(const iguanaPacket response)
 {
-    int retval = 1;
-    dataPacket *packet = (dataPacket*)response;
+    return packetIsError((dataPacket*)response);
+}
 
-    errno = EIO;
-    if (packet != NULL)
+bool iguanaTransaction(PIPE_PTR connection, const iguanaPacket request,
+                       iguanaPacket *response)
+{
+    bool retval = false;
+    dataPacket *req = (dataPacket*)request;
+
+    /* check versions of the client and server */
+    if (req &&
+        iguanaWriteRequest(req, connection))
     {
-        if (packet->code != IG_DEV_ERROR)
-            retval = 0;
+        dataPacket *result = iguanaReadResponse(connection, 10000);
+        if (iguanaResponseIsError(result))
+            freeDataPacket(result);
         else
-            errno = -packet->dataLen;
+        {
+            if (response != NULL)
+                *(dataPacket**)response = result;
+            else
+                freeDataPacket(result);
+            retval = true;
+        }
     }
 
     return retval;
@@ -308,10 +300,7 @@ int iguanaReadPulseFile(const char *filename, void **pulses)
             {
                 /* ignore any leading spaces */
                 if (count == 0)
-                {
-                    message(LOG_INFO, "Discarding leading space.\n");
                     discard = true;
-                }
                 else if (inSpace)
                 {
                     ((uint32_t*)(*pulses))[count - 1] += value;

@@ -38,7 +38,11 @@ enum
   #define acceptClient(a) accept((a), NULL, NULL);
 #endif
 
-/* functions dealing with the server sockets */
+/* functions managing server sockets */
+PIPE_PTR createServerPipe(const char *name, char **addrStr);
+void closeServerPipe(PIPE_PTR fd, const char *name);
+void setAlias(const char *target, bool deleteAll, const char *alias);
+
 void socketName(const char *name, char *buffer, unsigned int length);
 PIPE_PTR connectToPipe(const char *name);
 

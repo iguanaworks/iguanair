@@ -79,6 +79,9 @@ typedef struct iguanaDev
     /* what carrier frequency should we transmit at?  default 38k */
     unsigned int carrier;
 
+    /* we keep a copy of the address string in case a client asks */
+    char *addrStr;
+
     /* might as well keep the aliases and list of clients here */
     char *locAlias;
     char *userAlias;
