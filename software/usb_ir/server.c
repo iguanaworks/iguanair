@@ -380,7 +380,7 @@ char* aliasSummary(iguanaDev *idev)
 
 static bool summarize(itemHeader *item, void *userData)
 {
-    bool retval = false, first = false;
+    bool first = false;
     int len;
     char *sum, **buf = (char**)userData;
 
@@ -404,10 +404,9 @@ static bool summarize(itemHeader *item, void *userData)
             strcat(*buf, "|");
             strcat(*buf, sum);
         }
-        retval = true;
     }
 
-    return retval;
+    return true;
 }
 
 char* deviceSummary()
