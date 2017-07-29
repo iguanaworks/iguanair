@@ -165,7 +165,7 @@ add_library(directIguanaIR SHARED
   driver.c driver.h driverapi.h
   sendFormat.c sendFormat.h
   ${BASESRC})
-target_link_libraries(directIguanaIR iguanaIR
+target_link_libraries(directIguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 set_property(TARGET directIguanaIR
              APPEND PROPERTY COMPILE_DEFINITIONS DIRECT_EXPORTS)
@@ -183,7 +183,7 @@ add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
 #  driver.c driver.h driverapi.h sendFormat.c sendFormat.h # this OR directIguanaIR
   list.c list.h protocol-versions.c protocol-versions.h
   dataPackets.c dataPackets.h)
-target_link_libraries(igdaemon iguanaIR directIguanaIR
+target_link_libraries(igdaemon directIguanaIR
 #target_link_libraries(igdaemon iguanaIR # this OR directIguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)

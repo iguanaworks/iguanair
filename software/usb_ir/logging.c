@@ -23,6 +23,11 @@
 
 #include <argp.h>
 
+enum
+{
+    ARG_LOG_LEVEL = 0x100
+};
+
 static char *msgPrefixes[] =
 {
     "FATAL: ",
@@ -36,9 +41,29 @@ static char *msgPrefixes[] =
 };
 
 /* logging variables */
-static loggingImpl logImpl = {NULL,NULL,NULL};
-static int currentLevel = LOG_NORMAL;
-static FILE *logFile = NULL;
+logSettings internalSettings = INIT_LOG_SETTINGS,
+    *settings = &internalSettings;
+
+static void openLog(const char *filename)
+{
+    if (settings->log != NULL)
+        fclose(settings->log);
+    settings->log = NULL;
+
+    if (strcmp(filename, "-") != 0)
+    {
+        settings->log = fopen(filename, "a");
+        if (settings->log != NULL)
+            setlinebuf(settings->log);
+    }
+}
+
+static void changeLogLevel(int difference)
+{
+    settings->level += difference;
+    if (settings->level < LOG_FATAL)
+        settings->level = LOG_FATAL;
+}
 
 static struct argp_option options[] =
 {
@@ -82,7 +107,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
             return ARGP_HELP_STD_ERR;
         }
         else
-            setLogLevel(res);
+            changeLogLevel(res - settings->level);
         break;
     }
 
@@ -106,12 +131,11 @@ static FILE* pickStream(int level)
 {
     FILE *out = NULL;
 
-    if (level <= currentLevel ||
-        level == LOG_ALWAYS)
+    if (level <= settings->level)
     {
         /* if logfile is open print to it instead */
-        if (logFile != NULL)
-            out = logFile;
+        if (settings->log != NULL)
+            out = settings->log;
         else if (level <= LOG_WARN)
             out = stderr;
         else
@@ -121,22 +145,46 @@ static FILE* pickStream(int level)
     return out;
 }
 
-static bool wouldOutput_internal(int level)
+void initializeLogging(logSettings *globalSettings)
+{
+    if (globalSettings == NULL)
+    {
+        /* keep a copy of our old settings */
+        if (settings != NULL)
+            internalSettings = *settings;
+        settings = &internalSettings;
+    }
+    else
+        settings = globalSettings;
+}
+
+logSettings* currentLogSettings()
+{
+    return settings;
+}
+
+struct argp* logArgParser()
+{
+    return &parser;
+}
+
+bool wouldOutput(int level)
 {
     return pickStream(level) != NULL;
 }
 
-/* do the actual work of printing */
-static int vaMessage_internal(int level, char *format, va_list list)
+int message(int level, char *format, ...)
 {
     int retval = 0;
     FILE *out;
+    va_list list;
 
+    va_start(list, format);
     out = pickStream(level);
     if (out != NULL)
     {
         char *buffer;
-        if (level != LOG_ALWAYS && level != LOG_NORMAL)
+        if (level != LOG_NORMAL)
         {
             char when[22];
             time_t now;
@@ -148,8 +196,8 @@ static int vaMessage_internal(int level, char *format, va_list list)
             strftime(when, 22, "%b %d %H:%M:%S %Y ", nowTm);
             when[21] = '\0';
 
-            buffer = (char*)malloc(strlen(when) + \
-                                   strlen(msgPrefixes[level]) + \
+            buffer = (char*)malloc(strlen(when) +                   \
+                                   strlen(msgPrefixes[level]) +     \
                                    strlen(format) + 1);
             if (buffer == NULL)
             {
@@ -167,20 +215,21 @@ static int vaMessage_internal(int level, char *format, va_list list)
         retval = vfprintf(out, buffer, list);
 #endif
         /* flushing the log file after each write */
-        if (out == logFile)
-            fflush(logFile);
+        if (out == settings->log)
+            fflush(settings->log);
         /* free the format if it ws allocated */
         if (buffer != format)
             free(buffer);
     }
+    va_end(list);
 
     /* die at callers request */
     assert(level > LOG_FATAL);
-
+    
     return retval;
 }
 
-static void appendHex_internal(int level, void *location, unsigned int length)
+void appendHex(int level, void *location, unsigned int length)
 {
     FILE *out;
     int retval = 0;
@@ -195,82 +244,7 @@ static void appendHex_internal(int level, void *location, unsigned int length)
             retval += fprintf(out, "%2.2x", ((unsigned char*)location)[x]);
         retval += fprintf(out, "\n");
         /* flushing the log file after each write */
-        if (out == logFile)
-            fflush(logFile);
+        if (out == settings->log)
+            fflush(settings->log);
     }
-}
-
-void initLogSystem(const loggingImpl *impl)
-{
-    if (impl == NULL)
-    {
-        static loggingImpl staticLogImpl = { wouldOutput_internal,
-                                             vaMessage_internal,
-                                             appendHex_internal };
-        logImpl = staticLogImpl;
-    }
-    else
-        logImpl = *impl;
-}
-
-loggingImpl* logImplementation()
-{
-    return &logImpl;
-}
-
-struct argp* logArgParser()
-{
-    return &parser;
-}
-
-void changeLogLevel(int difference)
-{
-    currentLevel += difference;
-    if (currentLevel < LOG_FATAL)
-        currentLevel = LOG_FATAL;
-}
-
-void setLogLevel(int value)
-{
-    changeLogLevel(value - currentLevel);
-}
-
-void openLog(const char *filename)
-{
-    if (logFile != NULL)
-        fclose(logFile);
-    logFile = NULL;
-
-    if (strcmp(filename, "-") != 0)
-    {
-        logFile = fopen(filename, "a");
-        if (logFile != NULL)
-            setlinebuf(logFile);
-    }
-}
-
-bool wouldOutput(int level)
-{
-    if (logImpl.wouldOutput != NULL)
-        return logImpl.wouldOutput(level);
-    return true;
-}
-
-int message(int level, char *format, ...)
-{
-    int retval = 0;
-    if (logImpl.vaMessage != NULL)
-    {
-        va_list list;
-        va_start(list, format);
-        retval = logImpl.vaMessage(level, format, list);
-        va_end(list);
-    }
-    return retval;
-}
-
-void appendHex(int level, void *location, unsigned int length)
-{
-    if (logImpl.appendHex != NULL)
-        logImpl.appendHex(level, location, length);
 }

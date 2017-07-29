@@ -15,10 +15,9 @@
 #include "direct.h"
 #include "devicebase.h"
 
-struct loggingImpl;
-
 /* call this first to enable logging in this layer */
-DIRECT_API void initializeDriverLayer(struct loggingImpl *impl);
+struct logSettings;
+DIRECT_API void initializeDriverLayer(struct logSettings *globalSettings);
 
 /* remaining function calls are illegal until this returns true */
 DIRECT_API bool findDriver(const char *path, const char **preferred, bool onlyPreferred);

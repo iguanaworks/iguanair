@@ -166,6 +166,9 @@ IGUANAIR_API bool iguanaWriteRequest(const iguanaPacket request,
 IGUANAIR_API iguanaPacket iguanaReadResponse(PIPE_PTR connection,
                                              unsigned int timeout);
 IGUANAIR_API bool iguanaResponseIsError(const iguanaPacket response);
+IGUANAIR_API bool iguanaTransaction(PIPE_PTR connection,
+                                    const iguanaPacket request,
+                                    iguanaPacket *response);
 
 /* a few helper functions for dealing with function arguments */
 IGUANAIR_API int iguanaReadPulseFile(const char *filename, void **pulses);

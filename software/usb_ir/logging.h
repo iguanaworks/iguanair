@@ -2,6 +2,7 @@
 
 #include "iguanaIR.h"
 #include <stdarg.h>
+#include <stdio.h>
 
 enum
 {
@@ -15,34 +16,25 @@ enum
     LOG_DEBUG2,
     LOG_DEBUG3,
 
-    LOG_ALWAYS,
-
     /* argp related logging defines */
-    ARG_LOG_LEVEL = 0x100,
     LOG_GROUP = 1,
     MSC_GROUP
 };
 
-/* for passing to drivers */
-typedef struct loggingImpl
+typedef struct logSettings
 {
-    bool (*wouldOutput)(int level);
-    int (*vaMessage)(int level, char *format, va_list list);
-    void (*appendHex)(int level, void *location, unsigned int length);
-} loggingImpl;
+    int level;
+    FILE *log;
+} logSettings;
+
+#define INIT_LOG_SETTINGS { LOG_NORMAL, NULL }
 
 /* functions for configuring logging */
-void initLogSystem(const loggingImpl *impl);
-loggingImpl* logImplementation();
+void initializeLogging(logSettings *globalSsettings);
+logSettings* currentLogSettings();
 struct argp* logArgParser();
-void changeLogLevel(int difference);
-void setLogLevel(int value);
-void openLog(const char *filename);
 
 /* fuctions for outputting log lines */
 bool wouldOutput(int level);
 int message(int level, char *format, ...);
 void appendHex(int level, void *location, unsigned int length);
-
-/* internal to the logging subsystem */
-int vaMessage(int level, char *format, va_list list);

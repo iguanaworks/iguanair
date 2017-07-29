@@ -49,7 +49,7 @@ void triggerCommand(THREAD_PTR cmd)
 
 void initServerSettings()
 {
-    initLogSystem(NULL);
+    initializeLogging(NULL);
 
     /* Driver location and preference information.  The preferred list
        is a NULL terminated list of strings. */
@@ -236,7 +236,7 @@ bool initServer()
             "  recvTimeout: %d\n", srvSettings.devSettings.recvTimeout);
     message(LOG_DEBUG,
             "  sendTimeout: %d\n", srvSettings.devSettings.sendTimeout);
-    initializeDriverLayer(logImplementation());
+    initializeDriverLayer(currentLogSettings());
 
     /* prepare the pipe for shutting down any scan thread */
     if (! createPipePair(srvSettings.scanTimerPipe))

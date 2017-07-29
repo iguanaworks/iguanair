@@ -51,5 +51,5 @@ typedef struct driverImpl
 
 } driverImpl;
 
-struct loggingImpl;
-DRIVER_API driverImpl* getImplementation(const struct loggingImpl *impl);
+struct logSettings;
+DRIVER_API driverImpl* getImplementation(struct logSettings *globalSettings);

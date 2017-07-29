@@ -681,8 +681,8 @@ driverImpl impl_libusb = {
     printError
 };
 
-driverImpl* getImplementation(const loggingImpl *impl)
+driverImpl* getImplementation(struct logSettings *globalSettings)
 {
-    initLogSystem(impl);
+    initializeLogging(globalSettings);
     return &impl_libusb;
 }

@@ -886,8 +886,9 @@ int main(int argc, char **argv)
     igtask *junk;
     struct argp_child children[2];
     bool ctlCommands;
+    logSettings settings = INIT_LOG_SETTINGS;
 
-    initLogSystem(NULL);
+    initializeLogging(&settings);
 
     /* include the log argument parser */
     memset(children, 0, sizeof(struct argp_child) * 2);

@@ -530,14 +530,14 @@ bool oldPinConfig(iguanaDev *idev,       /* required */
             request->code = IG_DEV_GETCONFIG0 + x * 2;
 
         if (! deviceTransaction(idev, request, response) ||
-            iguanaResponseIsError(*response))
+            packetIsError(*response))
             break;
 
         if (code == IG_DEV_GETPINCONFIG)
         {
             memcpy(data + x * 4, (*response)->data, 4);
             if (x == 0)
-                iguanaFreePacket(*response);
+                freeDataPacket(*response);
             else
             {
                 free((*response)->data);
