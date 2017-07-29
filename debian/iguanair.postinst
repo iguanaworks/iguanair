@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+systemctl daemon-reload	
+
+if [ -z "`id -u iguanair 2> /dev/null`" ]; then
+    adduser --system --gecos "iguanair" --group \
+            --no-create-home --disabled-password \
+            --quiet iguanair --home /var/run/iguanaIR || true
+fi
+
+if [ -f /lib/udev/rules.d/80-iguanaIR.rules ]; then
+    touch /lib/udev/rules.d/80-iguanaIR.rules
+else
+    echo >&2 "Unable to touch /lib/udev/rules.d/80-iguanaIR.rules (for udev rescan) because file does not exist."
+fi
+
+systemctl start iguanaIR.service
