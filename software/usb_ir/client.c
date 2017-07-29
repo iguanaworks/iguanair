@@ -887,6 +887,26 @@ static struct argp parser = {
     NULL
 };
 
+bool connectToDaemon(const char *name, PIPE_PTR *conn)
+{
+    if ((*conn = iguanaConnect(params.device)) == INVALID_PIPE)
+    {
+#ifdef WIN32
+        /* windows does not set errno correctly on failure */
+        errno = GetLastError();
+#endif
+        if (errno == 2)
+            message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running and the device connected?\n",
+                    translateError(errno));
+        else if (errno != 0)
+            message(LOG_ERROR, "Failed to connect to iguanaIR daemon at %s: %s\n",
+                    name, translateError(errno));
+    }
+    else
+        return true;
+    return false;
+}
+
 int main(int argc, char **argv)
 {
     PIPE_PTR conn = INVALID_PIPE;
@@ -917,21 +937,7 @@ int main(int argc, char **argv)
     if (params.listDevs)
     {
         ctlCommands = true;
-        conn = iguanaConnect("ctl");
-        if (conn == INVALID_PIPE)
-        {
-#ifdef WIN32
-            /* windows does not set errno correctly on failure */
-            errno = GetLastError();
-#endif
-            if (errno == 2)
-                message(LOG_ERROR, "Failed to connect to iguanaIR ctl interface: %s: is the daemon running?\n",
-                        translateError(errno));
-            else if (errno != 0)
-                message(LOG_ERROR, "Failed to connect to iguanaIR ctl interface: %s\n",
-                        translateError(errno));
-        }
-        else
+        if (connectToDaemon("ctl", &conn))
         {
             igtask cmd;
             memset(&cmd, 0, sizeof(igtask));
@@ -949,20 +955,7 @@ int main(int argc, char **argv)
         if (! ctlCommands)
             message(LOG_ERROR, "No tasks specified.\n");
     }
-    else if ((conn = iguanaConnect(params.device)) == INVALID_PIPE)
-    {
-#ifdef WIN32
-        /* windows does not set errno correctly on failure */
-        errno = GetLastError();
-#endif
-        if (errno == 2)
-            message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running and the device connected?\n",
-                    translateError(errno));
-        else if (errno != 0)
-            message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s\n",
-                    translateError(errno));
-    }
-    else
+    else if (connectToDaemon(params.device, &conn))
     {
         igtask cmd;
 
