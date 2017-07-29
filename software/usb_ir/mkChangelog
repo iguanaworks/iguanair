@@ -136,6 +136,7 @@ with open(os.path.join(sys.path[0], 'ChangeLog')) as input:
                                                                            '%a, %d %b %Y %H:%M:%S')
                             except:
                                 raise Exception('Failed to parse date string: %s' % parts[1])
+                        entry['whenText'] = parts[1]
                     elif parts[0].lower() == 'debian':
                         entry['debian'] = parts[1].strip()
                     elif parts[0].lower() == 'message':
