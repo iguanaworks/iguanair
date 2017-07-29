@@ -19,7 +19,8 @@ trap 'exit' ERR
 
 # directory prep
 cd $(dirname $(readlink -f $0))
-test -d dist || mkdir dist
+rm -rf dist
+mkdir dist
 
 # default to tree "HEAD"
 treeish=${1:-'HEAD'}
@@ -64,16 +65,20 @@ tar -xf dist/${tarname}.tar ${tarname}/ChangeLog --to-stdout > dist/ChangeLog
 # generate the iguanair.spec with the proper %changelog content and put it in the tarball
 tar -xf dist/${tarname}.tar ${tarname}/mkChangelog --to-stdout > dist/mkChangelog
 tar -xf dist/${tarname}.tar ${tarname}/fedora/iguanair.spec.in --to-stdout > dist/iguanair.spec.in
-python dist/mkChangelog --append-to-spec dist/iguanair.spec.in > dist/iguanair.spec
+python dist/mkChangelog --build 1 --append-to-spec dist/iguanair.spec.in > dist/iguanair.spec
 tar --remove-files --append --transform "s|^dist|${tarname}/fedora|" \
     -f dist/${tarname}.tar dist/iguanair.spec
 rm dist/iguanair.spec.in
+
+# write a selection debian changelog files
+python dist/mkChangelog --build 1 --debian-release stable --output dist/changelog.stable-1
+python dist/mkChangelog --build 1 --debian-release ubuntu --output dist/changelog.ubuntu-1
 
 # cleanup
 rm -f dist/ChangeLog dist/mkChangelog
 
 # gzip, and sum it
 gzip -f dist/${tarname}.tar
-sha256sum dist/${tarname}.tar.gz > dist/${tarname}.sum
+sha256sum dist/* > dist/${tarname}.sum
 
 ls -l dist
