@@ -1,4 +1,4 @@
-usr/lib/x86_64-linux-gnu/lirc/plugins/iguanair.so
+usr/lib/*/lirc/plugins/iguanair.so
 usr/share/lirc/configs/iguanair.conf
 usr/share/doc/lirc/plugindocs/iguanair.html
 etc/modprobe.d/60-blacklist-kernel-iguanair.conf

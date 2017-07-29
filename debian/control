@@ -5,13 +5,15 @@ Maintainer: IguanaWorks <support@iguanaworks.net>
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.2
 Build-Depends: cmake,
+ udev,
+ swig,
  pkg-config,
  debhelper (>= 9),
  dh-systemd (>= 1.5),
  liblircclient-dev,
  libusb-1.0-0-dev | libusb-dev,
- python-all,
- python3-all,
+ python-dev,
+ python3-dev,
 Standards-Version: 3.9.8
 Homepage:https://www.iguanaworks.net/
 #Vcs-Git: https://github.com/iguanaworks/iguanair.git
