@@ -209,14 +209,16 @@ install(TARGETS igclient DESTINATION /usr/bin)
 
 # see if we have python and swig
 If("${CMAKE_ARCH}" STREQUAL "arm")
-  Message("Skipping Python bits on ARM.")
+  Message(STATUS "Skipping Python bits on ARM.")
 Else()
   find_package(SWIG)
-  find_package(PythonLibs 2)
-  If(SWIG_FOUND AND PYTHONLIBS_FOUND)
-    ForEach(PYVER 2 3)
-      add_subdirectory(python python${PYVER})
-    EndForEach(PYVER)
+
+  ForEach(PYVER 2 3)
+    add_subdirectory(python python${PYVER})
+  EndForEach(PYVER)
+
+  If(SWIG_FOUND AND FOUND_SOME_PYTHON)
+    message(STATUS "Python and SWIG found; will build Python bindings")
 
     # install the reflasher script and hex files
     install(DIRECTORY files/python/usr
@@ -234,7 +236,7 @@ Else()
                               \$ENV{DESTDIR}/usr/bin/iguanaIR-reflasher)
     ")
   Else()
-    Message("    Skipping python build")
+    Message(STATUS "Skipping python build")
   EndIf()
 EndIf()
 
