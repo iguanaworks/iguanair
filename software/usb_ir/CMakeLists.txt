@@ -165,6 +165,9 @@ set_target_properties(iguanaIR PROPERTIES
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
 
+# TODO: should have this just build early w/o an explicit dep?
+add_dependencies(iguanaIR VersionH)
+
 # build the library that can be used to communicate with the devices
 add_library(directIguanaIR SHARED
   driver.c driver.h driverapi.h
