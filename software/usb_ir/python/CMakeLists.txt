@@ -5,10 +5,10 @@ unset(PYTHON_INCLUDE_DIR CACHE)
 unset(PYTHON_LIBRARY CACHE)
 unset(PYTHON_LIBRARY)
 
-find_package(PythonLibs ${PYVER})
+find_package(PythonLibs ${PYVER} QUIET)
 If(PYTHONLIBS_FOUND)
-  message(STATUS "Found Python version ${PYTHONLIBS_VERSION_STRING} (override with -DPYVER=2|3)")
-  message(STATUS "Python and SWIG found; will build Python bindings")
+  message(STATUS "  Found ${PYTHONLIBS_VERSION_STRING}")
+  set(FOUND_SOME_PYTHON TRUE PARENT_SCOPE)
 
   # ensure we have PYTHON_INCLUDE_DIR even on older CMake
   If("${PYTHON_INCLUDE_DIR}" STREQUAL "")
@@ -44,4 +44,6 @@ If(PYTHONLIBS_FOUND)
           DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/iguanaIR.py
           DESTINATION ${LIBDIR}/python${PYMAJMINVER}/site-packages)
+Else()
+  message(STATUS "  Not found")
 EndIf()

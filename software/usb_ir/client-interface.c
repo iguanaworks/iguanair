@@ -83,7 +83,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
         break;
 
     case IG_CTL_DEVADDR:
-        // TODO: dereferencing request->data as a string is a bad idea
+        /* TODO: dereferencing request->data as a string is a bad idea */
         request->data = (unsigned char*)deviceAddress((char*)request->data);
         if (request->data == NULL)
             request->dataLen = 0;

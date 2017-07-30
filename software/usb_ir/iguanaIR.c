@@ -27,7 +27,7 @@
 
 enum
 {
-    MAX_LINE = 1024,
+    MAX_LINE = 1024
 };
 
 PIPE_PTR iguanaConnect_internal(const char *name, unsigned int protocol, bool checkVersion);

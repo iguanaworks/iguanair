@@ -49,21 +49,12 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 Else()
   include(CheckLibraryExists)
   include(CheckFunctionExists)
-  include(CheckIncludeFile)
 
   # set variables common to all Unix-like systems
   Set(DAEMONSRC daemon.c)
   List(APPEND BASESRC compat-unix.c)
   Set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
   add_c_flag(-pedantic -g -O2)
-
-  # check that we have SOME libusb header
-  CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
-  CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
-  CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
-  If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
-    message(FATAL_ERROR "No version of the libusb header files were found.")
-  EndIf()
 
   # see if we have clock_gettime possibly in rt
   check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
@@ -146,6 +137,17 @@ If("${PIPESRC}" STREQUAL "pipes.h")
   message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
 
+If(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+  # check that we have SOME libusb header
+  include(CheckIncludeFile)
+  CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
+  CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
+  CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
+  If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
+    message(FATAL_ERROR "No version of the libusb header files were found.")
+  EndIf()
+EndIf()
+
 # Make config.h based on what cmake found and include it's path
 configure_file("${CMAKE_SOURCE_DIR}/config.h.in" config.h)
 include_directories(${CMAKE_BINARY_DIR})
@@ -164,6 +166,9 @@ set_target_properties(iguanaIR PROPERTIES
                       SOVERSION ${SO_VER})
 install(TARGETS iguanaIR
         DESTINATION ${LIBDIR})
+
+# TODO: should have this just build early w/o an explicit dep?
+add_dependencies(iguanaIR VersionH)
 
 # build the library that can be used to communicate with the devices
 add_library(directIguanaIR SHARED
@@ -206,14 +211,16 @@ install(TARGETS igclient DESTINATION /usr/bin)
 
 # see if we have python and swig
 If("${CMAKE_ARCH}" STREQUAL "arm")
-  Message("Skipping Python bits on ARM.")
+  Message(STATUS "Skipping Python bits on ARM.")
 Else()
   find_package(SWIG)
-  find_package(PythonLibs 2)
-  If(SWIG_FOUND AND PYTHONLIBS_FOUND)
-    ForEach(PYVER 2 3)
-      add_subdirectory(python python${PYVER})
-    EndForEach(PYVER)
+
+  ForEach(PYVER 2 3)
+    add_subdirectory(python python${PYVER})
+  EndForEach(PYVER)
+
+  If(SWIG_FOUND AND FOUND_SOME_PYTHON)
+    message(STATUS "Python and SWIG found; will build Python bindings")
 
     # install the reflasher script and hex files
     install(DIRECTORY files/python/usr
@@ -231,7 +238,7 @@ Else()
                               \$ENV{DESTDIR}/usr/bin/iguanaIR-reflasher)
     ")
   Else()
-    Message("    Skipping python build")
+    Message(STATUS "Skipping python build")
   EndIf()
 EndIf()
 
