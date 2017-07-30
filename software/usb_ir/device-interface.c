@@ -896,11 +896,13 @@ void handleIncomingPackets(iguanaDev *idev)
                 {
                     if (srvSettings.fixToggle)
                     {
-                        //message(LOG_WARN, "%d %d %d %d %d\n", errno, length, EAGAIN, USB_ETIMEDOUT, LIBUSB_ERROR_TIMEOUT);
-                        //interruptRecv(idev->usbDev, NULL, 0, 424242);
+                        /*
+                        message(LOG_WARN, "%d %d %d %d %d\n", errno, length, EAGAIN, USB_ETIMEDOUT, LIBUSB_ERROR_TIMEOUT);
+                        interruptRecv(idev->usbDev, NULL, 0, 424242);
+                        */
                         if (idev->firstTimeout && toggle)
                             idev->willFail = true;
-                        //message(LOG_INFO, "timeout: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout);
+                        /* message(LOG_INFO, "timeout: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout); */
                         idev->firstTimeout = false;
                         toggle = 0;
                     }
@@ -963,7 +965,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     toggle ^= 1;
                     idev->willFail = false;
                     idev->firstTimeout = true;
-                    //message(LOG_INFO, "packet: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout);
+                    /* message(LOG_INFO, "packet: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout); */
                 }
             }
             else /* if (length > 0)*/
@@ -973,7 +975,7 @@ void handleIncomingPackets(iguanaDev *idev)
                     toggle ^= 1;
                     idev->willFail = false;
                     idev->firstTimeout = true;
-                    //message(LOG_INFO, "packet: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout);
+                    /* message(LOG_INFO, "packet: %d %d %d\n", toggle, idev->willFail, idev->firstTimeout); */
                 }
 
                 /* now we need to store a dataPacket */

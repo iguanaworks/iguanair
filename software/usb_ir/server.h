@@ -20,7 +20,7 @@ enum
     /* start possible commands that can be triggered by signals at an
        arbitrary but recognizable value */
     SCAN_TRIGGER = 0x55,
-    QUIT_TRIGGER,
+    QUIT_TRIGGER
 };
 void triggerCommand(THREAD_PTR cmd);
 
