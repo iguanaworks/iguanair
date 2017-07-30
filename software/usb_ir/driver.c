@@ -16,7 +16,7 @@ static driverImpl *implementation = NULL;
 #ifdef _WIN32
 static bool findDriverDir(char *path)
 {
-    HMODULE hModule = GetModuleHandle("iguanaIR.dll");
+    HMODULE hModule = GetModuleHandle("directIguanaIR.dll");
     if (hModule != NULL &&
         GetModuleFileName(hModule, path, PATH_MAX) > 0)
     {
@@ -61,8 +61,8 @@ static bool findDriverDir(char *path)
     struct kinfo_vmentry *freep, *kve;
     int i, cnt;
 
-    library = loadLibrary("libiguanaIR" DYNLIB_EXT);
-    target = (uintmax_t)dlsym(library, "iguanaClose");
+    library = loadLibrary("libdirectIguanaIR" DYNLIB_EXT);
+    target = (uintmax_t)dlsym(library, "initializeDriver");
 
     freep = kinfo_getvmmap(getpid(), &cnt);
     if (freep != NULL)
@@ -97,8 +97,8 @@ static bool findDriverDir(char *path)
     FILE *maps;
     char buffer[80 + PATH_MAX], *object;
 
-    library = loadLibrary("libiguanaIR" DYNLIB_EXT);
-    target = (unsigned long)dlsym(library, "iguanaClose");
+    library = loadLibrary("libdirectIguanaIR" DYNLIB_EXT);
+    target = (unsigned long)dlsym(library, "initializeDriver");
 
     maps = fopen("/proc/self/maps", "r");
     while(fgets(buffer, 80 + PATH_MAX, maps) != NULL)
