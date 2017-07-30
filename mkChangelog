@@ -248,7 +248,7 @@ def execute(args):
             output.write("""iguanair (%(version)s-%(debianRel)s-%(debianBld)s) %(debianRel)s; urgency=low
 
 %(message)s
-            -- %(author)s  %(longWhen)s
+ -- %(author)s  %(longWhen)s
 
 """ % entry)
     else:
