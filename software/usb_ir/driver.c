@@ -191,7 +191,10 @@ bool findDriver(const char *driverDir, const char **preferred, bool onlyPreferre
     {
         char expectedDir[PATH_MAX];
         if (findDriverDir(expectedDir))
+        {
             driverDir = expectedDir;
+            message(LOG_DEBUG2, "  findDriverDir: %s\n", driverDir);
+        }
         else
             /* fall back on something reasonable per OS */
 #ifdef _WIN32
