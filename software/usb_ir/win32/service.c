@@ -729,17 +729,25 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 }
 
 // TODO: only allows for 1 alias, but alright
-void setAlias(iguanaDev *idev, bool deleteAll, const char *alias)
+void setAlias(const char *target, bool deleteAll, const char *alias)
 {
-    EnterCriticalSection(&aliasLock);
-    if (listeners[idev->usbDev->id][1] != NULL)
+    /* convert the string back into an index and refer into the alias lists */
+    char junk;
+    int id;
+    if (sscanf(target, "%d%c", &id, &junk) == 1)
     {
-        CloseHandle(listeners[idev->usbDev->id][1]);
-        listeners[idev->usbDev->id][1] = NULL;
+        OutputDebugString(alias);
+
+        EnterCriticalSection(&aliasLock);
+        if (listeners[id][1] != NULL)
+        {
+            CloseHandle(listeners[id][1]);
+            listeners[id][1] = NULL;
+        }
+        if (alias != NULL)
+            strcpy(aliases[id], alias);
+	    else
+		    aliases[id][0] = '\0';
+        LeaveCriticalSection(&aliasLock);
     }
-    if (alias != NULL)
-        strcpy(aliases[idev->usbDev->id], alias);
-	else
-		aliases[idev->usbDev->id][0] = '\0';
-    LeaveCriticalSection(&aliasLock);
 }
