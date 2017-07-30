@@ -49,21 +49,12 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 Else()
   include(CheckLibraryExists)
   include(CheckFunctionExists)
-  include(CheckIncludeFile)
 
   # set variables common to all Unix-like systems
   Set(DAEMONSRC daemon.c)
   List(APPEND BASESRC compat-unix.c)
   Set(CMAKE_REQUIRED_FLAGS "-I/usr/include")
   add_c_flag(-pedantic -g -O2)
-
-  # check that we have SOME libusb header
-  CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
-  CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
-  CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
-  If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
-    message(FATAL_ERROR "No version of the libusb header files were found.")
-  EndIf()
 
   # see if we have clock_gettime possibly in rt
   check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
@@ -144,6 +135,17 @@ EndIf()
 
 If("${PIPESRC}" STREQUAL "pipes.h")
   message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+EndIf()
+
+If(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+  # check that we have SOME libusb header
+  include(CheckIncludeFile)
+  CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
+  CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
+  CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
+  If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
+    message(FATAL_ERROR "No version of the libusb header files were found.")
+  EndIf()
 EndIf()
 
 # Make config.h based on what cmake found and include it's path
