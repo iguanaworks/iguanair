@@ -9,6 +9,7 @@ Set(BASESRCS ../logging.c ../list.c)
 
 If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(USBPRE1LIB ${CMAKE_SOURCE_DIR}/win32/libusb-win32/lib/msvc/libusb.lib)
+  Set(COMPILE_OLD true)
 Else()
   Set(USBPRE1LIB usb)
   If(NOT "${CMAKE_ARCH}" STREQUAL "arm")

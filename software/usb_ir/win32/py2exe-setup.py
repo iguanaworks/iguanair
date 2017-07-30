@@ -7,8 +7,8 @@ from distutils.core import setup
 import py2exe
 
 # copy the Python stuff to where the rest of the results are
-shutil.copy('Release/_iguanaIR.pyd', '../Release/_iguanaIR.pyd')
-shutil.copy('iguanaIR.py', '../Release/iguanaIR.py')
+shutil.copy('../build/python2/Release/_iguanaIR.pyd', '../Release/_iguanaIR.pyd')
+shutil.copy('../build/python2/iguanaIR.py', '../Release/iguanaIR.py')
 
 # first ensure that py2exe can find the iguanaIR.py
 sys.path.append('../Release')
