@@ -457,8 +457,9 @@ static bool findAddress(itemHeader *item, void *userData)
 
 char* deviceAddress(const char *name)
 {
-    findAddrInfo info = {name, NULL};
+    findAddrInfo info = {NULL, NULL};
 
+    info.name = name;
     forEach(&srvSettings.devs, findAddress, &info);
 
     if (info.result == NULL)
