@@ -95,22 +95,25 @@ Else()
 
     # Use pkg-config to find udev
     pkg_check_modules(UDEV udev)
-    if(UDEV_FOUND)
+    If(UDEV_FOUND)
       execute_process(COMMAND pkg-config --variable udevdir udev
                       OUTPUT_VARIABLE UDEVDIR
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    endif()
+    EndIf()
 
     # Use pkg-config to find systemd
     pkg_check_modules(SYSTEMD systemd)
-    if (SYSTEMD_FOUND)
+    If(SYSTEMD_FOUND)
       execute_process(COMMAND pkg-config --variable systemdsystemunitdir systemd
                       OUTPUT_VARIABLE SYSTEMD_UNITDIR
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
       execute_process(COMMAND pkg-config --variable tmpfilesdir systemd
                       OUTPUT_VARIABLE TMPFILESDIR
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    endif()
+    Else()
+      # fall back on checking for an old systemd (Ubuntu14.04 et al)
+      pkg_check_modules(OLDSYSTEMD libsystemd-daemon)
+    EndIf()
   ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
     # flag that this was a recognized system
     List(APPEND PIPESRC pipes.c)
@@ -246,24 +249,28 @@ Else()
   install(FILES iguanaIR.h
           DESTINATION /usr/include)
 
-  If(UDEV_FOUND)
-    install(DIRECTORY files/base/lib/udev/rules.d
-            DESTINATION ${UDEVDIR})
-  EndIf()
-
-  If(SYSTEMD_FOUND)
-    install(FILES files/systemd/lib/systemd/system/iguanaIR.service
-            DESTINATION ${SYSTEMD_UNITDIR})
-    install(FILES  files/base/lib/udev/rules.d/80-iguanaIR.rules
-            DESTINATION ${UDEVDIR}/rules.d)
-    install(FILES files/systemd/lib/tmpfiles.d/iguanair.conf
-            DESTINATION ${TMPFILESDIR})
-    install(DIRECTORY files/systemd/usr
+  If(OLDSYSTEMD_FOUND)
+    install(DIRECTORY files/systemd/lib files/systemd/usr
             USE_SOURCE_PERMISSIONS
             DESTINATION /)
   Else()
-    install(DIRECTORY files/sysV/usr files/sysV/etc
-            USE_SOURCE_PERMISSIONS
-            DESTINATION /)
+    If(UDEV_FOUND)
+      install(FILES  files/systemd/lib/udev/rules.d/80-iguanaIR.rules
+              DESTINATION ${UDEVDIR}/rules.d)
+    EndIf()
+    
+    If(SYSTEMD_FOUND)
+      install(FILES files/systemd/lib/systemd/system/iguanaIR.service
+              DESTINATION ${SYSTEMD_UNITDIR})
+      install(FILES files/systemd/usr/lib/tmpfiles.d/iguanair.conf
+              DESTINATION ${TMPFILESDIR})
+      install(DIRECTORY files/systemd/usr/bin
+              USE_SOURCE_PERMISSIONS
+              DESTINATION /usr)
+    Else()
+      install(DIRECTORY files/sysV/usr files/sysV/etc
+              USE_SOURCE_PERMISSIONS
+              DESTINATION /)
+    EndIf()
   EndIf()
 EndIf()
