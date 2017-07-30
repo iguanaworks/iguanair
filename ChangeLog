@@ -60,7 +60,7 @@ Message:
 END
 
 Version: 1.0pre2
-Author:  Ben Luey <bluey@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sun, 08 Nov 2009 08:48:53 -0600
 Debian:  jaunty, 1
 Fedora:  1
@@ -69,7 +69,7 @@ Message:
 END
 
 Version: 1.0pre1
-Author:  Ben Luey <bluey@iguanaDev>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sun, 12 Jul 2009 18:07:25 -0400
 Debian:  jaunty, 1
 Fedora:  1
@@ -78,7 +78,7 @@ Message:
 END
 
 Version: 0.99.1
-Author:  Ben Luey <bluey@iguanaDevUbuntu64>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sun, 23 Nov 2008 16:36:37 -0500
 Debian:  gutsy, 4
 Fedora:  4
@@ -106,7 +106,7 @@ Message:
 END
 
 Version: 0.96
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Fri Jun 27 2008
 Debian:  stable, 1
 Fedora:  1
@@ -154,7 +154,7 @@ Message:
 END
 
 Version: 0.31
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sat Mar 10 2007
 Debian:  unstable, 1
 Fedora:  1
@@ -163,7 +163,7 @@ Message:
 END
 
 Version: 0.30
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Thu Feb 1 2007
 Debian:  unstable, 1
 Fedora:  1
@@ -172,7 +172,7 @@ Message:
 END
 
 Version: 0.29
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sun Jan 21 2007
 Debian:  unstable, 1
 Fedora:  1
@@ -181,7 +181,7 @@ Message:
 END
 
 Version: 0.26
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sun Dec 31 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -190,7 +190,7 @@ Message:
 END
 
 Version: 0.25
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sun Dec 10 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -199,7 +199,7 @@ Message:
 END
 
 Version: 0.24
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Wed Dec 6 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -208,7 +208,7 @@ Message:
 END
 
 Version: 0.19
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Wed Oct 18 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -217,7 +217,7 @@ Message:
 END
 
 Version: 0.10
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sat Sep 23 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -226,7 +226,7 @@ Message:
 END
 
 Version: 0.9
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Tue Jul 11 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -235,7 +235,7 @@ Message:
 END
 
 Version: 0.8
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Mon Jul 10 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -244,7 +244,7 @@ Message:
 END
 
 Version: 0.5
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Mon Mar 27 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -253,7 +253,7 @@ Message:
 END
 
 Version: 0.4
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Mon Mar 20 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -262,7 +262,7 @@ Message:
 END
 
 Version: 0.3
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Tue Mar 07 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -271,7 +271,7 @@ Message:
 END
 
 Version: 0.2
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Tue Mar 07 2006
 Debian:  unstable, 2
 Fedora:  2
@@ -280,7 +280,7 @@ Message:
 END
 
 Version: 0.2
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Tue Mar 07 2006
 Debian:  unstable, 1
 Fedora:  1
@@ -289,7 +289,7 @@ Message:
 END
 
 Version: 0.1
-Author:  Joseph Dunn <jdunn@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Tue Mar 07 2006
 Debian:  unstable, 1
 Fedora:  1
