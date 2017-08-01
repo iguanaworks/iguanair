@@ -193,11 +193,9 @@ add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
   server.c server.h
   client-interface.c client-interface.h
   device-interface.c device-interface.h
-#  driver.c driver.h driverapi.h sendFormat.c sendFormat.h # this OR directIguanaIR
   list.c list.h protocol-versions.c protocol-versions.h
   dataPackets.c dataPackets.h)
 target_link_libraries(igdaemon directIguanaIR
-#target_link_libraries(igdaemon iguanaIR # this OR directIguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
 install(TARGETS igdaemon DESTINATION /usr/bin)
 
