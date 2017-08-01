@@ -2,9 +2,9 @@
  * service.c **************************************************************
  **************************************************************************
  *
- * TODO: DESCRIBE AND DOCUMENT THIS FILE
+ * Implementation of the Win32 service code that cannot be ported.
  *
- * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

@@ -1,3 +1,17 @@
+/****************************************************************************
+ ** logging.h ***************************************************************
+ ****************************************************************************
+ *
+ * Implementation of our logging code with multiple log levels and the
+ * argp bits provided to control logging.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the LGPL version 2.1.
+ * See LICENSE-LGPL for license details.
+ */
+
 #pragma once
 
 #include "iguanaIR.h"

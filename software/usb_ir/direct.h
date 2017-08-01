@@ -1,3 +1,16 @@
+/****************************************************************************
+ ** direct.h ****************************************************************
+ ****************************************************************************
+ *
+ * Export header for the library that controls hardware communication.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the LGPL version 2.1.
+ * See LICENSE-LGPL for license details.
+ */
+
 #pragma once
 
 #ifdef WIN32

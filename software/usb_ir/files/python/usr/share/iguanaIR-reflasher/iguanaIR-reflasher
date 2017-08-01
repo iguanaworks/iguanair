@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 #
 # **************************************************************************
-# ** upgrade-usb ***********************************************************
+# ** iguanaIR-reflasher ****************************************************
 # **************************************************************************
 # *
 # * This script is used to flash the body code on to each USB device
 # * and can also be used for testing.  Additionally it may be replace
 # * the existing firmware on a device with any other version.
 # *
-# * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+# * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
 # * Author: Joseph Dunn <jdunn@iguanaworks.net>
 # *
 # * Distributed under the GPL version 2.

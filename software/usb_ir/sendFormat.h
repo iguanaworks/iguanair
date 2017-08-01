@@ -1,3 +1,16 @@
+/****************************************************************************
+ ** sendFormat.h ************************************************************
+ ****************************************************************************
+ *
+ * Declarations used in send commands within the device protocol.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the LGPL version 2.1.
+ * See LICENSE-LGPL for license details.
+ */
+
 #pragma once
 
 #include "direct.h"

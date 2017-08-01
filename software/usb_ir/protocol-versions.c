@@ -1,12 +1,12 @@
 /****************************************************************************
- ** compatibility.c *********************************************************
+ ** protocol-versions.c *****************************************************
  ****************************************************************************
  *
  * This file provides functions to allow the driver to support older
  * versions of the protocol.  Currently this means supporting the
  * current and original versions although more could be added.
  *
- * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

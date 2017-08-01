@@ -1,3 +1,16 @@
+/****************************************************************************
+ ** driverapi.h *************************************************************
+ ****************************************************************************
+ *
+ * The API implemented by each of our low level drivers.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the LGPL version 2.1.
+ * See LICENSE-LGPL for license details.
+ */
+
 #pragma once
 
 #include "devicebase.h"

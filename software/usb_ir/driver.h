@@ -4,12 +4,13 @@
  *
  * Header for the lowest level interface to the USB device.
  *
- * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.
  * See LICENSE for license details.
  */
+
 #pragma once
 
 #include "direct.h"

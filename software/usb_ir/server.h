@@ -4,7 +4,7 @@
  *
  * Header included ONLY in daemon.c/service.c
  *
- * Copyright (C) 2009, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

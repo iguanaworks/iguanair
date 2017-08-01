@@ -2,9 +2,9 @@
  ** libusb.c ****************************************************************
  ****************************************************************************
  *
- * Lowest level interface to the USB devices.
+ * Lowest level interface to the USB devices via libusb 1.0.
  *
- * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

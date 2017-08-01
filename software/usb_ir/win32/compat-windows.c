@@ -1,10 +1,11 @@
 /**************************************************************************
- * compat.c ***************************************************************
+ * compat-windows.c *******************************************************
  **************************************************************************
  *
- * TODO: DESCRIBE AND DOCUMENT THIS FILE
+ * A few functions must be implemented for compatibility.  This is the
+ * Windows version.
  *
- * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

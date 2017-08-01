@@ -1,3 +1,16 @@
+/****************************************************************************
+ ** sendFormat.c ************************************************************
+ ****************************************************************************
+ *
+ * Implementation of functions used to prepare data for sending.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the GPL version 2.
+ * See LICENSE for license details.
+ */
+
 #include "sendFormat.h"
 #include "iguanaIR.h"
 #include "compat.h"

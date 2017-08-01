@@ -1,10 +1,10 @@
 /****************************************************************************
- ** igdaemon.h **************************************************************
+ ** client-interface.h ******************************************************
  ****************************************************************************
  *
  * A couple functions used to interface with Iguanaworks USB devices.
  *
- * Copyright (C) 2007, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

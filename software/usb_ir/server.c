@@ -4,7 +4,7 @@
  *
  * Common code used by all daemon/server/service implementations.
  *
- * Copyright (C) 2009, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
  *
  * Distributed under the GPL version 2.

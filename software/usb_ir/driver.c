@@ -1,3 +1,17 @@
+/****************************************************************************
+ ** driver.c ****************************************************************
+ ****************************************************************************
+ *
+ * Wrapper for the driver interface to the USB device to abstract out
+ * the function pointers and calls through them.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the GPL version 2.
+ * See LICENSE for license details.
+ */
+
 #include "iguanaIR.h"
 #include "compat.h"
 

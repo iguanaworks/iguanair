@@ -1,3 +1,16 @@
+/****************************************************************************
+ ** devicebase.h ************************************************************
+ ****************************************************************************
+ *
+ * Low level defines for our device APIs.
+ *
+ * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
+ * Author: Joseph Dunn <jdunn@iguanaworks.net>
+ *
+ * Distributed under the LGPL version 2.1.
+ * See LICENSE-LGPL for license details.
+ */
+
 #pragma once
 
 enum
