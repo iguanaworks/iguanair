@@ -28,10 +28,8 @@ EndIf()
 If(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   Set(CMAKE_INSTALL_PREFIX /usr CACHE PATH "Default prefix to /usr" FORCE)
   Set(ETC_PARENT /)
-  Set(ROOT_PREFIX)
 Else()
   Set(ETC_PARENT ${CMAKE_INSTALL_PREFIX})
-  Set(ROOT_PREFIX ${CMAKE_INSTALL_PREFIX})
 EndIf()
 
 # set a couple variables early
@@ -85,8 +83,6 @@ Else()
       get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
       If(LIB64)
         Set(LIBDIR "lib64")
-      Else()
-        Set(LIBDIR "lib")
       EndIf()
     EndIf()
 
@@ -156,8 +152,13 @@ If("${PIPESRC}" STREQUAL "pipes.h")
   message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 EndIf()
 
+# finally set the LIBDIR if it has not already been set
+If("${LIBDIR}" STREQUAL "")
+  Set(LIBDIR "lib")
+EndIf()
+
 If(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-  # check that we have SOME libusb header
+  # check for SOME libusb header now that include paths are set
   include(CheckIncludeFile)
   CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
   CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
@@ -281,14 +282,14 @@ Else()
   Else()
     If(UDEV_FOUND)
       install(FILES files/systemd/lib/udev/rules.d/80-iguanaIR.rules
-              DESTINATION ${ROOT_PREFIX}${UDEVDIR}/rules.d)
+              DESTINATION ${UDEVDIR}/rules.d)
     EndIf()
 
     If(SYSTEMD_FOUND)
       install(FILES files/systemd/lib/systemd/system/iguanaIR.service
-              DESTINATION ${ROOT_PREFIX}${SYSTEMD_UNITDIR})
+              DESTINATION ${SYSTEMD_UNITDIR})
       install(FILES files/systemd/usr/lib/tmpfiles.d/iguanair.conf
-              DESTINATION ${ROOT_PREFIX}${TMPFILESDIR})
+              DESTINATION ${TMPFILESDIR})
       install(PROGRAMS files/systemd/usr/bin/iguanaIR-rescan
               DESTINATION bin)
     Else()
