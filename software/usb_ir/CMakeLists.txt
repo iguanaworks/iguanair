@@ -24,11 +24,15 @@ If(TARGET_ANDROID)
   include(Android.cmake)  
 EndIf()
 
-# default the LIBDIR if it was not set
-If("${LIBDIR}" STREQUAL "")
-  Set(LIBDIR "/usr/lib")
+# Default the prefix if it was not set
+If(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  Set(CMAKE_INSTALL_PREFIX /usr CACHE PATH "Default prefix to /usr" FORCE)
+  Set(ETC_PARENT /)
+  Set(ROOT_PREFIX)
+Else()
+  Set(ETC_PARENT ${CMAKE_INSTALL_PREFIX})
+  Set(ROOT_PREFIX ${CMAKE_INSTALL_PREFIX})
 EndIf()
-# TODO: installation should go to lib64 on some platforms, but not sure this handles it now
 
 # set a couple variables early
 Set(BASESRC compat.h logging.c logging.h)
@@ -75,6 +79,21 @@ Else()
       # this makes it build on GNU Mach, but there's no USB support....
       add_definitions(-DPATH_MAX=1024)
     EndIf()
+
+    # default the LIBDIR if it was not set
+    If("${LIBDIR}" STREQUAL "")
+      get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+      If(LIB64)
+        Set(LIBDIR "lib64")
+      Else()
+        Set(LIBDIR "lib")
+      EndIf()
+    EndIf()
+
+    # default the Linux settings files into /etc
+    install(DIRECTORY files/base/etc
+            USE_SOURCE_PERMISSIONS
+            DESTINATION ${ETC_PARENT})
 
     # non-Android Linux systems need to link to dl and pthread
     If(NOT TARGET_ANDROID)
@@ -197,7 +216,7 @@ add_executable(igdaemon ${DAEMONSRC} ${PIPESRC} ${BASESRC}
   dataPackets.c dataPackets.h)
 target_link_libraries(igdaemon directIguanaIR
                       ${DAEMONLIBS} ${BASELIBS} ${ARGPLIB})
-install(TARGETS igdaemon DESTINATION /usr/bin)
+install(TARGETS igdaemon DESTINATION bin)
 
 # build all the drivers
 add_subdirectory(drivers)
@@ -205,7 +224,7 @@ add_subdirectory(drivers)
 # build igclient
 add_executable(igclient ${BASESRC} client.c list.c list.h)
 target_link_libraries(igclient iguanaIR ${BASELIBS} ${ARGPLIB})
-install(TARGETS igclient DESTINATION /usr/bin)
+install(TARGETS igclient DESTINATION bin)
 
 # see if we have python and swig
 If("${CMAKE_ARCH}" STREQUAL "arm")
@@ -218,16 +237,17 @@ Else()
   EndForEach(PYVER)
 
   If(SWIG_FOUND AND FOUND_SOME_PYTHON)
-    message(STATUS "Python and SWIG found; will build Python bindings")
+    message(STATUS "Python and SWIG found; will build Python bindings ${CMAKE_INSTALL_PREFIX}")
 
     # install the reflasher script and hex files
-    install(DIRECTORY files/python/usr
-            DESTINATION /
-            PATTERN ".svn" EXCLUDE
+    install(FILES files/python/usr/bin/iguanaIR-reflasher
+            DESTINATION bin)
+    install(DIRECTORY files/python/usr/share/iguanaIR-reflasher
+            DESTINATION share
             PATTERN "body-0.hex" EXCLUDE
             PATTERN "loader-0.hex" EXCLUDE)
     install(PROGRAMS files/python/usr/share/iguanaIR-reflasher/iguanaIR-reflasher
-            DESTINATION /usr/share/iguanaIR-reflasher)
+            DESTINATION share/iguanaIR-reflasher)
 
     # force creation of a symlink
     install(CODE "
@@ -248,34 +268,35 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
                     DEPENDS igdaemon igclient usbpre1drv argp _iguanaIR2)
 Else()
-  install(DIRECTORY files/base/etc files/base/usr
+  install(DIRECTORY files/base/usr/share/man
           USE_SOURCE_PERMISSIONS
-          DESTINATION /)
+          DESTINATION share)
   install(FILES iguanaIR.h
-          DESTINATION /usr/include)
+          DESTINATION include)
 
   If(OLDSYSTEMD_FOUND)
     install(DIRECTORY files/systemd/lib files/systemd/usr
             USE_SOURCE_PERMISSIONS
-            DESTINATION /)
+            DESTINATION ${ETC_PARENT})
   Else()
     If(UDEV_FOUND)
-      install(FILES  files/systemd/lib/udev/rules.d/80-iguanaIR.rules
-              DESTINATION ${UDEVDIR}/rules.d)
+      install(FILES files/systemd/lib/udev/rules.d/80-iguanaIR.rules
+              DESTINATION ${ROOT_PREFIX}${UDEVDIR}/rules.d)
     EndIf()
-    
+
     If(SYSTEMD_FOUND)
       install(FILES files/systemd/lib/systemd/system/iguanaIR.service
-              DESTINATION ${SYSTEMD_UNITDIR})
+              DESTINATION ${ROOT_PREFIX}${SYSTEMD_UNITDIR})
       install(FILES files/systemd/usr/lib/tmpfiles.d/iguanair.conf
-              DESTINATION ${TMPFILESDIR})
-      install(DIRECTORY files/systemd/usr/bin
-              USE_SOURCE_PERMISSIONS
-              DESTINATION /usr)
+              DESTINATION ${ROOT_PREFIX}${TMPFILESDIR})
+      install(PROGRAMS files/systemd/usr/bin/iguanaIR-rescan
+              DESTINATION bin)
     Else()
-      install(DIRECTORY files/sysV/usr files/sysV/etc
+      install(PROGRAMS files/sysV/usr/bin/iguanaIR-rescan
+              DESTINATION bin)
+      install(DIRECTORY files/sysV/etc
               USE_SOURCE_PERMISSIONS
-              DESTINATION /)
+              DESTINATION ${ETC_PARENT})
     EndIf()
   EndIf()
 EndIf()
