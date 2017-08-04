@@ -307,6 +307,7 @@ static bool findId(itemHeader *item, void *userData)
 static bool checkInUse(struct libusb_device *dev, bool describe)
 {
     bool retval = false;
+#ifndef WIN32
     char buffer[PATH_MAX];
     struct dirent *dp;
     DIR *dir;
@@ -379,7 +380,7 @@ static bool checkInUse(struct libusb_device *dev, bool describe)
         }
         closedir(dir);
     }
-
+#endif
     return retval;
 }
 
@@ -477,7 +478,7 @@ static bool updateDeviceList(deviceList *devList)
     ssize_t listSize, listPos;
 
     /* fedora 19 seems to process udev triggers before the device is ready */
-    usleep(1000);
+    Sleep(1);
 
     /* the next two return counts of busses and devices respectively */
     listSize = libusb_get_device_list(NULL, &usbList);
@@ -580,7 +581,7 @@ static unsigned int releaseDevices(deviceList *devList)
         if (head != prev)
             releaseDevice(&head->info);
         else
-            sleep(100);
+            Sleep(100);
         prev = head;
     }
 
