@@ -267,7 +267,7 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   add_custom_target(BuildReleasePackage
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/py2exe-setup.py py2exe
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
-                    DEPENDS igdaemon igclient usbpre1drv argp _iguanaIR2)
+                    DEPENDS igdaemon igclient usbdrv usbpre1drv argp _iguanaIR2)
 Else()
   install(DIRECTORY files/base/usr/share/man
           USE_SOURCE_PERMISSIONS

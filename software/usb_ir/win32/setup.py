@@ -71,6 +71,8 @@ Source: "../win32/libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}/libusb-old"
 Source: "../Release/usbpre1drv.dll";                 DestDir: "{app}/libusb-old"; Flags: ignoreversion
 Source: "../win32/libusb-1.0-win32/MS32/dll/libusb-1.0.dll"; DestDir: "{app}"; Flags: ignoreversion; DestName: libusb-1.0.dll
 Source: "../Release/usbdrv.dll";                             DestDir: "{app}"; Flags: ignoreversion
+Source: "../Release/argp.dll"; DestDir: "{app}/winlirc"; Flags: ignoreversion
+Source: "../win32/winlirc-reconnect/iguanaIR.dll"; DestDir: "{app}/winlirc"; Flags: ignoreversion
 
 ; the rest are created by libusb's tools
 Source: "../win32/libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
