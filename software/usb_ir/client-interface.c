@@ -47,7 +47,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
     int compressVersion;
 
     /* translate the newly read data packet code */
-    if (! translateClient(&request->code, target->version, true))
+    if (! translateProtocol(&request->code, target->version, false))
         return false;
 
     /* return false if the incoming packet does not match the protocol */
@@ -290,7 +290,7 @@ static bool handleClientRequest(dataPacket *request, client *target)
     }
 
     /* translate the newly read data packet code before returning */
-    if (! translateClient(&request->code, target->version, false))
+    if (! translateProtocol(&request->code, target->version, true))
         retval = false;
 
     return retval;
@@ -462,7 +462,8 @@ static bool tellReceivers(itemHeader *item, void *userData)
         (me->receiving == IG_DEV_RAWRECVON && ! info->translated))
     {
         /* translate the packet code before returning it */
-        if (! translateClient(&info->packet->code, me->version, false))
+        uint8_t origCode = info->packet->code;
+        if (! translateProtocol(&info->packet->code, me->version, true))
             return false;
 
         if (! writeDataPacket(info->packet, me->fd))
@@ -484,8 +485,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
         }
 
         /* translate the packet code BACK before continuing */
-        if (! translateClient(&info->packet->code, me->version, true))
-            return false;
+         info->packet->code = origCode;
     }
 
     return true;

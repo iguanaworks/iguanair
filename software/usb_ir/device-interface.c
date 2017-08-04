@@ -115,6 +115,7 @@ static versionedType types[] =
     {0x306, 0, {IG_DEV_REPEATER, CTL_TODEV,  NO_PAYLOAD,  true,  NO_PAYLOAD}},
     {0, 0, {IG_DEV_RESET,       CTL_TODEV,   NO_PAYLOAD,  false, NO_PAYLOAD}},
     {4, 0, {IG_DEV_GETCHANNELS, CTL_TODEV,   NO_PAYLOAD,  true,  1}},
+    {3, 3, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
     {4, 0, {IG_DEV_SETCHANNELS, CTL_TODEV,   1,           true,  NO_PAYLOAD}},
     {0x101, 0, {IG_DEV_GETCARRIER, CTL_TODEV, NO_PAYLOAD, true,  4}},
     {0x101, 0, {IG_DEV_SETCARRIER, CTL_TODEV, 4,          true,  4}},
@@ -221,22 +222,12 @@ static packetType* findTypeEntry(unsigned char code, uint16_t version)
     unsigned int x;
 
     for(x = 0; types[x].type.code != IG_DEV_ANYCODE; x++)
-    {
-/*
-        if (types[x].type.code == code)
-            fprintf(stderr, "---- 0x%x 0x%x, 0x%x 0x%x\n", code, version, types[x].start, types[x].end);
-*/
-
         if (types[x].type.code == code &&
             types[x].start <= version &&
             (types[x].end >= version || types[x].end == 0))
         {
-/*
-            fprintf(stderr, "---- 0x%x 0x%x, 0x%x 0x%x\n", code, version, types[x].start, types[x].end);
-*/
             return &(types[x].type);
         }
-    }
 
     return NULL;
 }
@@ -333,7 +324,7 @@ static void* generateIDBlock(const char *label, uint16_t version)
         bool size_in_A = false;
 
         /* translate the code for the device */
-        if (! translateDevice(buf + CODE_OFFSET, version, false))
+        if (! translateDevice(buf + CODE_OFFSET, version, true))
             message(LOG_ERROR, "Failed to translate GETID code for device.\n");
         if (version >= 0x101)
         {
@@ -610,7 +601,7 @@ bool deviceTransaction(iguanaDev *idev,       /* required */
             msg[CODE_OFFSET] = request->code;
             break;
         }
-        if (! translateDevice(msg + CODE_OFFSET, idev->version, false))
+        if (! translateDevice(msg + CODE_OFFSET, idev->version, true))
             message(LOG_ERROR, "Failed to translate code for device.\n");
 
         /* compute the outgoing checksum for IG_DEV_WRITEBLOCK */
@@ -1006,9 +997,9 @@ void handleIncomingPackets(iguanaDev *idev)
 
                         /* translate the incoming packet code */
                         if (! translateDevice(&current->code,
-                                              idev->version, true))
+                                              idev->version, false))
                             message(LOG_ERROR,
-                                    "Failed to translate code for device.\n");
+                                    "Failed to translate code from device.\n");
 
                         /* log incoming errors to the igdaemon output */
                         if (current->code == IG_DEV_OVERRECV)

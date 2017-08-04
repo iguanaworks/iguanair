@@ -13,5 +13,5 @@
  */
 #pragma once
 
-bool translateClient(uint8_t *code, uint16_t version, bool fromClient);
-bool translateDevice(uint8_t *code, uint16_t version, bool fromDevice);
+bool translateProtocol(uint8_t *code, uint16_t protocolVersion, bool toVersion);
+bool translateDevice(uint8_t *code, uint16_t deviceVersion, bool toVersion);
