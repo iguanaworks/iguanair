@@ -2,7 +2,7 @@
  ** device-interface.h ******************************************************
  ****************************************************************************
  *
- * Definitions for the Iguanaworks device protocol.
+ * Definitions for the IguanaWorks device protocol.
  *
  * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>

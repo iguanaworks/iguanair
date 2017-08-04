@@ -335,7 +335,7 @@ void waitOnCommPipe()
         else
         {
             if (srvSettings.justDescribe)
-                message(LOG_NORMAL, "Detected Iguanaworks devices:\n");
+                message(LOG_NORMAL, "Detected IguanaWorks devices:\n");
             if (! updateDeviceList(srvSettings.list))
                 message(LOG_ERROR, "scan failed.\n");
             if (srvSettings.justDescribe)

@@ -2,7 +2,7 @@
  ** iguanaIR.i **************************************************************
  ****************************************************************************
  *
- * Swig interface file to provide access to Iguanaworks USB devices to
+ * Swig interface file to provide access to IguanaWorks USB devices to
  * python.
  *
  * Copyright (C) 2006, Joseph Dunn <jdunn@iguanaworks.net>

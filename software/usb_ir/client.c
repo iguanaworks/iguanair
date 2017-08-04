@@ -3,7 +3,7 @@
  ****************************************************************************
  *
  * Source of the igclient application which should allow users to
- * fully control the Iguanaworks USB IR device.
+ * fully control the IguanaWorks USB IR device.
  *
  * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>

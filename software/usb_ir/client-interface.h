@@ -2,7 +2,7 @@
  ** client-interface.h ******************************************************
  ****************************************************************************
  *
- * A couple functions used to interface with Iguanaworks USB devices.
+ * A couple functions used to interface with IguanaWorks USB devices.
  *
  * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>

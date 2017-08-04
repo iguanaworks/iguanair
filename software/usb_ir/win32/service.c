@@ -74,7 +74,7 @@ static bool registerWithSCM()
         path[0] = '"';
         strcat(path, "\"");
 
-        svc = CreateService(scm, "igdaemon", "Iguanaworks IR Daemon",
+        svc = CreateService(scm, "igdaemon", "IguanaWorks IR Daemon",
                             0, SERVICE_WIN32_OWN_PROCESS,
                             SERVICE_AUTO_START, SERVICE_ERROR_NORMAL, path,
                             NULL, NULL, NULL, NULL, "");

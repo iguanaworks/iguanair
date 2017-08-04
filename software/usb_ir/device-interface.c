@@ -2,7 +2,7 @@
  ** device-interface.c ******************************************************
  ****************************************************************************
  *
- * The specification of the Iguanaworks device protocol.
+ * The specification of the IguanaWorks device protocol.
  *
  * Copyright (C) 2017, IguanaWorks Incorporated (http://iguanaworks.net)
  * Author: Joseph Dunn <jdunn@iguanaworks.net>
