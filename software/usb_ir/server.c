@@ -139,7 +139,7 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     {
     /* driver options */
     case 'd':
-        srvSettings.preferred = (const char**)realloc(srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
+        srvSettings.preferred = (const char**)realloc((char*)srvSettings.preferred, sizeof(char*) * (srvSettings.preferredCount + 1));
         srvSettings.preferred[srvSettings.preferredCount - 1] = arg;
         srvSettings.preferred[srvSettings.preferredCount++] = NULL;
         break;
