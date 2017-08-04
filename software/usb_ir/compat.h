@@ -28,9 +28,6 @@
     #define _WIN32_WINNT 0x0500
     #include <windows.h>
 
-    /* taken from libusb-win32/src/error.h */
-//    #define ETIMEDOUT ERROR_TIMEOUT
-
     #define setlinebuf(a)
     #define snprintf _snprintf
 
@@ -69,7 +66,6 @@
     #include <stdbool.h>
 
     /* match the windows name and remap it on other platforms */
-//    #define USB_ETIMEDOUT ETIMEDOUT
     #define Sleep(a) usleep((a) * 1000)
 
     /* thread defines */
