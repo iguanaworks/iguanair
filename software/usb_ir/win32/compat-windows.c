@@ -14,6 +14,7 @@
 #include "iguanaIR.h"
 #include "compat.h"
 
+#include <errno.h>
 #include <stdio.h>
 
 bool startThread(THREAD_PTR *handle, void* (*target)(void*), void *arg)
@@ -53,8 +54,10 @@ bool setNonBlocking(PIPE_PTR pipe)
 char globalBuffer[256];
 char* translateError(int errnum)
 {
-    if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-                      NULL, errnum, 0, globalBuffer, 256, NULL) == 0)
+    if (errnum == ETIMEDOUT)
+        strcpy(globalBuffer, "Connection timed out");
+    else if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+                           NULL, errnum, 0, globalBuffer, 256, NULL) == 0)
         sprintf(globalBuffer, "FormatMessage failed to translate %d", errnum);
     return globalBuffer;
 }

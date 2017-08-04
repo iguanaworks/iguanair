@@ -54,7 +54,6 @@ Source: "../Release/directIguanaIR.dll";  DestDir: "{app}"; Flags: ignoreversion
 Source: "Release/directIguanaIR.lib";     DestDir: "{app}"; Flags: ignoreversion
 Source: "../Release/iguanaIR.dll";        DestDir: "{app}"; Flags: ignoreversion
 Source: "Release/iguanaIR.lib";           DestDir: "{app}"; Flags: ignoreversion
-Source: "../Release/usbpre1drv.dll";      DestDir: "{app}"; Flags: ignoreversion
 
 ; compiled python APIs
 Source: "../Release/_iguanaIR.pyd";  DestDir: "{app}"; Flags: ignoreversion
@@ -68,7 +67,10 @@ Source: "../Release/hex/*.hex";               DestDir: "{app}/hex"; Flags: ignor
 
 ; argp and libusb libraries
 Source: "../Release/argp.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "../win32/libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}"; Flags: ignoreversion; DestName: libusb0.dll
+Source: "../win32/libusb-win32/x86/libusb0_x86.dll"; DestDir: "{app}/libusb-old"; Flags: ignoreversion; DestName: libusb0.dll
+Source: "../Release/usbpre1drv.dll";                 DestDir: "{app}/libusb-old"; Flags: ignoreversion
+Source: "../win32/libusb-1.0-win32/MS32/dll/libusb-1.0.dll"; DestDir: "{app}"; Flags: ignoreversion; DestName: libusb-1.0.dll
+Source: "../Release/usbdrv.dll";                             DestDir: "{app}"; Flags: ignoreversion
 
 ; the rest are created by libusb's tools
 Source: "../win32/libusb-win32/iguanaIR.cat"; DestDir: "{app}"; Flags: ignoreversion
