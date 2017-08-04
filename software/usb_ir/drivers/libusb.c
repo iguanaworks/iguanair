@@ -601,9 +601,10 @@ static bool findDeviceEndpoints(deviceInfo *info, int *maxPacketSize)
     dev = libusb_get_device(handle->device);
     libusb_get_config_descriptor(dev, 0, &handle->cdesc);
 
-    /* sanity checks that we're looking at an acceptable device */
-    if (/*dev->descriptor.bNumConfigurations != 1 || TODO: ?*/
-        handle->cdesc->bNumInterfaces != 1 ||
+    /* Sanity checks that we're looking at an acceptable device. We
+       specifically do not check for a single configuration in case a
+       later device provides more. */
+    if (handle->cdesc->bNumInterfaces != 1 ||
         handle->cdesc->interface[0].num_altsetting != 1)
         return false;
 

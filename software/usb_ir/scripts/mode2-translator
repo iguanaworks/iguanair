@@ -34,8 +34,6 @@ options = None
 def dieCleanly(level = None):
     """Exit the application with proper cleanup."""
 
-    #TODO: perform application cleanup
-
     if level == None:
         level = LOG_ERROR
 

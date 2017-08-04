@@ -169,7 +169,6 @@ static void releaseDevice(deviceInfo *info)
         setError(handle, NULL);
         if (usb_release_interface(handle->device, 0) < 0 && errno != ENODEV)
             setError(handle, "Failed to release interface");
-/* TODO: valgrind notes an error here, but this shuts down quickly... */
         else if (usb_close(handle->device) < 0)
             setError(handle, "Failed to close device");
         else

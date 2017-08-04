@@ -375,7 +375,7 @@ def deviceTransaction(code, data = b'', quiet = False):
                 retval = minor + (major << 8)
         elif iguanaIR.responseIsError(resp):
             if not quiet:
-                # it is alright to get 0x0 on a reset (TODO: why get anything?)
+                # it is alright to get 0x0 on a reset from some firmware versions
                 if code != iguanaIR.IG_DEV_RESET or iguanaIR.code(resp) != 0:
                     message(LOG_ERROR, 'Error response code: 0x%s\n' % iguanaIR.code(resp))
         elif code == iguanaIR.IG_DEV_GETFEATURES:

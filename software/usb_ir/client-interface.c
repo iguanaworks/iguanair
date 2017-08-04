@@ -268,7 +268,6 @@ static bool handleClientRequest(dataPacket *request, client *target)
                 retval = true;
         }
         else
-            /* TODO: changes the errno to 9 sometimes.  need to store the error somewhere before this */
             message(LOG_ERROR,
                     "Device transaction (0x%2.2x) failed\n", request->code);
     }
@@ -701,7 +700,7 @@ bool reapAllChildren(deviceList *list)
         int result;
         THREAD_PTR child;
 
-        /* NOTE: using 2*recv timeout to allow readers to exit. TODO: we might want to move this to server.c  */
+        /* NOTE: using 2*recv timeout to allow readers to exit */
         result = readPipeTimed(srvSettings.commPipe[READ],
                                (char*)&child, sizeof(THREAD_PTR),
                                2 * srvSettings.devSettings.recvTimeout);
