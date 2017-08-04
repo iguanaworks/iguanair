@@ -436,10 +436,16 @@ static bool findAddress(itemHeader *item, void *userData)
         socketName(idBuf, buf, PATH_MAX);
         if (strcmp(buf, info->name) == 0)
             found = true;
+        else if (strcmp(idev->locAlias, info->name) == 0)
+            found = true;
         else
         {
             socketName(idev->locAlias, buf, PATH_MAX);
             if (strcmp(buf, info->name) == 0)
+                found = true;
+            else if (idev->userAlias == NULL)
+                ; /* intentionally empty */
+            else if (strcmp(idev->userAlias, info->name) == 0)
                 found = true;
             else
             {
@@ -459,8 +465,11 @@ char* deviceAddress(const char *name)
 {
     findAddrInfo info = {NULL, NULL};
 
-    info.name = name;
-    forEach(&srvSettings.devs, findAddress, &info);
+    if (name != NULL)
+    {
+        info.name = name;
+        forEach(&srvSettings.devs, findAddress, &info);
+    }
 
     if (info.result == NULL)
         return NULL;

@@ -63,12 +63,18 @@ enum
     OFFSET_SENDSIZE    = ARGP_OFFSET + IG_DEV_SENDSIZE,
     OFFSET_LISTALIASES = ARGP_OFFSET + IG_DEV_LISTALIASES,
     OFFSET_GETADDRESS  = ARGP_OFFSET + IG_DEV_GETADDRESS,
+    OFFSET_LISTDEVS    = ARGP_OFFSET + IG_CTL_LISTDEVS,
+    OFFSET_DEVADDR     = ARGP_OFFSET + IG_CTL_DEVADDR,
 
     /* used to check the receive buffer is empty in the end */
     FINAL_CHECK = 0xFFFF,
 
     /* valid because we use the last 8 bytes of RAM as packet scratch space */
-    PACKET_BUFFER_BASE = 0xF8
+    PACKET_BUFFER_BASE = 0xF8,
+
+    /* match these to the CTL commands that we support */
+    IG_FIRST_CTLCMD = IG_CTL_LISTDEVS,
+    IG_LAST_CTLCMD  = IG_CTL_DEVADDR
 };
 
 /* declare and initialize the parameters structure */
@@ -94,7 +100,8 @@ static commandSpec supportedCommands[] =
 {
     {"final check", false, FINAL_CHECK, 0, false},
 
-    {"all devices", false, IG_CTL_LISTDEVS, 0, false},
+    {"all devices",     false, IG_CTL_LISTDEVS, 0, false},
+    {"device address",  false, IG_CTL_DEVADDR,  0, false},
 
     {"get version",     false, IG_DEV_GETVERSION,      0,      false},
     {"write block",     false, IG_DEV_WRITEBLOCK,      0,      false},
@@ -166,7 +173,7 @@ typedef struct igtask
 /* globals */
 static listHeader tasks;
 static unsigned char pinState[IG_PIN_COUNT];
-static bool interactive = false, recvOn = false;
+static bool recvOn = false;
 static int deviceFeatures = 0;
 
 static bool parseNumber(const char *text, unsigned int *value)
@@ -316,6 +323,7 @@ static bool processResponse(unsigned char code, igtask *cmd, unsigned int length
                 switch(code)
                 {
                 case IG_CTL_LISTDEVS:
+                case IG_CTL_DEVADDR:
                 case IG_DEV_LISTALIASES:
                     if (data == NULL)
                         message(LOG_NORMAL, ": no devices");
@@ -519,6 +527,11 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
 
         switch(cmd->spec->code)
         {
+        case IG_CTL_DEVADDR:
+            result = strlen(cmd->arg) + 1;
+            data = strdup(cmd->arg);
+            break;
+
         case IG_DEV_RECVON:
             recvOn = true;
             break;
@@ -666,18 +679,59 @@ static bool performTask(PIPE_PTR conn, igtask *cmd)
     return retval;
 }
 
-static int performQueuedTasks(PIPE_PTR conn)
+bool connectToDaemon(const char *name, PIPE_PTR *conn)
+{
+    if ((*conn = iguanaConnect(name)) == INVALID_PIPE)
+    {
+#ifdef WIN32
+        /* windows does not set errno correctly on failure */
+        errno = GetLastError();
+#endif
+        if (errno == 2)
+        {
+            if (name != NULL && strcmp("ctl", name) == 0)
+                message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running?\n",
+                        translateError(errno));
+            else
+                message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running and the device connected?\n",
+                        translateError(errno));
+        }
+        else if (errno != 0)
+            message(LOG_ERROR, "Failed to connect to iguanaIR daemon at %s: %s\n",
+                    name, translateError(errno));
+    }
+    else
+        return true;
+    return false;
+}
+
+static int performQueuedTasks()
 {
     igtask *cmd;
     int failed = 0;
+    PIPE_PTR devConn = INVALID_PIPE, ctlConn = INVALID_PIPE;
 
     memset(pinState, 0, IG_PIN_COUNT);
     while((cmd = (igtask*)removeFirstItem(&tasks)) != NULL)
     {
-        if (checkTask(cmd) && ! performTask(conn, cmd))
-            failed++;
+        if (checkTask(cmd))
+        {
+            PIPE_PTR *conn = &devConn;
+            const char *name = params.device;
+            if (cmd->spec->code >= IG_FIRST_CTLCMD && cmd->spec->code <= IG_LAST_CTLCMD)
+            {
+                conn = &ctlConn;
+                name = "ctl";
+            }
+
+            if ((*conn == INVALID_PIPE && ! connectToDaemon(name, conn)) || ! performTask(*conn, cmd))
+                failed++;
+        }
         free(cmd);
     }
+
+    iguanaClose(devConn);
+    iguanaClose(ctlConn);
 
     return failed;
 }
@@ -724,16 +778,16 @@ static igtask* enqueueTaskById(unsigned short code, const char *arg)
         if (code == supportedCommands[x].code)
             return enqueueTask(supportedCommands[x].text, arg);
 
-    message(LOG_FATAL, "enqueueTaskById failed on code %d\n", code);
+    message(LOG_FATAL, "enqueueTaskById failed on code 0x%x\n", code);
     return NULL;
 }
 
 static struct argp_option options[] = {
     { NULL, 0, NULL, 0, "General options:", GEN_GROUP },
-    { "all-devices", 'a',            NULL,     0, "List all devices known to the daemon.",   GEN_GROUP },
-    { "device",      'd',            "DEVICE", 0, "Specify the target device index or id.",  GEN_GROUP },
-    { "interactive", 'i',            NULL,     0, "Use the client interactively.",           GEN_GROUP },
-    { "sleep",       INTERNAL_SLEEP, "NUM",    0, "Sleep for NUM seconds.",                  GEN_GROUP },
+    { "all-devices", OFFSET_LISTDEVS, NULL,     0, "List all devices known to the daemon.",   GEN_GROUP },
+    { "dev-address", OFFSET_DEVADDR,  "ALIAS",  0, "Ask the daemon for an alias' address.",   GEN_GROUP },
+    { "device",      'd',             "DEVICE", 0, "Specify the target device index or id.",  GEN_GROUP },
+    { "sleep",       INTERNAL_SLEEP,  "NUM",    0, "Sleep for NUM seconds.",                  GEN_GROUP },
 
     /* device commands */
     { NULL, 0, NULL, 0, "Device commands:", DEV_GROUP },
@@ -834,6 +888,8 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
     case OFFSET_SENDSIZE:
     case OFFSET_LISTALIASES:
     case OFFSET_GETADDRESS:
+    case OFFSET_LISTDEVS:
+    case OFFSET_DEVADDR:
         enqueueTaskById((unsigned short)(key - ARGP_OFFSET), arg);
         break;
 
@@ -856,19 +912,11 @@ static error_t parseOption(int key, char *arg, struct argp_state *state)
         break;
 
     /* handling of the normal command arguments */
-    case 'a':
-        params.listDevs = true;
-        break;
-
     case 'd':
         if (strlen(arg) == 0)
             params.device = NULL;
         else
             params.device = arg;
-        break;
-
-    case 'i':
-        interactive = true;
         break;
 
     default:
@@ -887,33 +935,12 @@ static struct argp parser = {
     NULL
 };
 
-bool connectToDaemon(const char *name, PIPE_PTR *conn)
-{
-    if ((*conn = iguanaConnect(params.device)) == INVALID_PIPE)
-    {
-#ifdef WIN32
-        /* windows does not set errno correctly on failure */
-        errno = GetLastError();
-#endif
-        if (errno == 2)
-            message(LOG_ERROR, "Failed to connect to iguanaIR daemon: %s: is the daemon running and the device connected?\n",
-                    translateError(errno));
-        else if (errno != 0)
-            message(LOG_ERROR, "Failed to connect to iguanaIR daemon at %s: %s\n",
-                    name, translateError(errno));
-    }
-    else
-        return true;
-    return false;
-}
-
 int main(int argc, char **argv)
 {
     PIPE_PTR conn = INVALID_PIPE;
     int retval = 1;
     igtask *junk;
     struct argp_child children[2];
-    bool ctlCommands;
     logSettings settings = INIT_LOG_SETTINGS;
 
     initializeLogging(&settings);
@@ -933,61 +960,14 @@ int main(int argc, char **argv)
 #endif
 
     /* issue any ctl commands before connecting to devices */
-    ctlCommands = false;
-    if (params.listDevs)
-    {
-        ctlCommands = true;
-        if (connectToDaemon("ctl", &conn))
-        {
-            igtask cmd;
-            memset(&cmd, 0, sizeof(igtask));
-            cmd.command = "all devices";
-            if (! checkTask(&cmd))
-                message(LOG_ERROR, "Unexpected error making 'all devices' task.\n");
-            else if (! transaction(&cmd, conn, 0, NULL))
-                message(LOG_ERROR, "Transaction failed during 'all devices' task: %s\n",
-                        translateError(errno));
-        }
-    }
-
-    if (! interactive && firstItem(&tasks) == NULL)
-    {
-        if (! ctlCommands)
-            message(LOG_ERROR, "No tasks specified.\n");
-    }
-    else if (connectToDaemon(params.device, &conn))
+    if (firstItem(&tasks) == NULL)
+        message(LOG_ERROR, "No tasks specified.\n");
+    else
     {
         igtask cmd;
 
         /* handle all requests */
-        if (interactive)
-        {
-            retval = 0;
-
-            do
-            {
-                char line[512], *argument;
-
-                retval += performQueuedTasks(conn);
-                message(LOG_NORMAL, "igclient> ");
-                if (fgets(line, 512, stdin) == NULL)
-                {
-                    message(LOG_NORMAL, "\n");
-                    break;
-                }
-                line[strlen(line) - 1] = '\0';
-
-                argument = strchr(line, ':');
-                if (argument != NULL)
-                {
-                    argument[0] = '\0';
-                    argument += strspn(argument + 1, " \r\n\t") + 1;
-                }
-                enqueueTask(line, argument);
-            } while(true);
-        }
-        else
-            retval = performQueuedTasks(conn);
+        retval = performQueuedTasks(conn);
 
         cmd.command = "final check";
         findTaskSpec(&cmd);
