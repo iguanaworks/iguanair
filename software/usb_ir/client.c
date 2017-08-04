@@ -13,6 +13,7 @@
  */
 #include "iguanaIR.h"
 #include "version.h"
+#include <argp.h>
 #include "compat.h"
 
 /* not necessary for any client application but helpful for some
@@ -25,7 +26,6 @@
 #ifndef WIN32
   #include <arpa/inet.h>
 #endif
-#include <argp.h>
 
 enum
 {

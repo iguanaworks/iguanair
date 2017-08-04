@@ -11,6 +11,7 @@
  * See LICENSE-LGPL for license details.
  */
 #include "logging.h"
+#include <argp.h>
 #include "compat.h"
 #include "version.h"
 
@@ -20,8 +21,6 @@
 #include <errno.h>
 #include <time.h>
 #include <assert.h>
-
-#include <argp.h>
 
 enum
 {
