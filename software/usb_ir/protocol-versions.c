@@ -47,7 +47,8 @@ static codeMap codeMap0 = {
 };
 
 static codeMap *codeMaps[] = {
-    &codeMap0
+    &codeMap0,
+    NULL
 };
 
 bool translateProtocol(uint8_t *code, uint16_t protocolVersion, bool toVersion)
@@ -59,6 +60,8 @@ bool translateProtocol(uint8_t *code, uint16_t protocolVersion, bool toVersion)
         retval = true;
     else if (protocolVersion > IG_PROTOCOL_VERSION)
         message(LOG_ERROR, "Cannot translate protocols > %d\n", IG_PROTOCOL_VERSION);
+    else if (codeMaps[protocolVersion] == NULL)
+        message(LOG_ERROR, "No protocol translation found for verison %d\n", protocolVersion);
     else
     {
         int x, dir = toVersion ? 0 : 1;
