@@ -83,14 +83,21 @@ static bool handleClientRequest(dataPacket *request, client *target)
         break;
 
     case IG_CTL_DEVADDR:
-        /* TODO: dereferencing request->data as a string is a bad idea */
-        request->data = (unsigned char*)deviceAddress((char*)request->data);
+    {
+        /* make a temporary copy of the incoming alias to safely pass
+           to deviceAddress as a string */
+        char *alias = (char*)malloc(request->dataLen + 1);
+        memcpy(alias, request->data, request->dataLen);
+        alias[request->dataLen] = '\0';
+        request->data = (unsigned char*)deviceAddress(alias);
         if (request->data == NULL)
             request->dataLen = 0;
         else
             request->dataLen = strlen((char*)request->data) + 1;
         retval = true;
+        free(alias);
         break;
+    }
 
     case IG_DEV_GETFEATURES:
         /* shortcut the request if possible */
