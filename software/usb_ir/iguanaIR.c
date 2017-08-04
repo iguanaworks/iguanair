@@ -124,10 +124,15 @@ PIPE_PTR iguanaConnect(const char *name)
 
 void iguanaClose(PIPE_PTR connection)
 {
+    if (connection == INVALID_PIPE)
+        message(LOG_DEBUG3, "iguanaClose called on invalid pipe.\n");
+    else
+    {
 #if DEBUG
 message(LOG_WARN, "CLOSE %d %s(%d)\n", connection, __FILE__, __LINE__);
 #endif
-    closePipe(connection);
+        closePipe(connection);
+    }
 }
 
 void* iguanaCreateRequest(unsigned char code,
