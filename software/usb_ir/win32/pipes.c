@@ -16,6 +16,7 @@
 #include "pipes.h"
 
 #include <stdio.h> /* sprintf */
+#include <errno.h>
 
 bool createPipePair(PIPE_PTR *pair)
 {
@@ -81,7 +82,7 @@ int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
         switch(WaitForSingleObject(over.hEvent, timeout))
         {
         case WAIT_TIMEOUT:
-            errno = ERROR_TIMEOUT;
+            errno = ETIMEDOUT;
             /* cancel the IO so it doesn't consume later messages */
             CancelIo(fd);
             /* see if it completed JUST now */

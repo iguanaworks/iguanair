@@ -29,8 +29,7 @@
     #include <windows.h>
 
     /* taken from libusb-win32/src/error.h */
-    #define USB_ETIMEDOUT 116
-    #define ETIMEDOUT ERROR_TIMEOUT
+//    #define ETIMEDOUT ERROR_TIMEOUT
 
     #define setlinebuf(a)
     #define snprintf _snprintf
@@ -69,8 +68,8 @@
     #include <dlfcn.h>
     #include <stdbool.h>
 
-    /* because it's different in windows */
-    #define USB_ETIMEDOUT ETIMEDOUT
+    /* match the windows name and remap it on other platforms */
+//    #define USB_ETIMEDOUT ETIMEDOUT
     #define Sleep(a) usleep((a) * 1000)
 
     /* thread defines */

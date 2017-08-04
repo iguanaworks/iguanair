@@ -114,9 +114,14 @@ static int interruptRecv(deviceInfo *info,
     if (retval < 0)
     {
         setError(handle, "Failed to read (interrupt end point)");
-        /* libusb does not reliably set errno */
+        /* libusbpre1 does not reliably set errno */
         if (retval < -1 || !errno)
-            errno = -retval;
+        {
+            if (retval == -116)
+                errno = ETIMEDOUT;
+            else
+                errno = -retval;
+        }
     }
     else
     {

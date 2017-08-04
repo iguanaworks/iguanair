@@ -892,12 +892,12 @@ void handleIncomingPackets(iguanaDev *idev)
             if (length < 0)
             {
                 /* loop on timeouts */
-                if (errno == EAGAIN || errno == USB_ETIMEDOUT)
+                if (errno == ETIMEDOUT)
                 {
                     if (srvSettings.fixToggle)
                     {
                         /*
-                        message(LOG_WARN, "%d %d %d %d %d\n", errno, length, EAGAIN, USB_ETIMEDOUT, LIBUSB_ERROR_TIMEOUT);
+                        message(LOG_WARN, "%d %d %d %d\n", errno, length, EAGAIN, LIBUSB_ERROR_TIMEOUT);
                         interruptRecv(idev->usbDev, NULL, 0, 424242);
                         */
                         if (idev->firstTimeout && toggle)
