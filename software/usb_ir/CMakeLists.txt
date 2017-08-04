@@ -46,8 +46,10 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   Set(DAEMONSRC win32/service.c)
   Set(DAEMONLIBS setupapi) # for INF installation
   Set(BASELIBS ws2_32) # for htonl
-  include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR} ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
-
+  include_directories(${CMAKE_SOURCE_DIR} ${ARGPDIR})
+  Set(CMAKE_REQUIRED_INCLUDES ${CMAKE_SOURCE_DIR}/win32/libusb-1.0-win32/include
+                              ${CMAKE_SOURCE_DIR}/win32/libusb-win32/include)
+					  
 Else()
   include(CheckLibraryExists)
   include(CheckFunctionExists)
@@ -157,15 +159,13 @@ If("${LIBDIR}" STREQUAL "")
   Set(LIBDIR "lib")
 EndIf()
 
-If(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-  # check for SOME libusb header now that include paths are set
-  include(CheckIncludeFile)
-  CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
-  CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
-  CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
-  If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
-    message(FATAL_ERROR "No version of the libusb header files were found.")
-  EndIf()
+# check for SOME libusb header now that include paths are set
+include(CheckIncludeFile)
+CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
+CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
+CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
+If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
+  message(FATAL_ERROR "No version of the libusb header files were found.")
 EndIf()
 
 # Make config.h based on what cmake found and include it's path
