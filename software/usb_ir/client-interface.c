@@ -398,6 +398,8 @@ void getID(iguanaDev *idev)
         deviceTransaction(idev, &request, &response);
 
     /* use any alias the user has set */
+    free(idev->userAlias);
+    idev->userAlias = NULL;
     if (! deviceTransaction(idev, &request, &response))
         message(LOG_INFO,
                 "Failed to get id.  Device may not have one assigned.\n");
@@ -408,7 +410,6 @@ void getID(iguanaDev *idev)
         memset(buf, 0, 13);
         strncpy(buf, (char*)response->data, 12);
         setAlias(idxStr, false, buf);
-        free(idev->userAlias);
         idev->userAlias = strdup(buf);
         freeDataPacket(response);
     }
