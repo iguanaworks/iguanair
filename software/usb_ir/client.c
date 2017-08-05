@@ -967,7 +967,7 @@ int main(int argc, char **argv)
         igtask cmd;
 
         /* handle all requests */
-        retval = performQueuedTasks(conn);
+        retval = performQueuedTasks();
 
         cmd.command = "final check";
         findTaskSpec(&cmd);
