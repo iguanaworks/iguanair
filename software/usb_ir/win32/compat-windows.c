@@ -46,19 +46,25 @@ uint64_t microsSinceX()
 
 bool setNonBlocking(PIPE_PTR pipe)
 {
-    UNUSED(pipe);
-    // TODO: implementing this might close ticket #9
-    return true;
+    DWORD mode = PIPE_READMODE_BYTE | PIPE_WAIT;
+//    DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
+	if (SetNamedPipeHandleState(pipe, &mode, NULL, NULL))
+        return true;
+    return false;
 }
 
+/* translate errno, or if the errnum == -1 translate GetLastError()  */
 char globalBuffer[256];
 char* translateError(int errnum)
 {
     if (errnum == ETIMEDOUT)
         strcpy(globalBuffer, "Connection timed out");
+    else if (errnum >= 0)
+        strcpy(globalBuffer, strerror(errnum));
     else if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-                           NULL, errnum, 0, globalBuffer, 256, NULL) == 0)
+                           NULL, GetLastError(), 0, globalBuffer, 256, NULL) == 0)
         sprintf(globalBuffer, "FormatMessage failed to translate %d", errnum);
+
     return globalBuffer;
 }
 

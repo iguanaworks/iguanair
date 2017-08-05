@@ -98,7 +98,7 @@ static bool changeServiceState(unsigned int action)
 
     scm = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
     if (scm == NULL)
-        message(LOG_ERROR, "Failed to open the SCM: %s\n", translateError(GetLastError()));
+        message(LOG_ERROR, "Failed to open the SCM: %s\n", translateError(-1));
     else
     {
 		// translate the requested access as necessary
@@ -111,7 +111,7 @@ static bool changeServiceState(unsigned int action)
         svc = OpenService(scm, "igdaemon", access);
         if (svc == NULL)
             message(LOG_ERROR, "Failed to open the service: %s\n",
-                    translateError(GetLastError()));
+                    translateError(-1));
         else
         {
             SERVICE_STATUS status;
@@ -121,7 +121,7 @@ static bool changeServiceState(unsigned int action)
             case SERVICE_START:
                 if (StartService(svc, 0, NULL) == FALSE)
                     message(LOG_ERROR, "Failed to start the service: %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                 else
                     retval = true;
                 break;
@@ -129,7 +129,7 @@ static bool changeServiceState(unsigned int action)
             case SERVICE_STOP:
                 if (ControlService(svc, SERVICE_CONTROL_STOP, &status) == FALSE)
                     message(LOG_ERROR, "Failed to stop the service: %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                 else
                     retval = true;
                 break;
@@ -137,7 +137,7 @@ static bool changeServiceState(unsigned int action)
 			case SERVICE_CONTROL_PAUSE:
                 if (ControlService(svc, SERVICE_CONTROL_PAUSE, &status) == FALSE)
                     message(LOG_ERROR, "Failed to pause the service: %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                 else
                     retval = true;
                 break;
@@ -145,7 +145,7 @@ static bool changeServiceState(unsigned int action)
 			case SERVICE_CONTROL_CONTINUE:
                 if (ControlService(svc, SERVICE_CONTROL_CONTINUE, &status) == FALSE)
                     message(LOG_ERROR, "Failed to continue the service: %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                 else
                     retval = true;
                 break;
@@ -153,7 +153,7 @@ static bool changeServiceState(unsigned int action)
 			case DELETE:
                 if (DeleteService(svc) == FALSE)
                     message(LOG_ERROR, "Failed to delete the service: %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                 else
                     retval = true;
                 break;
@@ -524,7 +524,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
                                               &pEveryoneSID))
                 {
                     message(LOG_ERROR, "AllocateAndInitializeSid Error %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                     goto Cleanup;
                 }
 
@@ -542,7 +542,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
                 if (ERROR_SUCCESS != SetEntriesInAcl(1, ea, NULL, &pACL))
                 {
                     message(LOG_ERROR, "SetEntriesInAcl Error %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                     goto Cleanup;
                 }
 
@@ -552,7 +552,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
                 if (NULL == pSD) 
                 { 
                     message(LOG_ERROR, "LocalAlloc Error %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                     goto Cleanup; 
                 } 
              
@@ -560,7 +560,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
                                                    SECURITY_DESCRIPTOR_REVISION)) 
                 {  
                     message(LOG_ERROR, "InitializeSecurityDescriptor Error %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                     goto Cleanup; 
                 } 
              
@@ -571,7 +571,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
                         FALSE))   // not a default DACL 
                 {  
                     message(LOG_ERROR, "SetSecurityDescriptorDacl Error %s\n",
-                            translateError(GetLastError()));
+                            translateError(-1));
                     goto Cleanup; 
                 } 
 
