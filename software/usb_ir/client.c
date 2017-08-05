@@ -28,6 +28,9 @@
   #include <arpa/inet.h>
 #endif
 
+/* uncomment the following line to check if a blocking client causes problems in the daemon. */
+//#define TEST_BLOCKING_CLIENT
+
 enum
 {
     /* use the upper byte of the short to not overlap with DEV_ commands */
@@ -416,22 +419,35 @@ static bool processResponse(unsigned char code, igtask *cmd, unsigned int length
 static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 {
     bool retval = false;
+#ifdef TEST_BLOCKING_CLIENT
+    bool inSleep;
+#endif
     uint64_t end;
 
     /* read the start and add the timeout */
     end = microsSinceX() + timeout * 1000;
 
+#ifdef TEST_BLOCKING_CLIENT
+    inSleep = timeout != 10000 && timeout != 0;
+#endif
     while(timeout >= 0)
     {
-        iguanaPacket response;
+        iguanaPacket response = NULL;
         uint64_t now = microsSinceX();
 
         /* try not to wait past the computed end, do wait at least once */
-        if (now > end)
-            timeout = 0;
+#ifdef TEST_BLOCKING_CLIENT
+        if (inSleep)
+            Sleep(timeout);
         else
-            timeout = (uint32_t)(end - now) / 1000;
-        response = iguanaReadResponse(conn, timeout);
+#endif
+        {
+            if (now > end)
+                timeout = 0;
+            else
+                timeout = (uint32_t)(end - now) / 1000;
+            response = iguanaReadResponse(conn, timeout);
+        }
         if (iguanaResponseIsError(response))
         {
             if ((errno != ETIMEDOUT && errno != EIO) || (cmd->spec->code != INTERNAL_SLEEP && cmd->spec->code != FINAL_CHECK))
