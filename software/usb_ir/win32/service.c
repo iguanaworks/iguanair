@@ -623,7 +623,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         }
 
         /* list the current clients last */
-//        message(LOG_ERROR, "%p: Counted %d before clients............\n", idev, count);
+//message(LOG_ERROR, "%p: Counted %d before clients............\n", idev, count);
         for(john = (client*)clientList->head; john != NULL; john = (client*)john->header.next)
         {
 			/* start the first overlapped I/O */
@@ -640,7 +640,7 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 		}
 
         /* wait for something to happen */
-//        message(LOG_ERROR, "%p: Waiting on %d............\n", idev, count);
+//message(LOG_ERROR, "%p: Waiting on %d............\n", idev, count);
         WaitForMultipleObjects(count, handles, FALSE, INFINITE);
 
         /* handle the reader thread sending us things, and on failure quit */
@@ -663,10 +663,22 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 
             if (WaitForSingleObject(event, 0) == WAIT_OBJECT_0)
             {
-                if (handleClient(john))
-                    startOverlappedAction(john->fd, &john->over, false);
+                DWORD avail;
+
+                if (! PeekNamedPipe(john->fd, NULL, 0, NULL, &avail, NULL))
+                    releaseClient(john);
+                else if (avail)
+                {
+                    if (handleClient(john))
+                        startOverlappedAction(john->fd, &john->over, false);
+                    else
+                        CloseHandle(event);
+                }
                 else
-                    CloseHandle(event);
+                {
+                    message(LOG_DEBUG, "Spurious wake on client pipe\n");
+                    Sleep(100);
+                }
             }
             john = next;
         }

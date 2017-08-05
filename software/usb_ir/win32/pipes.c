@@ -66,14 +66,20 @@ bool createPipePair(PIPE_PTR *pair)
     return retval;
 }
 
-int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
+static int timedPipeOperation(PIPE_PTR fd, void *inBuf, const void *outBuf, int count, int timeout)
 {
     int retval = -1;
     OVERLAPPED over = { (ULONG_PTR)NULL };
-    DWORD read;
+    DWORD amt;
+    BOOL res;
 
     over.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (ReadFile(fd, buf, count, NULL, &over) == TRUE)
+    if (outBuf == NULL)
+        res = ReadFile(fd, inBuf, count, NULL, &over);
+    else
+        res = WriteFile(fd, outBuf, count, NULL, &over);
+
+    if (res)
         retval = count;
     else if (GetLastError() == ERROR_HANDLE_EOF ||
              GetLastError() == ERROR_BROKEN_PIPE)
@@ -87,8 +93,8 @@ int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
             CancelIo(fd);
             /* see if it completed JUST now */
         case WAIT_OBJECT_0:
-            if (GetOverlappedResult(fd, &over, &read, TRUE))
-                retval = read;
+            if (GetOverlappedResult(fd, &over, &amt, TRUE))
+                retval = amt;
             break;
 
         default:
@@ -98,6 +104,16 @@ int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
     CloseHandle(over.hEvent);
 
     return retval;
+}
+
+int readPipeTimed(PIPE_PTR fd, char *buf, int count, int timeout)
+{
+    return timedPipeOperation(fd, buf, NULL, count, timeout);
+}
+
+int writePipeTimed(PIPE_PTR fd, const void *buf, int count, int timeout)
+{
+    return timedPipeOperation(fd, NULL, buf, count, timeout);
 }
 
 int readPipe(PIPE_PTR fd, void *buf, int count)

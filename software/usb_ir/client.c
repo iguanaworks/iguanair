@@ -28,8 +28,7 @@
   #include <arpa/inet.h>
 #endif
 
-/* uncomment the following line to check if a blocking client causes
-   problems in the daemon.
+/* uncomment the following line to check if a blocking client causes problems in the daemon.
 #define TEST_BLOCKING_CLIENT
 //*/
 

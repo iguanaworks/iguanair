@@ -81,7 +81,7 @@ bool writeDataPacket(const dataPacket *packet, PIPE_PTR fd, unsigned int timeout
     {
         if (packet->dataLen > 0)
         {
-            int elapsed = (microsSinceX() - then) / 1000;
+            unsigned int elapsed = (unsigned int)(microsSinceX() - then) / 1000;
             if (timeout != WAIT_FOREVER)
             {
                 if (timeout > elapsed)
