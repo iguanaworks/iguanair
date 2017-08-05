@@ -269,6 +269,12 @@ If("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
                     COMMAND ${PYTHON_INTERP} ${CMAKE_SOURCE_DIR}/win32/setup.py
                     DEPENDS igdaemon igclient usbdrv usbpre1drv argp _iguanaIR2)
 Else()
+  If(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    install(DIRECTORY files/base/etc
+            USE_SOURCE_PERMISSIONS
+            DESTINATION ${ETC_PARENT})
+  EndIf()
+
   install(DIRECTORY files/base/usr/share/man
           USE_SOURCE_PERMISSIONS
           DESTINATION share)
@@ -292,6 +298,8 @@ Else()
               DESTINATION ${TMPFILESDIR})
       install(PROGRAMS files/systemd/usr/bin/iguanaIR-rescan
               DESTINATION bin)
+    ElseIf("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+      message(STATUS "No initscript or iguanaIR-rescan installed in OS X.")
     Else()
       install(PROGRAMS files/sysV/usr/bin/iguanaIR-rescan
               DESTINATION bin)
