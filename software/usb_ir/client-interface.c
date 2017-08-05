@@ -470,7 +470,8 @@ static bool tellReceivers(itemHeader *item, void *userData)
         if (! translateProtocol(&info->packet->code, me->version, true))
             return false;
 
-        if (! writeDataPacket(info->packet, me->fd, WAIT_FOREVER))
+        /* try to write the received data but do not block waiting on it */
+        if (! writeDataPacket(info->packet, me->fd, 100))
         {
             message(LOG_ERROR, "Failed to send packet to receiver: %d: %s\n",
                     errno, translateError(errno));
