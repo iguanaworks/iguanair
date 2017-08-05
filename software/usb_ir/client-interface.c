@@ -446,9 +446,6 @@ message(LOG_WARN, "OPEN %d %s(%d)\n", clientFd, __FILE__, __LINE__);
         newClient = (client*)malloc(sizeof(client));
         if (newClient == NULL)
             message(LOG_ERROR, "Out of memory allocating client struct.");
-        else if (! setNonBlocking(clientFd))
-            message(LOG_ERROR,
-                    "Failed to set client socket to non-blocking mode.\n");
         else
         {
             memset(newClient, 0, sizeof(client));

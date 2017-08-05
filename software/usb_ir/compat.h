@@ -106,6 +106,5 @@
 
 /* a few functions must be implemented in each OS */
 uint64_t microsSinceX();
-bool setNonBlocking(PIPE_PTR pipe);
 char* translateError(int errnum);
 DIR_HANDLE findNextFile(DIR_HANDLE hFind, char *buffer);

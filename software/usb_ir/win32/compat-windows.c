@@ -44,15 +44,6 @@ uint64_t microsSinceX()
     return retval;
 }
 
-bool setNonBlocking(PIPE_PTR pipe)
-{
-    DWORD mode = PIPE_READMODE_BYTE | PIPE_WAIT;
-//    DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
-	if (SetNamedPipeHandleState(pipe, &mode, NULL, NULL))
-        return true;
-    return false;
-}
-
 /* translate errno, or if the errnum == -1 translate GetLastError()  */
 char globalBuffer[256];
 char* translateError(int errnum)

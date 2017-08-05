@@ -22,6 +22,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 #include <argp.h>
 
@@ -315,7 +316,19 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 
             /* next handle incoming connections */
             if (FD_ISSET(listener, &fdsin))
-                clientConnected(accept(listener, NULL, NULL), clientList, idev);
+            {
+                PIPE_PTR clientFd;
+                int flags;
+
+                clientFd = accept(listener, NULL, NULL);
+                flags = fcntl(clientFd, F_GETFL);
+                if (flags == -1)
+                    message(LOG_ERROR, "Failed read status flags for socket.\n");
+                else if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+                    message(LOG_ERROR, "Failed to set client socket to non-blocking mode.\n");
+                else
+                    clientConnected(clientFd, clientList, idev);
+            }
             FD_SET(listener, &fds);
             if (listener > max)
                 max = listener;
