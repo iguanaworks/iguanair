@@ -69,17 +69,28 @@ bool readDataPacket(dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
     return retval;
 }
 
-bool writeDataPacket(const dataPacket *packet, PIPE_PTR fd)
+bool writeDataPacket(const dataPacket *packet, PIPE_PTR fd, unsigned int timeout)
 {
     bool retval = false;
     int result;
+    uint64_t then;
 
-    result = writePipe(fd, packet, sizeof(dataPacket));
+    then = microsSinceX();
+    result = writePipeTimed(fd, packet, sizeof(dataPacket), timeout);
     if (result == sizeof(dataPacket))
     {
         if (packet->dataLen > 0)
         {
-            result = writePipe(fd, packet->data, packet->dataLen);
+            int elapsed = (microsSinceX() - then) / 1000;
+            if (timeout != WAIT_FOREVER)
+            {
+                if (timeout > elapsed)
+                    timeout -= elapsed;
+                else
+                    timeout = 0;
+            }
+
+            result = writePipeTimed(fd, packet->data, packet->dataLen, timeout);
             if (result == packet->dataLen)
                 retval = true;
         }

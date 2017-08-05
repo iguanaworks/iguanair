@@ -15,9 +15,11 @@
 
 enum
 {
-    /* for use with readPipe */
+    /* pipe pair indices */
     READ  = 0,
-    WRITE = 1
+    WRITE = 1,
+
+    WAIT_FOREVER = 0x7FFFFFFF
 };
 
 #ifdef WIN32
@@ -46,8 +48,9 @@ void setAlias(const char *target, bool deleteAll, const char *alias);
 void socketName(const char *name, char *buffer, unsigned int length);
 PIPE_PTR connectToPipe(const char *name);
 
-/* reads with timeouts */
-int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout);
+/* read/write with timeouts */
+int readPipeTimed(PIPE_PTR fd, void *buffer, int size, int timeout);
+int writePipeTimed(PIPE_PTR fd, const void *buffer, int size, int timeout);
 
 /* used for notification of packet arrival */
 int notified(PIPE_PTR fd, int timeout);

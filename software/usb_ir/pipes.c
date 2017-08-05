@@ -239,18 +239,18 @@ void setAlias(const char *target, bool deleteAll, const char *alias)
     }
 }
 
-int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
+static int timedPipeOperation(PIPE_PTR fd, void *inBuf, const void *outBuf, int size, int timeout)
 {
-    int retval = -1;
-    fd_set fdsin, fdserr;
+    int retval = -1, res;
+    fd_set fds, fdserr;
     struct timeval tv = {0,0}, *tvp = NULL;
     int64_t stoptime = (int64_t)microsSinceX() + timeout * 1000;
 
     /* prepare the fds for the select call */
     eintr_loop:
-    FD_ZERO(&fdsin);
-    FD_SET(fd, &fdsin);
-    fdserr = fdsin;
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+    fdserr = fds;
 
     /* configure the timeout if there was one*/
     if (timeout >= 0)
@@ -262,7 +262,11 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
         tv.tv_usec = timeremaining % 1000000;
     }
 
-    switch(select(fd + 1, &fdsin, NULL, &fdserr, tvp))
+    if (outBuf == NULL)
+        res = select(fd + 1, &fds, NULL, &fdserr, tvp);
+    else
+        res = select(fd + 1, NULL, &fds, &fdserr, tvp);
+    switch(res)
     {
     /* error */
     case -1:
@@ -277,14 +281,19 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
         break;
 
     default:
-        if (FD_ISSET(fd, &fdsin))
+        if (FD_ISSET(fd, &fds))
         {
             int goal = size;
 
             retval = 0;
             while(goal > 0)
             {
-                int amount = readPipe(fd, buffer + retval, goal);
+                int amount;
+
+                if (outBuf == NULL)
+                    amount = read(fd, (char*)inBuf + retval, goal);
+                else
+                    amount = write(fd, (const char*)outBuf + retval, goal);
                 switch(amount)
                 {
                 case -1:
@@ -310,6 +319,16 @@ int readPipeTimed(PIPE_PTR fd, char *buffer, int size, int timeout)
         break;
     }
     return retval;
+}
+
+int readPipeTimed(PIPE_PTR fd, void *buffer, int size, int timeout)
+{
+    return timedPipeOperation(fd, buffer, NULL, size, timeout);
+}
+
+int writePipeTimed(PIPE_PTR fd, const void *buffer, int size, int timeout)
+{
+    return timedPipeOperation(fd, NULL, buffer, size, timeout);
 }
 
 int notified(PIPE_PTR fd, int timeout)

@@ -187,7 +187,7 @@ void iguanaFreePacket(iguanaPacket pkt)
 
 bool iguanaWriteRequest(const iguanaPacket request, PIPE_PTR connection)
 {
-    if (writeDataPacket((dataPacket*)request, connection))
+    if (writeDataPacket((dataPacket*)request, connection, WAIT_FOREVER))
         return 1;
     return 0;
 }

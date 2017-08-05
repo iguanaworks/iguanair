@@ -348,7 +348,7 @@ bool handleClient(client *me)
             request.dataLen = -errno;
         }
 
-        if (! writeDataPacket(&request, me->fd))
+        if (! writeDataPacket(&request, me->fd, WAIT_FOREVER))
         {
             message(LOG_INFO, "FAILED to write packet back to client: 0x%x\n",
                     request.code);
@@ -473,7 +473,7 @@ static bool tellReceivers(itemHeader *item, void *userData)
         if (! translateProtocol(&info->packet->code, me->version, true))
             return false;
 
-        if (! writeDataPacket(info->packet, me->fd))
+        if (! writeDataPacket(info->packet, me->fd, WAIT_FOREVER))
         {
             message(LOG_ERROR, "Failed to send packet to receiver: %d: %s\n",
                     errno, translateError(errno));
