@@ -623,34 +623,25 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         }
 
         /* list the current clients last */
+//        message(LOG_ERROR, "%p: Counted %d before clients............\n", idev, count);
         for(john = (client*)clientList->head; john != NULL; john = (client*)john->header.next)
         {
-			/* check if an existing overlapped action is still running */
-			bool pending = false;
-			DWORD bytes;
-			if (! GetOverlappedResult(john->fd, &john->over, &bytes, FALSE))
-				switch(GetLastError())
-				{
-				case ERROR_IO_INCOMPLETE:
-				/* docs say error should be ERROR_IO_INCOMPLETE, but results say otherwise */
-				case ERROR_IO_PENDING:
-					pending = true;
-					break;
-
-				default:
-					break;
-				}
-
-			/* Start a new one if need be */
-			if (! pending)
-			{
-				startOverlappedAction(john->fd, &john->over, false);
-				handles[count++] = john->over.hEvent;
-			}
+			/* start the first overlapped I/O */
+            if (john->over.hEvent == NULL)
+                startOverlappedAction(john->fd, &john->over, false);
+            /* trigger handleClient since a pending overlapped IO on a broken pipe does not trigger */
+			else if (! PeekNamedPipe(john->fd, NULL, 0, NULL, NULL, NULL) &&
+                     GetLastError() == ERROR_BROKEN_PIPE)
+            {
+                CancelIo(john->fd);
+                SetEvent(john->over.hEvent);
+            }
+            handles[count++] = john->over.hEvent;
 		}
 
         /* wait for something to happen */
-        WaitForMultipleObjects(count, handles, FALSE, INFINITE); 
+//        message(LOG_ERROR, "%p: Waiting on %d............\n", idev, count);
+        WaitForMultipleObjects(count, handles, FALSE, INFINITE);
 
         /* handle the reader thread sending us things, and on failure quit */
         if (WaitForSingleObject(handles[0], 0) == WAIT_OBJECT_0)
@@ -660,6 +651,24 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
 
             /* Prepare for the next pass */
             startOverlappedAction(idev->readerPipe[READ], over + 0, false);
+        }
+
+        /* handle existing clients */
+        for(john = (client*)clientList->head; john != NULL;)
+        {
+            HANDLE event;
+            client *next;
+            next = (client*)john->header.next;
+            event = john->over.hEvent;
+
+            if (WaitForSingleObject(event, 0) == WAIT_OBJECT_0)
+            {
+                if (handleClient(john))
+                    startOverlappedAction(john->fd, &john->over, false);
+                else
+                    CloseHandle(event);
+            }
+            john = next;
         }
 
         /* now accept new clients */
@@ -682,21 +691,6 @@ void listenToClients(const char *name, listHeader *clientList, iguanaDev *idev)
         }
         LeaveCriticalSection(&aliasLock);
 
-        /* last, handle existing clients */
-        for(john = (client*)clientList->head; john != NULL;)
-        {
-            HANDLE event;
-            client *next;
-
-            next = (client*)john->header.next;
-            event = john->over.hEvent;
-            if (event != NULL &&
-                WaitForSingleObject(event, 0) == WAIT_OBJECT_0 &&
-                ! handleClient(john))
-                CloseHandle(event);
-
-            john = next;
-        }
         firstPass = false;
     }
 
