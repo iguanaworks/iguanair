@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifndef WIN32
   #include <arpa/inet.h>
 #endif
@@ -423,16 +424,17 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
     while(timeout >= 0)
     {
         iguanaPacket response;
+        uint64_t now = microsSinceX();
 
-        /* determine the time remaining */
-        if (microsSinceX() >= end)
-            break;
-
+        /* try not to wait past the computed end, do wait at least once */
+        if (now > end)
+            timeout = 0;
+        else
+            timeout = (uint32_t)(end - now) / 1000;
         response = iguanaReadResponse(conn, timeout);
         if (iguanaResponseIsError(response))
         {
-            if ((errno != 110 || (cmd->spec->code != INTERNAL_SLEEP && cmd->spec->code != FINAL_CHECK)) &&
-                (errno != 5   ||  cmd->spec->code != INTERNAL_SLEEP))
+            if ((errno != ETIMEDOUT && errno != EIO) || (cmd->spec->code != INTERNAL_SLEEP && cmd->spec->code != FINAL_CHECK))
                 message(LOG_NORMAL, "%s: failed: %d: %s\n", cmd->spec->text,
                         errno, translateError(errno));
             /* failure means stop */
@@ -456,6 +458,10 @@ static bool receiveResponse(PIPE_PTR conn, igtask *cmd, int timeout)
 
         /* free successes or errors */
         iguanaFreePacket(response);
+
+        /* break out when we hit the end */
+        if (microsSinceX() > end)
+            break;
     }
 
     return retval;
@@ -472,6 +478,8 @@ static bool handleInternalTask(igtask *cmd, PIPE_PTR conn)
         char dummy;
         if (sscanf(cmd->arg, "%f%c", &seconds, &dummy) != 1)
             message(LOG_ERROR, "failed to parse sleep time.\n");
+        else if (seconds < 0)
+            message(LOG_ERROR, "sleep time cannot be negative.\n");
         else if (receiveResponse(conn, cmd, (int)(seconds * 1000)))
         {
             message(LOG_NORMAL, "%s (%.3f): success\n", cmd->command, seconds);
