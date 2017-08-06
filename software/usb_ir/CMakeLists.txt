@@ -27,6 +27,10 @@ EndIf()
 # Default the prefix if it was not set
 If(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   Set(CMAKE_INSTALL_PREFIX /usr CACHE PATH "Default prefix to /usr" FORCE)
+EndIf()
+
+# if we're installing into /usr then etc is /etc, otherwise put it in ${PREFIX}
+If("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr")
   Set(ETC_PARENT /)
 Else()
   Set(ETC_PARENT ${CMAKE_INSTALL_PREFIX})
