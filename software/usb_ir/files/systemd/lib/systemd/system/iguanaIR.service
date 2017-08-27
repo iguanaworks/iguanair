@@ -2,14 +2,14 @@
 Description=Iguanaworks USB IR transceiver
 
 [Service]
-Type=forking
 User=iguanair
 Group=iguanair
 EnvironmentFile=/etc/default/iguanaIR
 ExecStart=/usr/bin/igdaemon $DRIVERS $OPTIONS \
                             --log-level=${LOGLEVEL} \
                             --send-timeout=${SENDTIMEOUT} \
-                            --receive-timeout=${RECEIVETIMEOUT}
+                            --receive-timeout=${RECEIVETIMEOUT} \
+                            --no-daemon
 
 [Install]
 WantedBy=multi-user.target
