@@ -99,9 +99,15 @@ def parseOptions():
     parser.add_option('--keep-one',
                       action = 'store_true', dest = 'one',
                       help = 'Just print a single signal in --send format.')
-    parser.add_option('-s', '--source-file',
+    parser.add_option('-i', '--input',
                       metavar = 'FILE', dest = 'srcFile',
                       help = 'Specify a file containing igclient output.')
+    parser.add_option('-o', '--output',
+                      metavar = 'FILE', dest = 'outFile',
+                      help = 'Specify a file to receive the signal.  Specify - to ask the user for a name.')
+    parser.add_option('--loop',
+                      action='store_true',
+                      help = 'Loop to allow the user to collect multiple signals.  Primarily useful when used with "--collect --output -"')
     parser.add_option('-g', '--gap',
                       type = 'int', dest = 'gap',
                       help = 'Length of the gap in microseconds.')
@@ -161,6 +167,7 @@ def collectLiveSignals(device):
                 results.append(result)
     except KeyboardInterrupt:
         message(LOG_NORMAL, 'Formatting collected signals....\n')
+    iguanaIR.close(conn)
 
     return results
 
@@ -194,6 +201,19 @@ def parseSignals(input):
     if prevType != 'space':
         signals[-1].append(prevLen)
         message(LOG_DEBUG, '%s %s\n' % (prevType, prevLen))
+
+    # attempt to identify the gap length
+    if options.gap == 0:
+        # assume the header is the largest real signal so look for
+        # something at least twice that length.
+        gap = max(signals[0][:4]) * 2
+        chopped = [[]]
+        for sig in signals[0]:
+            if sig > gap:
+                chopped.append([])
+            else:
+                chopped[-1].append(sig)
+        signals = chopped
 
     return signals
 
@@ -288,58 +308,76 @@ if not options.srcFile and not options.collect:
     message(LOG_NORMAL, "No source file specified on the command line.  Defaulting to live collection\n")
     options.collect = True
 
-if options.collect:
-    input = collectLiveSignals(options.device)
-else:
-    input = open(options.srcFile, 'r')
-
-signals = parseSignals(input)
-
-# some people just want the first signal in --send format, others get 10
-if options.one:
-    signals[1:] = []
-signals[10:] = []
-
-# clean the signal if requested
-if options.clean or options.cleaner:
-    # split the pulses from the spaces and clean each if requested
-    for pos in range(len(signals)):
-        signal = signals[pos]
-
-        signal[::2] = cleanSignals(signal[::2])
-        if options.cleaner:
-            signal[1::2] = cleanSignals(signal[1::2])
-
-        signals[pos] = signal
-
-# find the max length signal
-length = 0
-for signal in signals:
-    if len(signal) > length:
-        length = len(signal)
-
-text = ''
-# print a header only if we need it
-if len(signals) > 1:
-    text += 'action '
-    parts = []
-    for x in range(len(signals)):
-        parts.append('signal%d' % x)
-    text += ' | '.join(parts) + '\n'
-
-    text += re.sub('[^|]', '-', text).replace('|', '+') + '\n'
-
-# print in a nice format
-for x in range(length):
-    if x % 2 == 0:
-        text += 'pulse  '
+while True:
+    if options.collect:
+        input = collectLiveSignals(options.device)
     else:
-        text += 'space  '
+        input = open(options.srcFile, 'r')
 
-    parts = []
+    signals = parseSignals(input)
+
+    # some people just want the first signal in --send format, others get 10
+    if options.one:
+        signals[1:] = []
+    signals[10:] = []
+
+    # clean the signal if requested
+    if options.clean or options.cleaner:
+        # split the pulses from the spaces and clean each if requested
+        for pos in range(len(signals)):
+            signal = signals[pos]
+
+            signal[::2] = cleanSignals(signal[::2])
+            if options.cleaner:
+                signal[1::2] = cleanSignals(signal[1::2])
+
+            signals[pos] = signal
+
+    # find the max length signal
+    length = 0
     for signal in signals:
-        if len(signal) > x:
-            parts.append('%6d' % signal[x])
-    text += '  | '.join(parts) + '\n'
+        if len(signal) > length:
+            length = len(signal)
 
-message(LOG_NORMAL, text)
+    text = ''
+    # print a header only if we need it
+    if len(signals) > 1:
+        text += 'action '
+        parts = []
+        for x in range(len(signals)):
+            parts.append('signal%d' % x)
+        text += ' | '.join(parts) + '\n'
+
+        text += re.sub('[^|]', '-', text).replace('|', '+') + '\n'
+
+    # print in a nice format
+    for x in range(length):
+        if x % 2 == 0:
+            text += 'pulse  '
+        else:
+            text += 'space  '
+
+        parts = []
+        for signal in signals:
+            if len(signal) > x:
+                parts.append('%6d' % signal[x])
+        text += '  | '.join(parts) + '\n'
+
+    if options.outFile:
+        outFile = options.outFile
+        if outFile == '-':
+            sys.stdout.write('Filename: ')
+            outFile = sys.stdin.readline().strip()
+        with open(outFile, 'w') as output:
+            output.write(text)
+    else:
+        message(LOG_NORMAL, text)
+
+    if options.loop:
+        sys.stdout.write('Another? [Y/n]: ')
+        resp = sys.stdin.readline().strip().lower()
+        if not resp:
+            resp = 'y'
+        if resp == 'y' or resp == 'yes':
+            continue
+    break
