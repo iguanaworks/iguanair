@@ -76,10 +76,10 @@ tar --delete --file dist/${tarname}.tar ${tarname}/debian/changelog.in
 tar --remove-files --append --transform "s|^dist|${tarname}/debian|" \
     -f dist/${tarname}.tar dist/changelog
 python dist/mkChangelog --build 1 --debian-release stable --output dist/changelog.stable-1
-python dist/mkChangelog --build 1 --debian-release zesty  --output dist/changelog.zesty-1
+python dist/mkChangelog --build 1 --debian-release cosmic  --output dist/changelog.cosmic-1
+python dist/mkChangelog --build 1 --debian-release bionic  --output dist/changelog.bionic-1
 python dist/mkChangelog --build 1 --debian-release xenial --output dist/changelog.xenial-1
 python dist/mkChangelog --build 1 --debian-release trusty --output dist/changelog.trusty-1
-python dist/mkChangelog --build 1 --debian-release artful  --output dist/changelog.artful-1
 
 # cleanup
 rm -f dist/ChangeLog dist/mkChangelog
