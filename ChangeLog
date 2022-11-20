@@ -1,5 +1,14 @@
+Version: 1.2.1
+Author:  Iguanaworks Support <support@iguanaworks.net>
+When:    Sun, 20 Nov 2022 11:12:38 -0600
+Debian:  jammy, 1
+Fedora:  1
+Message:
+  * Update Build requirements for newer .deb based distros
+END
+
 Version: 1.2.0
-Author:  Iguanaworks <support@iguanaworks.net>
+Author:  Iguanaworks Support <support@iguanaworks.net>
 When:    Sat, 29 Jul 2017 14:22:28 -0600
 Debian:  zesty, 1
 Fedora:  1
