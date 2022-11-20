@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # What: create source distribution, requires a git tree.
 #
@@ -75,11 +75,20 @@ python dist/mkChangelog --build 1 --debian-release unstable --output dist/change
 tar --delete --file dist/${tarname}.tar ${tarname}/debian/changelog.in
 tar --remove-files --append --transform "s|^dist|${tarname}/debian|" \
     -f dist/${tarname}.tar dist/changelog
-python dist/mkChangelog --build 1 --debian-release stable --output dist/changelog.stable-1
-python dist/mkChangelog --build 1 --debian-release cosmic  --output dist/changelog.cosmic-1
+
+python dist/mkChangelog --build 1 --debian-release kinetic  --output dist/changelog.kinetic-1
+python dist/mkChangelog --build 1 --debian-release jammy  --output dist/changelog.jammy-1
+python dist/mkChangelog --build 1 --debian-release focal  --output dist/changelog.focal-1
+#python dist/mkChangelog --build 1 --debian-release stable --output dist/changelog.stable-1
+#python dist/mkChangelog --build 1 --debian-release cosmic  --output dist/changelog.cosmic-1
 python dist/mkChangelog --build 1 --debian-release bionic  --output dist/changelog.bionic-1
 python dist/mkChangelog --build 1 --debian-release xenial --output dist/changelog.xenial-1
 python dist/mkChangelog --build 1 --debian-release trusty --output dist/changelog.trusty-1
+#python dist/mkChangelog --build 1 --debian-release disco --output dist/changelog.disco-1
+#python dist/mkChangelog --build 1 --debian-release eoan --output dist/changelog.eoan-1
+#python dist/mkChangelog --build 1 --debian-release focal --output dist/changelog.focal-1
+#python dist/mkChangelog --build 1 --debian-release groovy --output dist/changelog.groovy-1
+#python dist/mkChangelog --build 1 --debian-release hirsute --output dist/changelog.hirsute-1
 
 # cleanup
 rm -f dist/ChangeLog dist/mkChangelog

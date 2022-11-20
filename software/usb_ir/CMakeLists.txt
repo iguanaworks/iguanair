@@ -10,7 +10,7 @@ include(${CMAKE_SOURCE_DIR}/bootstrap/CMakeMacros/Basics.txt)
 include(${CMAKE_SOURCE_DIR}/bootstrap/CMakeMacros/GitVersion.txt)
 
 # Make sure to change the value in Changelog as well
-Set(FULLVER 1.2.0)
+Set(FULLVER 1.2.1)
 
 # SONAME links, unrelated to the package version.
 SET(SO_VER 0)
@@ -166,7 +166,7 @@ EndIf()
 # check for SOME libusb header now that include paths are set
 include(CheckIncludeFile)
 CHECK_INCLUDE_FILE("usb.h" HAVE_USB_H)
-CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
+#CHECK_INCLUDE_FILE("libusb.h" HAVE_LIBUSB_H)
 CHECK_INCLUDE_FILE("libusb-1.0/libusb.h" HAVE_USB_10_LIBUSB_H)
 If(NOT HAVE_USB_H AND NOT HAVE_LIBUSB_H AND NOT HAVE_USB_10_LIBUSB_H)
   message(FATAL_ERROR "No version of the libusb header files were found.")
