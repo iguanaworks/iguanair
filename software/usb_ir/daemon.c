@@ -55,7 +55,7 @@ static void scanHandler(int UNUSED(sig))
 static void workLoop()
 {
     /* initialize the driver, signals, and device list */
-    if (initServer(&srvSettings))
+    if (initServer())
     {
         if (signal(SIGINT, quitHandler) == SIG_ERR)
             message(LOG_ERROR, "failed to install SIGINT handler.\n");
