@@ -98,7 +98,7 @@ void initServerSettings();
 struct argp* baseArgParser();
 bool initServer();
 void waitOnCommPipe();
-char* aliasSummary();
+char* aliasSummary(iguanaDev *idev);
 char* deviceSummary();
 char* deviceAddress(const char *name);
 void cleanupServer();
