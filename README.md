@@ -1,3 +1,7 @@
+# On December 31st, 2025 Iguanaworks closed down.
+
+The information below is for history / reference, but the company has shut down and the devices are no longer available for sale. The open source code will remain here.
+
 # IguanaIR software / firmware project
 
 This project provides the software and firmware used with the
@@ -33,14 +37,14 @@ configurations can tie infrared signals into home automation:
  * https://www.promixis.com/girder.php
  * http://www.eventghost.org/
 
-The hardware can be purchased from our website and bulk discounts are
-available:
+The hardware ~~can be purchased from our website and bulk discounts are
+available~~:
 
  * http://www.iguanaworks.net
 
-The IguanaWorks website also provides Windows binaries, frequently
+The IguanaWorks website also provides Windows binaries, ``frequently
 asked questions, and a support site to contact the developers with
-questions, issues, or descriptions of interesting projects.
+questions, issues, or descriptions of interesting projects``.
 
 Thank you for your interest.
 
