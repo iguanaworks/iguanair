@@ -42,9 +42,9 @@ available~~:
 
  * http://www.iguanaworks.net
 
-The IguanaWorks website also provides Windows binaries, ``frequently
+The IguanaWorks website also provides Windows binaries, ~~frequently
 asked questions, and a support site to contact the developers with
-questions, issues, or descriptions of interesting projects``.
+questions, issues, or descriptions of interesting projects~~.
 
 Thank you for your interest.
 
